@@ -1,0 +1,210 @@
+%\VignetteIndexEntry{Baltagi}
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{ucs}
+\usepackage[utf8]{inputenc}
+
+\title{Examples from \textsc{B. Baltagi} : \emph{Econometric Analysis
+    of Panel Data}}
+
+\author{Yves Croissant}
+\begin{document}
+
+\maketitle
+
+
+\section{Introduction}
+
+<<>>=
+library(plm)
+library(Ecdat)
+@ 
+
+\section{Oneway panel}
+
+
+Grunfeld data, used in Baltagi p21--24.
+
+<<>>=
+
+
+data(Grunfeld)
+Grunfeld=pdata.frame(Grunfeld,firm,year)
+form=inv~value+capital
+gow=plm(form,data=Grunfeld,theta="swar")
+
+
+gowt=plm(inv~value+capital,effect="double",data=Grunfeld)
+gowt=plm(inv~value+capital,effect="double",data=Grunfeld,theta="walhus")
+xt=summary(gow)$CoefTable
+summary(gow$random)
+@ 
+
+Gasoline data, used in Baltagi p. 24
+
+<<>>=
+data(Gasoline)
+Gasoline=pdata.frame(Gasoline,country,year)
+form=lgaspcar~lincomep+lrpmg+lcarpcap
+plm(form,data=Gasoline)
+
+@ 
+
+Produ data, used p.25.
+
+<<>>=
+data(Produc)
+Produc=pdata.frame(Produc,state,year)
+form=log(gsp)~log(pcap)+log(pc)+log(emp)+unemp
+zo <- plm(form,data=Produc,theta="swar")
+summary(zo)
+@ 
+
+\section{Two--way error component regression model}
+
+
+Grunfeld data, used in Baltagi p.43--46
+
+<<>>=
+data(Grunfeld)
+Grunfeld=pdata.frame(Grunfeld,firm,year)
+gtw=plm(inv~value+capital,data=Grunfeld,theta="swar",effect="double")
+summary(gtw$random)
+@ 
+
+Gasoline data, used in Baltagi p. 24
+
+<<>>=
+data(Gasoline)
+Gasoline=pdata.frame(Gasoline,country,year)
+form=lgaspcar~lincomep+lrpmg+lcarpcap
+gas=plm(form,data=Gasoline)
+
+@ 
+
+Produ data, used p.25.
+
+<<>>=
+data(Produc)
+Produc=pdata.frame(Produc,state,year)
+form=log(gsp)~log(pcap)+log(pc)+log(emp)+unemp
+zo <- plm(form,data=Produc,theta="swar")
+summary(zo)
+
+@ 
+
+\section{Test of hypotheses with panel data}
+
+\subsection{Test for Poolability of the data}
+
+<<fig=T>>=
+data(Grunfeld)
+Grunfeld=pdata.frame(Grunfeld,firm,year)
+form=inv~value+capital
+
+z=nopool(form,data=Grunfeld)
+z=plm(form,data=Grunfeld,np=TRUE)
+summary(z)
+plot(z$nopool)
+pooltest(z)
+pooltest(z,effect=T)
+
+z=plm(form,data=Grunfeld,effect="time",np=TRUE)
+pooltest(z,effect=F)
+
+@
+
+\subsection{Test for individual and time effects}
+
+Grunfeld, p. 65
+<<>>=
+
+plmtest(gow)
+plmtest(gow,type="honda")
+plmtest(gow,effect="time")
+plmtest(gow,type="honda",effect="time")
+plmtest(gow,effect="double")
+plmtest(gow,type="honda",effect="double")
+plmtest(gow,type="ghm",effect="double")
+plmtest(gow,type="kw",effect="double")
+pFtest(gow)
+pFtest(gtw)
+pFtest(gowt)
+
+@ 
+
+
+
+\subsection{Hausman's specification test}
+
+Grunfeld, p.71
+
+<<>>=
+phtest(gow)
+phtest(gow$between,gow$random)
+@ 
+
+Gasoline, p.71-72
+<<>>=
+phtest(gas)
+phtest(gas$between,gas$random)
+@ 
+
+\section{Seemingly unrelated regressions with error components}
+
+\section{Simultaneous equations with error components}
+
+Crime in North Carolina, p. 117--121
+<<>>=
+data(Crime)
+Crime=pdata.frame(Crime,county,year)
+form=log(crmrte)~log(prbarr)+log(polpc)+log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+factor(year)
+inst=~log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+log(taxpc)+log(mix)+factor(year)
+inst2=~log(taxpc)+log(mix)
+endog=~log(prbarr)+log(polpc)
+cr=plm(form,data=Crime)
+cr1=plm(form,inst,data=Crime)
+cr3=plm(form,inst2,endog,data=Crime)
+summary(cr3)
+@
+
+Hausman and Taylor estimator, p.129--131
+
+<<>>=
+data(Wages)
+Wages=pdata.frame(Wages,595)
+form=lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sexe+black+ed
+ht=plm(form,~sexe+black+bluecol+south+smsa+ind,data=Wages,theta="swar",trinst="ht")
+summary(ht)
+@ 
+
+\section{Dynamic panel data models}
+
+\section{Unbalanced panel data}
+
+Hedonic, p.173
+
+<<>>=
+data(Hedonic)
+Hedonic=pdata.frame(Hedonic,townid)
+form=mv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+blacks+lstat
+ba=plm(form,data=Hedonic)
+summary(ba)
+@ 
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
