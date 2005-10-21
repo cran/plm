@@ -1,0 +1,625 @@
+%\VignetteIndexEntry{Introduction a plm}
+\documentclass[a4paper]{article}
+\usepackage[francais]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{ucs}
+\usepackage[utf8]{inputenc}
+
+\title{Introduction à plm}
+
+\author{Yves Croissant}
+\begin{document}
+
+\maketitle
+
+
+\section{Introduction}
+
+L'objectif du package \texttt{plm} est de permettre d'estimer
+simplement les modèles de panel. Le package \texttt{nlme}
+(\textit{non--linear mixed effect models}) permet
+d'estimer certains modèles de panel, mais pas de manière intuitive
+pour un économètre. \texttt{plm} fournit des fonctions pour lire
+des données de panel, pour estimer différents modèles et pour
+réaliser des tests.
+
+Ce package est chargé en utilisant :
+
+<<>>=
+library(plm)
+@ 
+
+
+Ce document présente différents exemples d'utilisation de \texttt{plm}
+en utilisant des données disponibles dans le package
+\texttt{Ecdat}. 
+
+<<>>=
+library(Ecdat)
+@ 
+
+Ces données sont utilisées dans \textsc{Baltagi} (2001).
+
+\section{Lecture des données}
+
+Avec \texttt{plm}, les données de panel sont stockées dans un objet de
+type \texttt{pdata.frame}, qui est un \texttt{data.frame} auquel
+plusieurs attributs ont été ajoutés de manière à stocker des
+informations sur la structure des données utiles pour les
+estimations. Un \texttt{pdata.frame} peut être créé à partir d'un
+\texttt{data.frame} ordinaire (commande \texttt{pdata.frame}) ou
+directement à partir d'un fichier texte (commande
+\texttt{pread.table}). 
+
+
+\subsection{Lire les données à partir d'un data.frame}
+
+
+
+Nous illustrerons la commande
+\texttt{pdata.frame} en utilisant les données \texttt{Produc} :
+
+
+<<>>=
+data(Produc)
+pdata.frame(Produc,"state","year","pprod")
+@ 
+
+La commande \texttt{pdata.frame} attend 4 arguments :
+
+\begin{itemize}
+\item le nom du \texttt{data.frame},
+\item \texttt{id} : la variable qui identifie les individus,
+\item \texttt{time} : la variable qui identifie les périodes,
+\item \texttt{name} : le nom sous lequel sera stocké le \texttt{pdata.frame}
+\end{itemize}
+
+Les observations doivent être classées par individu, puis par période. Le
+troisième argument est optionnel, en son absence, une nouvelle série
+appelée \texttt{time} est ajoutée aux données. Le quatrième argument
+est également optionnel, en son absence, le \texttt{pdata.frame} est
+stocké sous le même nom que le \texttt{data.frame}.
+S'il n'y a pas d'index temporel, seul l'argument \texttt{id} peut être
+renseigné, dans ce cas une variable appelée \texttt{time} est ajoutée
+au \texttt{pdata.frame}.
+
+
+<<>>=
+data(Hedonic)
+pdata.frame(Hedonic,"townid")
+@ 
+
+Enfin, il est possible, si le panel est cylindré, d'indiquer comme
+deuxième argument non pas le nom de l'index individuel, mais le nombre
+d'individus. Dans ce cas, deux séries supplémentaires \texttt{id} et
+\texttt{time} sont créées :
+
+<<>>=
+data(Wages)
+pdata.frame(Wages,595)
+@ 
+
+Un résumé des données est obtenu en appliquant la méthode
+\texttt{summmary} :
+
+<<>>=
+summary(Hedonic)
+@ 
+
+L'affichage se décompose en quatre sections :
+
+\begin{itemize}
+\item \texttt{indexes} indique le nom des index individuels et temporels,
+\item \texttt{panel dimensions} donne des informations sur la
+  dimension du  panel,
+\item \texttt{Time/individual variation} indique les variables pour
+lesquelles il n'y a pas de variation temporelle ou individuelle,
+\item \texttt{Descriptive statistics} présente des statistiques
+descriptives sur les différentes variables.
+\end{itemize}
+
+\subsection{Lire les données à partir d'un fichier texte}
+
+La commande \texttt{pread.table} est proposée afin de lire des données
+de panel directement à partir d'un fichier texte. La syntaxe est la
+suivante :
+
+\begin{verbatim}
+pread.table("c:/mes documents/essai/donnees.txt",
+         "firm","year","dataname",header=T,sep=";",dec=",")
+\end{verbatim}
+
+Les arguments de \texttt{pread.table} sont les suivants :
+
+\begin{itemize}
+\item le fichier texte qui contient les données,
+\item \texttt{id} : la variable qui identifie les individus,
+\item \texttt{time} : la variable qui identifie les périodes,
+\item \texttt{name} : le nom du \texttt{pdata.frame} qui sera créé (si l'argument est nul, le nom du \texttt{pdata.frame}
+  est le nom du fichier sans l'extension et sans le chemin d'accès),
+\item d'autres arguments éventuels qui seront passés à la fonction
+  \texttt{read.table} (ici, on précise que la première ligne du
+  fichier contient le nom des variables, que le séparateur de champs
+  est le point--virgule et que le séparateur décimal est la virgule).
+\end{itemize}
+
+
+
+
+\section{Estimer un modèle}
+
+L'estimation d'un modèle de panel est obtenu avec la fonction
+\texttt{plm}.
+
+
+\subsection{Utilisation simple de plm}
+
+Il y deux possibilités pour utiliser \texttt{plm} : la première
+consiste à estimer une liste de modèles (comportement par défaut), la
+seconde à estimer un modèle. Dans le premier cas, les modèles estimés
+sont :
+
+\begin{itemize}
+\item le modèle à effets fixes (\texttt{within}),
+\item les moindres carrés ordinaires (\texttt{pooling}),
+\item le modèle estimé sur les moyennes individuelles ou temporelles (\texttt{between}),
+\item le modèle à erreurs composées (\texttt{random}).
+\end{itemize}
+
+Il peut être pertinent d'estimer directement ces quatre modèles car
+beaucoup de tests impliquent plusieurs d'entre eux. L'utilisation
+la plus simple de \texttt{plm} consiste à indiquer une formule
+décrivant le modèle à estimer et le \texttt{pdata.frame} qui contient
+les données\footnote{L'exemple présenté ci--dessous est utilisé par  \textsc{Baltagi} (2001), pp. 25--28.} :
+
+<<>>=
+zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod)
+@ 
+
+Le résultat de l'estimation est stocké dans un objet de classe
+\texttt{plms}. Celui--ci est une liste contenant les résultats des 4
+modèles estimés. Chacun de ceux--ci est un objet de classe
+\texttt{plm} et  peut ensuite être extrait :
+
+<<>>=
+zzwith <- zz$within
+@ 
+
+
+On peut également préciser un modèle à estimer en fixant l'argument
+\texttt{model} de \texttt{plm} à : \texttt{within}, \texttt{between},
+\texttt{random} ou \texttt{pooling}.
+
+<<>>=
+zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random")
+@ 
+
+Les objets de classe \texttt{plm} et \texttt{plms} sont dotés d'une
+méthode \texttt{print} qui ressemble à celle de la commande
+\texttt{lm} :
+
+
+<<>>=
+print(zzra)
+@ 
+
+
+Ils disposent également d'une méthode \texttt{summary} :
+\begin{itemize}
+\item pour les objets de classe \texttt{plms}, les coefficients et les
+  écarts--type des modèles à effets fixes et à erreurs composées sont affichés, ainsi que
+  plusieurs tests (test d'Hausman, test de multiplicateur de Lagrange,
+  test de F).
+\item pour les objets de classe \texttt{plm}, le tableau des
+  coefficients est affiché, ainsi que différentes statistiques.
+\end{itemize}
+
+
+<<>>=
+summary(zz)
+summary(zzra)
+@ 
+
+Pour le modèle \texttt{random}, la commande \texttt{summary} donne des
+précisions sur la variance des différents éléments du terme d'erreur.
+
+Enfin, les objets issus de la commande \texttt{plm} supportent l'utilisation de
+la commande \texttt{update}. Par exemple, pour enlever
+\texttt{log(emp)} et \texttt{unemp} et ajouter \texttt{emp} à l'estimation précédente, on
+utilisera la commande suivante :
+
+<<>>=
+zzwithmod <- update(zzwith,.~.-unemp-log(emp)+emp)
+zzmod <- update(zz,.~.-unemp-log(emp)+emp)
+summary(zzwithmod)
+@ 
+
+
+Les effets fixes peuvent être extraits facilement en utilisant la
+commande \texttt{FE} qui prend comme argument soit un modèle estimé de
+type \texttt{within}, soit un objet de classe \texttt{plms} :
+
+<<>>=
+FE(zzmod)
+@ 
+
+\subsection{Options concernant le modèle à erreurs composées}
+
+Le modèle à erreurs composées est estimé en réalisant une estimation
+linéaire sur les données en quasi--différences. Le coefficient de
+cette quasi--différence est obtenu à partir d'estimations préalables
+des variances des différents éléments du terme d'erreur. Quatre
+possibilités existent pour estimer ce coefficient, en fixant
+l'argument \texttt{theta.method} à :
+
+\begin{itemize}
+\item \texttt{swar} : d'après \textsc{Swamy} et \textsc{Arora} (1972),
+\item \texttt{walhus} : d'après \textsc{Wallace} et \textsc{Hussain} (1969),
+\item \texttt{amemiya} : d'après \textsc{Amemiyia} (1971),
+\item \texttt{nerlove} : d'après \textsc{Nerlove} (1971).
+\end{itemize}
+
+Par défaut, l'estimateur \texttt{swar} est utilisé. Pour, par exemple,
+utiliser l'estimateur \texttt{amemiya}, on utilisera :
+
+<<>>=
+zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random",theta.method="amemiya")
+@ 
+
+
+\subsection{Préciser les effets}
+
+Par défaut, le modèle estimé par \texttt{plm} contient des effets
+individuels. Il est également possible, via l'argument \texttt{effect}
+d'introduire :
+
+
+\begin{itemize}
+\item des effets temporels \texttt{effect="time"},
+\item des effets temporels et individuels \texttt{effect="twoways"}.
+\end{itemize}
+
+Par exemple, pour estimer un modèle à erreurs composées à effets
+temporels et individuels pour les données \texttt{Grunfeld}, on
+utilisera :
+
+<<>>=
+data(Grunfeld)
+pdata.frame(Grunfeld,"firm","year")
+z <- plm(inv~value+capital,data=Grunfeld,effect="twoways",theta.method="amemiya")
+summary(z$random)
+
+@ 
+
+
+Dans la section ``effects'' du résultat est désormais précisé
+l'importance des trois éléments du terme d'erreur, ainsi que les trois
+paramètres utilisés dans la transformation (associés aux moyennes
+individuelle, temporelle et globale).
+
+L'estimation du modèle à double effets (individuels et temporels)
+n'est pour l'instant disponible que pour les panels cylindrés.
+
+
+\subsection{Modèle de Hausman--Taylor}
+
+Le modèle de \textsc{Hausman}--\textsc{Taylor} (1981) peut être estimé à l'aide de la commande
+\texttt{plm} en fixant l'argument \texttt{model} à \texttt{"ht"} et en
+précisant en second argument de \texttt{plm} une formule présentant les variables qui sont utilisées comme instruments
+\footnote{L'exemple présenté ci--dessous est utilisé par
+  \textsc{Baltagi} (2001), p. 130.} :
+
+
+<<>>=
+data(Wages)
+pdata.frame(Wages,595)
+form=lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sex+black+ed
+ht=plm(form,~sex+black+bluecol+south+smsa+ind,data=Wages,model="ht")
+summary(ht)
+
+@ 
+
+\subsection{Variables instrumentales}
+
+Un ou l'ensemble des modèles de panel peut être estimé avec des
+variables instrumentales, en précisant la liste des variables
+utilisées comme instruments. Les instruments peuvent être précisés de
+deux manières différentes :
+
+\begin{itemize}
+\item en spécifiant la liste totale des instruments (à l'aide de
+  l'argument \texttt{instrument} de \texttt{plm}),
+\item en spécifiant, d'une part la liste des instruments extérieurs
+  au modèle (argument \texttt{instrument}) et d'autre part la liste des variables du modèles qui sont
+  considérées comme corrélées avec le terme d'erreur (argument \texttt{endog}).
+\end{itemize}
+
+La méthode utilisée peut être spécifiée à l'aide de l'argument
+\texttt{inst.method} :
+
+\begin{itemize}
+\item \texttt{bvk}, d'après \textsc{Balestra} et \textsc{Varadharajan--Krishnakumar} (1987), la valeur par défaut,
+\item \texttt{baltagi}, d'après \textsc{Baltagi} (1981).
+\end{itemize}
+
+Nous illustrons l'estimation d'un modèle de panel avec variables
+instrumentales avec les données \texttt{Crime}\footnote{Voir
+  \textsc{Baltagi} (2001), pp.119--120.}. La même estimation est
+réalisée en utilisant la première technique (\texttt{cr1}) et la
+deuxième (\texttt{cr2}). Les variables \texttt{prbarr} et \texttt{polpc}
+sont considérées comme endogènes et il y a deux instruments extérieurs
+au modèle,
+\texttt{taxpc} et \texttt{mix} :
+
+<<>>=
+data(Crime)
+pdata.frame(Crime,"county","year")
+form=log(crmrte)~log(prbarr)+log(polpc)+log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+year
+inst=~log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+log(taxpc)+log(mix)+year
+inst2=~log(taxpc)+log(mix)
+endog=~log(prbarr)+log(polpc)
+cr=plm(form,data=Crime)
+cr1=plm(form,inst,data=Crime)
+cr2=plm(form,inst2,endog,data=Crime)
+summary(cr2$random)
+
+@ 
+
+
+\subsection{Modèle à coefficients individuels}
+
+Si le nombre d'observations temporelles est suffisant, le modèle peut
+également être spécifié de manière à ce que les différents
+coefficients soient a priori différents d'un individu à un autre. Dans
+ce cas, la même équation est estimée pour chaque individu. Cette
+estimation peut être réalisée avec \texttt{plm} de deux manières
+différentes :
+
+\begin{itemize}
+\item en utilisant la commande \texttt{nopool},
+\item en utilisant la commande \texttt{plm} avec l'argument
+  \texttt{np} fixé à \texttt{TRUE}.
+\end{itemize}
+
+
+Avec les données \texttt{Grunfeld}, on obtient le résultat suivant :
+
+
+<<>>=
+z <- nopool(inv~value+capital,data=Grunfeld)
+print(z)
+summary(z)
+@ 
+
+
+Le résultat est un objet de classe \texttt{nopool}. L'impression de
+cet objet présente les coefficients estimés pour chaque individu. La
+méthode \texttt{summary} présente des statistiques descriptives pour
+ces coefficients.
+
+Dans la commande ci--dessous, l'estimation est réalisée à partir de la
+commande \texttt{plm} :
+
+
+<<>>=
+z <- plm(inv~value+capital,data=Grunfeld,np=TRUE)
+znp <- z$nopool
+@ 
+
+Le résultat de l'estimation du modèle \texttt{nopool} est alors un
+élément supplémentaire  de l'objet renvoyé par \texttt{plm}.
+
+
+
+\subsection{Panel non--cylindré}
+
+\texttt{plm} propose un support limité pour les panels non--cylindrés.
+Nous présentons ci--dessous les résultats d'une estimation réalisée
+sur les données \texttt{Hedonic}\footnote{Voir \textsc{Baltagi}
+  (2001), p. 174.}.
+
+
+
+<<>>=
+form=mv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+blacks+lstat
+ba=plm(form,data=Hedonic)
+summary(ba$random)
+
+@ 
+\section{Tests}
+
+
+\subsection{Tests de coefficients identiques}
+
+On teste ici l'hypothèse que les mêmes coefficients associés à chaque
+variable sont les mêmes pour tous les individus. Il s'agit d'un test
+de F classique, comparant les résultats d'un modèle estimé globalement
+pour l'ensemble des individus et d'un modèle obtenu en estimant une
+équation pour chaque individu. La commande \texttt{pooltest} permet
+de réaliser ce test. Cette commande prend pour principal  argument un
+objet 
+de classe \texttt{plms}. Si le modèle a été estimé par \texttt{plm}
+avec l'argument \texttt{np=F}, il faut spécifier un deuxième argument
+de classe \texttt{nopool} (dans le cas inverse, le modèle
+\texttt{nopool} est un élément de l'objet \texttt{plms}).
+
+Un troisième argument \texttt{effect} doit être fixé à vrai ou faux
+(valeur par défaut), suivant que sous H$_\mtext{o$}, les constantes
+individuelles sont supposées être différentes ou
+identiques\footnote{Les exemples ci--dessous sont présentés par
+  \textsc{Baltagi} (2001), pp. 57--58.}:
+
+<<>>=
+form=inv~value+capital
+znp=nopool(form,data=Grunfeld)
+zplm=plm(form,data=Grunfeld)
+pooltest(zplm,znp)
+pooltest(zplm,znp,effect=T)
+
+z=plm(form,data=Grunfeld,effect="time",np=TRUE)
+pooltest(z,effect=F)
+
+@
+
+
+\subsection{Tests sur les effets}
+
+
+
+\subsubsection{Tests de multiplicateur de Lagrange}
+
+Ces tests de présence d'effets individuels et/ou temporels sont basés sur
+les résultats du modèle de pooling. La commande \texttt{plmtest}
+permet de calculer ces tests, en indiquant en argument soit un objet
+de classe \texttt{plms}, soit un objet de classe \texttt{plm} (en
+l'occurence le résultat d'un modèle \texttt{pooling}). 
+
+Deux arguments supplémentaires permettent de préciser le test à
+calculer. \texttt{type} peut être fixé à :
+
+\begin{itemize}
+\item \texttt{bp}, test de \textsc{Breusch--Pagan} (1980), la valeur par défaut,
+\item \texttt{honda}, d'après \textsc{Honda} (1985),
+\item \texttt{kw}, d'après \textsc{King} et \textsc{Wu} (1997).
+\end{itemize}
+
+Le type d'effet testé est précisé grâce à l'argument \texttt{effect}
+fixé à :
+
+\begin{itemize}
+\item \texttt{individual} pour des effets individuels (la valeur par défaut),
+\item \texttt{time} pour des effets temporels,
+\item \texttt{twoways} pour des effets individuels et temporels.
+\end{itemize}
+
+Différents exemple d'utilisation de tests de multiplicateur de Lagrange
+sont présentés ci--dessous\footnote{Voir \textsc{Baltagi} (2001), p. 65.}.
+
+<<>>=
+
+
+library(Ecdat)
+g <- plm(inv ~ value + capital, data=Grunfeld)
+plmtest(g)
+plmtest(g,effect="time")
+plmtest(g,type="honda")
+plmtest(g,type="ghm",effect="twoways")
+plmtest(g,type="kw",effect="twoways")
+
+@ 
+
+
+
+\subsubsection{Tests de F}
+
+La présence d'effets peut également être testée à partir de la
+comparaison des  résultats des modèles \texttt{within} et
+\texttt{pooling}, sous la forme d'un test de F. La commande
+\texttt{pFtest} permet de calculer ce type de test, en indiquant comme
+argument soit un objet de classe \texttt{plms}, soit deux objets de
+classe \texttt{plm}, contenant respectivement les résultats d'un
+modèle \texttt{within} et d'un modèle \texttt{pooling}.
+Différents exemples d'utilisation de \texttt{pFtest}
+sont présentés ci--dessous\footnote{Voir \textsc{Baltagi} (2001),
+  p. 65.}:
+
+<<>>=
+library(Ecdat)
+gi <- plm(inv ~ value + capital, data=Grunfeld)
+gt <- plm(inv ~ value + capital, data=Grunfeld,effect="time")
+gd <- plm(inv ~ value + capital, data=Grunfeld,effect="twoways")
+pFtest(gi)
+pFtest(gi$within,gi$pooling)
+pFtest(gt)
+pFtest(gd)
+
+@ 
+
+
+
+\subsection{Test d'Hausman}
+
+Le test d'\textsc{Hausman} (1978) est un test basé sur la comparaison de deux
+modèles :
+
+\begin{itemize}
+\item sous l'hypothèse nulle, les deux modèles sont convergents et
+  l'un des deux est plus efficace que l'autre,
+\item sous l'hypothèse alternative, seul le premier des deux modèles
+  est convergent.
+\end{itemize}
+
+
+La commande \texttt{phtest} permet de calculer le test d'Hausman. Elle
+peut prendre comme argument un objet de classe \texttt{plms}, dans ce
+cas les deux modèles concernés sont les modèles \texttt{within} et
+\texttt{random} (usage le plus courant en économétrie de panel). Elle
+peut également prendre pour argument deux objets de classe \texttt{plm}.
+Différents exemples d'utilisation du test d'\textsc{Hausman}
+sont présentés ci--dessous\footnote{Voir \textsc{Baltagi} (2001), p. 71.}.
+
+
+<<>>=
+g <- plm(inv~value+capital,data=Grunfeld)
+phtest(g)
+phtest(g$between, g$random)
+
+@ 
+
+
+\section{Bibiographie}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.4cm}
+
+  Amemiyia, T. (1971), The estimation of the variances in a
+  variance--components model, \emph{International Economic Review}, 12,
+  pp.1--13.
+
+  Balestra, P. et J. Varadharajan--Krishnakumar (1987), Full
+  information estimations of a system of simultaneous equations with
+  error components structure, \emph{Econometric Theory}, 3, pp.223--246.
+  
+  Baltagi, B.H. (1981), Simultaneous equations with error components,
+  \emph{Journal of econometrics}, 17, pp.21--49.
+  
+  Baltagi, B.H. (2001) \emph{Econometric Analysis of Panel Data}. John
+  Wiley and sons. ltd.
+
+  Breusch, T.S. et A.R. Pagan (1980), The Lagrange multiplier test and
+  its applications to model specification in econometrics, \emph{Review
+    of Economic Studies}, 47, pp.239--253.
+
+  Gourieroux, C., A. Holly et A. Monfort (1982), Likelihood ratio test,
+  Wald test, and Kuhn--Tucker test in linear models with inequality
+  constraints on the regression parameters, \emph{Econometrica}, 50,
+  pp.63--80.
+
+  Hausman, G. (1978), Specification tests in econometrics,
+  \emph{Econometrica}, 46, pp.1251--1271.
+
+  Hausman, J.A. et W.E. Taylor (1981), Panel data and unobservable
+  individual effects, \emph{Econometrica}, 49, pp.1377--1398.
+  
+  Honda, Y. (1985), Testing the error components model with non--normal
+  disturbances, \emph{Review of Economic Studies}, 52, pp.681--690.
+
+  King, M.L. et P.X. Wu (1997), Locally optimal one--sided tests for
+  multiparameter hypotheses, \emph{Econometric Reviews}, 33,
+  pp.523--529.
+
+  Nerlove, M. (1971), Further evidence on the estimation of dynamic
+  economic relations from a time--series of cross--sections,
+  \emph{Econometrica}, 39, pp.359--382.
+
+  Swamy, P.A.V.B. et S.S. Arora (1972), The exact finite sample
+  properties of the estimators of coefficients in the error components
+  regression models, \emph{Econometrica}, 40, pp.261--275.
+
+  Wallace, T.D. et A. Hussain (1969), The use of error components
+  models in combining cross section with time series data,
+  \emph{Econometrica}, 37(1), pp.55--72.
+
+\end{document}
+
+

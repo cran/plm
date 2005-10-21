@@ -1,19 +1,31 @@
-\name{pdimcheck}
-\alias{pdimcheck}
+\name{pdim}
+\alias{pdim}
+\alias{pdim.pdata.frame}
+\alias{pdim.data.frame}
+\alias{pdim.default}
+\alias{print.pdim}
+
 \title{Check for the dimensions of the panel}
-\description{This function check the number of individuals and time
-  observations in the panel and wheter it is balanced or not.}
+\description{This function checks the number of individuals and time
+  observations in the panel and whether it is balanced or not.}
 \usage{
-pdimcheck(id,time,data=NULL)
+pdim(x,...)
+\method{pdim}{pdata.frame}(x,...)
+\method{pdim}{data.frame}(x,id,time,...)
+%\method{pdim}{default}(x,y,...)
+
 }
 \arguments{
-  \item{id}{a vector containing the individual index,}
-  \item{time}{a vector containing the time index,}
-  \item{data}{an optional \code{data.frame}.}
+  \item{x}{a \code{data.frame} or a \code{pdata.frame},}
+%  or a vector for the default method}
+%  \item{y}{a vector,}
+  \item{id}{the individual index,}
+  \item{time}{the time index,}
+  \item{...}{further arguments.}
 }
 
 \value{
-  a list containing the following elements :
+  an object of class \code{plim} containing the following elements :
   \item{nT}{ a list containing \code{n}, the number of individuals,
     \code{T}, the number of time observations, \code{N} the total number
     of observations,}
@@ -27,7 +39,7 @@ pdimcheck(id,time,data=NULL)
     contains the names of each period.}
     }
 \details{
-\code{pdimcheck} is called by \code{pdata.frame} and by \code{plm} in
+\code{pdim} is called by \code{pdata.frame} and by \code{plm} if
 there are some missing values.
 }
 \seealso{
@@ -37,7 +49,6 @@ there are some missing values.
 \examples{
 library(Ecdat)
 data(Produc)
-pdimcheck(state,year,Produc)
-pdimcheck(Produc$state,Produc$year)
+pdim(Produc,"state","year")
 }
 \keyword{attribute}

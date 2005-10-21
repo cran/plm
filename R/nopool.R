@@ -1,8 +1,5 @@
-nopool <- function(y,...){
-  UseMethod("nopool")
-}
-nopool.formula <- function(y,data=data,effect="individual",...){
-  formula <- y
+
+nopool <- function(formula,data=data,effect="individual",...){
   indexes <- attr(data,"indexes")
   id.index.name <- indexes$id
   time.index.name <- indexes$time
@@ -25,12 +22,12 @@ nopool.formula <- function(y,data=data,effect="individual",...){
   mtx <- terms(formula)
   X <- model.matrix(mtx,mf)[,-1,drop=F]
   y <- model.response(mf)
-  res <- nopool(y,X,cond)
+  res <- nopool.fit(y,X,cond)
   res
 }
 
 
-nopool.default <- function(y,X,cond,...){
+nopool.fit <- function(y,X,cond,...){
   K <- ncol(X)
   N <- nrow(X)
   namesX <- c("(intercept)",colnames(X))
@@ -108,13 +105,15 @@ pooltest <- function(plms,nopool=NULL,effect=FALSE){
   df2 <- dlu
   stat <- (rss-uss)/uss*df2/df1
   pval <- 1-pf(stat,df1,df2)
+  parameter <- c(df1,df2)
+  names(parameter) <- c("df1","df2")
   names(stat)="F"
   data.name <- paste(deparse(substitute(plms)))
   res <- list(statistic = stat,
+              parameter=parameter,
               p.value = pval,
               data.name=data.name,
               null.value = "stability",
-              alternative = "no stability",
               method = "F statistic")
   class(res) <- "htest"
   res

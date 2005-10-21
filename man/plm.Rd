@@ -1,7 +1,5 @@
 \name{plm}
 \alias{plm}
-\alias{plm.default}
-\alias{plm.formula}
 \alias{print.plm}
 \alias{summary.plm}
 \alias{print.plms}
@@ -13,74 +11,80 @@
   Estimators for panel data (balanced or unbalanced)
 }
 \usage{
-plm(y, ...)
-\method{plm}{formula}(y,instruments=NULL,endog=NULL,data,effect="individual",
-theta="swar",trinst="baltagi",model=NULL,np=FALSE,...)
-\method{plm}{default}(y,X,W,id,time,pvar,pdim,pmodel, ...)
-\method{print}{plm}(x,digits=3, ...)
+plm(formula,instruments=NULL,endog=NULL,data,effect="individual",
+random.method="swar",inst.method="bvk",model=NULL,np=FALSE, ...)
+\method{print}{plm}(x,digits=5, ...)
 \method{summary}{plm}(object, ...)
-\method{print}{plms}(x,digits=3, ...)
+\method{print}{plms}(x,digits=5, ...)
 \method{summary}{plms}(object, ...)
-\method{print}{summary.plm}(x,digits=3, ...)
-\method{print}{summary.plms}(x,digits=3, ...)
+\method{print}{summary.plm}(x,digits=5,length.line=70, ...)
+\method{print}{summary.plms}(x,digits=5,length.line=70, ...)
 
 
 }
 
 \arguments{
-  \item{y}{a symbolic description for the model to be estimated
-    for the \code{formula} method, a numeric vector for the default method,}
+  \item{formula}{a symbolic description for the model to be estimated,}
   \item{object,x}{an object of class \code{plm} or \code{plms},}
   \item{instruments}{a one side formula containing instrumental
     variables,}
-  \item{endog}{a one side formula containing endogenous variable,}
+  \item{endog}{a one side formula containing endogenous variables,}
   \item{data}{the data, must be an object of class \code{pdata.frame}
-    and is compulsary,}
-  \item{effect}{one of \code{"individual"}, \code{"time"} or \code{"twoways"} for a two way estimation,}
-  \item{theta}{method of estimation for the variance components in the
+    and is mandatory,}
+  \item{effect}{the effects introduced in the model, one of \code{"individual"}, \code{"time"} or \code{"twoways"},}
+  \item{random.method}{method of estimation for the variance components in the
     random effect model, one of \code{"swar"}, \code{"amemiya"}, \code{"walhus"} and \code{"nerlove"},}
-  \item{trinst}{the instrumental variable transformation : one of
-    \code{"baltagi"}, \code{"bvk"}, \code{"ht"},}
+  \item{inst.method}{the instrumental variable transformation : one of
+    \code{"bvk"} and \code{"baltagi"},}
   \item{model}{one of \code{"pooling"}, \code{"within"},
-    \code{"between"} and \code{"random"} or \code{NULL} : \code{plm}
-    returns the model spectified or if \code{NULL }a list containing the
-    fout models,}
-  \item{W}{a matrix of instrumental variables,}
-  \item{X}{a matrix of explanatory variables,}
-  \item{id}{the individual index,}
-  \item{time}{the time index,}
-  \item{pvar}{a list resulting from a call to \code{pvarcheck},}
-  \item{pdim}{a list resulting from a call to \code{pdimcheck},}
-  \item{pmodel}{a list containing the characteristics of the model to be
-  estimated : \code{model}, \code{formula}, \code{effect}, \code{theta},
-\code{trinst},}
+    \code{"between"}, \code{"random"} and \code{"ht"} : \code{plm}
+    returns the model specified or, if \code{NULL}, a list containing 
+    four models (\code{"pooling"}, \code{"within"},
+    \code{"between"} and  \code{"random"}),}
   \item{np}{a logical value which indicates whether the \code{nopool}
     model has to be estimated or not,}
   \item{digits}{digits,}
+  \item{length.line}{the maximum length of the lines in the print output,}
   \item{...}{further arguments.}
 
     
 }
 
 \value{
-  Wheter :
+  Whether :
   
   an object of class \code{"plms"}, which is a list of the
   following models : \code{pooling}, \code{between} (\code{between.id} and
   \code{between.time} if \code{method="twoways"}), \code{within} and
   \code{random} which are all of class \code{"plm"},
+  
+  an object of class \code{c("plm","lm")} if the argument
+  \code{model} is filled.
 
-  an object of class \code{"plm"} if the argument \code{model} is filled
-  or if \code{trinst="ht"}.
+  
+  A \code{"plm"} object inherits form \code{"lm"}. It has the following
+  additional elements :
+  
+%  \describe{
+    \item{cov.unscaled}{the unscaled covariance of the coefficients,}
+    \item{ssr}{the sum of the square residuals,}
+    \item{model}{the name of the estimated model,}
+    \item{formula}{the formula of the estimated model,}
+    \item{FE}{the fixed effects (\code{within} model only),}
+    \item{alpha}{the estimated intercept (\code{within} model only),}
+    \item{theta}{the estimated parameter for the quasi--difference
+      (\code{random} model only),}
+    \item{sigma2}{the estimated variance of the error components
+      (\code{random} model only).}
+    %  }
+    
+  
+    
+    It has \code{print}, \code{summary} and \code{print.summary} methods.
 
-  A \code{"plm"} object is a  list of the following elements :
-  \code{coefficients}, \code{df.residual}, \code{ssr},
-  \code{cov.unscaled} and \code{formula}. It has \code{print}, \code{summary} and
-  \code{print.summary} methods which are not unlike \code{lm}'s methods.
-
-  A specific \code{summary} method is provided for objects of class \code{"plms"}, which returns an objects of
+  A specific \code{summary} method is provided for objects of class \code{"plms"}, which returns an object of
   class \code{summary.plms} and prints a table of the coefficients
-  of the different models and their standard errors.
+  of the within and random models and their standard errors.
 }
 
 \details{
@@ -89,18 +93,20 @@ theta="swar",trinst="baltagi",model=NULL,np=FALSE,...)
   estimation of two-ways effects models.
 
   For random effect models, 4 estimators of the transformation
-  parameter are available : "swar","amemiya","walhus" and "nerlove".
+  parameter are available : \code{swar} (Swamy and Arora),
+  \code{amemiya},\code{walhus} (Walhus and Hussain) and \code{nerlove}.
 
-  Instrumental variable estimation is obtained using the
+  Instrumental variables estimation is obtained using the
   \code{instruments} and/or \code{endog} arguments. If for example, the
-  model is y~x1+x2+x3,  x1,x2 are endogenous and z1,z2 are external
+  model is \code{y~x1+x2+x3},  \code{x1}, \code{x2} are endogenous and
+  \code{z1}, \code{z2} are external
   instruments, the model can be estimated with :
   \code{instruments=~x3+z1+z2}, or
-  \code{instruments=~z1+z2,endog=~x1+x2}. The four models are estimated by
-  instrumental variables if \code{trinstr} equal \code{"bvk"} (Balestra, P. and
-  J. Varadharajan--Krishnakumar (1987)) or \code{"baltagi"} (Baltagi
-  (1981)). If \code{trinstr="ht"}, the Hausman and Taylor estimator is computed
-  and only a random effect model is returned.
+  \code{instruments=~z1+z2,endog=~x1+x2}. The four models are estimated 
+  using  Balestra and Varadharajan--Krishnakumar's  method if
+  \code{inst.method=bvk} or Baltagi's method if \code{inst.method="baltagi"}.
+
+  The Hausman and Taylor estimator is  computed if \code{model="ht"}.
 }
 \references{
   Amemiyia, T. (1971), The estimation of the variances in a
@@ -133,12 +139,12 @@ theta="swar",trinst="baltagi",model=NULL,np=FALSE,...)
   \emph{Econometrica}, 37(1), pp.55--72.
 }
 \seealso{
-  \code{\link{pdata.frame}} for the creation of a \code{pdata.frame}
+  \code{\link{pdata.frame}} for the creation of a \code{pdata.frame}.
 }
 \examples{
 library(Ecdat)
 data(Produc)
-Produc <-pdata.frame(Produc,state,year)
+Produc <-pdata.frame(Produc,"state","year")
 zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc)
 summary(zz$random)
 }

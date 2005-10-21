@@ -21,14 +21,14 @@ pooltest(plms,nopool=NULL,effect=FALSE)
 }
 
 \details{
-  \code{pooltest} is a classical \emph{F} test of stability (or Chow
+  \code{pooltest} is a \emph{F} test of stability (or Chow
   test) for the coefficients of a panel model.
 }
 
 \examples{
 library(Ecdat)
 data(Gasoline)
-Gasoline <- pdata.frame(Gasoline,country,year)
+Gasoline <- pdata.frame(Gasoline,"country","year")
 form <- lgaspcar~lincomep+lrpmg+lcarpcap
 gas <-  plm(form,data=Gasoline,np=TRUE)
 pooltest(gas)
