@@ -25,11 +25,13 @@ phtest.plm <- function(x,x2,data=NULL,...){
   names(stat) <- "chi2"
   parameter <- df
   names(parameter) <- "df"
-  if(!is.null(data)){
-    data.name <- data}
-  else{
+  if (is.null(data)){
     data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(x2)))
   }
+  else{
+    data.name <- data
+  }
+
   res <- list(statistic = stat,
                 p.value = pval,
                 parameter = parameter,
@@ -90,7 +92,7 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
     parameter <- switch(type,honda=NULL,bp=1)
     pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
   }
-  if(effect=="double"){
+  if(effect=="twoways"){
     if(type != "honda" & type != "bp" & type !="ghm" & type != "kw"){
       warning("type must be one of honda or bp, bp used")
       type="bp"
@@ -115,8 +117,8 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
   method.effect <- switch(effect,
                           id="individual effects",
                           time="time effects",
-                          double="two-ways effects")
-  method=paste("Lagrange Multiplier Test - ",method.effect," (",method.type,")\n")
+                          twoways="two-ways effects")
+  method=paste("Lagrange Multiplier Test - ",method.effect," (",method.type,")\n",sep="")
     
   if(type=="honda"){
     res <- list(statistic = stat,
@@ -144,24 +146,86 @@ pFtest.plms <- function(x,...){
   data.name <- paste(deparse(substitute(x)))
   within <- x$within
   pooling <- x$pooling
-  pFtest(within,pooling)
+  pFtest(within,pooling,data.name)
 }
 
-pFtest.plm <- function(x,z,data=NULL,...){
+pFtest.plm <- function(x,z,data=NULL, ...){
+  if (is.null(data)){
+    data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(z)))
+  }
+  else{
+    data.name <- data
+  }
   within <- x
   pooling <- z
   df1 <- pooling$df.residual-within$df.residual
   df2 <- within$df.residual
   stat <- (pooling$ssr-within$ssr)/within$ssr/df1*df2
   names(stat) <- "F"
+  parameter <- c(df1,df2)
+  names(parameter) <- c("df1","df2")
   pval <- 1-pf(stat,df1,df2)
   res <- list(statistic = stat,
-               p.value = pval,
-               null.value = "null.value",
-               alternative = "alternative",
-               method = "F statistic",
-               data.name = "data.name")
+              p.value = pval,
+              method = "F test for effects",
+              parameter=parameter,
+              data.name=data.name)
   class(res) <- "htest"
   res
 }
   
+Ftest <- function(x,...){
+  pdim <- attr(x,"pdim")
+  df1 <- x$df.residual
+  df2 <- switch(x$model.name,
+                "within"=pdim$Kw,
+                "between"=pdim$Kb,
+                "pooling"=pdim$K,
+                "random"=pdim$K,
+                "ht"=pdim$K
+                )
+  stat <- (x$tss-x$ssr)/x$ssr*df1/df2
+  names(stat) <- "F"
+  pval <- 1-pf(stat,df1,df2)
+  parameter <- c(df1,df2)
+  names(parameter) <- c("df1","df2")
+  res <- list(statistic = stat,
+              parameter = parameter,
+              p.value = pval,
+              method = "F test",
+              data.name = "data.name")
+  class(res) <- "htest"
+  res
+}
+
+waldtest <- function(x,...){
+  pdim <- attr(x,"pdim")
+  df <- switch(x$model.name,
+                "within"=pdim$Kw,
+                "between"=pdim$Kb,
+                "pooling"=pdim$K,
+                "random"=pdim$K,
+                "ht"=pdim$K
+                )
+  if (names(coefficients(x))[1]=="(intercept)"){
+    coef <- coefficients(x)[-1]
+    vcv <- vcov(x)[-1,-1]
+  }
+  else{
+    coef <- coefficients(x)
+    vcv <- vcov(x)
+  }
+  parameter <- length(coef)
+  stat <- coef%*%solve(vcv)%*%coef
+  names(stat) <- "chisq"
+  names(parameter) <- "df"
+  pval <- 1-pchisq(stat,df)
+  res <- list(statistic = stat,
+              p.value = pval,
+              parameter = parameter,
+              parameter.name = "df",
+              method = "Wald Test",
+              data.name = "data.name")
+  class(res) <- "htest"
+  res
+}

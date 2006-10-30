@@ -1,6 +1,6 @@
 \name{plmtest}
 \alias{plmtest}
-\alias{plmtest.default}
+%\alias{plmtest.default}
 \alias{plmtest.plm}
 \alias{plmtest.plms}
 \title{Lagrance mulitplier tests for panel models}
@@ -11,23 +11,23 @@
 plmtest(x, ...)
 \method{plmtest}{plm}(x,effect="id",type="bp", ...)
 \method{plmtest}{plms}(x,effect="id",type="bp", ...)
-\method{plmtest}{default}(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="id",type="bp",data=NULL, ...)
+%\method{plmtest}{default}(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="id",type="bp",data=NULL, ...)
 }
 
 \arguments{
-  \item{x}{a vector of residuals for the default method,}
+  \item{x}{an object of class \code{plm} or \code{plms},}
   \item{effect}{a character string indicating which effects are tested :
-    individual effects (\code{"id"}), time effects (\code{"time"}) or both (\code{"double"}),}
+    individual effects (\code{"id"}), time effects (\code{"time"}) or both (\code{"twoways"}),}
   \item{type}{a character string indicating the  test to be
     computed : \code{"bp"} for Breush-Pagan (1980), \code{"ghm"} for Gourieroux, Holly and
     Monfort (1982), \code{"honda"} for Honda (1985) or \code{"kw"} for King and Wu (1997),}
-  \item{n}{the number of individuals,}
-  \item{T}{the number of time periods,}
-  \item{balanced}{A logical value indicating wheter the panel is
-    balanced or not,}
-  \item{id}{a vector containing the individual index,}
-  \item{time}{a vector containong the time index,}
-  \item{data}{the name of the data,}
+%   \item{n}{the number of individuals,}
+%   \item{T}{the number of time periods,}
+%   \item{balanced}{A logical value indicating wheter the panel is
+%     balanced or not,}
+%   \item{id}{a vector containing the individual index,}
+%   \item{time}{a vector containong the time index,}
+%   \item{data}{the name of the data,}
   \item{...}{further arguments.}
 }
 
@@ -37,8 +37,7 @@ plmtest(x, ...)
 
 \details{
   These Lagrange multiplier tests use only the residuals of the pooling
-  model. The main argument of this function may be whether a vector of
-  residuals, a pooling model of class \code{plm} or an object of class \code{plms}.
+  model. The main argument of this function may be whether a pooling model of class \code{plm} or an object of class \code{plms}.
 }
 \references{
   Breusch, T.S. and A.R. Pagan (1980), The Lagrange multiplier test and
@@ -65,12 +64,12 @@ plmtest(x, ...)
 \examples{
 library(Ecdat)
 data(Grunfeld)
-Grunfeld <-pdata.frame(Grunfeld,firm,year)
+Grunfeld <-pdata.frame(Grunfeld,"firm","year")
 g <- plm(inv ~ value + capital, data=Grunfeld)
 plmtest(g)
 plmtest(g,effect="time")
 plmtest(g,type="honda")
-plmtest(g,type="ghm",effect="double")
-plmtest(g,type="kw",effect="double")
+plmtest(g,type="ghm",effect="twoways")
+plmtest(g,type="kw",effect="twoways")
 }
 \keyword{htest}

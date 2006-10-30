@@ -3,9 +3,9 @@
 \alias{phtest.default}
 \alias{phtest.plm}
 \alias{phtest.plms}
-\title{Hausman's test for panel models}
+\title{Hausman test for panel models}
 \description{
-  Test of consistency for panel models
+  Specification test for panel models
 }
 \usage{
 phtest(x, ...)
@@ -14,10 +14,10 @@ phtest(x, ...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"plms"} or \code{"plm"}}
-  \item{x2}{an object of class \code{"plm"}}
-  \item{data}{the name of the data}
-  \item{...}{further arguments}
+  \item{x}{an object of class \code{"plms"} or \code{"plm"},}
+  \item{x2}{an object of class \code{"plm"},}
+  \item{data}{}
+  \item{...}{further arguments.}
 }
 
 \value{
@@ -31,14 +31,14 @@ phtest(x, ...)
   within and the random effects model.
 }
 \references{
-  Hausman, G. (1978), Specification tests in econometrics,
+  Hausman, J.A. (1978), Specification tests in econometrics,
   \emph{Econometrica}, 46, pp.1251--1271.
   }
 
 \examples{
 library(Ecdat)
 data(Gasoline)
-Gasoline <- pdata.frame(Gasoline,country,year)
+Gasoline <- pdata.frame(Gasoline,"country","year")
 form <- lgaspcar~lincomep+lrpmg+lcarpcap
 gas <-  plm(form,data=Gasoline)
 phtest(gas)
