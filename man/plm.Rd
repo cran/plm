@@ -1,6 +1,6 @@
 \name{plm}
 \alias{plm}
-\alias{print.plm}
+\alias{print.panelmodel}
 \alias{summary.plm}
 \alias{print.plms}
 \alias{summary.plms}
@@ -8,12 +8,12 @@
 \alias{print.summary.plms}
 \title{Panel Data Estimators}
 \description{
-  Estimators for panel data (balanced or unbalanced)
+  Linear models for panel data estimated using the \code{lm} function to
+  transformed data.
 }
 \usage{
-plm(formula,instruments=NULL,endog=NULL,data,effect="individual",
-random.method="swar",inst.method="bvk",model=NULL,np=FALSE, ...)
-\method{print}{plm}(x,digits=5, ...)
+plm(formula,data,effect="individual",model=NULL,instruments=NULL,endog=NULL,
+random.method="swar",inst.method="bvk", ...)
 \method{summary}{plm}(object, ...)
 \method{print}{plms}(x,digits=5, ...)
 \method{summary}{plms}(object, ...)
@@ -26,67 +26,62 @@ random.method="swar",inst.method="bvk",model=NULL,np=FALSE, ...)
 \arguments{
   \item{formula}{a symbolic description for the model to be estimated,}
   \item{object,x}{an object of class \code{plm} or \code{plms},}
-  \item{instruments}{a one side formula containing instrumental
-    variables,}
-  \item{endog}{a one side formula containing endogenous variables,}
   \item{data}{the data, must be an object of class \code{pdata.frame}
     and is mandatory,}
   \item{effect}{the effects introduced in the model, one of \code{"individual"}, \code{"time"} or \code{"twoways"},}
-  \item{random.method}{method of estimation for the variance components in the
-    random effect model, one of \code{"swar"}, \code{"amemiya"}, \code{"walhus"} and \code{"nerlove"},}
-  \item{inst.method}{the instrumental variable transformation : one of
-    \code{"bvk"} and \code{"baltagi"},}
   \item{model}{one of \code{"pooling"}, \code{"within"},
-    \code{"between"}, \code{"random"} and \code{"ht"} : \code{plm}
+    \code{"between"}, \code{"random",} \code{"nopool"} and \code{"ht"} : \code{plm}
     returns the model specified or, if \code{NULL}, a list containing 
     four models (\code{"pooling"}, \code{"within"},
     \code{"between"} and  \code{"random"}),}
-  \item{np}{a logical value which indicates whether the \code{nopool}
-    model has to be estimated or not,}
+  \item{instruments}{a one side formula containing instrumental
+    variables,}
+  \item{endog}{a one side formula containing endogenous variables,}
+  \item{random.method}{method of estimation for the variance components in the
+    random effect model, one of \code{"swar"} (the default value), \code{"amemiya"}, \code{"walhus"} and \code{"nerlove"},}
+  \item{inst.method}{the instrumental variable transformation : one of
+    \code{"bvk"} and \code{"baltagi"},}
   \item{digits}{digits,}
   \item{length.line}{the maximum length of the lines in the print output,}
   \item{...}{further arguments.}
-
-    
 }
 
 \value{
   Whether :
-  
   an object of class \code{"plms"}, which is a list of the
   following models : \code{pooling}, \code{between} (\code{between.id} and
   \code{between.time} if \code{method="twoways"}), \code{within} and
   \code{random} which are all of class \code{"plm"},
   
-  an object of class \code{c("plm","lm")} if the argument
+  an object of class \code{c("plm","panelmodel")} if the argument
   \code{model} is filled.
 
+  A \code{"plm"} object  has the following elements :
   
-  A \code{"plm"} object inherits form \code{"lm"}. It has the following
-  additional elements :
-  
-%  \describe{
-    \item{cov.unscaled}{the unscaled covariance of the coefficients,}
-    \item{ssr}{the sum of the square residuals,}
-    \item{model}{the name of the estimated model,}
-    \item{formula}{the formula of the estimated model,}
-    \item{FE}{the fixed effects (\code{within} model only),}
-    \item{alpha}{the estimated intercept (\code{within} model only),}
-    \item{theta}{the estimated parameter for the quasi--difference
-      (\code{random} model only),}
-    \item{sigma2}{the estimated variance of the error components
-      (\code{random} model only).}
+  %  \describe{
+  \item{coefficients}{the vector of coefficients,}
+  \item{residuals}{the vector of residuals,}
+  \item{fitted.values}{the vector of fitted.values,}
+  \item{vcov}{the covariance matrix of the coefficients,}
+  \item{df.residual}{degrees of freedom of the residuals,}
+  \item{model}{a data.frame containing the variables used for the
+    estimation,}
+  \item{call}{the call,}
+  \item{FE}{the fixed effects (only for within models),}
+  \item{alpha}{the overall intercept (only for within models),}
+  \item{theta}{the parameter of transformation (only for random effect
+    models),}
+  \item{sigma2}{the variance of the different elements of the error
+    (only for random effect models),}
     %  }
-    
-  
     
     It has \code{print}, \code{summary} and \code{print.summary} methods.
 
-  A specific \code{summary} method is provided for objects of class \code{"plms"}, which returns an object of
-  class \code{summary.plms} and prints a table of the coefficients
-  of the within and random models and their standard errors.
+    A specific \code{summary} method is provided for objects of class \code{"plms"}, which returns an object of
+    class \code{summary.plms} and prints a table of the coefficients
+    of the within and random models and their standard errors.
+    
 }
-
 \details{
   \code{plm} is a general function for the estimation of linear
   panel models. It offers limited support for unbalanced panels and
@@ -94,7 +89,7 @@ random.method="swar",inst.method="bvk",model=NULL,np=FALSE, ...)
 
   For random effect models, 4 estimators of the transformation
   parameter are available : \code{swar} (Swamy and Arora),
-  \code{amemiya},\code{walhus} (Walhus and Hussain) and \code{nerlove}.
+  \code{amemiya}, \code{walhus} (Walhus and Hussain) and \code{nerlove}.
 
   Instrumental variables estimation is obtained using the
   \code{instruments} and/or \code{endog} arguments. If for example, the
@@ -107,7 +102,11 @@ random.method="swar",inst.method="bvk",model=NULL,np=FALSE, ...)
   \code{inst.method=bvk} or Baltagi's method if \code{inst.method="baltagi"}.
 
   The Hausman and Taylor estimator is  computed if \code{model="ht"}.
+
 }
+
+\author{Yves Croissant}
+
 \references{
   Amemiyia, T. (1971), The estimation of the variances in a
   variance--components model, \emph{International Economic Review}, 12,

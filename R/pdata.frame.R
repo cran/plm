@@ -67,6 +67,7 @@ pdata.frame <- function(x,id,time=NULL,name=NULL){
     }
   }
   pvar <- pvar(x,id.name,time.name)
+  
   x <- structure(x,class=c("pdata.frame","data.frame"),pvar=pvar,pdim=pdim,indexes=indexes)
   assign(data.name,x,pos=1)
 }
@@ -100,16 +101,3 @@ print.summary.pdata.frame <- function(x,...){
   print.table(x)
 }
  
-
-edit.pdata.frame <- function(name,...){
-  x <- name
-  attr(x,"pdim") <- NULL
-  attr(x,"pvar") <- NULL
-  attr(x,"indexes") <- NULL
-  class(x) <- "data.frame"
-  for (i in names(x)){
-    attr(x[[i]],"data") <- NULL
-    attr(x[[i]],"class") <- attr(x[[i]],"class")[-1]
-  }
-  edit(x)
-}

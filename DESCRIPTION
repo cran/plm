@@ -1,12 +1,12 @@
 Package: plm
-Version: 0.1-2
-Date: 2005-10-21
+Version: 0.2-1
+Date: 2007-03-13
 Title: Linear models for panel data
-Author: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>
+Author: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>, Giovanni Millo <Giovanni_Millo@Generali.com>
 Maintainer: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>
-Depends: R (>= 1.8.0), stats
-Suggests: Ecdat
+Depends: R (>= 1.8.0), stats, kinship, Matrix
+Suggests: Ecdat, lmtest, car
 Description: A set of estimators and tests for panel data
 License: GPL version 2 or newer
 URL: http://www.r-project.org
-Packaged: Mon Oct 30 13:56:23 2006; yves
+Packaged: Wed Mar 14 12:00:02 2007; yves

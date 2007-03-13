@@ -3,7 +3,7 @@
 
 \title{Read panel data from text file}
 \description{
-  Create a \code{pdata.frame} directly by reading a text file
+  Create a \code{pdata.frame} directly by reading a text file.
 }
 \usage{
  pread.table(file,id,time=NULL,name=NULL,...)
@@ -23,6 +23,8 @@
   a \code{pdata.frame} object
 }
 
+
+\author{Yves Croissant}
 
 \seealso{
   \code{\link{pdata.frame}}

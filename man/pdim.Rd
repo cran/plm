@@ -46,6 +46,8 @@ there are some missing values.
   \code{\link{pdata.frame}} and \code{\link{plm}}
 }
 
+\author{Yves Croissant}
+
 \examples{
 library(Ecdat)
 data(Produc)

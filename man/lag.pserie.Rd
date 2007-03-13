@@ -18,6 +18,9 @@ lag.pserie(x,k=1,...)
   lag values. \code{NA} values are inserted at the correct positions.}
 
 \seealso{\code{\link{diff.pserie}}}
+
+\author{Yves Croissant}
+
 \examples{
 library(Ecdat)
 data(Produc)

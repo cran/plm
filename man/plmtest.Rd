@@ -61,6 +61,9 @@ plmtest(x, ...)
   \code{\link{pFtest}} for individual and/or time effects tests based on
   the within model.
 }
+
+\author{Yves Croissant}
+
 \examples{
 library(Ecdat)
 data(Grunfeld)

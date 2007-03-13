@@ -2,7 +2,7 @@
 \alias{diff.pserie}
 \alias{diff}
 \title{Difference operator for panel data}
-\description{Computes the first difference of variables that have a temporal and
+\description{Computes the first difference of variables that have a time and
   an individual dimension.}
 \usage{
 diff.pserie(x,lag=0, ...)
@@ -21,6 +21,7 @@ diff.pserie(x,lag=0, ...)
 
 \seealso{\code{\link{lag.pserie}}}
 
+\author{Yves Croissant}
 \examples{
 # Anderson and Hsiao estimator
 library(Ecdat)

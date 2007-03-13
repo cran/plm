@@ -24,9 +24,12 @@ within(x, ...)
 
 \value{
   a vector of the same length as \code{x} containing the
-  within transformation. \code{NA} values are inserted at the correct positions}
+  within transformation.
+}
 
 \seealso{\code{\link{between}} and \code{\link{papply}}}
+
+\author{Yves Croissant}
 
 \examples{
 library(Ecdat)

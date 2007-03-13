@@ -24,7 +24,7 @@ papply.pserie <- function(x,func,effect="individual",...){
 papply.matrix <- function(x,func,cond,...){
   na.x <- is.na(x)
   cm <- apply(x,2,tapply,cond,func)
-  Cm <- cm[as.character(cond),]
+  Cm <- cm[as.character(cond),,drop=F]
   Cm[na.x] <- NA
   attr(Cm,"cm") <- cm
   Cm
@@ -151,7 +151,6 @@ within.matrix <- function(x,cond, ...){
   res
 }
 
-
 diff.pserie <- function(x,lag=0,...){
   if (!is.numeric(x)) stop("diff meaningfull only for numeric vectors\n")
   xlagt <- lag(x,k=lag)
@@ -237,16 +236,79 @@ FE <- function(x){
 }
 
 FE.plm <- function(x){
-  if (x$model.name!="within"){
+  model.name <- attr(x,"pmodel")$model
+  if (model.name!="within"){
     stop("FE function only implemented for within models\n")
   }
   else{
     FE <- attr(x$FE,"cm")
   }
+  bet <- update(x,model="between")
+  xb <- bet$model[[2]]
+  sigma2 <- sum(residuals(bet)^2)/df.residual(bet)
+  vcov <- vcov(x)
+  T <- attr(bet,"pdim")$nT$T
+  seFE <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
+  intercept <- x$alpha
+  FE <- structure(FE,se=seFE,intercept=intercept,class="FE")
   FE
 }
 
-FE.plms <- function(x){
-  attr(x$within$FE,"cm")
+print.FE <- function(x,digits=5,...){
+  attr(x,"se") <- attr(x,"intercept") <- attr(x,"class") <- NULL
+  print.default(x)
 }
 
+summary.FE <- function(object,...){
+  se <- attr(object,"se")
+  alpha <- attr(object,"intercept")
+  zvalue <- (object-alpha)/se
+  res <- cbind(object-alpha,se,zvalue,(1-pnorm(abs(zvalue)))*2)
+  colnames(res) <- c("FE","std.error","t-value","p-value")
+  res
+}
+  
+FE.plms <- function(x){
+  x <- x$within
+  FE(x)
+}
+
+suml <- function(x){
+  n <- length(x)
+  if (!is.null(dim(x[[1]]))){
+    d <- dim(x[[1]])
+    s <- matrix(0,d[1],d[2])
+    for (i in 1:n){
+      s <- s+x[[i]]
+    }
+  }
+  else{
+    s <- rep(0,length(x[[n]]))
+    for (i in 1:n){
+      s <- s+x[[i]]
+    }
+  }
+  s
+}
+
+oppl <- function(x,y,func){
+  n <- length(x)
+  z <- list()
+  if (!is.list(y)){
+    for (i in 1:n){
+      t <- paste("\"",func,"\"","(x[[i]],y)",sep="")
+      z[[i]] <- eval(parse(text=t))
+    }
+  }
+  else{
+    for (i in 1:n){
+      t <- paste("\"",func,"\"","(x[[i]],y[[i]])",sep="")
+      z[[i]] <- eval(parse(text=t))
+    }
+  }
+  z
+}
+
+is.one.side.formula <- function(x){
+  class(x)=="formula" && length(x)==2
+}

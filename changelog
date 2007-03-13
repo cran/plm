@@ -1,0 +1,8 @@
+Changes since version 0-1.2
+* Models with only one explanatory variable resulted in a bug. This has been fixed.
+* Estimation methods are now available with four functions : plm, pvcm, pggls and pgmm instead of one (plm) in the previous version.
+* pvcm is a new function which estimate variable coefficients models. The "nopool" model is now part of it.
+* pggls is a new function which enables the estimation of general FGLS.
+* pgmm is a new function for general method of moments estimator.
+* for all estimation functions, the four first arguments are now formula,data,effect,model
+* robus inference is now provided by the pvcovHC function.
