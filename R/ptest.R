@@ -9,17 +9,18 @@ phtest.plms <- function(x,...){
   phtest(within,random,data.name)
 }
 
-phtest.plm <- function(x,x2,data=NULL,...){
-  coef.wi <- x$coefficients
-  coef.re <- x2$coefficients
-  vcov.wi <- x$cov.unscaled*x$ssr/x$df.residual
-  vcov.re <- x2$cov.unscaled*x2$ssr/x2$df.residual
+phtest.panelmodel <- function(x,x2,data=NULL,...){
+  # x is assumed to have a greater variance than x2
+  coef.wi <- coefficients(x)
+  coef.re <- coefficients(x2)
+  vcov.wi <- vcov(x)
+  vcov.re <- vcov(x2)
   names.wi <- names(coef.wi)
   names.re <- names(coef.re)
   coef.h <- names.re[names.re%in%names.wi]
   dbeta <- coef.wi[coef.h]-coef.re[coef.h]
   df <- length(dbeta)
-  dvcov <- vcov.wi[coef.h,coef.h]-vcov.re[coef.h,coef.h]
+  dvcov <- vcov.re[coef.h,coef.h]-vcov.wi[coef.h,coef.h]
   stat <- t(dbeta)%*%solve(dvcov)%*%dbeta
   pval <- (1-pchisq(stat,df=df))
   names(stat) <- "chi2"
@@ -49,10 +50,14 @@ plmtest <- function(x,...){
 plmtest.plms <- function(x,effect="id",type="bp", ...){
   data.name <- paste(deparse(substitute(x)))
   pooling <- x$pooling
-  id <- attr(x,"data")$id
-  time <- attr(x,"data")$time
-  n <- attr(x,"pdim")$nT$n
-  T <- attr(x,"pdim")$nT$T
+  data.name <- pooling$call$data
+  class(data)
+  id.name <- attr(pooling,"indexes")$id
+  time.name <- attr(pooling,"indexes")$time
+  id <- eval(data.name)[[id.name]]
+  time <- eval(data.name)[[time.name]]
+  n <- attr(pooling,"pdim")$nT$n
+  T <- attr(pooling,"pdim")$nT$T
   balanced <- attr(x,"pdim")$pdim$balanced
   res <- pooling$res
   plmtest(res,n=n,T=T,balanced=balanced,id=id,time=time,effect=effect,type=type,data=data.name)
@@ -60,8 +65,10 @@ plmtest.plms <- function(x,effect="id",type="bp", ...){
 
 plmtest.plm <- function(x,effect="id",type="bp", ...){
   data.name <- paste(deparse(substitute(x)))
-  id <- attr(x,"data")$id
-  time <- attr(x,"data")$time
+  id.name <- attr(x,"indexes")$id
+  time.name <- attr(x,"indexes")$time
+  id <- eval(data.name)[[id.name]]
+  time <- eval(data.name)[[time.name]]
   n <- attr(x,"pdim")$nT$n
   T <- attr(x,"pdim")$nT$T
   balanced <- attr(x,"pdim")$pdim$balanced
@@ -158,9 +165,11 @@ pFtest.plm <- function(x,z,data=NULL, ...){
   }
   within <- x
   pooling <- z
-  df1 <- pooling$df.residual-within$df.residual
-  df2 <- within$df.residual
-  stat <- (pooling$ssr-within$ssr)/within$ssr/df1*df2
+  df1 <- df.residual(pooling)-df.residual(within)
+  df2 <- df.residual(within)
+  ssrp <- sum(residuals(pooling)^2)
+  ssrw <- sum(residuals(within)^2)
+  stat <- (ssrp-ssrw)/ssrw/df1*df2
   names(stat) <- "F"
   parameter <- c(df1,df2)
   names(parameter) <- c("df1","df2")
@@ -176,8 +185,9 @@ pFtest.plm <- function(x,z,data=NULL, ...){
   
 Ftest <- function(x,...){
   pdim <- attr(x,"pdim")
+  model.name <- attr(x,"pmodel")$model
   df1 <- x$df.residual
-  df2 <- switch(x$model.name,
+  df2 <- switch(model.name,
                 "within"=pdim$Kw,
                 "between"=pdim$Kb,
                 "pooling"=pdim$K,
@@ -198,7 +208,7 @@ Ftest <- function(x,...){
   res
 }
 
-waldtest <- function(x,...){
+pwaldtest <- function(x,...){
   pdim <- attr(x,"pdim")
   df <- switch(x$model.name,
                 "within"=pdim$Kw,
@@ -226,6 +236,44 @@ waldtest <- function(x,...){
               parameter.name = "df",
               method = "Wald Test",
               data.name = "data.name")
+  class(res) <- "htest"
+  res
+}
+
+pooltest <- function(x,...){
+  UseMethod("pooltest")
+}
+
+
+pooltest.plms <- function(x,nopool,effect=FALSE,...){
+  if(effect){
+    z <- x$within
+  }
+  else{
+    z <- x$pooling
+  }
+  pooltest(z,nopool)
+}
+
+pooltest.plm <- function(x,nopool,...){
+  rss <- sum(residuals(x)^2)
+  uss <- sum(unlist(residuals(nopool))^2)
+  dlr <- df.residual(x)
+  dlu <- df.residual(nopool)
+  df1 <- dlr-dlu
+  df2 <- dlu
+  stat <- (rss-uss)/uss*df2/df1
+  pval <- 1-pf(stat,df1,df2)
+  parameter <- c(df1,df2)
+  names(parameter) <- c("df1","df2")
+  names(stat)="F"
+  data.name <- paste(deparse(substitute(plms)))
+  res <- list(statistic = stat,
+              parameter=parameter,
+              p.value = pval,
+              data.name=data.name,
+              null.value = "stability",
+              method = "F statistic")
   class(res) <- "htest"
   res
 }

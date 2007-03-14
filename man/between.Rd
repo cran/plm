@@ -9,7 +9,7 @@
 \alias{between.default}
 
 \title{The between transformation}
-\description{Computes the between transformation}
+\description{Computes the between transformation.}
 
 \usage{
 Between(x, ...)
@@ -35,11 +35,13 @@ between(x, ...)
   a vector (or a matrix) of the same length as \code{x} containing the
   between transformation (\code{Between}) or of a length equal of the
   number of modalities of the conditional variable (\code{between}).
-  \code{NA} values are inserted at the correct positions}
+}
 
 \seealso{
   \code{\link{within}} and \code{\link{papply}}.
-  }
+}
+
+\author{Yves Croissant}
 
 \examples{
 library(Ecdat)

@@ -6,7 +6,7 @@
 
 \title{Introduction to plm}
 
-\author{Yves Croissant}
+\author{Yves Croissant & Giovanni Milo}
 \begin{document}
 
 \maketitle
@@ -133,9 +133,42 @@ The arguments of  \texttt{pread.table} are :
 
 \section{Model estimation}
 
-A panel model is estimated with the \texttt{plm} function.
+\texttt{plm} provides four functions for estimation :
 
-\subsection{Basic use of plm}
+\begin{itemize}
+\item \texttt{plm} : estimation of the
+  basic panel models, \emph{i.e.} within, between and random effect
+  models. Models are estimated using the \texttt{lm} function to
+  transformed data,
+\item \texttt{pvcm} : estimation of models with variable coefficients,
+\item \texttt{pgmm} : estimation of general method of moments models,
+\item \texttt{pggls} : estimation of general feasible generalized least squares
+  models.
+\end{itemize}
+
+All these functions share the same 4 first arguments :
+
+\begin{itemize}
+\item \texttt{formula} : the symbolic description of the model to be estimated,
+\item \texttt{data} : the \texttt{pdata.frame} containing the data,
+\item \texttt{effect} : the kind of effects to include in the model,
+  \emph{i.e.} individual effects, time effects or both,
+\item \texttt{model} : the kind of model to be estimated, most of the
+time a model with fixed effects or a model with random effects.
+\end{itemize}
+
+The results of this four functions are stored in an object which class has the
+same name of the function. They all inherit from class \texttt{panelmodel}. A
+\texttt{panelmodel} object contains : \texttt{coefficients},
+\texttt{residuals}, \texttt{fitted.values}, \texttt{vcov},
+\texttt{df.residual} and \texttt{call}.
+
+Functions that extract these elements and to print the object are provided.
+
+
+
+
+\subsection{Estimation of the basic models with plm}
 
 There are two ways to use \texttt{plm} : the first one is to estimate
 a list of models (the default behavior), the second to estimate just one model.
@@ -170,14 +203,12 @@ the \texttt{model} argument of \texttt{plm}.
 zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random")
 @ 
 
-Objects of class \texttt{plm} and \texttt{plms} have a \texttt{print}
-method. 
 
 <<>>=
 print(zzra)
 @ 
 
-There is also a \texttt{summary} method :
+\texttt{summary} and \texttt{print.summary} methods are provided. 
 
 \begin{itemize}
 \item for  \texttt{plms} objects, coefficients and standard errors
@@ -195,7 +226,7 @@ summary(zzra)
 For a \texttt{random} model, the \texttt{summary} method gives
 information about the variance of the components of the errors.
 
-\texttt{plm}'s can be updated using the \texttt{update} method :
+\texttt{plm} objects can be updated using the \texttt{update} method :
 
 <<>>=
 zzwithmod <- update(zzwith,.~.-unemp-log(emp)+emp)
@@ -207,15 +238,28 @@ Fixed effects may be extracted easily from a \texttt{plms} or a
 \texttt{plm} object using  \texttt{FE} :
 
 <<>>=
-FE(zzmod)
+FE(zzmod)[1:10]
 @ 
 
-\subsection{Options for the random effect model}
+The \texttt{FE} function returns an object of class \texttt{FE}. A
+summary method is provided, which prints the effects (in deviation
+from the overall intercept), their standard
+errors and the test of equality to the overall intercept.
+
+<<>>=
+summary(FE(zzmod))[1:10,]
+@ 
+
+
+\subsection{More advanced use of plm}
+
+
+\subsubsection{Options for the random effect model}
 
 The random effect model is obtained as a linear estimation on
 quasi--differentiated  data. The parameter of this transformation is
 obtained using preliminary estimations. Four estimators of this
-parameter are available, depending on the value of the argument \texttt{theta.method}  :
+parameter are available, depending on the value of the argument \texttt{random.method}  :
 
 \begin{itemize}
 \item \texttt{swar} : from \textsc{Swamy} and \textsc{Arora}
@@ -228,11 +272,11 @@ parameter are available, depending on the value of the argument \texttt{theta.me
 For exemple, to use the \texttt{amemiya} estimator :
 
 <<>>=
-zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random",theta.method="amemiya")
+zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random",random.method="amemiya")
 @ 
 
 
-\subsection{Choosing  the effects}
+\subsubsection{Choosing  the effects}
 
 The default behavior of \texttt{plm} is to introduce individual
 effects. Using the \texttt{effect} argument, one may also introduce :
@@ -248,7 +292,7 @@ For example, to estimate a two--ways effect model for the
 <<>>=
 data(Grunfeld)
 pdata.frame(Grunfeld,"firm","year")
-z <- plm(inv~value+capital,data=Grunfeld,effect="twoways",theta.method="amemiya")
+z <- plm(inv~value+capital,data=Grunfeld,effect="twoways",random.method="amemiya")
 summary(z$random)
 
 @ 
@@ -261,7 +305,7 @@ The two--ways effect model is for the moment only available for
 balanced panels.
 
 
-\subsection{Hausman--Taylor's model}
+\subsubsection{Hausman--Taylor's model}
 
 \textsc{Hausman}--\textsc{Taylor}'s model may be estimated with \texttt{plm}
 by equating the \texttt{model} argument to  \texttt{"ht"} and
@@ -273,12 +317,12 @@ indicating the variables used as instruments.
 data(Wages)
 pdata.frame(Wages,595)
 form=lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sex+black+ed
-ht=plm(form,~sex+black+bluecol+south+smsa+ind,data=Wages,model="ht")
+ht=plm(form,data=Wages,instruments=~sex+black+bluecol+south+smsa+ind,model="ht")
 summary(ht)
 
 @ 
 
-\subsection{Instrumental variables estimation}
+\subsubsection{Instrumental variables estimation}
 
 One or all of the models may be estimated using instrumental variables
 by indicating the list of the instrumental variables. This can be done
@@ -316,47 +360,21 @@ inst=~log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log
 inst2=~log(taxpc)+log(mix)
 endog=~log(prbarr)+log(polpc)
 cr=plm(form,data=Crime)
-cr1=plm(form,inst,data=Crime)
-cr2=plm(form,inst2,endog,data=Crime)
+cr1=plm(form,data=Crime,instruments=inst)
+cr2=plm(form,data=Crime,instruments=inst2,endog=endog)
 summary(cr2$random)
 
 @ 
 
 
-\subsection{Variable coefficients model}
 
-If there is enough time observations for each individual, the model
-may be estimate for each individual. The \texttt{nopool} function
-provide this kind of estimation. It can be done using :
+\subsubsection{Unbalanced panel}
 
-\begin{itemize}
-\item directly the \texttt{nopool} function,
-\item \texttt{plm} with the argument \texttt{np} fixed to \texttt{TRUE}.
-\end{itemize}
+\texttt{plm} enables the estimation of unbalanced panel data, with a
+few restrictions (twoways effects models are not supported and the
+only transformation for random effects models is \texttt{swar}).
 
-With the \texttt{Grunfeld} data, we get :
-
-<<>>=
-znp <- nopool(inv~value+capital,data=Grunfeld)
-@ 
-
-or 
-
-<<>>=
-z <- plm(inv~value+capital,data=Grunfeld,np=TRUE)
-znp <- z$nopool
-print(znp)
-summary(znp)
-@ 
-
-
-The result is an object of class  \texttt{nopool}. The \texttt{print}
-method presents the coefficients estimated for each individual. The
-\texttt{summary} method gives descriptive statistics for these coefficients.
-
-\subsection{Unbalanced panel}
-
-\texttt{plm} offers limited support for unbalanced panels. The
+The
 following example is based on the \texttt{Hedonic} data\footnote{See \textsc{Baltagi}
   (2001), p. 174.}:
 
@@ -366,6 +384,127 @@ ba=plm(form,data=Hedonic)
 summary(ba$random)
 
 @ 
+
+
+\subsection{Variable coefficients model}
+
+The \texttt{pvcm} function enables the estimation of variable
+cofficients models. Time or individual effects are introduced if
+\texttt{effect} is fixed to \texttt{"time"} or \texttt{"individual"}
+(the default value). 
+
+Coefficients are assumed to be fixed if \texttt{model="within"} and
+random if \texttt{model="random"}. In the first case, a different
+model is estimated for each individual (or time period). In the second
+case, the \textsc{Swamy} (1970) model is estimated. It is a
+generalized least squares model which use the result of the previous model.
+
+
+With the \texttt{Grunfeld} data, we get :
+
+<<>>=
+znp <- pvcm(inv~value+capital,data=Grunfeld,model="within")
+znp 
+summary(znp)
+@ 
+
+<<>>=
+form <- inv~value+capital
+sw <- plm(form,data=Grunfeld,model="random")
+summary(sw)
+@ 
+
+\subsection{General method of moments estimator}
+
+The general method of moments is provided by the \texttt{pgmm}
+function. It's main argument is either a formula or a variable,
+entered as a character string. In this last case, a pure
+autoregressive model is estimated. Lag values of the dependent
+variable should not be written in the formula, but specified in the
+\texttt{lags.endog} argument (as an integer 0 : no lag, 1 or 2).
+The effect argument is either \texttt{NULL} (the default),
+\texttt{"individual"} or \texttt{"twoways"}. In the first case, the
+model is estimated in levels. In the second case, the model is
+estimated in first differences to get rid of the individuals
+effects. In the last case, the model is estimated in first differences
+and time dummies are included. 
+
+By default, the instruments are the
+independent variables (and the dependent variables if \texttt{lags.endog}>0).
+
+The complete list of instruments can also be specified with the
+argument \texttt{instruments} which should be a one side formula. 
+Note that if the \texttt{formula} contains lags of some variables, you
+\emph{have} to write explicitely the list of instruments.
+
+For each of the instruments, the number of lags (or/and leads) is
+specified with the \texttt{first.period} and \texttt{last.period}
+arguments. For example, if \texttt{first.period=-4} and
+\texttt{last.period=-1}, $x_{t-4},x_{t-3}, x_{t-2}, x_{t-1}$ are used
+as instruments for observation $t$. Use ``big'' integers (like -99 and
+99) to include all lags and/or leads. The \texttt{first.period} and
+\texttt{last.period} can be of length 1, 2 or J (the number of
+instruments). In the first case, the same periods are chosen for all
+the instruments. In the second case, two different values may be
+chosen for the dependent variable and all the independent variables
+(only relevant when \texttt{lags.endog}>0). In the last case,
+different values may be chosen for each instrument. Instruments are
+introduced in levels if \texttt{inst.transformation="l"} and in first
+difference if \texttt{inst.transformation="d"}. Like previously, it can be
+specified with a vector of length 1, 2 or J.
+
+The \texttt{model} argument specifies whether a one--step or a
+two--steps model is required (\texttt{"onestep"} or \texttt{"twosteps"}).
+
+The  following example is from \textsc{Arellano} (2003). Employment in
+different firms is explained by past values of employment and wages
+(two lags). All available lags are used up to $t-2$.
+
+<<>>=
+data(Snmesp)
+pdata.frame(Snmesp,"firm","year")
+z <-  pgmm(n~lag(w)+lag(w,2),effect="twoways",model="twosteps",Snmesp,lags.endog=2,
+          last.period=c(-2),inst.transformation=c("l"),instruments=~n+w)
+summary(z)
+@ 
+
+In the following example, a pure auto--regressive model is
+estimated. In this cas, the first argument is the name of the
+variable, entered as a character string.
+
+<<>>=
+z <-  pgmm("n",effect="twoways",model="twosteps",Snmesp,lags.endog=2,
+          last.period=c(-2),inst.transformation=c("l"))
+summary(z)
+@ 
+
+\subsection{General FGLS models}
+General FGLS estimators are based on a two-step estimation process: first an OLS model is estimated, then its residuals are used to estimate an error covariance matrix for use in a feasible-GLS analysis. Formally, the structure of the error covariance matrix is $ V=I_N \otimes \Omega $, with symmetry being the only requisite for $\Omega$: $ \Omega(ij)=\Omega(ji) $ (see Wooldridge (2002), 10.4.3 and 10.5.5).
+
+This framework allows the error covariance structure inside every group (if \texttt{effect="individual"}) of observations to be fully unrestricted and is therefore robust against any type of intragroup heteroskedasticity and serial correlation. This structure, by converse, is assumed identical across groups and thus \texttt{ggls} is inefficient under groupwise heteroskedasticity. Cross-sectional correlation is excluded a priori.
+
+Moreover, the number of variance parameters to be estimated with $NT$ data points is $T(T+1)/2$, which makes these estimators particularly suited for situations where $N>>T$, as e.g. in labour or household income surveys, while problematic for "long" panels. 
+
+In a pooled time series context (\texttt{effect="time"}), symmetrically, this estimator is able to account for arbitrary cross-sectional correlation, provided that the latter is time-invariant (see Greene (2003) 13.9.1-2, p.321-2). In this case serial correlation has to be assumed away and the estimator is consistent with respect to the time dimension, keeping N fixed.
+
+The function \texttt{pggls} estimates general FGLS models, with either fixed of ''random'' effects\footnote{The ''random effect'' is better termed ''general FGLS'' model, as in fact it does not have a proper random effects structure, but we keep this terminology for consistency with \texttt{plm}.}. 
+
+The ''random effect'' general FGLS is estimated by
+ 
+<<>>=
+zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random")
+summary(zz)
+@ 
+
+The fixed effects \texttt{pggls} (see \textsc{Wooldridge} (2002, p.276)) is based on estimation of a within model in the first step; the rest follows as above. It is estimated by
+
+<<>>=
+zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="within")
+summary(zz)
+@ 
+
+The \texttt{pggls} function is similar to \texttt{plm} in many respects (e.g., Hausman tests may be carried out on \texttt{pggls} objects much the same way they are done on \texttt{plm} ones). An exception is that the estimate of the group covariance matrix of errors (\verb!zz$sigma!, 17x17 matrix, not shown) is reported in the model objects instead of the usual estimated variances of the two error components.
+
 \section{Tests}
 
 
@@ -375,23 +514,26 @@ summary(ba$random)
 apply to each individual. It is a standard F test, based on the
 comparison of a model obtained for the full sample and a model based
 on the estimation of an equation for each individual. The main
-argument of \texttt{pooltest} is a \texttt{plm} object. If the model
-has been estimated with the argument  \texttt{np=F}, one has to
-indicate a second argument of class  \texttt{nopool}.
-A third argument  \texttt{effect} should be fixed to \texttt{FALSE} if
+argument of \texttt{pooltest} is a \texttt{plms} or a \texttt{plm} object. 
+The second argument is a \texttt{pvcm} object obtained with \texttt{model=within} .
+If the first argument is a \texttt{plms} object, 
+a third argument  \texttt{effect} should be fixed to \texttt{FALSE} if
 the intercepts are assumed to be identical (the default value) or \texttt{TRUE} if
 not\footnote{The following examples are from 
   \textsc{Baltagi} (2001), pp. 57--58.}.
 
 <<>>=
+
 form=inv~value+capital
-znp=nopool(form,data=Grunfeld)
+znp=pvcm(form,data=Grunfeld,model="within")
 zplm=plm(form,data=Grunfeld)
 pooltest(zplm,znp)
 pooltest(zplm,znp,effect=T)
+pooltest(zplm$within,znp)
 
-z=plm(form,data=Grunfeld,effect="time",np=TRUE)
-pooltest(z,effect=F)
+z=plm(form,data=Grunfeld,effect="time")
+znpt=pvcm(form,data=Grunfeld,effect="time",model="within")
+pooltest(z,znpt,effect=F)
 
 @
 
@@ -484,6 +626,71 @@ phtest(g$between, g$random)
 @ 
 
 
+\subsection{Robust covariance matrix estimation}
+Robust estimators of the covariance matrix of coefficients are provided, mostly for use in Wald-type tests. \texttt{pvcovHC} estimates three ''flavours'' of White (1980, 1984)'s heteroskedasticity-consistent covariance matrix (known as the \emph{sandwich} estimator). Interestingly, in the context of panel data the most general version also proves consistent vs. serial correlation.
+
+All types assume no correlation between errors of different groups while allowing for heteroskedasticity across groups, so that the full covariance matrix of errors is $  V=I_n \otimes \Omega_i;  i=1,..,n$. As for the \emph{intragroup} error covariance matrix of every single group of observations, \texttt{"white1"} allows for general heteroskedasticity but no serial correlation, i.e
+
+\begin{equation}
+ \label{eq:omegaW1}
+ \Omega_i=
+ \left[ \begin{array}{c c c c}
+ \sigma_{i1}^2 & \dots & \dots & 0 \\
+ 0 & \sigma_{i2}^2 & & \vdots \\
+ \vdots & & \ddots & 0 \\
+ 0 & & & \sigma_{iT}^2 \\
+ \end{array} \right]
+\end{equation}
+
+while \texttt{"white2"} is \texttt{"white1"} restricted to a common variance inside every group, estimated as $\sigma_i^2=\sum_{t=1}^T{e_{it}^2}/T$, so that $\Omega_i=I_T \otimes \sigma_i^2$ (see Greene (2003), 13.7.1-2 and Wooldridge (2003), 10.7.2); \texttt{"arellano"} (see ibid. and the original ref. Arellano (1987)) allows a fully general structure w.r.t. heteroskedasticity and serial correlation:
+
+\begin{equation}
+ \label{eq:omegaArellano}
+ \Omega_i=
+ \left[ \begin{array}{c c c c c}
+ \sigma_{i1}^2 & \sigma_{i1,i2}  & \dots & \dots & \sigma_{i1,iT} \\
+ \sigma_{i2,i1} & \sigma_{i2}^2 & & & \vdots \\
+ \vdots & & \ddots & & \vdots \\
+ \vdots & & & \sigma_{iT-1}^2 & \sigma_{iT-1,iT} \\
+ \sigma_{iT,i1} & \dots & \dots & \sigma_{iT,iT-1} & \sigma_{iT}^2 \\
+ \end{array} \right]
+\end{equation}
+
+The latter is, as already observed, consistent w.r.t. timewise correlation of the errors, but on the converse, unlike the White 1 and 2 methods, it relies on large N asymptotics with small T. 
+
+The errors may be weighted according to the schemes proposed by MacKinnon and White (1985) and Cribari-Neto (2004) to improve small-sample performance. 
+
+Main use of \texttt{pvcovHC} is together with testing functions from \texttt{lmtest} and \texttt{car} packages. These typically allow passing the \texttt{vcov} parameter to be either a matrix or a function (see Zeileis 2004). If one is happy with the defaults, it is easiest to pass the function itself:
+
+<<>>=
+library(lmtest)
+data(Airline)
+pdata.frame(Airline,"airline","year")
+form <- log(cost)~log(output)+log(pf)+lf
+z <- plm(form,data=Airline,model="within")
+coeftest(z,pvcovHC)
+@
+
+else one may do the covariance computation inside the call to \texttt{coeftest}, thus passing on a matrix:
+
+<<>>=
+coeftest(z,pvcovHC(z,type="white2",weights="HC3"))
+@ 
+
+For some tests, e.g. for multiple model comparisons by \texttt{waldtest}, one should always provide a function\footnote{Joint zero-restriction testing still allows providing the \texttt{vcov} of the unrestricted model as a matrix, see the documentation of package \texttt{lmtest}}. In this case, optional parameters are provided as shown below (see also Zeileis, 2004, p.12):
+
+<<>>=
+waldtest(z,update(z,.~.-log(pf)-lf),
+  vcov=function(x) pvcovHC(x,type="white2",weights="HC3"))
+@ 
+
+\texttt{linear.hypothesis} from package \texttt{car} may be used to test for linear restrictions:
+
+<<>>=
+library(car)
+linear.hypothesis(zz, "2*log(pc)=log(emp)", vcov=pvcovHC)
+@
+
 \section{Bibiographie}
 
 \setlength{\parindent}{0em}
@@ -492,6 +699,16 @@ phtest(g$between, g$random)
   Amemiyia, T. (1971), The estimation of the variances in a
   variance--components model, \emph{International Economic Review}, 12,
   pp.1--13.
+
+  Arellano M. (1987), Computing robust standard errors for within group estimators, 
+\emph{Oxford bulletin of Economics and Statistics}, \bold{49}, 431--434.
+
+
+  Arellano, M. (2003), Panel data econometrics, Oxford University Press.
+
+  Arellano M. and S. Bond (1991), Some tests of specification for
+  panel data : monte carlo evidence and an application to employment
+  equations, \emph{Review of Economic Studies}, 58, pp.277--297.
 
   Balestra, P. and J. Varadharajan--Krishnakumar (1987), Full
   information estimations of a system of simultaneous equations with
@@ -507,10 +724,16 @@ phtest(g$between, g$random)
   its applications to model specification in econometrics, \emph{Review
     of Economic Studies}, 47, pp.239--253.
 
+  Cribari-Neto F. (2004), Asymptotic inference under heteroskedasticity
+of unknown form. \emph{Computational Statistics \& Data Analysis}
+\bold{45}, 215--233.
+
   Gourieroux, C., A. Holly and A. Monfort (1982), Likelihood ratio test,
   Wald test, and Kuhn--Tucker test in linear models with inequality
   constraints on the regression parameters, \emph{Econometrica}, 50,
   pp.63--80.
+
+  Greene W. H. (2003), \emph{Econometric Analysis}, 5th ed. Prentice Hall.
 
   Hausman, G. (1978), Specification tests in econometrics,
   \emph{Econometrica}, 46, pp.1251--1271.
@@ -525,10 +748,18 @@ phtest(g$between, g$random)
   multiparameter hypotheses, \emph{Econometric Reviews}, 33,
   pp.523--529.
 
+  MacKinnon J. G., White H. (1985), Some heteroskedasticity-consistent
+covariance matrix estimators with improved finite sample properties.
+\emph{Journal of Econometrics} \bold{29}, 305--325.
+
   Nerlove, M. (1971), Further evidence on the estimation of dynamic
   economic relations from a time--series of cross--sections,
   \emph{Econometrica}, 39, pp.359--382.
 
+  Swamy, P.A.V.B. (1970), Efficient inference in a random coefficient
+  regression model, \emph{Econometrica}, 38, pp.311-323.
+
+  
   Swamy, P.A.V.B. and S.S. Arora (1972), The exact finite sample
   properties of the estimators of coefficients in the error components
   regression models, \emph{Econometrica}, 40, pp.261--275.
@@ -536,6 +767,19 @@ phtest(g$between, g$random)
   Wallace, T.D. and A. Hussain (1969), The use of error components
   models in combining cross section with time series data,
   \emph{Econometrica}, 37(1), pp.55--72.
+
+  White H. (1980), \emph{Asymptotic Theory for Econometricians}, Ch. 6, Academic Press, Orlando (FL).
+
+  White H. (1984), A heteroskedasticity-consistent covariance matrix and
+a direct test for heteroskedasticity. \emph{Econometrica} \bold{48},
+817--838.
+
+  Wooldridge J. M. (2003), \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press
+
+  Zeileis A. (2004), Econometric Computing with HC and HAC Covariance Matrix
+Estimators. \emph{Journal of Statistical Software}, \bold{11}(10), 1--17.
+
+URL \url{http://http://www.jstatsoft.org/v11/i10/}.
 
 \end{document}
 

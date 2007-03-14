@@ -1,21 +1,21 @@
 \name{phtest}
 \alias{phtest}
 \alias{phtest.default}
-\alias{phtest.plm}
+\alias{phtest.panelmodel}
 \alias{phtest.plms}
 \title{Hausman test for panel models}
 \description{
-  Specification test for panel models
+  Specification test for panel models.
 }
 \usage{
 phtest(x, ...)
-\method{phtest}{plm}(x,x2,data=NULL, ...)
+\method{phtest}{panelmodel}(x,x2,data=NULL, ...)
 \method{phtest}{plms}(x,...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"plms"} or \code{"plm"},}
-  \item{x2}{an object of class \code{"plm"},}
+  \item{x}{an object of class \code{"plms"} or \code{"panelmodel"},}
+  \item{x2}{an object of class \code{"panelmodel"},}
   \item{data}{}
   \item{...}{further arguments.}
 }
@@ -33,8 +33,10 @@ phtest(x, ...)
 \references{
   Hausman, J.A. (1978), Specification tests in econometrics,
   \emph{Econometrica}, 46, pp.1251--1271.
-  }
+}
 
+\author{Yves Croissant}
+  
 \examples{
 library(Ecdat)
 data(Gasoline)

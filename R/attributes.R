@@ -1,4 +1,3 @@
-
 pvar <- function(x, ...){
   UseMethod("pvar")
 }
@@ -11,7 +10,6 @@ pvar.matrix <- function(x,id,time, ...){
   x <- as.data.frame(x)
   pvar.default(x,id,time)
 }
-
 
 pvar.data.frame <- function(x,id,time, ...){
   id <- x[[id]]
@@ -35,12 +33,24 @@ pvar.default <- function(x,id,time, ...){
   class(dim.var) <- "pvar"
   dim.var
 }
-  
+
+print.pvar <- function(x,y=NULL, ...){
+  varnames <- names(x$time.variation)
+  if(any(!x$time.variation)){
+    var <- varnames[x$time.variation==FALSE]
+    if (!is.null(y)) var <- var[-which(var==y$id)]
+    if (length(var)!=0) cat(paste("no time variation   : ",paste(var,collapse=" "),"\n"))
+  }
+  if(any(!x$id.variation)){
+    var <- varnames[x$id.variation==FALSE]
+    if (!is.null(y)) var <- var[-which(var==y$time)]
+    if(length(var)!=0) cat(paste("no individual variation : ",paste(var,collapse=" "),"\n"))
+  }
+}
 
 pdim <- function(x, ...){
   UseMethod("pdim")
 }
-
 
 pdim.pdata.frame <- function(x, ...){
   attr(x,"pdim")
@@ -75,32 +85,6 @@ pdim.default <- function(x,y, ...){
   z
 }  
 
-indexes <- function(x){
-  if (class(x)[1]!="pdata.frame"){
-    stop("indexes function only for pdata.frame\n")
-  }
-  attr(x,"indexes")
-}
-
-
-print.pvar <- function(x,y=NULL, ...){
-  varnames <- names(x$time.variation)
-  if(any(!x$time.variation)){
-    var <- varnames[x$time.variation==FALSE]
-    if (!is.null(y)) var <- var[-which(var==y$id)]
-    if (length(var)!=0) cat(paste("no time variation   : ",paste(var,collapse=" "),"\n"))
-  }
-  if(any(!x$id.variation)){
-    var <- varnames[x$id.variation==FALSE]
-    if (!is.null(y)) var <- var[-which(var==y$time)]
-    if(length(var)!=0) cat(paste("no individual variation : ",paste(var,collapse=" "),"\n"))
-  }
-}
-
-print.indexes <- function(x, ...){
-  cat(paste("Individual index : ",x$id,"\nTime index       : ",x$time,"\n",sep=""))
-}
-
 print.pdim <- function(x, ...){
   if (x$balanced){
     cat("Balanced Panel\n")
@@ -116,3 +100,13 @@ print.pdim <- function(x, ...){
   }
 }
 
+indexes <- function(x){
+  if (class(x)[1]!="pdata.frame"){
+    stop("indexes function only for pdata.frame\n")
+  }
+  attr(x,"indexes")
+}
+
+print.indexes <- function(x, ...){
+  cat(paste("Individual index : ",x$id,"\nTime index       : ",x$time,"\n",sep=""))
+}

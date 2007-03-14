@@ -15,10 +15,10 @@ pFtest(x, ...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"plms"} or \code{"plm"}}
-  \item{z}{an object of class \code{"plm"}}
-  \item{data}{}
-  \item{...}{further arguments}
+  \item{x}{an object of class \code{"plms"} or \code{"plm"},}
+  \item{z}{an object of class \code{"plm"},}
+  \item{data}{data,}
+  \item{...}{further arguments.}
 }
 \value{
   An object of class \code{"htest"}.
@@ -34,6 +34,9 @@ pFtest(x, ...)
   \code{\link{plmtest}} for Lagrange multipliers tests of individuals
   and/or time effects.
 }
+
+\author{Yves Croissant}
+
 \examples{
 library(Ecdat)
 data(Grunfeld)

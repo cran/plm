@@ -19,7 +19,7 @@ papply(x, ...)
   \item{x}{a numeric vector or matrix,}
   \item{func}{the function to apply to \code{x},}
   \item{cond}{a vector containing the conditional variable,}
-  \item{effect}{the effect for the papply transformation (one of
+  \item{effect}{the effect for the \code{papply} transformation (one of
     \code{individual} or \code{time}),}
   \item{...}{further arguments.}
 }
@@ -28,7 +28,7 @@ papply(x, ...)
   a vector (or a matrix) of the same dimension as the first argument.
 }
 
-
+\author{Yves Croissant}
 \examples{
 library(Ecdat)
 data(Grunfeld)

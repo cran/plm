@@ -16,8 +16,8 @@
   \item{x}{a \code{data.frame} (a \code{pdata.frame} for the print
     method),}
   \item{object}{a \code{pdata.frame} object,}
-  \item{id}{the individual index}
-  \item{time}{the time index}
+  \item{id}{the individual index,}
+  \item{time}{the time index,}
   \item{name}{the name of the \code{pdata.frame} (the name of \code{x} if \code{NULL}),}
   \item{...}{further arguments.}
 }
@@ -29,7 +29,7 @@
     individual (\code{id}) and time (\code{time}) index variables,}
   \item{pdim}{a list containing the dimension of the \code{pdata.frame} (see \code{\link{pdim}}),}
   \item{pvar}{a list of two logical vectors indicating whether each
-    variable has variations across individuals (\code{id.var}) and
+    variable varies across individuals (\code{id.var}) and
     accross time periods (\code{time.var}) (see \code{\link{pvar}}).}
 }
 
@@ -54,8 +54,11 @@ The \code{print} method is inherited from \code{data.frame}. A
 \code{summary.data.frame} method informations about the structure of the panel.
 }
 \seealso{
-  \code{\link{plm}}, \code{\link{pdim}}, \code{\link{pvar}}, \code{\link{pread.table}}.
+  \code{\link{pdim}}, \code{\link{pvar}}, \code{\link{pread.table}}.
 }
+
+\author{Yves Croissant}
+
 \examples{
 library(Ecdat)
 
@@ -68,7 +71,7 @@ pdata.frame(Wages,595)
 # The pdata.frame is called gas
 data(Gasoline)
 pdata.frame(Gasoline,"country","year",name="gas")
-summary(Gasoline)
+summary(gas)
 
 # Hedonic is an unbalanced panel, townid is the individual index
 data(Hedonic)
