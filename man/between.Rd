@@ -56,3 +56,5 @@ bX <- between(X,Grunfeld$firm)
 blm <- lm(between(inv)~between(value)+between(capital),data=Grunfeld)
 }
 \keyword{arith}
+
+% <!-- Local IspellDict: english --> <!-- Local IspellPersDict: ~/emacs/.ispell-english -->

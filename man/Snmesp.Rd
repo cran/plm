@@ -20,13 +20,13 @@
     \item{n}{log of employment}
     \item{w}{log of wages}
     \item{y}{log of real output}
-    \item{i}{log of intermadiate inputs}
+    \item{i}{log of intermediate inputs}
     \item{k}{log of real capital stock}
     \item{f}{real cash flow}
   }
 }
 \source{
-    Alonso--Borrego, C\'esar  and  M.  Arellano (1999) \dQuote{Symmetrically Normalized Instrumenta-Variable Estimation Using Paneld Data}, \emph{Journal of Business and Economic Statistics}, \bold{17(1)}, 36--49.
+    Alonso--Borrego, C\'esar  and  M.  Arellano (1999) \dQuote{Symmetrically Normalized Instrumental-Variable Estimation Using Panel Data}, \emph{Journal of Business and Economic Statistics}, \bold{17(1)}, 36--49.
 
 }
 \references{

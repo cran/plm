@@ -6,3 +6,14 @@ Changes since version 0-1.2
 * pgmm is a new function for general method of moments estimator.
 * for all estimation functions, the four first arguments are now formula,data,effect,model
 * robus inference is now provided by the pvcovHC function.
+
+Changes since version 0-2.1
+* pdata.frame is much faster thanks to a modification of the pvar function
+* series with only NA values or with constants values are now removed by pdata.frame
+* observations are ordered by id and time by pdata.frame
+* a pfix function is added to edit a pdata.frame
+* a as.data.frame function is provided to coerce a pdata.frame to a data.frame
+* the dependency to the Matrix package has been removed and pgmm is much faster now
+* phtest has been fixed to return only positive values of the statistic
+* pgmm objects now inherits from panelmodel like other estimators and prints correctly
+* a bug in summary.pgmm has been fixed

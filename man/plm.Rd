@@ -89,7 +89,7 @@ random.method="swar",inst.method="bvk", ...)
 
   For random effect models, 4 estimators of the transformation
   parameter are available : \code{swar} (Swamy and Arora),
-  \code{amemiya}, \code{walhus} (Walhus and Hussain) and \code{nerlove}.
+  \code{amemiya}, \code{walhus} (Wallace and Hussain) and \code{nerlove}.
 
   Instrumental variables estimation is obtained using the
   \code{instruments} and/or \code{endog} arguments. If for example, the

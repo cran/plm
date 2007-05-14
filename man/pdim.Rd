@@ -25,7 +25,7 @@ pdim(x,...)
 }
 
 \value{
-  an object of class \code{plim} containing the following elements :
+  an object of class \code{pdim} containing the following elements :
   \item{nT}{ a list containing \code{n}, the number of individuals,
     \code{T}, the number of time observations, \code{N} the total number
     of observations,}

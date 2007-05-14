@@ -46,7 +46,7 @@ pvcm(formula,data,effect="individual",model,...)
 }
 \details{
   The \code{pvcm} function enables the estimation of variable
-  cofficients models. Time or individual effects are introduced if
+  coefficients models. Time or individual effects are introduced if
   \code{effect} is fixed to \code{"time"} or \code{"individual"}
   (the default value). 
   

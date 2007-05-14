@@ -8,33 +8,37 @@
 }
 \usage{
 pgmm(formula,data,effect="individual",model="twosteps",
-instruments=NULL,inst.transformation="l",lags.endog=1,
-first.period=-99,last.period=-1,...)
-\method{summary}{pgmm}(object, ...)
+instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
+\method{summary}{pgmm}(object,robust, ...)
 \method{print}{summary.pgmm}(x,digits=5,length.line=70, ...)
 }
 
 \arguments{
-  \item{formula}{a symbolic description for the model to be estimated or
-    a character string for a pure auto--regressive model,}
+  \item{formula}{a symbolic description for the model to be
+    estimated. Should be an object of class \code{dynformula}},
   \item{object,x}{an object of class \code{pgmm},}
   \item{data}{the data, must be an object of class \code{pdata.frame}
     and is mandatory,}
   \item{effect}{the effects introduced in the model, one of
     \code{"individual"} or \code{"twoways"},}
   \item{model}{one of \code{"onestep"} or \code{"twosteps"},}
-  \item{instruments}{a one side formula containing the instruments,}
-  \item{inst.transformation}{a vector of character strings containing
-    \code{"l"} for instruments in level and \code{"d"} for instruments
-    in first difference,}
-  \item{lags.endog}{an integer between 0 and 2 indicating the number of
-    lags of the dependent variable,}
-  \item{first.period}{a vector of integer containing the first period
-    for which the instrument has to be introduced,}
-  \item{last.period}{a vector integer containing the last period for
-    which the instrument has to be introduced,}
+  \item{instruments}{a one side formula containing the normal
+    instruments,}
+  \item{gmm.inst}{a one side formula containing the GMM instruments,}
+  \item{lag.gmm}{a list containing the lags to use for each GMM
+    instrument, or a list of two named lists (\code{"d"} for difference
+    and \code{"l"} for level) in case of ``system GMM'',}
+  \item{transformation}{the kind of transformation to apply to the model
+    : either \code{"d"} (the default value) for the ``difference GMM''
+    model or \code{"ld"} for the ``system GMM'',}
+  \item{fsm}{the matrix for the one step estimator : one of \code{"I"}
+    (identity matrix) or \code{"G"} ($=D'D$ where $D$ is the first
+    difference operator) if \code{transformation="d"}, one of
+    \code{"GI"} or \code{"full"} if \code{transformation="ld"},}
   \item{digits}{digits,}
-  \item{length.line}{the maximum length of the lines in the print output,}
+  \item{length.line}{the maximum length of the lines in the print
+    output,}
+  \item{robust}{if \code{TRUE}, robust inference is performed in the summary,}
   \item{...}{further arguments.}
 }
 
@@ -46,56 +50,103 @@ first.period=-99,last.period=-1,...)
   \item{fitted.values}{the vector of fitted.values,}
   \item{vcov}{the covariance matrix of the coefficients,}
   \item{df.residual}{degrees of freedom of the residuals,}
-  \item{model}{a data.frame containing the variables used for the
-    estimation,}
-  \item{omega}{a matrix containing the instruments (each column is an individual),}
-  \item{WDWm1}{the inverse of the norm matrix used in the gmm estimation,}
-  \item{J}{a 3D table containing the first period, last period and
-    number of periods for each instrument and each year,}
+  \item{model}{a list containing  the variables used for the
+    estimation for each individual,}
+  \item{W}{a list containing the instruments for each individual (two
+    lists in case of ``sys--GMM''),}
   \item{K}{a list containing \code{K} the number of explanatory
     variables, \code{Ky} the number of lags of the dependent variable
     and \code{Kt} the number of time dummies,}
+  \item{A1}{the weighting matrix for the one--step estimator,}
+  \item{A2}{the weighting matrix for the two--steps estimator,}
   \item{call}{the call.}
   %  }
   It has \code{print}, \code{summary} and \code{print.summary} methods.
 }
 \details{
   \code{pgmm} estimate a model for panel data with the general method of
-  moments estimator. A dynamic model is specified by fixing the
-  \code{lags.endog} argument to 1 or 2. By default, the instruments used
-  are the independent variables (and the dependent variable if
-  \code{lags.endog>0}). The complete list of instruments can also be
-  specified with the \code{instruments} argument. For each instruments,
-  the first period used is specified by \code{first.period} , the last
-  period by \code{last.period} and the way they are introduced (in level
-  or in first difference by \code{inst.transformation}). These three
-  arguments may be of length one, in this case, all the instruments are
-  treated the same way. In case of a dynamic model, they may be of
-  length two, then the first   element is used for the dependent
-  variable and the second element is used for the independent
-  variables. They finally may be of length equal to the number of
-  instruments to specify a specific rule for each instrument.}
+  moments estimator. The description of the model to estimate is
+  provided with a \code{\link{dynformula}}. The GMM instruments are
+  provided by filling the \code{pgmm.inst} argument with a one side
+  formula. By default, all the variables of the model which are not used
+  as GMM instruments are used as normal instruments with the same lag
+  structure as the one specified in the \code{dynformula}, but the user
+  may also specified one side formula to indicate expicitly the
+  variables to use as normal instruments. The lags used for the GMM
+  instruments are indicated with the \code{lag.gmm} argument. For each
+  instrument, it is either a vector of length 2 (c(99,3) indicates to use
+  all the lags available up to t-3), or a scalar (2 indicates to use the
+  lags 0, 1 and 2). If a single vector (or scalar) is written, then this
+  lag structure is replicated for all GMM instruments. Otherwise,
+  \code{lag.gmm} should be a list of length equal to the number of GMM
+  instruments.
+  \code{transformation} indicates how the model should be transformed
+  for the estimation. \code{"d"} gives the ``difference GMM'' model (see
+  Arellano and Bond (1991)), \code{"ld"} the ``system GMM'' model (see
+  Blundell and Bond (1998)).
+%   If \code{transformation="ld"}, \code{gmm.inst}, \code{lag.gmm} and
+%   \code{instruments}  can  be  lists of two elements, the first one for the equation in
+%   difference, the second for the equation in differences. Otherwise, the
+%   same instruments are used for both difference and level
+%   equations. Moreover, the \code{lag.gmm} for the level equation is
+%   c(1,1) for all instruments.
+  
+  \code{pgmm} is an attempt to adapt GMM estimators availaible with the
+  PDP library for GAUSS (see Arellano and Bound 1998) and OX (see
+  Doornik, Arelanno and Bond 2006) and with the xtabound2 library for
+  STATA (see Roodman 2006).
+}  
+  \references{
 
-\references{
+    
   Arellano, Manuel & Bond, Stephen (1991), Some Tests of Specification
   for Panel Data: Monte Carlo Evidence and an Application to Employment
   Equations, \emph{The Review of Economic Studies}, vol. 58(2), april
   1991, pp.227--297.
+  
+  Arellano, Manuel & Bond, Stephen (1998), Dynamic Panel Data Estimation
+  Using DPD89 for GAUSS : a Guide for Users.
+
+  Blundell, Richard and Stephen Bond (1998), Initial Conditions and
+  Moment Restrictions in Dynamic Panel Data Models, \emph{Journal of
+    Econometrics}, vol. 87, pp.115--143.
+
+  Doornik, Jurgen,  Arellano, Manuel and Stephen Bond (2006), Panel Data
+  Estimation using DPD for Ox.
+  
+
+  Roodman, David (2006), How to do xtabound2 : an Introduction to
+  ``difference'' and ``system'' GMM in Stata, working paper no 103,
+  Center for Global Development.
+
+
+  
 }
 \seealso{
-  \code{\link{plm}} for the estimation of models with instrumental variables.
+  \code{\link{dynformula}} for dynamic formulas, \code{sargan} for
+  Sargan tests and \code{mtest} for Arellano and Bond 's tests of mulicolinearity
 }
 
 \author{Yves Croissant}
 
 \examples{
-library(Ecdat)
-data(Snmesp)
-pdata.frame(Snmesp,"firm","year")
-z <-  pgmm(n~lag(w)+lag(w,2),Snmesp,effect="twoways",model="twosteps",lags.endog=2,
-          last.period=c(-2),
-          inst.transformation=c("l"),instruments=~n+w)
-summary(z)
+
+data(EmplUK)
+pdata.frame(EmplUK,"firm","year")
+
+## Arelanno Bound 91 table 4b 
+z1 <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,0,1)),EmplUK,
+           effect="twoways",model="twosteps",
+           gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
+
+
+## BLUNDEL AND BOND TAB4 cf DPD for OX p12 col 4
+
+z2 <- pgmm(dynformula(log(emp)~log(wage)+log(capital),list(1,1,1)),EmplUK,
+           effect="twoways",model="onestep",
+           gmm.inst=~log(emp)+log(wage)+log(capital),lag.gmm=c(2,99),
+           transformation="ld")
+summary(z2,robust=TRUE)
 
 }
 \keyword{regression}

@@ -2,6 +2,8 @@
 \alias{pdata.frame}
 \alias{summary.pdata.frame}
 \alias{print.summary.pdata.frame}
+\alias{as.data.frame.pdata.frame}
+\alias{pfix}
 
 \title{Data frame for panel data}
 \description{
@@ -14,7 +16,7 @@
 }
 \arguments{
   \item{x}{a \code{data.frame} (a \code{pdata.frame} for the print
-    method),}
+    and summary methods),}
   \item{object}{a \code{pdata.frame} object,}
   \item{id}{the individual index,}
   \item{time}{the time index,}
@@ -30,12 +32,11 @@
   \item{pdim}{a list containing the dimension of the \code{pdata.frame} (see \code{\link{pdim}}),}
   \item{pvar}{a list of two logical vectors indicating whether each
     variable varies across individuals (\code{id.var}) and
-    accross time periods (\code{time.var}) (see \code{\link{pvar}}).}
+    across time periods (\code{time.var}) (see \code{\link{pvar}}).}
 }
 
 \details{
-The observations are assumed to be sorted by individuals first and by
-time observations. \code{id} and \code{time} can be the names of the
+\code{id} and \code{time} can be the names of the
 indexes contained in the \code{data.frame} if any. \code{time} may be
 omitted, in this case a new variable called \code{"time"} is added to
 the \code{data.frame}. For balanced panels, the argument \code{id} can
@@ -51,7 +52,15 @@ an attribute \code{data} which is the name of the \code{pdata.frame}.
   
 The \code{print} method is inherited from \code{data.frame}. A
 \code{summary} method is provided which add to the
-\code{summary.data.frame} method informations about the structure of the panel.
+\code{summary.data.frame} method informations about the structure of the
+panel.
+
+A \code{as.data.frame} method is also provided to coerce a
+\code{pdata.frame} to an ordinary \code{data.frame}. Finally, a
+\code{pfix} function is available to edit a \code{pdata.frame}. It
+mimics the behavior of \code{fix} (which is not a generic
+function). Only editing is possible, not modification. 
+
 }
 \seealso{
   \code{\link{pdim}}, \code{\link{pvar}}, \code{\link{pread.table}}.

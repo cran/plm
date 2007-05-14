@@ -1,5 +1,8 @@
+pvcovHC <- function(x,...){
+  UseMethod("pvcovHC")
+}
 
-pvcovHC<-function(x,type="white1",weights="HC0", ...) {
+pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
   ## Robust vcov for panel models (random or within type plm obj.)
   ##
   ## This function takes the demeaned data from the
@@ -153,9 +156,52 @@ pvcovHC<-function(x,type="white1",weights="HC0", ...) {
   
   ## bread
   pane<-solve(crossprod(demX))
-
+  
   ## sandwich
   mycov <- pane %*% salame %*% pane
   return(mycov)
+}
+
+pvcovHC.pgmm <- function(x,...){
+  model.name <- attr(x,"pmodel")$model.name
+  transformation <- attr(x,"pmodel")$transformation
+  A1 <- x$A1
+  A2 <- x$A2
+
+  if (transformation=="ld"){
+    yX <- lapply(x$model,function(x) rbind(diff(x),x))
+    residuals <-lapply(x$residuals,function(x) c(diff(x),x))
   }
+  else{
+    yX <- x$model
+    residuals <- x$residuals
+  }    
+  
+  if (model.name=="twosteps"){
+    coef1s <- x$coefficients[[1]]
+    res1s <- lapply(yX,function(x) x[,1]-crossprod(t(x[,-1]),coef1s))
+    K <- ncol(yX[[1]])
+    D <- c()
+    WX <- suml(mapply(function(x,y) crossprod(x,y[,-1]),x$W,yX,SIMPLIFY=FALSE))
+    We <- suml(mapply(function(x,y) crossprod(x,y),x$W,residuals,SIMPLIFY=FALSE))
+    B1 <- solve(t(WX)%*%A1%*%WX)
+    B2 <- vcov(x)
+    vcov1s <- B1%*%(t(WX)%*%A1%*%solve(A2)%*%A1%*%WX)%*%B1
+    for (k in 2:K){
+      exk <- mapply(function(x,y){ z <- crossprod(t(x[,k]),t(y));-z-t(z)},yX,res1s)
+      wexkw <- suml(mapply(function(x,y) crossprod(x,crossprod(y,x)), x$W,exk,SIMPLIFY=FALSE))
+      Dk <- -B2%*%t(WX)%*%A2%*%wexkw%*%A2%*%We
+      D <- cbind(D,Dk)
+    }
+    vcovr <- B2+crossprod(t(D),B2)+t(crossprod(t(D),B2))+D%*%vcov1s%*%t(D)
+  }
+  else{
+    res1s <- lapply(yX,function(x) x[,1]-crossprod(t(x[,-1]),x$coefficients))
+    K <- ncol(yX[[1]])
+    WX <- suml(mapply(function(x,y) crossprod(x[,-1],y),yX,x$W,SIMPLIFY=FALSE))
+    B1 <- vcov(x)
+    vcovr <- B1%*%(WX%*%A1%*%solve(A2)%*%A1%*%t(WX))%*%B1
+  }
+  vcovr
+}
 
