@@ -36,19 +36,34 @@ swar <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     else{
       data.name <- within$call$data
       if (effect=="individual"){
-        condvar <- eval(data.name)[[indexes$id]]
+#        condvar <- eval(data.name)[[indexes$id]]
+        condvar <- id
       }
       else{
-        condvar <- eval(data.name)[[indexes$time]]
+        condvar <- time
+#        condvar <- eval(data.name)[[indexes$time]]
       }
       X.m <- papply(cbind(1,X),mymean,condvar)
       X.sum <- attr(papply(cbind(1,X),mysum,condvar),"cm")
-#      tr <- sum(diag(solve(crossprod(cbind(1,X.m)))%*%crossprod(X.sum))
-      tr <- sum(diag(solve(crossprod(X.m))%*%crossprod(X.sum)))
+      X.m.X <- crossprod(X.m)
+      X.sum.X <- crossprod(X.sum)
+      X.m.X.eig <- eigen(X.m.X)
+      if (any(abs(X.m.X.eig$values)<1E-12)){
+        cn <- which(abs(X.m.X.eig$values)<1E-12)
+        C <- X.m.X.eig$vectors[,-cn]
+        OM <- diag(X.m.X.eig$values[-cn])
+        X.m.Xi <- C%*%solve(OM)%*%t(C)
+        X.sum.X <- crossprod(X.sum)
+        tr <- sum(diag(X.m.Xi%*%X.sum.X))
+      }
+      else{
+        tr <- sum(diag(solve(crossprod(X.m))%*%crossprod(X.sum)))
+      }
       sigma2$idios <- sum(within$residuals^2)/(N-n-Kw)
       ssrbet <- sum(between$residuals^2*Ti)
       sigma2$id <- (ssrbet-(n-Kb-1)*sigma2$idios)/(N-tr)
       z <- list(sigma2=sigma2)
+      
     }
   }
   else{

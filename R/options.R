@@ -16,10 +16,12 @@ effect.pgmm.list <- list(individual="Oneway (individual) effect",
                          twoways="Twoways effects")
 
 model.plm.list <- list(pooling="Pooling",
-                   within="Within",
-                   between="Between",
-                   random="Random Effect",
-                   ht="Hausman-Taylor")
+                       within="Within",
+                       between="Between",
+                       random="Random Effect",
+                       ht="Hausman-Taylor",
+                       fd="First--Difference"
+                       )
 
 model.pvcm.list <- list(within="No-pooling model",
                         random="Random coefficients model")

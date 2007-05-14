@@ -184,6 +184,7 @@ lag.pserie <- function(x,k=1,...){
   res
 }
 
+
 myvar <- function(x){
   if(any(is.na(x))) x <- x[!is.na(x)]
   n <- length(x)
@@ -214,6 +215,10 @@ mysum <- function(x){
 
 twosls <- function(y,X,W,intercept=FALSE){
   Xhat <- lm(X~W)$fit
+  if(!is.matrix(Xhat)){
+    Xhat <- matrix(Xhat,ncol=1)
+    colnames(Xhat) <- colnames(X)
+  }
   if(intercept){
     model <- lm(y~Xhat)
     residuals <- y-as.vector(cbind(1,X)%*%model$coef)
@@ -311,4 +316,13 @@ oppl <- function(x,y,func){
 
 is.one.side.formula <- function(x){
   class(x)=="formula" && length(x)==2
+}
+
+rbindl <- function(x){
+  n <- length(x)
+  d <- dim(x[[1]])
+  s <- c()
+  for (i in 1:n){
+    s <- rbind(s,x[[i]])
+  }
 }

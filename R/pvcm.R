@@ -216,7 +216,7 @@ print.summary.pvcm <- function(x,digits=5,length.line=70,...){
   }
   centre("Overall Statistics",length.line)
   cat(paste("Total Sum of Squares       : ",signif(x$tss,digits),"\n",sep=""))
-  cat(paste("Sum of Squares Residuals   : ",signif(x$ssr,digits),"\n",sep=""))
+  cat(paste("Residual Sum of Squares    : ",signif(x$ssr,digits),"\n",sep=""))
   cat(paste("Rsq                        : ",signif(x$rsqr,digits),"\n",sep=""))
   cat(paste(trait(length.line),"\n"))
   invisible(x)

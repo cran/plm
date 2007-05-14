@@ -45,6 +45,7 @@ plm.extract <- function(formula,data,instruments=NULL,endog=NULL){
       }
     }
   }
+
   id <- mf[[id.index.name]]
   time <- mf[[time.index.name]]
   mtx <- terms(formula)
@@ -129,6 +130,7 @@ plm <-  function(formula,data,effect="individual",model=NULL,instruments=NULL,en
                      "pooling"=plm.pooling(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                      "random"=plm.random(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                      "ht"=plm.ht(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
+                     "fd"=plm.fd(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...)
                      )
   }
   result$call <- cl

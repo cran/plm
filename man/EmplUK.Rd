@@ -1,3 +1,4 @@
+%  -*-ispell-dictionary: "american"; -*-
 \name{EmplUK}
 \docType{data}
 \alias{EmplUK}
@@ -9,7 +10,7 @@
 
  \emph{observation} :  firms
 
-   \emph{country} :  United--Kingdown
+   \emph{country} :  United--Kingdom
 
 }
 \usage{data(EmplUK)}
@@ -26,7 +27,7 @@
 \source{
   Arellano, Manuel & Bond, Stephen (1991), Some Tests of Specification
   for Panel Data: Monte Carlo Evidence and an Application to Employment
-  Equations, \emph{The Review of Economic Studies}, vol. 58(2), april
+  Equations, \emph{The Review of Economic Studies}, vol. 58(2), April
   1991, pp.227--297.
 }
 

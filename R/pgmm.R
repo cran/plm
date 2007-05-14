@@ -1,485 +1,558 @@
-X3D <- function(form,data){
-  tf <- terms(form)
-  if (attr(tf,"intercept")==1){
-    if (attr(tf,"response")==1){
-      form <- update(form,.~.-1)
-    }
-    else{
-      form <- update(form,~.-1)
-    }
-  }
-  pdim <- attr(data,"pdim")
-  id.names <- pdim$panel.names$id.names
-  time.names <- pdim$panel.names$time.names
-  n <- pdim$nT$n
-  T <- pdim$nT$T
-  id.name <- attr(data,"indexes")$id
-  time.name <- attr(data,"indexes")$time
-  mf <- model.frame(form,data,na.action=NULL)
-  X <- as.data.frame(model.matrix(form,mf))
-  rselect <- rownames(X)
-  indexes <- data[rselect,c(id.name,time.name)]
-  K <- ncol(X)
-  tot <- as.vector(t(outer(id.names,time.names,paste)))
-  totg <- paste(indexes[,1],indexes[,2])
-  rownames(X) <- totg
-  X <- X[tot,,drop=F]
-  rownames(X) <- tot
-  array(as.vector(as.matrix(X)),
-        dim=c(T,n,K),
-        dimnames=(list(time.names,id.names,colnames(X))))
-}
-
-pgmm.extract <- function(formula,data,effect,instruments,
-                 inst.transformation,
-                 lags.endog,first.period,last.period,
-                 model,verbal){
-
-  indexes <- attr(data,"indexes")
-  id.index.name <- indexes$id
-  time.index.name <- indexes$time
-
-  if (is.character(formula)){
-    pure.ar.model <- TRUE
-    fortot <-  as.formula(paste(formula,"~",id.index.name,"+",time.index.name))
-    y.name <- formula
-    x.formula <- X <- names.X <- NULL
-    K <- 0
-  }
-  else{
-    pure.ar.model <- FALSE
-    fortot <-  as.formula(paste(formula,"+",id.index.name,"+",time.index.name))
-    y.name <- paste(deparse(formula[[2]]))
-    x.formula <- paste(deparse(formula[[3]]),collapse="")
-    x.formula <- as.formula(paste("~ ",x.formula,collapse="",sep=""))
-  }
-  mf <- model.frame(fortot,data=data,na.action=NULL)
-  id <- mf[[id.index.name]]
-  time <- mf[[time.index.name]]
-  first.diff.model <- ifelse(effect %in% c("individual","twoways"),
-                             TRUE,FALSE)
-  t.start <- 1+(first.diff.model)+lags.endog
-  pdim <- attr(data,"pdim")
-  pvar <- attr(data,"pvar")
-  time.var <- attr(data,"indexes")$time
-  y.names <- switch(as.character(lags.endog),
-                   "0"=NULL,
-                   "1"=c(paste("lag(",y.name,")",collapse="",sep="")),
-                   "2"=c(paste("lag(",y.name,")",collapse="",sep=""),
-                     paste("lag(",y.name,",2)",collapse="",sep=""))
-                 )
-  y.formula <- as.formula(paste("~ ",y.name,collapse="",sep=""))
-  if (!pure.ar.model){
-    X <- X3D(x.formula,data)
-    K <- dim(X)[3]
-    names.X <- dimnames(X)[[3]]
-  }
-    
-  y <- X3D(y.formula,data)
-##   K <- dim(X)[3]
-##   T <- dim(X)[1]
-##   n <- dim(X)[2]
-  T <- dim(y)[1]
-  n <- dim(y)[2]
-  Ky <- lags.endog
-
-  names.time <- dimnames(y)[[1]]
-  names.id <- dimnames(y)[[2]]
-
-# Creation of a list containing available periods for each individual
-  pdim <- pdim(id,time)
-  if (!pdim$balanced){
-    stop("pgmm not implemented for unbalanced panel data")
-    ti <- list()
-    for (i in pdim$panel.names$id.names){
-      ti[[i]] <- time[id==i][-(1:(t.start-1))]
-      ti[[i]] <- as.character(ti[[i]])
-    }
-  }
-  
-# Matrix Z of instruments (3D array)
-  
+pgmm.formula <- function(formula,data,effect,model,instruments,gmm.inst,lag.gmm,transformation){
   if (is.null(instruments)){
-    if (lags.endog>0){
-      names.inst <- c(y.name,names.X)
+    if (!is.list(gmm.inst)){
+      var.gmm <- attr(terms(gmm.inst),"term.labels")
+      J <- length(var.gmm)
+      var.tot <- attr(formula,"var")
+      lag.tot <- attr(formula,"lag")
+      log.tot <- attr(formula,"log")
+      diff.tot <- attr(formula,"diff")
+      var.inst <- var.tot[! var.tot %in% var.gmm]
+      if (length(var.inst)>0){
+        lag.inst <- lag.tot[!var.tot %in% var.gmm]
+        log.inst <- log.tot[!var.tot %in% var.gmm]
+        diff.inst <- diff.tot[!var.tot %in% var.gmm]
+        form.inst <- as.formula(paste("~",paste(var.inst,collapse="+"),sep=""))
+        instruments <- dynformula(form.inst,lag.inst,diff.inst,log.inst)
+      }
     }
-    else{
-      names.inst <- names.X
-    }
-    Z <- array(NA,dim=c(T,n,K+(Ky>0)),
-               dimnames=list(names.time,names.id,
-                 names.inst))
-    if (lags.endog>0){
-      Z[,,1] <- y[,,]
-    }
-    if (!pure.ar.model)  Z[,,((Ky>0)+1):(K+(Ky>0))] <- X
+  }
+  if (!is.list(lag.gmm)){
+    lag.gmm <- rep(list(lag.gmm),J)
+  }
+  max.lag.gmm <- max(sapply(lag.gmm,function(x) x[1]))
+  max.lag.model <- max(sapply(attr(formula,"lag"),max))+1
+  time.lost <- max(max.lag.model,max.lag.gmm)
+  
+  gmm <- list(gmm.inst=gmm.inst,lag.gmm=lag.gmm,instruments=instruments)
+  if (transformation=="ld"){
+    lag.gmm <- rep(list(c(1,1)),J)
+    gmm.inst.level <- dynformula(gmm.inst,diff=T)
+    gmm.level <- list(gmm.inst=gmm.inst.level,lag.gmm=lag.gmm,instruments=instruments)
+    z <- list(gmm.diff=gmm,gmm.level=gmm.level,time.lost=time.lost)
   }
   else{
-    if (length(instruments)!=2 & class(instruments)!="formula"){
-      stop("instruments must be a one side formula\n")
-    }
-    Z <- X3D(instruments,data)
-    names.inst <- dimnames(Z)[[3]]
+    z <- list(gmm=gmm,time.lost=time.lost)
   }
-  Ki <- length(names.inst)
-
-#  inclusion of time dummies (3D array) and modification of the names of variables and instruments
-  
-  if (effect=="twoways"){
-    t.formula <- as.formula(paste("~ ",time.var,sep="",collapse=""))
-    time <- X3D(t.formula,data)
-    time <- time[,,t.start:T]
-    t.names <- dimnames(time)[[3]]
-    Kt <- T-t.start+1
-    var.names <- c(y.names,names.X,t.names)
-    names.inst2 <- c(names.inst,"(intercept)")
-  } 
- else{
-    time <- NULL
-    Kt <- 0
-    t.names <- NULL
-    var.names <- c(y.names,names.X)
-    names.inst2 <- names.inst
-  }
-
-# Matrix of variables (3D array) the first is the dependent variable
-  
-  yX <- array(Z,dim=c(T,n,K+Ky+Kt+1),
-              dimnames=list(names.time,names.id,
-                c(y.name,var.names)))
-  yX[,,1] <- y
-  if (lags.endog>0){
-    yX[2:T,,2] <- y[1:(T-1),,]
-  }
-  if (lags.endog>1){
-    yX[3:T,,3] <- y[1:(T-2),,]
-  }
-  if (!pure.ar.model)  yX[,,(Ky+2):(K+Ky+1)] <- X
-  if (effect=="twoways"){
-    yX[,,(K+Ky+2):(K+Ky+Kt+1)] <- time
-  }
-  if (effect %in% c("individual","twoways")){
-    yX[2:T,,] <- yX[2:T,,]-yX[1:(T-1),,]
-  }
-  yX <- yX[t.start:T,,]
-
-# Construction of the vectors of first/last period for instruments and instruments transformation
-  
-  lfp <- length(first.period)
-  llp <- length(last.period)
-  lit <- length(inst.transformation)
-  if (lfp!=Ki){
-    first.period <- switch(as.character(lfp),
-                           "1"=rep(first.period,Ki),
-                           "2"=c(first.period[1],rep(first.period[2],Ki-1)),
-                           stop("the first.period argument is irrelevant")
-                           )
-  }
-  if (llp!=Ki){
-    last.period <- switch(as.character(llp),
-                           "1"=rep(last.period,Ki),
-                           "2"=c(last.period[1],rep(last.period[2],Ki-1)),
-                           stop("the last.period argument is irrelevant")
-                           )
-  }
-  if (lit!=Ki){
-    inst.transformation <- switch(as.character(lit),
-                          "1"=rep(inst.transformation,Ki),
-                          "2"=c(inst.transformation[1],rep(inst.transformation[2],Ki-1)),
-                          stop("the inst.transformation argument is irrelevant")
-                          )
-  }
-  names(first.period) <- names(last.period) <- names(inst.transformation) <- names.inst
-
-# J is an array containing the first, last period and the number of period for each instrument and each year
-# W is a list containing lists (one for each instrument) of instruments values for each period
-
-  J <- array(0,dim=c(T,length(names.inst2),3),
-             dimnames=list(names.time,names.inst2,
-               c("start","end","n")))
-  for (ni in names.inst2){
-    for (t in 1:T){
-      if (ni=="(intercept)"){
-        J[t,ni,"start"] <- 1
-        J[t,ni,"end"] <- 1
-      }
-      else{
-        J[t,ni,"start"] <- max(1,t+first.period[ni])
-        J[t,ni,"end"] <- max(1,min(t+last.period[ni],T))
-      }
-    }
-  }
-  J[,,"n"] <- J[,,"end"]-J[,,"start"]+1
-  
-  W <- list()
-  for (ni in names.inst){
-    wi <- list()
-    for (t in t.start:T){
-      andebut <- J[t,ni,"start"]
-      anfin <- J[t,ni,"end"]
-      if (inst.transformation[ni]=="l"){
-        wi[[names.time[t]]] <- Z[andebut:anfin,,ni]
-      }
-      if (inst.transformation[ni]=="d"){
-        wi[[names.time[t]]] <- Z[andebut:anfin,,ni]-Z[(andebut-1):(anfin-1),,ni]
-      }
-    }
-    W[[ni]] <- wi
-  }
-  J <- J[t.start:T,,,drop=F]
-  Jtotal <- sum(J[,,"n"])
-  ra <- J[,,"n",drop=F]
-  BJ <- BJ(apply(J[,,"n",drop=F],1,sum))
-
-# omega is a matrix where each column is an individual. Each column is a vector containing all instruments for
-# all periods (the W_i block diagonal matrix in vector form)
-
-  omega <- c()
-  for (an in names.time[t.start:T]){
-    for (vk in names(W)){
-      omega <- rbind(omega,W[[vk]][[an]])
-     }
-    if (effect=="twoways") omega <- rbind(omega,1)
-  }
-  omega[is.na(omega)] <- 0
-
-  
-  yX[is.na(yX)] <- 0
-  
-  time.span <- names.time[t.start:length(names.time)]
-  row.names.omega <- rep(time.span,apply(J[,,"n",drop=F],1,sum))
-  rownames(omega) <- row.names.omega
-  
-# In case of unbalanced panel, blocks of omega corresponding to missing
-# periods and unavailable instruments for present periods are
-# fixed to zero
-  
-  if (!pdim$balanced){
-    for (i in pdim$panel.names$id.names){
-      null.row.omega <- !(row.names.omega %in% ti[[i]])
-      omega[null.row.omega,i] <- 0
-      null.period.id <- !(time.span %in% ti[[i]])
-      yX[null.period.id,i,] <- 0
-    }
-  }
-  omega[is.na(omega)] <- 0
-  WyX <- matrix(0,nrow=Jtotal,ncol=K+Ky+Kt+1)
-  if(verbal) cat("Moments creation : loop on individuals ")
-  for (i in names.id){
-    WyX1i <- as.matrix(t(BJ)%*%yX[,i,])
-    WyX2i <- matrix(omega[,i],ncol=K+Ky+Kt+1,nrow=Jtotal)
-    WyXi <- WyX1i*WyX2i
-    WyX <- WyX+WyXi
-    if(verbal) cat(paste(i," "))
-  }
-  if (verbal) cat("\n")
-
-  extract <- list(omega=omega,yX=yX,WyX=WyX,J=J,t.start=t.start,K=K,Ky=Ky,Kt=Kt)
-  attr(extract,"pdim") <- pdim
-  extract
-}
-
-
-pgmm.one.step <- function(omega,yX,WyX,J,K,Ky,Kt,verbal,effect){
-  names.yX <- dimnames(yX)
-  dim.yX <- dim(yX)
-  names.id <- names.yX[[2]]
-  names.time <- names.yX[[1]]
-  var.names <- names.yX[[3]][-1]
-  n <- dim.yX[2]
-  T <- dim.yX[1]
-
-  Jtotal <- sum(J[,,"n"])
-  BJ <- BJ(apply(J[,,"n",drop=F],1,sum))
- 
-  if (effect %in% c("individual","twoways")){
-    G=matrix(0,T,T)
-    for (i in 1:(T-1)){
-      G[i,i]=2
-      G[i,i+1]=-1
-      G[i+1,i]=-1
-    }
-    G[T,T]=2
-  }
-  else{
-    G <- diag(rep(1,T),nrow=T)
-    rownames(G) <- colnames(G) <- time.span
-  }
-  
-  V <- (t(BJ)%*%G%*%BJ)
-
-  WDW <- matrix(0,nrow=Jtotal,ncol=Jtotal)
-  if(verbal) cat("First Step : loop on individuals ")
-  for (i in names.id){
-    omegai <- omega[,i]
-    WDW1i <- outer(omegai,omegai)
-    WDWi <- WDW1i*V
-    WDW <- WDW+WDWi
-    if(verbal) cat(paste(i," "))
-  }
-  if (verbal) cat("\n")
-  WDWm1 <- as.matrix(solve(WDW))
-  Wy <- WyX[,1,drop=F]
-  WX <- WyX[,-1,drop=F]
-  
-  vcov <- solve(t(WX)%*%WDWm1%*%WX)
-  coefficients <- vcov%*%(t(WX)%*%WDWm1%*%Wy)
-  dim(coefficients) <- NULL
-  names(coefficients) <- var.names
-  yX2 <- yX
-  for (k in var.names){
-    yX2[,,k] <- coefficients[k]*yX[,,k]
-  }
-  residuals <- yX2[,,1]-apply(yX2[,,-1],c(1,2),sum)
-  fitted.values <- yX2[,,1]-residuals
-  dvW <- apply(crossprod(BJ,residuals)*omega,1,sum)
-
-  stat <- t(dvW)%*%WDWm1%*%dvW
-  dim(stat) <- NULL
-  p <- nrow(omega)
-  Ktot <- K+Ky+Kt
-  parameter <- p-Ktot
-
-  res1 <- list(coefficients=coefficients,
-               residuals=residuals,
-               fitted.values=fitted.values,
-               vcov=vcov,
-               df.residual=df.residual,
-               model=yX,
-               omega=omega,
-               WDWm1=WDWm1,
-               WyX=WyX,
-               J=J)
-}
-
-pgmm.two.steps <- function(omega,yX,WyX,J,K,Ky,Kt,verbal,effect){
-  res.one.step <- pgmm.one.step(omega,yX,WyX,J,K,Ky,Kt,verbal,effect)
-  names.yX <- dimnames(yX)
-  dim.yX <- dim(yX)
-  names.id <- names.yX[[2]]
-  names.time <- names.yX[[1]]
-  var.names <- names.yX[[3]][-1]
-  n <- dim.yX[2]
-  T <- dim.yX[1]
-  Jtotal <- sum(J[,,"n"])
-  BJ <- BJ(apply(J[,,"n",drop=F],1,sum))
-  WDW <- matrix(0,nrow=Jtotal,ncol=Jtotal)
-
-  if(verbal) cat("Second Step : loop on individuals ")
-  for (i in names.id){
-    WDW1i <- crossprod(t(omega[,i]))
-    vipvi <- crossprod(t(res.one.step$residuals[,i]))
-    WDW2i <- (t(BJ)%*%vipvi%*%BJ)
-    WDWi <- WDW1i*WDW2i
-    WDW <- WDW+WDWi
-    if(verbal) cat(paste(i," "))
-  }
-  
-  if (verbal) cat("\n")
-  Wy <- WyX[,1,drop=F]
-  WX <- WyX[,-1,drop=F]
-
-  WDWm1 <- as.matrix(solve(WDW))
-  vcov <- solve(t(WX)%*%WDWm1%*%WX)
-  coefficients <- vcov%*%(t(WX)%*%WDWm1%*%Wy)
-  dim(coefficients) <- NULL
-  names(coefficients) <- var.names
-  
-  yX2 <- yX
-  for (k in var.names){
-    yX2[,,k] <- coefficients[k]*yX[,,k]
-  }
-  
-  residuals <- yX2[,,1]-apply(yX2[,,-1],c(1,2),sum)
-  fitted.values <- yX2[,,1]-residuals
-  df.residual <- n*T-K-Ky-Kt
-  dvW <- apply(crossprod(BJ,residuals)*omega,1,sum)
-  
-  stat <- t(dvW)%*%WDWm1%*%dvW
-  dim(stat) <- NULL
-  p <- nrow(omega)
-  Ktot <- K+Ky+Kt
-  parameter <- p-Ktot
-  
-  res2 <- list(coefficients=coefficients,
-               residuals=residuals,
-               fitted.values=fitted.values,
-               vcov=vcov,
-               df.residual=df.residual,
-               model=yX,
-               omega=omega,
-               WDWm1=WDWm1,
-               WyX=WyX,
-               J=J)
-}
-
-pgmm <- function(formula,data,effect="individual",model="twosteps",
-                 instruments=NULL,inst.transformation="l",
-                 lags.endog=1,first.period=-99,last.period=-1,
-                 ...){
-  model.name <- model
-  verbal=FALSE
-  if (!any(class(data) %in% "pdata.frame")){
-    stop("argument data should be a pdata.frame\n")
-  }
-  if(!(effect %in% names(effect.pgmm.list))){
-    stop(paste("effect must be one of",oneof(effect.pgmm.list)))
-  }
-  if(!(model.name %in% names(model.pgmm.list))){
-    stop("model must be one of",oneof(model.pgmm.list))
-  }
-  
-  pmodel <- list(formula=formula,effect=effect,instruments=instruments,
-                 model.name=model)
-  if (is.null(effect)) effect <- "none"
-  cl <- match.call()
-  z <- pgmm.extract(formula,data,effect,instruments,
-                    inst.transformation,
-                    lags.endog,first.period,last.period,
-                    model,verbal)
-  pdim <- attr(z,"pdim")
-  omega <- z$omega
-  yX <- z$yX
-  J <- z$J
-  t.start <- z$t.start
-  K <- z$K
-  Ky <- z$Ky
-  Kt <- z$Kt
-  WyX <- z$WyX
-
-  if(model=="onestep"){
-    z <- pgmm.one.step(omega,yX,WyX,J,K,Ky,Kt,verbal,effect)
-  }
-  if (model=="twosteps"){
-    z <- pgmm.two.steps(omega,yX,WyX,J,K,Ky,Kt,verbal,effect)
-  }
-  z$K <- list(K=K,Ky=Ky,Kt=Kt)
-  z$call <- cl
-  z <- structure(z,class="pgmm",pdim=pdim,pmodel=pmodel)
   z
 }
 
-print.pgmm <- function(x,digits=5,...){
-  print(x$coefficients)
+extract.data <- function(formula,data,time.name,id.name){
+  if (length(formula)==3){
+    formula <- update(formula,.~.-1)
+    exo.name <- deparse(formula[[2]])
+  }
+  else{
+    formula <- update(formula,~.-1)
+  }    
+  yX <- model.frame(formula,data,na.action=NULL)
+  yX$time <- data[[time.name]]
+  yX <- split(yX,data[[id.name]])
+  yX <- lapply(yX,function(x){ rownames(x) <- x[["time"]];return(x)})
+  if (length(formula)==3){
+    yX <- lapply(yX,function(x) cbind(x[,1],model.matrix(formula,x)))
+    yX <- lapply(yX,function(x){colnames(x)[1] <- exo.name;x})
+  }
+  else{
+    yX <- lapply(yX,function(x) model.matrix(formula,x))
+  }    
 }
 
-summary.pgmm <- function(object,...){
+pgmm <- function(formula,data,effect="individual",model="twosteps",instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...){
+  if(is.null(fsm)){
+    fsm <- switch(transformation,
+                  "d"="G",
+                  "ld"="full"
+                )
+  }
+  cl <- match.call()
+  model.name <- model
+  if (is.null(effect)) effect <- "none"
+  pdim <- attr(data,"pdim")
+  cl <- match.call()
+  z <- pgmm.formula(formula,data,effect,model,instruments,gmm.inst,lag.gmm,transformation)
+  pmodel <- list(formula=formula,effect=effect,instruments=instruments,
+                 model.name=model,transformation=transformation,time.lost=z$time.lost)
+  if (transformation=="ld"){
+    gmm.desc <- z$gmm.diff
+    gmm.desc.level <- z$gmm.level
+  }
+  else{
+    gmm.desc <- z$gmm
+  }
+  time.lost <- z$time.lost
+  data.name <- deparse(substitute(data))
+  id.name <- attr(data,"index")$id
+  time.name <- attr(data,"index")$time
+  time.names <- attr(data,"pdim")$panel.names$time.names
+  id.names <- attr(data,"pdim")$panel.names$id.names
+  T <- pdim(data)$nT$T
+  ti <- split(data[[time.name]],data[[id.name]])
+  yX <- extract.data(formula,data,time.name,id.name)
+  yX <- lapply(yX,function(x) if(time.lost==1) x else x[-c(1:(time.lost-1)),])
+  W <- extract.data(gmm.desc$gmm.inst,data,time.name,id.name)
+  J <- makeJ(time.names,gmm.desc$gmm.inst,gmm.desc$lag.gmm,time.lost)
+  W <- lapply(W,momatrix,J,time.names)
+  if (is.null(gmm.desc$instruments)){
+    In <- NULL
+  }
+  else{
+    In <- extract.data(gmm.desc$instruments,data,time.name,id.name)
+    In <- lapply(In,function(x) if(time.lost==1) x else x[-c(1:(time.lost-1)),])
+  }
+  if (transformation=="ld"){
+    Wl <- extract.data(gmm.desc.level$gmm.inst,data,time.name,id.name)
+    Wl <- lapply(Wl,function(x) x[-1,])
+    Jl <- makeJ(time.names[-1],gmm.desc.level$gmm.inst,gmm.desc.level$lag.gmm,time.lost-1)
+    Wl <- lapply(Wl,momatrix,Jl,time.names[-1])
+    Wl <- lapply(Wl,function(x){prems <- which(time.names==rownames(x)[1]);z <- rbind(0,x);rownames(z)[1] <- time.names[prems-1];z})
+  }
+  else{
+    Wl=NULL
+  }
+  if (effect!="individual"){
+    if (transformation=="ld"){
+      time.dummies <- cbind(1,diag(1,T)[,-(1:(time.lost))])
+      dimnames(time.dummies) <- list(time.names,c("(intercept)",time.names[(time.lost+1):T]))
+    }
+    else{
+      time.dummies <- diag(1,T)[,-(1:(time.lost))]
+      dimnames(time.dummies) <- list(time.names,time.names[(time.lost+1):T])
+    }
+  }
+  else{
+    time.dummies <- NULL
+  }
+  if (transformation=="ld"){
+    result <- pgmm.sys(yX,W,Wl,In,time.dummies,model,fsm,cl)
+  }
+  else{
+    result <- pgmm.diff(yX,W,In,time.dummies,model,fsm,cl)
+  }
+  structure(result,class=c("pgmm","panelmodel"),pdim=pdim,pmodel=pmodel)
+}
+
+
+pgmm.diff <- function(yX,W,In,time.dummies,model,fsm,cl){
+  if(!is.null(time.dummies)){
+    yX <- lapply(yX,function(x) cbind(x,time.dummies[rownames(x),]))
+    W <- lapply(W,function(x) cbind(x,time.dummies[rownames(x),]))
+  }
+  yX <- lapply(yX,diff)
+  if (!is.null(In)){
+    In <- lapply(In,diff)
+    W <- mapply(cbind,W,In,SIMPLIFY=FALSE)
+  }
+  Vi <- lapply(W,function(x) crossprod(t(crossprod(x,FSM(dim(x)[1],fsm))),x))
+  A1 <- solve(suml(Vi))*length(W)
+  WyXi <- mapply(crossprod,W,yX,SIMPLIFY=FALSE)
+  Wyi <- lapply(WyXi,function(x) x[,1])
+  WXi <- lapply(WyXi,function(x) x[,-1])
+  Wy <- suml(Wyi)
+  WX <- suml(WXi)
+  var.names <- colnames(yX[[1]])
+  B1 <- solve(t(WX)%*%A1%*%WX)
+  rownames(B1) <- colnames(B1) <- var.names[-1]
+  coefficients <- B1%*%(t(WX)%*%A1%*%Wy)
+  dim(coefficients) <- NULL
+  names(coefficients) <- var.names[-1]
+  residuals <- lapply(yX,function(x) as.vector(x[,1]-crossprod(t(x[,-1]),coefficients)))
+  outresid <- lapply(residuals,function(x) outer(x,x))
+  A2 <- mapply(crossprod,W,outresid,SIMPLIFY=FALSE)
+  A2 <- mapply("%*%",A2,W,SIMPLIFY=FALSE)
+  A2 <- solve(suml(A2))
+  B2 <- solve(t(WX)%*%A2%*%WX)
+  rownames(B2) <- colnames(B2) <- var.names[-1]
+  if (model=="twosteps"){
+    coef1s <- coefficients
+    coefficients <- B2%*%(t(WX)%*%A2%*%Wy)
+    dim(coefficients) <- NULL
+    names(coefficients) <- var.names[-1]
+    vcov <- B2
+  }
+  else{
+    vcov <- B1
+  }
+  residuals <- lapply(yX,function(x){
+    nz <- rownames(x)
+    z <- as.vector(x[,1]-crossprod(t(x[,-1]),coefficients))
+    names(z) <- nz
+    z
+  }
+                      )
+  fitted.values <- mapply(function(x,y) x[,1]-y,yX,residuals)
+  n <- apply(sapply(yX,dim),1,sum)[1]
+  K <- length(attr(terms(as.formula(cl$formula)),"term.labels"))
+  Kt <- dim(yX[[1]])[2]-K-1
+  p <- ncol(W[[1]])
+  Ky <- attr(as.formula(cl$formula),"lag")[[1]][2]
+  if(is.na(Ky)) Ky <- 0
+  K <- list(K=K-Ky,Ky=Ky,Kt=Kt)
+  if (model=="twosteps") coefficients <- list(coef1s,coefficients)
+
+  list(coefficients=coefficients,residuals=residuals,vcov=vcov,
+       fitted.values=fitted.values,
+       df.residual=df.residual,
+       model=yX,W=W,K=K,A1=A1,A2=A2,call=cl)
+}
+
+
+
+
+pgmm.sys <- function(yX,W,Wl,In,time.dummies,model,fsm,cl){
+  if(!is.null(time.dummies)){
+    yX <- lapply(yX,function(x) cbind(x,time.dummies[rownames(x),]))
+    Wl <- lapply(Wl,function(x) cbind(x,time.dummies[rownames(x),]))
+  }
+  else{
+    yX <- lapply(yX,function(x){x <- cbind(x,1);colnames(x)[dim(x)[2]] <- "(intercept)";x})
+    Wl <- lapply(Wl,function(x){x <- cbind(x,1);colnames(x)[dim(x)[2]] <- "(intercept)";x})
+  }
+    
+  if (!is.null(In)){
+    Inl <- In
+    In <- lapply(In,diff)
+    W <- mapply(cbind,W,In,SIMPLIFY=FALSE)
+    Wl <- mapply(cbind,Wl,Inl,SIMPLIFY=FALSE)
+  }
+  var.names <- colnames(yX[[1]])
+  yXl <- yX
+  yX <- lapply(yX,diff)
+  pi <- lapply(Wl,nrow)
+  F <- lapply(pi,FSM,fsm)
+  WS <- mapply(bdiag,W,Wl,SIMPLIFY=FALSE)
+  yXS <- mapply(rbind,yX,yXl,SIMPLIFY=FALSE)
+  WyXi <- mapply(crossprod,WS,yXS,SIMPLIFY=FALSE)
+  Wyi <- lapply(WyXi,function(x) x[,1])
+  WXi <- lapply(WyXi,function(x) x[,-1])
+  Wy <- suml(Wyi)
+  WX <- suml(WXi)
+  Vi <- mapply(function(x,y) crossprod(t(crossprod(x,y)),x),WS,F,SIMPLIFY=FALSE)
+  A1 <- solve(suml(Vi))*length(WS)
+  B1 <- solve(t(WX)%*%A1%*%WX)
+  coefficients <- B1%*%(t(WX)%*%A1%*%Wy)
+  dim(coefficients) <- NULL
+  names(coefficients) <- var.names[-1]
+  residuals <- lapply(yXl,function(x){nx <- rownames(x);z <- as.vector(x[,1]-crossprod(t(x[,-1]),coefficients));names(z) <- nx;z})
+  resid <- lapply(residuals,function(x) c(diff(x),x))
+  outresid <- lapply(resid,function(x) outer(x,x))
+  Vi <- mapply(function(x,y) crossprod(t(crossprod(x,y)),x),WS,outresid,SIMPLIFY=FALSE)
+  A2 <- solve(suml(Vi))
+  B2 <- solve(t(WX)%*%A2%*%WX)
+  vcov <- B1
+  if (model=="twosteps"){
+    coef1s <- coefficients
+    coefficients <- B2%*%(t(WX)%*%A2%*%Wy)
+    dim(coefficients) <- NULL
+    names(coefficients) <- var.names[-1]
+    vcov <- B2
+    residuals <- lapply(yXl,function(x){nx <- rownames(x);z <- as.vector(x[,1]-crossprod(t(x[,-1]),coefficients));names(z) <- nx;z})
+  }
+  fitted.values <- mapply(function(x,y) x[,1]-y,yXl,residuals)
+  n <- apply(sapply(yX,dim),1,sum)[1]
+  K <- length(attr(terms(as.formula(cl$formula)),"term.labels"))
+  Kt <- dim(yX[[1]])[2]-K-1
+  p <- ncol(W[[1]])
+  dim(coefficients) <- NULL
+  names(coefficients) <- rownames(vcov) <- colnames(vcov) <- var.names[-1]
+  Ky <- attr(as.formula(cl$formula),"lag")[[1]][2]
+  if(is.na(Ky)) Ky <- 0
+  K <- list(K=K-Ky,Ky=Ky,Kt=Kt)
+  if (model=="twosteps") coefficients <- list(coef1s,coefficients)
+  list(coefficients=coefficients,residuals=residuals,
+       fitted.values=fitted.values,vcov=vcov,
+       df.residual=df.residual,
+       model=yXl,W=WS,K=K,A1=A1,A2=A2,call=cl)
+}
+
+
+makeJ <- function(time.names,gmminst,lag.gmm,time.lost){
+  T <- length(time.names)
+  names.gmm <- attr(terms(gmminst),"term.label")
+  J <- array(0,dim=c(T,length(names.gmm),3),
+             dimnames=list(time.names,names.gmm,
+               c("start","end","n")))
+  first.period <- sapply(lag.gmm,max)
+  last.period <- sapply(lag.gmm,min)
+  names(first.period) <- names(last.period) <- names.gmm
+  for (ni in names.gmm){
+    for (t in 1:T){
+      J[t,ni,"start"] <- max(1,t-first.period[ni])
+      J[t,ni,"end"] <- max(1,min(t-last.period[ni],T))
+    }
+  }
+  
+  J[,,"n"] <- J[,,"end",drop=FALSE]-J[,,"start",drop=FALSE]+1
+  if (time.lost!=0){
+    J <- J[-(1:time.lost),,,drop=FALSE]
+  }
+  J
+}
+
+momatrix <- function(x,J,ttot){
+  names.gmm <- dimnames(J)[[2]]
+  z <- matrix(0,nrow=length(ttot),ncol=length(names.gmm),dimnames=list(ttot,names.gmm))
+  z[rownames(x),] <- x
+  t.kept <- dimnames(J)[[1]]
+  t.drop <- length(ttot)-length(t.kept)
+  start <- which(ttot==rownames(x)[1])
+  cnames <- c()
+  for (y in t.kept){
+    my <- c()
+    for (ng in names.gmm){
+      my <- c(my,z[seq(J[y,ng,1],J[y,ng,2]),ng])
+    }
+    cnames <- c(cnames,names(my))
+    if (y==t.kept[1]){
+      maty <- matrix(my,nrow=1)
+    }
+    else{
+      lgn <- c(rep(0,ncol(maty)),my)
+      maty <- cbind(maty,matrix(0,nrow=nrow(maty),ncol=length(my)))
+      maty <- rbind(maty,lgn)
+    }
+  }
+  rownames(maty) <- t.kept
+  maty <- maty[rownames(x)[(t.drop+1):dim(x)[1]],]
+  maty
+}
+
+
+
+
+dynformula <- function(formula,lag.form=NULL,diff.form=NULL,log.form=NULL){
+  endog <- attr(terms(formula),"term.labels")
+  if(length(formula)==3){
+    exo <- deparse(formula[[2]])
+    lhs <- TRUE
+  }
+  else{
+    exo <- NULL
+    lhs <- FALSE
+  }
+  
+  K <- length(endog)
+
+  if (is.null(lag.form)){
+    lag.form <- rep(list(0),K+lhs)
+  }
+  else{
+    if (!is.list(lag.form)){
+      lag.form <- list(lag.form)
+    }
+    if (!is.null(names(lag.form))){
+      nam <- names(lag.form)
+      olag.form <- lag.form
+      if (any(nam=="")){
+        if (sum(nam=="")!=1) stop("Only one unnamed element is adminited\n")
+        else default <- lag.form[[""]]
+        lag.form <- rep(list(default),K+lhs)
+        names(lag.form) <- c(exo,endog)
+        na <- nam[nam!=""]
+        lag.form[nam] <- olag.form
+      }
+      else{
+        lag.form <- rep(list(0),K+lhs)
+        names(lag.form) <- c(exo,endog)
+        lag.form[nam] <- olag.form
+      }
+    }
+    else{
+      if (length(lag.form)==1){
+        lag.form <- rep(lag.form,c(K+lhs))
+      }
+      else if (!length(lag.form) %in% c(K,K+lhs)) stop("irrelevant length for lag.form\n")
+    }
+  }
+  if (is.null(diff.form)){
+    diff.form <- rep(list(FALSE),K+lhs)
+  }
+  else{
+    if (!is.list(diff.form)) diff.form <- list(diff.form)
+    if (!is.null(names(diff.form))){
+      nam <- names(diff.form)
+      odiff.form <- diff.form
+      if (any(nam=="")){
+        if (sum(nam=="")!=1) stop("Only one unnamed element is adminited\n")
+        else default <- diff.form[[""]]
+        diff.form <- rep(list(default),K+lhs)
+        names(diff.form) <- c(exo,endog)
+        na <- nam[nam!=""]
+        diff.form[nam] <- odiff.form
+      }
+      else{
+        diff.form <- rep(list(FALSE),K+lhs)
+        names(diff.form) <- c(exo,endog)
+        diff.form[nam] <- odiff.form
+      }
+    }
+    else{
+      if (length(diff.form)==1){
+        diff.form <- rep(diff.form,c(K+lhs))
+      }
+      else if (!length(diff.form) %in% c(K,K+lhs)) stop("irrelevant length for diff.form\n")
+    }
+  }
+  
+  if (is.null(log.form)){
+    log.form <- rep(list(FALSE),K+lhs)
+  }
+  else{
+    if (!is.list(log.form)) log.form <- list(log.form)
+    if (!is.null(names(log.form))){
+      nam <- names(log.form)
+      olog.form <- log.form
+      if (any(nam=="")){
+        if (sum(nam=="")!=1) stop("Only one unnamed element is adminited\n")
+        else default <- log.form[[""]]
+        log.form <- rep(list(default),K+lhs)
+        names(log.form) <- c(exo,endog)
+        na <- nam[nam!=""]
+        log.form[nam] <- olog.form
+      }
+      else{
+        log.form <- rep(list(FALSE),K+lhs)
+        names(log.form) <- c(exo,endog)
+        log.form[nam] <- olog.form
+      }
+    }
+    else{
+      if (length(log.form)==1){
+        log.form <- rep(log.form,c(K+lhs))
+      }
+      else if (!length(log.form) %in% c(K,K+lhs)) stop("irrelevant length for log.form\n")
+    }
+  }
+
+  chendog <- c()
+  if (lhs){
+    if (log.form[[1]]) exo <- paste("log(",exo,")",sep="")
+    if (length(lag.form)==K){
+      lag.form <- c(0,lag.form)
+    }
+    if (length(lag.form[[1]])==1 && lag.form[[1]]!=0){
+      lag.form[[1]] <- c(1,lag.form[[1]])
+    }
+    if (length(lag.form[[1]])!=1){
+      chendog <- c(chendog,gg(exo,lag.form[[1]],diff.form[[1]]))
+    }
+  }
+  
+  j <- 1*lhs
+  for (i in endog){
+    j <- j+1
+    if (log.form[[j]]) i <- paste("log(",i,")",sep="")
+    chendog <- c(chendog,gg(i,lag.form[[j]],diff.form[[j]]))
+  }
+  chendog <- paste(chendog,collapse="+")
+  if (!is.null(exo)){
+    if (diff.form[[1]]) exo <- paste("diff(",exo,")",sep="")
+    formod <- as.formula(paste(exo,"~",chendog,sep=""))
+  }
+  else{
+    formod <- as.formula(paste("~",chendog,sep=""))
+  }
+  structure(formod,class=c("dynformula","formula"),lag=lag.form,diff=diff.form,log=log.form,var=c(exo,endog))
+}
+
+gg <- function(name,lags,diff){
+  lags <- switch(length(lags),
+                 "1"=c(0,lags),
+                 "2"=sort(lags),
+                 stop("lags should be of length 1 or 2\n")
+                 )
+  lag.string <- ifelse(diff,"diff","lag")
+  chlag <- c()
+  if (lags[2]!=0){
+    lags <- lags[1]:lags[2]
+    for (i in lags){
+      if (i==0){
+        if (diff) chlag <- c(chlag,paste("diff(",name,")")) else chlag <- c(chlag,name)
+      }
+      else{
+        ichar <- paste(i)
+        chlag <- c(chlag,paste(lag.string,"(",name,",",i,")",sep=""))
+      }
+    }
+    ret <- paste(chlag,collapse="+")
+  }
+  else{
+    if (diff) chlag <- paste("diff(",name,")") else chlag <- name
+    ret <- chlag
+  }
+  ret
+}   
+
+print.dynformula <- function(x,...){
+  attr(x,"lag") <- attr(x,"var") <- attr(x,"log") <- attr(x,"diff") <- NULL
+  print.formula(x)
+}
+
+G <- function(t){
+  G <- matrix(0,t,t)
+  for (i in 1:(t-1)){
+    G[i,i] <- 2
+    G[i,i+1] <- -1
+    G[i+1,i] <- -1
+  }
+  G[t,t] <- 2
+  G
+}
+
+
+FD <- function(t){
+  FD <- Id(t)[-1,]
+  for (i in 1:(t-1)){
+    FD[i,i] <- -1
+  }
+  FD
+}
+
+Id <- function(t){
+  diag(rep(1,t))
+}
+
+FSM <- function(t,fsm){
+  switch(fsm,
+         "I"=Id(t),
+         "G"=G(t),
+         "GI"=bdiag(G(t-1),diag(1,t)),
+         "full"=rbind(cbind(G(t-1),FD(t)),cbind(t(FD(t)),Id(t)))
+         )
+}
+
+  
+
+
+
+summary.pgmm <- function(object,robust=FALSE,...){
+  model.name <- attr(object,"pmodel")$model
+  transformation <- attr(object,"pmodel")$transformation
+  if (robust){
+    vv <- pvcovHC(object)
+  }
+  else{
+    vv <- vcov(object)
+  }
   rowsel <- object$K$K+object$K$Ky
-  vcov <- object$vcov
-  std.err <- sqrt(diag(vcov))
-  b <- object$coefficients
+  std.err <- sqrt(diag(vv))
+  b <- coef(object)
   z <- b/std.err
   p <- 2*(1-pnorm(abs(z)))
   CoefTable <- cbind(b,std.err,z,p)
   colnames(CoefTable) <- c("Estimate","Std. Error","z-value","Pr(>|z|)")
-  object$CoefTable <- CoefTable[1:rowsel,,drop=F]
+  object$CoefTable <- CoefTable[1:rowsel,,drop=FALSE]
   object$sargan <- sargan(object)
-  if (object$call$effect=="twoways") object$wald.td <- wald.td(object)
+  object$m1 <- mtest(object,1,vv)
+  object$m2 <- mtest(object,2,vv)
+  object$wald.coef <- wald(object,"param",vv)
+  if (object$call$effect=="twoways") object$wald.td <- wald(object,"time",vv)
   class(object) <- "summary.pgmm"
   object
 }
 
 print.summary.pgmm <- function(x,digits=5,length.line=70,...){
+  transformation <- attr(x,"pmodel")$transformation
   pdim <- attr(x,"pdim")
   pmodel <- attr(x,"pmodel")
   effect <- pmodel$effect
@@ -488,13 +561,15 @@ print.summary.pgmm <- function(x,digits=5,length.line=70,...){
   centre("Model Description",length.line)
   cat(paste(effect.pvcm.list[[effect]],"\n",sep=""))
   cat(paste(model.pvcm.list[[model.name]],"\n",sep=""))
-  print.form(formula,"Model Formula             : ",length.line)
+  print.form(formula,"Model Formula              : ",length.line)
   centre("Panel Dimensions",length.line)
-  print(pdim)
+  ntot <- apply(sapply(x$model,dim),1,sum)[1]
+  cat("Number of Observations Used  : ",ntot,"\n")
+  
   centre("Residuals",length.line)
   save.digits <- unlist(options(digits=digits))
   on.exit(options(digits=save.digits))
-  print(summary(as.vector(residuals(x))))
+  print(summary(unlist(residuals(x))))
 
   centre("Model Description",length.line)
   print(x$CoefTable)
@@ -503,21 +578,82 @@ print.summary.pgmm <- function(x,digits=5,length.line=70,...){
   cat("Sargan Test                   : ",names(x$sargan$statistic),
       "(",x$sargan$parameter,") = ",x$sargan$statistic,
       " (p.value=",x$sargan$p.value,")\n",sep="")
+
+  cat("Autocorrelation test (1)      : ",names(x$m1$statistic),
+      " = ",x$m1$statistic,
+      " (p.value=",x$m1$p.value,")\n",sep="")
+  
+  cat("Autocorrelation test (2)      : ",names(x$m2$statistic),
+      " = ",x$m2$statistic,
+      " (p.value=",x$m2$p.value,")\n",sep="")
+  cat("Wald test for coefficients    : ",names(x$wald.coef$statistic),
+      "(",x$wald.coef$parameter,") = ",x$wald.coef$statistic,
+      " (p.value=",x$wald.coef$p.value,")\n",sep="")
+  
+  
   if (x$call$effect=="twoways"){
     cat("Wald test for time dummies    : ",names(x$wald.td$statistic),
         "(",x$wald.td$parameter,") = ",x$wald.td$statistic,
         " (p.value=",x$wald.td$p.value,")\n",sep="")
   }
+  cat(paste(trait(length.line),"\n"))
   invisible(x)
 }
 
-sargan <- function(x){
-  BJ <- BJ(apply(x$J[,,"n",drop=F],1,sum))
-  dvW <- apply(crossprod(BJ,x$residuals)*x$omega,1,sum)
-  stat <- t(dvW)%*%x$WDWm1%*%dvW
-  dim(stat) <- NULL
-  p <- nrow(z$omega)
-  Ktot <- z$K$K+z$K$Ky+z$K$Kt
+
+bdiag <- function(...){
+  if (nargs() == 1)
+    x <- as.list(...)
+  else
+    x <- list(...)
+  n <- length(x)
+  if(n==0) return(NULL)
+  x <- lapply(x, function(y) if(length(y)) as.matrix(y) else
+              stop("Zero-length component in x"))
+  d <- array(unlist(lapply(x, dim)), c(2, n))
+  rr <- d[1,]
+  cc <- d[2,]
+  rsum <- sum(rr)
+  csum <- sum(cc)
+  out <- array(0, c(rsum, csum))
+  ind <- array(0, c(4, n))
+  rcum <- cumsum(rr)
+  ccum <- cumsum(cc)
+  ind[1,-1] <- rcum[-n]
+  ind[2,] <- rcum
+  ind[3,-1] <- ccum[-n]
+  ind[4,] <- ccum
+  imat <- array(1:(rsum * csum), c(rsum, csum))
+  iuse <- apply(ind, 2, function(y, imat) imat[(y[1]+1):y[2],
+                                               (y[3]+1):y[4]], imat=imat)
+  iuse <- as.vector(unlist(iuse))
+  out[iuse] <- unlist(x)
+  return(out)
+} 
+
+
+sargan <- function(object){
+  transformation <- attr(object,"pmodel")$transformation
+  model.name <- attr(object,"pmodel")$model
+  Ktot <- object$K$K+object$K$Ky+object$K$Kt
+  
+  if (transformation=="ld"){
+#    WS <- mapply(bdiag,object$W[[1]],object$W[[2]])
+    resS <- lapply(object$residuals,function(x) c(diff(x),x))
+    z <- suml(mapply(function(x,y) t(x)%*%y,object$W,resS,SIMPLIFY=FALSE))
+    p <- ncol(object$W[[1]])
+  }
+  else{
+    z <- suml(mapply(function(x,y) t(x)%*%y,object$W,object$residuals,SIMPLIFY=FALSE))
+    p <- ncol(object$W[[1]])
+  }
+  if (model.name=="onestep"){
+    A <- object$A1
+  }
+  else{
+    A <- object$A2
+  }
+  stat <- as.numeric(crossprod(z,t(crossprod(z,A))))
   parameter <- p-Ktot
   names(parameter) <- "df"
   names(stat) <- "chi2"
@@ -531,13 +667,42 @@ sargan <- function(x){
   sargan
 }
 
-wald.td <- function(x){
-  Ktot <- length(x$coefficients)
-  coef <- x$coefficients[(Ktot-x$K$Kt+1):Ktot]
-  vcov <- x$vcov[(Ktot-x$K$Kt+1):Ktot,(Ktot-x$K$Kt+1):Ktot]
-  stat <- t(coef)%*%solve(vcov)%*%coef
+wald <- function(x,param="coef",vcov=NULL){
+  myvcov <- vcov
+  if (is.null(vcov)){
+    vv <- vcov(x)
+  }
+  else if (is.function(vcov)){
+    vv <- myvcov(x)
+  }
+  else{
+    vv <- myvcov
+  }
+  transformation <- attr(x,"pmodel")$transformation
+  model.name <- attr(x,"pmodel")$model.name
+  if (model.name=="onestep"){
+    coefficients <- x$coefficients
+  }
+  else{
+    coefficients <- x$coefficients[[2]]
+  }
+  Ktot <- length(coefficients)
+  if (param=="time"){
+    start <- switch(transformation,
+                    "d"=(Ktot-x$K$Kt+1),
+                    "ld"=(Ktot-x$K$Kt+2)
+                    )
+    end <- Ktot
+  }
+  else{
+    end <- Ktot-x$K$Kt
+    start <- 1
+  }
+  coef <- coefficients[start:end]
+  vv <- vv[start:end,start:end]
+  stat <- t(coef)%*%solve(vv)%*%coef
   names(stat) <- "chi2"
-  parameter <- x$K$Kt
+  parameter <- length(coef)
   pval <- 1-pchisq(stat,df=parameter)
   wald <- list(statistic = stat,
                p.value = pval,
@@ -547,12 +712,92 @@ wald.td <- function(x){
   wald
 }
 
-BJ <- function(x){
-  require(Matrix)
-  MJ <- list()
-  for (i in 1:length(x)){
-    MJ[[i]] <- matrix(rep(1,x[i]),nrow=1)
+mtest <- function(object,order=1,vcov=NULL){
+  myvcov <- vcov
+  if (is.null(vcov)){
+    vv <- vcov(object)
   }
-  bdiag(MJ)
-}
+  else if (is.function(vcov)){
+    vv <- myvcov(object)
+  }
+  else{
+    vv <- myvcov
+  }
+  time.names <- attr(object,"pdim")$panel.names$time.names
+  time.lost <- attr(object,"pmodel")$time.lost
+  model.name <- attr(object,"pmodel")$model
+  time.names <- time.names[-(1:time.lost)]
+  transformation <- attr(object,"pmodel")$transformation
+  resid <- object$residuals
+  if (transformation=="ld"){
+    resid <- lapply(resid,diff)
+    X <- lapply(object$model,function(x) rbind(diff(x[,-1]),x[,-1]))
+    W <- object$W
+    A2 <- object$A2
+  }
+  else{
+    X <- lapply(object$model,function(x) x[,-1])
+    W <- object$W
+  }
+  if (model.name=="onestep"){
+    A <- object$A1
+  }
+  else{
+    A <- object$A2
     
+  }
+  Eb <- lapply(resid,function(x){
+    z <- rep(0,length(time.names))
+    names(z) <- time.names
+    z[names(x)] <- x
+    return(z)
+  })
+  El <- lapply(resid,function(x){
+    nx <- names(x)
+    z <- c(rep(0,order),x[1:(length(x)-order)])
+    names(z) <- nx
+    z
+  })
+  Elb <- lapply(El,function(x){
+    z <- rep(0,length(time.names))
+    names(z) <- time.names
+    z[names(x)] <- x
+    z
+  })
+
+  if(transformation=="ld"){
+    Eb <- lapply(Eb,function(x) c(x,rep(0,length(x)+1)))
+    El <- lapply(El,function(x) c(x,rep(0,length(x)+1)))
+    Elb <- lapply(Elb,function(x) c(x,rep(0,length(x)+1)))
+    resid <- lapply(resid,function(x) c(x,rep(0,length(x)+1)))
+  }
+    
+  EVE <- suml(mapply(function(x,y) t(y)%*%x%*%t(x)%*%y,Eb,Elb,SIMPLIFY=FALSE))
+  EX <- suml(mapply(crossprod,El,X,SIMPLIFY=FALSE))
+  XZ <- suml(mapply(crossprod,W,X,SIMPLIFY=FALSE))
+  ZVE <- suml(mapply(function(x,y,z) t(x)%*%y%*%t(y)%*%z,W,resid,El,SIMPLIFY=FALSE))
+                                        #  denom <- EVE-2*EX%*%object$B2%*%t(XZ)%*%A2%*%ZVE+EX%*%object$vcov%*%t(EX)
+  denom <- EVE-2*EX%*%vcov(object)%*%t(XZ)%*%A%*%ZVE+EX%*%vv%*%t(EX)
+  num <- suml(mapply(crossprod,Eb,Elb,SIMPLIFY=FALSE))
+  stat <- num/sqrt(denom)
+  names(stat) <- "normal"
+  pval <- 1-pnorm(abs(stat))
+  mtest <- list(statistic = stat,
+                p.value = pval,
+                method = paste("Autocorrelation test of degree",order))
+  class(mtest) <- "htest"
+  mtest
+}
+
+
+
+coef.pgmm <- function(object,...){
+  model.name <- attr(object,"pmodel")$model
+  if(model.name=="onestep"){
+    coefficients <- object$coefficients
+  }
+  else{
+    coefficients <- object$coefficients[[2]]
+  }
+  coefficients
+}

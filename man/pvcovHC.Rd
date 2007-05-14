@@ -1,16 +1,21 @@
 \name{pvcovHC}
 \alias{pvcovHC}
+\alias{pvcovHC.panelmodel}
+\alias{pvcovHC.pgmm}
+
 \title{Robust covariance matrix estimators}
 \description{
   Robust covariance matrix estimators {\em à la White} for panel models.
 }
 \usage{
-pvcovHC(x,type="white1",weights="HC0", ...)
+pvcovHC(x,...)
+\method{pvcovHC}{panelmodel}(x,type="white1",weights="HC0", ...)
+\method{pvcovHC}{pgmm}(x,...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"plm"} which should be the result of
-    a random or a within model,}
+  \item{x}{an object of class \code{"panelmodel"} which should be the result of
+    a random or a within model or a model of class \code{pgmm},}
   \item{type}{one of \code{"white1","white2","arellano"},}
   \item{weights}{one of \code{"HC0","HC1","HC2","HC3","HC4"},}
   \item{...}{further arguments.}
@@ -32,11 +37,11 @@ e.g. for Wald-type testing: as \code{vcov} to \code{coeftest()},
 \code{waldtest()} and other methods in the \code{lmtest} package; and as
 \code{vcov} to \code{linear.hypothesis()} in the \code{car} package (see the examples). Notice that the \code{vcov} argument may be supplied a function (which is the safest) or a matrix (see Zeileis (2004), 4.1-2 and examples below).  
 
-
+A special procedure, proposed by Windmeijer (2005) for \code{pgmm} objects.
 
 }
 
-\author{Giovanni Millo}
+\author{Giovanni Millo \& Yves Croissant}
 
 \references{
 Arellano M. (1987), Computing robust standard errors for within group estimators, 
@@ -51,6 +56,11 @@ Greene W. H. (1993), \emph{Econometric Analysis}, 2nd ed. Macmillan Publishing C
 MacKinnon J. G., White H. (1985), Some heteroskedasticity-consistent
 covariance matrix estimators with improved finite sample properties.
 \emph{Journal of Econometrics} \bold{29}, 305--325.
+
+
+Weidmeijer, F. (2005), A finite sample correction for the variance of
+linear efficicent two--step GMM estimators, \emph{Journal of
+  Econometrics}, 126, pp.25--51.
 
 White H. (1980), \emph{Asymptotic Theory for Econometricians}, Ch. 6, Academic Press, Orlando (FL).
 
@@ -87,6 +97,15 @@ coeftest(zz, vcov=pvcovHC(zz, type="arellano", weights="HC1"))
 waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=pvcovHC)
 ## test of hyp.: 2*log(pc)=log(emp)
 linear.hypothesis(zz, "2*log(pc)=log(emp)", vcov=pvcovHC)
+
+## Robust inference for GMM models
+data(EmplUK)
+pdata.frame(EmplUK,"firm","year")
+ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2)),EmplUK,
+           effect="twoways",model="twosteps",
+           gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
+rv <- pvcovHC(ar)
+mtest(ar,order=2,vcov=rv)
 
 }
 \keyword{regression}

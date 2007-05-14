@@ -20,6 +20,36 @@ pdata.frame <- function(x,id,time=NULL,name=NULL){
   else{
     data.name <- name
   }
+  # coerce character vectors to factors
+  x.char <- names(x)[sapply(x,is.character)]
+    for (i in x.char){
+    x[[i]] <- factor(x[[i]])
+  }
+  # check and remove complete NA series
+  na.check <- sapply(x,function(x) sum(!is.na(x))==0)
+  na.serie <- names(x)[na.check]
+  if (length(na.serie)>0){
+    if (length(na.serie)==1){
+      cat(paste("serie",na.serie," is NA and has been removed\n"))
+    }
+    else{
+      cat(paste("series ",paste(na.serie,collapse=",")," are NA and have been removed\n"))
+    }
+  }
+  x <- x[,!na.check]
+  # check and remove cst series
+  cst.check <- sapply(x,function(x) myvar(as.numeric(x))==0)
+  cst.serie <- names(x)[cst.check]
+  if (length(cst.serie)>0){
+    if (length(cst.serie)==1){
+      cat(paste("serie",cst.serie," is constant and has been removed\n"))
+    }
+    else{
+      cat(paste("series ",paste(na.serie,collapse=",")," are constants and have been removed\n"))
+    }
+  }
+  x <- x[,!cst.check]
+  
   if(is.numeric(id.name)){
     if(!is.null(time.name)){warning("The time argument will be ignored\n")}
     N <- nrow(x)
@@ -53,6 +83,7 @@ pdata.frame <- function(x,id,time=NULL,name=NULL){
       x[[time.name]] <- time <- as.factor(x[[time.name]])
     }
   }
+  x <- x[order(id,time),]
   indexes <- list(id=id.name,time=time.name)
   class(indexes) <- "indexes"
   var.names <- names(x)
@@ -67,7 +98,6 @@ pdata.frame <- function(x,id,time=NULL,name=NULL){
     }
   }
   pvar <- pvar(x,id.name,time.name)
-  
   x <- structure(x,class=c("pdata.frame","data.frame"),pvar=pvar,pdim=pdim,indexes=indexes)
   assign(data.name,x,pos=1)
 }
@@ -101,3 +131,62 @@ print.summary.pdata.frame <- function(x,...){
   print.table(x)
 }
  
+as.data.frame.pdata.frame <- function(x,...){
+  rn <- attr(x,"row.names")
+  attr(x,"pdim") <- attr(x,"pvar") <- attr(x,"indexes") <- NULL
+  x <- lapply(x,function(x){
+    if (length(class(x))==1){
+      attr(x,"class") <- NULL
+    }
+    else{
+      class(x) <- class(x)[-1]
+    }
+    attr(x,"data") <- NULL
+    x
+  }
+              )
+  attr(x,"row.names") <- rn
+  class(x) <- "data.frame"
+  x
+}
+
+pfix <- function(x,...){
+  subx <- substitute(x)
+  if (is.name(subx)){
+    subx <- deparse(subx)
+  }
+  if (!is.character(subx) || length(subx) != 1)
+    stop("'fix' requires a name")
+  parent <- parent.frame()
+  ox <- x
+  x <- as.data.frame(x)
+  assign(subx, x, env = .GlobalEnv)
+  if (exists(subx, envir=parent, inherits = TRUE))
+    x <- edit(get(subx, envir=parent), title = subx, ...)
+  else {
+    x <- edit(function(){}, title = subx, ...)
+    environment(x) <- .GlobalEnv
+  }
+  assign(subx, ox, env = .GlobalEnv)
+}
+  
+
+"fix" <-
+    function (x, ...)
+{
+    subx <- substitute(x)
+    if (is.name(subx)){
+        subx <- deparse(subx)
+        print(subx)
+      }
+    if (!is.character(subx) || length(subx) != 1)
+        stop("'fix' requires a name")
+    parent <- parent.frame()
+    if (exists(subx, envir=parent, inherits = TRUE))
+        x <- edit(get(subx, envir=parent), title = subx, ...)
+    else {
+        x <- edit(function(){}, title = subx, ...)
+        environment(x) <- .GlobalEnv
+    }
+    assign(subx, x, env = .GlobalEnv)
+}

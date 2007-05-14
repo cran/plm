@@ -151,7 +151,6 @@ plm.pooling <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   K <- pdim$K <- ncol(X)
   N <- nrow(X)
   coef.names <- colnames(X)
-  
   if (is.null(W)){
     pooling <- lm(y~X)
   }
@@ -159,12 +158,10 @@ plm.pooling <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     if (ncol(W)<ncol(X)+1) stop("Insufficient number of instruments\n")
     pooling=twosls(y,X,W,TRUE)
   }
-  X <- cbind(1,X)
-  colnames(X)[1] <- "(intercept)"
   pooling <- plmformat(pooling,c("(intercept)",coef.names),rnames,
                        N-K-1,"pooling",pdim,pmodel,indexes,cl)
-  pooling$model[["X"]] <- cbind(1,pooling$model[["X"]])
-  colnames(pooling$model[["X"]])[1] <- "(intercept)"
+  pooling$model[[2]] <- cbind(1,pooling$model[[2]])
+  colnames(pooling$model[[2]])[1] <- "(intercept)"
   pooling
 }
 
@@ -176,7 +173,11 @@ plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   K <- pdim$K <- ncol(X)
   N <- nrow(X)
   coef.names <- colnames(X)
-  
+
+  X <- rbind(NA,X[2:N,]-X[1:(N-1)])
+  did <- c(1,as.numeric(id[2:N])-as.numeric(id[1:(N-1)]))
+  X <- X[did==0,]
+
   if (is.null(W)){
     pooling <- lm(y~X)
   }
@@ -184,6 +185,7 @@ plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     pooling=twosls(y,X,W,TRUE)
   }
   X <- cbind(1,X)
+  
   colnames(X)[1] <- "(intercept)"
   pooling <- plmformat(pooling,c("(intercept)",coef.names),rnames,
                        N-K-1,"pooling",pdim,pmodel,indexes,cl)
@@ -217,7 +219,6 @@ plm.random <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     other.variation <- pvar$id.variation
     ncond <- T
   }
-  
   X.m <- papply(X,mymean,cond)
   y.m <- papply(unclass(y),mymean,cond)
   

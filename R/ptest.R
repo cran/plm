@@ -21,7 +21,7 @@ phtest.panelmodel <- function(x,x2,data=NULL,...){
   dbeta <- coef.wi[coef.h]-coef.re[coef.h]
   df <- length(dbeta)
   dvcov <- vcov.re[coef.h,coef.h]-vcov.wi[coef.h,coef.h]
-  stat <- t(dbeta)%*%solve(dvcov)%*%dbeta
+  stat <- abs(t(dbeta)%*%solve(dvcov)%*%dbeta)
   pval <- (1-pchisq(stat,df=df))
   names(stat) <- "chi2"
   parameter <- df

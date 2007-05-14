@@ -2,11 +2,12 @@
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{ucs}
-\usepackage[utf8]{inputenc}
-
+\usepackage[utf8x]{inputenc}
+\usepackage{url}
+\usepackage{Sweave}
 \title{Introduction to plm}
 
-\author{Yves Croissant & Giovanni Milo}
+\author{Yves Croissant \& Giovanni Millo}
 \begin{document}
 
 \maketitle
@@ -339,7 +340,7 @@ using one of the two following techniques :
 The instrumental variables estimator used may be indicated with the
 \texttt{inst.method} argument :
 \begin{itemize}
-\item \texttt{bvk}, from  \textsc{Balestra} et
+\item \texttt{bvk}, from  \textsc{Balestra} and
   \textsc{Varadharajan--Krishnakumar} (1987), the default value,
 \item \texttt{baltagi}, from \textsc{Baltagi} (1981).
 \end{itemize}
@@ -389,7 +390,7 @@ summary(ba$random)
 \subsection{Variable coefficients model}
 
 The \texttt{pvcm} function enables the estimation of variable
-cofficients models. Time or individual effects are introduced if
+coefficients models. Time or individual effects are introduced if
 \texttt{effect} is fixed to \texttt{"time"} or \texttt{"individual"}
 (the default value). 
 
@@ -417,41 +418,21 @@ summary(sw)
 \subsection{General method of moments estimator}
 
 The general method of moments is provided by the \texttt{pgmm}
-function. It's main argument is either a formula or a variable,
-entered as a character string. In this last case, a pure
-autoregressive model is estimated. Lag values of the dependent
-variable should not be written in the formula, but specified in the
-\texttt{lags.endog} argument (as an integer 0 : no lag, 1 or 2).
-The effect argument is either \texttt{NULL} (the default),
-\texttt{"individual"} or \texttt{"twoways"}. In the first case, the
+function. It's main argument is  a \texttt{dynformula} which describe the variables of the model and the lag structure.
+
+
+The effect argument is either \texttt{NULL}, \texttt{"individual"} (the default),
+or \texttt{"twoways"}. In the first case, the
 model is estimated in levels. In the second case, the model is
 estimated in first differences to get rid of the individuals
 effects. In the last case, the model is estimated in first differences
 and time dummies are included. 
 
-By default, the instruments are the
-independent variables (and the dependent variables if \texttt{lags.endog}>0).
+In a gmm estimation, there are ``normal'' instruments and ``gmm'' instruments. gmm instruments are indicated with the \texttt{gmm.inst} argument (a one side formula) and the lags by with the \texttt{lag.gmm} argument. By default, all the variables of the model that are not used as gmm instruments are used as normal instruments, with the same lag structure. 
 
 The complete list of instruments can also be specified with the
-argument \texttt{instruments} which should be a one side formula. 
-Note that if the \texttt{formula} contains lags of some variables, you
-\emph{have} to write explicitely the list of instruments.
+argument \texttt{instruments} which should be a one side formula (or \texttt{dynformula}). 
 
-For each of the instruments, the number of lags (or/and leads) is
-specified with the \texttt{first.period} and \texttt{last.period}
-arguments. For example, if \texttt{first.period=-4} and
-\texttt{last.period=-1}, $x_{t-4},x_{t-3}, x_{t-2}, x_{t-1}$ are used
-as instruments for observation $t$. Use ``big'' integers (like -99 and
-99) to include all lags and/or leads. The \texttt{first.period} and
-\texttt{last.period} can be of length 1, 2 or J (the number of
-instruments). In the first case, the same periods are chosen for all
-the instruments. In the second case, two different values may be
-chosen for the dependent variable and all the independent variables
-(only relevant when \texttt{lags.endog}>0). In the last case,
-different values may be chosen for each instrument. Instruments are
-introduced in levels if \texttt{inst.transformation="l"} and in first
-difference if \texttt{inst.transformation="d"}. Like previously, it can be
-specified with a vector of length 1, 2 or J.
 
 The \texttt{model} argument specifies whether a one--step or a
 two--steps model is required (\texttt{"onestep"} or \texttt{"twosteps"}).
@@ -463,25 +444,24 @@ different firms is explained by past values of employment and wages
 <<>>=
 data(Snmesp)
 pdata.frame(Snmesp,"firm","year")
-z <-  pgmm(n~lag(w)+lag(w,2),effect="twoways",model="twosteps",Snmesp,lags.endog=2,
-          last.period=c(-2),inst.transformation=c("l"),instruments=~n+w)
+z <-  pgmm(dynformula(n~w,lag=list(c(1,2),c(1,2))),effect="twoways",model="twosteps",Snmesp,gmm.inst=~n+w,
+          lag.gmm=c(2,99),transformation=c("d"))
 summary(z)
 @ 
 
 In the following example, a pure auto--regressive model is
-estimated. In this cas, the first argument is the name of the
-variable, entered as a character string.
+estimated.
 
 <<>>=
-z <-  pgmm("n",effect="twoways",model="twosteps",Snmesp,lags.endog=2,
-          last.period=c(-2),inst.transformation=c("l"))
+z <-  pgmm(dynformula(n~1,lag=list(c(1,2))),effect="twoways",model="twosteps",Snmesp,gmm.inst=~n,
+          lag.gmm=c(2,99),transformation=c("d"))
 summary(z)
 @ 
 
 \subsection{General FGLS models}
 General FGLS estimators are based on a two-step estimation process: first an OLS model is estimated, then its residuals are used to estimate an error covariance matrix for use in a feasible-GLS analysis. Formally, the structure of the error covariance matrix is $ V=I_N \otimes \Omega $, with symmetry being the only requisite for $\Omega$: $ \Omega(ij)=\Omega(ji) $ (see Wooldridge (2002), 10.4.3 and 10.5.5).
 
-This framework allows the error covariance structure inside every group (if \texttt{effect="individual"}) of observations to be fully unrestricted and is therefore robust against any type of intragroup heteroskedasticity and serial correlation. This structure, by converse, is assumed identical across groups and thus \texttt{ggls} is inefficient under groupwise heteroskedasticity. Cross-sectional correlation is excluded a priori.
+This framework allows the error covariance structure inside every group (if \texttt{effect="individual"}) of observations to be fully unrestricted and is therefore robust against any type of intragroup heteroskedasticity and serial correlation. This structure, by converse, is assumed identical across groups and thus \texttt{ggls} is inefficient under groupwise heteroskedasticity. Cross-sectional correlation is excluded a priory.
 
 Moreover, the number of variance parameters to be estimated with $NT$ data points is $T(T+1)/2$, which makes these estimators particularly suited for situations where $N>>T$, as e.g. in labour or household income surveys, while problematic for "long" panels. 
 
@@ -584,7 +564,7 @@ plmtest(g,type="kw",effect="twoways")
 the  \texttt{within} and the \texttt{pooling} models. Its arguments
 are whether a \texttt{plms} object or two \texttt{plm} objects
 (the results of a  \texttt{pooling} and a \texttt{within} model).
-Some examples of the use of \texttt{pFtest} are shown below\footnote{Voir \textsc{Baltagi} (2001),
+Some examples of the use of \texttt{pFtest} are shown below\footnote{See \textsc{Baltagi} (2001),
   p. 65.}:
 
 <<>>=
@@ -691,7 +671,7 @@ library(car)
 linear.hypothesis(zz, "2*log(pc)=log(emp)", vcov=pvcovHC)
 @
 
-\section{Bibiographie}
+\section{References}
 
 \setlength{\parindent}{0em}
 \setlength{\parskip}{0.4cm}
@@ -701,7 +681,7 @@ linear.hypothesis(zz, "2*log(pc)=log(emp)", vcov=pvcovHC)
   pp.1--13.
 
   Arellano M. (1987), Computing robust standard errors for within group estimators, 
-\emph{Oxford bulletin of Economics and Statistics}, \bold{49}, 431--434.
+\emph{Oxford bulletin of Economics and Statistics}, \textbf{49}, 431--434.
 
 
   Arellano, M. (2003), Panel data econometrics, Oxford University Press.
@@ -726,7 +706,7 @@ linear.hypothesis(zz, "2*log(pc)=log(emp)", vcov=pvcovHC)
 
   Cribari-Neto F. (2004), Asymptotic inference under heteroskedasticity
 of unknown form. \emph{Computational Statistics \& Data Analysis}
-\bold{45}, 215--233.
+\textbf{45}, 215--233.
 
   Gourieroux, C., A. Holly and A. Monfort (1982), Likelihood ratio test,
   Wald test, and Kuhn--Tucker test in linear models with inequality
@@ -750,7 +730,7 @@ of unknown form. \emph{Computational Statistics \& Data Analysis}
 
   MacKinnon J. G., White H. (1985), Some heteroskedasticity-consistent
 covariance matrix estimators with improved finite sample properties.
-\emph{Journal of Econometrics} \bold{29}, 305--325.
+\emph{Journal of Econometrics} \textbf{29}, 305--325.
 
   Nerlove, M. (1971), Further evidence on the estimation of dynamic
   economic relations from a time--series of cross--sections,
@@ -771,16 +751,17 @@ covariance matrix estimators with improved finite sample properties.
   White H. (1980), \emph{Asymptotic Theory for Econometricians}, Ch. 6, Academic Press, Orlando (FL).
 
   White H. (1984), A heteroskedasticity-consistent covariance matrix and
-a direct test for heteroskedasticity. \emph{Econometrica} \bold{48},
+a direct test for heteroskedasticity. \emph{Econometrica} \textbf{48},
 817--838.
 
   Wooldridge J. M. (2003), \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press
 
   Zeileis A. (2004), Econometric Computing with HC and HAC Covariance Matrix
-Estimators. \emph{Journal of Statistical Software}, \bold{11}(10), 1--17.
+Estimators. \emph{Journal of Statistical Software}, \textbf{11}(10), 1--17.
 
 URL \url{http://http://www.jstatsoft.org/v11/i10/}.
 
 \end{document}
 
 
+% <!-- Local IspellDict: english --> <!-- Local IspellPersDict: ~/emacs/.ispell-english -->

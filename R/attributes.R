@@ -21,12 +21,16 @@ pvar.default <- function(x,id,time, ...){
   name.var <- names(x)
   time.variation=rep(TRUE,length(x))
   id.variation=rep(TRUE,length(x))
-  for (i in 1:length(x)){
-    tv <- tapply(x[[i]],id,myvar)
-    ti <- tapply(x[[i]],time,myvar)
-    vari <- myvar(x[[i]])
-    if (mean(tv[!is.na(tv)])/vari<1E-06) time.variation[i]=FALSE
-    if (mean(ti[!is.na(ti)])/vari<1E-06) id.variation[i]=FALSE
+  K <- length(x)
+  lid <- split(x,id)
+  ltime <- split(x,time)
+  if (K>1){
+    time.variation <- apply(sapply(lid,function(x) sapply(x,myvar)==0),1,sum)!=length(lid)
+    id.variation <- apply(sapply(ltime,function(x) sapply(x,myvar)==0),1,sum)!=length(ltime)
+  }
+  else{
+    time.variation <- sum(sapply(lid,function(x) sapply(x,myvar)==0))!=length(lid)
+    id.variation <- sum(sapply(ltime,function(x) sapply(x,myvar)==0))!=length(ltime)
   }
   names(id.variation) <- names(time.variation) <- name.var
   dim.var <- list(id.variation=id.variation,time.variation=time.variation)
@@ -89,13 +93,13 @@ print.pdim <- function(x, ...){
   if (x$balanced){
     cat("Balanced Panel\n")
     cat(paste("Number of Individuals        :  ",x$nT$n,"\n",sep=""))
-    cat(paste("Number of Time Obserbations  :  ",x$nT$T,"\n",sep=""))
+    cat(paste("Number of Time Observations  :  ",x$nT$T,"\n",sep=""))
     cat(paste("Total Number of Observations :  ",x$nT$N,"\n",sep=""))
   }
   else{
     cat("Unbalanced Panel\n")
     cat(paste("Number of Individuals        :  ",x$nT$n,"\n",sep=""))
-    cat(paste("Number of Time Obserbations  :  from ",min(x$Tint$Ti)," to ",max(x$Tint$Ti),"\n",sep=""))
+    cat(paste("Number of Time Observations  :  from ",min(x$Tint$Ti)," to ",max(x$Tint$Ti),"\n",sep=""))
     cat(paste("Total Number of Observations :  ",x$nT$N,"\n",sep=""))
   }
 }
