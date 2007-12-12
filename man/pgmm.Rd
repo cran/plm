@@ -2,23 +2,24 @@
 \alias{pgmm}
 \alias{summary.pgmm}
 \alias{print.summary.pgmm}
-\title{General method of moments estimator for panel data}
+\title{General Method of Moments Estimator for Panel Data}
 \description{
   General method of moments estimator for static or dynamic models with panel data.
 }
 \usage{
-pgmm(formula,data,effect="individual",model="twosteps",
-instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
+pgmm(formula, data, effect = "individual", model = "twosteps",
+   instruments = NULL, gmm.inst, lag.gmm, transformation = "d",
+   fsm = NULL, index = NULL,...)
 \method{summary}{pgmm}(object,robust, ...)
-\method{print}{summary.pgmm}(x,digits=5,length.line=70, ...)
+\method{print}{summary.pgmm}(x, digits = max(3, getOption("digits") - 2),
+    width = getOption("width"),...)
 }
 
 \arguments{
   \item{formula}{a symbolic description for the model to be
-    estimated. Should be an object of class \code{dynformula}},
-  \item{object,x}{an object of class \code{pgmm},}
-  \item{data}{the data, must be an object of class \code{pdata.frame}
-    and is mandatory,}
+    estimated. Should be an object of class \code{"dynformula"}},
+  \item{object,x}{an object of class \code{"pgmm"},}
+  \item{data}{a \code{data.frame},}
   \item{effect}{the effects introduced in the model, one of
     \code{"individual"} or \code{"twoways"},}
   \item{model}{one of \code{"onestep"} or \code{"twosteps"},}
@@ -35,11 +36,12 @@ instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
     (identity matrix) or \code{"G"} ($=D'D$ where $D$ is the first
     difference operator) if \code{transformation="d"}, one of
     \code{"GI"} or \code{"full"} if \code{transformation="ld"},}
+  \item{index}{the indexes, see \code{\link{plm.data}},}
   \item{digits}{digits,}
-  \item{length.line}{the maximum length of the lines in the print
+  \item{width}{the maximum length of the lines in the print
     output,}
   \item{robust}{if \code{TRUE}, robust inference is performed in the summary,}
-  \item{...}{further arguments.}
+  \item{\dots}{further arguments.}
 }
 
 \value{
@@ -74,7 +76,7 @@ instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
   may also specified one side formula to indicate expicitly the
   variables to use as normal instruments. The lags used for the GMM
   instruments are indicated with the \code{lag.gmm} argument. For each
-  instrument, it is either a vector of length 2 (c(99,3) indicates to use
+  instrument, it is either a vector of length 2 (\code{c(99,3)} indicates to use
   all the lags available up to t-3), or a scalar (2 indicates to use the
   lags 0, 1 and 2). If a single vector (or scalar) is written, then this
   lag structure is replicated for all GMM instruments. Otherwise,
@@ -91,7 +93,7 @@ instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
 %   equations. Moreover, the \code{lag.gmm} for the level equation is
 %   c(1,1) for all instruments.
   
-  \code{pgmm} is an attempt to adapt GMM estimators availaible with the
+  \code{pgmm} is an attempt to adapt GMM estimators available with the
   PDP library for GAUSS (see Arellano and Bound 1998) and OX (see
   Doornik, Arelanno and Bond 2006) and with the xtabound2 library for
   STATA (see Roodman 2006).
@@ -99,23 +101,23 @@ instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
   \references{
 
     
-  Arellano, Manuel & Bond, Stephen (1991), Some Tests of Specification
+  Arellano, M. and Bond, S. (1991) Some Tests of Specification
   for Panel Data: Monte Carlo Evidence and an Application to Employment
-  Equations, \emph{The Review of Economic Studies}, vol. 58(2), april
+  Equations, \emph{The Review of Economic Studies}, vol. \bold{58}(2), april
   1991, pp.227--297.
   
-  Arellano, Manuel & Bond, Stephen (1998), Dynamic Panel Data Estimation
+  Arellano, M. and  Bond, S. (1998) Dynamic Panel Data Estimation
   Using DPD89 for GAUSS : a Guide for Users.
 
-  Blundell, Richard and Stephen Bond (1998), Initial Conditions and
+  Blundell, R. and  Bond, S. (1998) Initial Conditions and
   Moment Restrictions in Dynamic Panel Data Models, \emph{Journal of
-    Econometrics}, vol. 87, pp.115--143.
+    Econometrics}, vol. \bold{87}, pp.115--143.
 
-  Doornik, Jurgen,  Arellano, Manuel and Stephen Bond (2006), Panel Data
+  Doornik, J.,  Arellano, M. and  Bond, S. (2006) Panel Data
   Estimation using DPD for Ox.
   
 
-  Roodman, David (2006), How to do xtabound2 : an Introduction to
+  Roodman, D. (2006) How to do xtabound2 : an Introduction to
   ``difference'' and ``system'' GMM in Stata, working paper no 103,
   Center for Global Development.
 
@@ -123,29 +125,28 @@ instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...)
   
 }
 \seealso{
-  \code{\link{dynformula}} for dynamic formulas, \code{sargan} for
-  Sargan tests and \code{mtest} for Arellano and Bond 's tests of mulicolinearity
+  \code{\link{dynformula}} for dynamic formulas, \code{\link{sargan}} for
+  Sargan tests and \code{\link{mtest}} for Arellano--Bond 's tests of mulicolinearity
 }
 
 \author{Yves Croissant}
 
 \examples{
 
-data(EmplUK)
-pdata.frame(EmplUK,"firm","year")
+data("EmplUK", package="plm")
 
 ## Arelanno Bound 91 table 4b 
-z1 <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,0,1)),EmplUK,
-           effect="twoways",model="twosteps",
-           gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
+z1 <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,0,1)),
+    data=EmplUK, effect="twoways", model="twosteps",
+    gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
 
 
-## BLUNDEL AND BOND TAB4 cf DPD for OX p12 col 4
+## Blundel and Bond tab4 (cf DPD for OX p.12 col.4)
 
-z2 <- pgmm(dynformula(log(emp)~log(wage)+log(capital),list(1,1,1)),EmplUK,
-           effect="twoways",model="onestep",
-           gmm.inst=~log(emp)+log(wage)+log(capital),lag.gmm=c(2,99),
-           transformation="ld")
+z2 <- pgmm(dynformula(log(emp)~log(wage)+log(capital),list(1,1,1)),
+    data=EmplUK, effect="twoways", model="onestep",
+    gmm.inst=~log(emp)+log(wage)+log(capital),lag.gmm=c(2,99),
+    transformation="ld")
 summary(z2,robust=TRUE)
 
 }

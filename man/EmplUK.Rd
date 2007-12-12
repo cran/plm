@@ -25,9 +25,9 @@
   }
 }
 \source{
-  Arellano, Manuel & Bond, Stephen (1991), Some Tests of Specification
+  Arellano, M. and Bond, S. (1991), Some Tests of Specification
   for Panel Data: Monte Carlo Evidence and an Application to Employment
-  Equations, \emph{The Review of Economic Studies}, vol. 58(2), April
+  Equations, \emph{The Review of Economic Studies}, vol. \bold{58}(2), April
   1991, pp.227--297.
 }
 

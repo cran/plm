@@ -2,18 +2,15 @@ pvar <- function(x, ...){
   UseMethod("pvar")
 }
 
-pvar.pdata.frame <- function(x, ...){
-  attr(x,"pvar")
-}
-
 pvar.matrix <- function(x,id,time, ...){
   x <- as.data.frame(x)
   pvar.default(x,id,time)
 }
 
-pvar.data.frame <- function(x,id,time, ...){
-  id <- x[[id]]
-  time <- x[[time]]
+pvar.data.frame <- function(x,indexes=NULL, ...){
+  x <- plm.data(x,indexes)
+  id <- x[[1]]
+  time <- x[[2]]
   pvar.default(x,id,time)
 }
 
@@ -24,17 +21,24 @@ pvar.default <- function(x,id,time, ...){
   K <- length(x)
   lid <- split(x,id)
   ltime <- split(x,time)
-  if (K>1){
-    time.variation <- apply(sapply(lid,function(x) sapply(x,myvar)==0),1,sum)!=length(lid)
-    id.variation <- apply(sapply(ltime,function(x) sapply(x,myvar)==0),1,sum)!=length(ltime)
+  if (is.list(x)){
+    if (K==1){
+      time.variation <- sum(sapply(lid,function(x) sapply(x,myvar)==0))!=length(lid)
+      id.variation <- sum(sapply(ltime,function(x) sapply(x,myvar)==0))!=length(ltime)
+    }
+    else{
+      time.variation <- apply(sapply(lid,function(x) sapply(x,myvar)==0),1,sum)!=length(lid)
+      id.variation <- apply(sapply(ltime,function(x) sapply(x,myvar)==0),1,sum)!=length(ltime)
+      names(id.variation) <- names(time.variation) <- name.var
+    }
+    dim.var <- list(id.variation=id.variation,time.variation=time.variation)
+    class(dim.var) <- "pvar"
   }
   else{
-    time.variation <- sum(sapply(lid,function(x) sapply(x,myvar)==0))!=length(lid)
-    id.variation <- sum(sapply(ltime,function(x) sapply(x,myvar)==0))!=length(ltime)
+    time.variation <- sum(sapply(lid,function(x) myvar(x)==0))!=length(lid)
+    id.variation <- sum(sapply(ltime,function(x) myvar(x)==0))!=length(ltime)
+    dim.var <- c(time.variation,id.variation)
   }
-  names(id.variation) <- names(time.variation) <- name.var
-  dim.var <- list(id.variation=id.variation,time.variation=time.variation)
-  class(dim.var) <- "pvar"
   dim.var
 }
 
@@ -56,18 +60,21 @@ pdim <- function(x, ...){
   UseMethod("pdim")
 }
 
-pdim.pdata.frame <- function(x, ...){
-  attr(x,"pdim")
+pdim.data.frame <- function(x,indexes=NULL, ...){
+  x <- plm.data(x,indexes)
+  id <- x[[1]][drop=T]
+  time <- x[[2]][drop=T]
+  pdim(id,time)
 }
 
-pdim.data.frame <- function(x,id,time, ...){
-  id <- x[[id]]
-  time <- x[[time]]
-  pdim(id,time)
+pdim.plm <- function(x,...){
+  attr(x,"pdim")
 }
 
 pdim.default <- function(x,y, ...){
   if (length(x) != length(y)) stop("The length of the two vectors differs\n")
+  x <- x[drop=T]
+  y <- y[drop=T]
   z <- table(x,y)
   Ti <- apply(z,1,sum)
   nt <- apply(z,2,sum)
@@ -91,16 +98,16 @@ pdim.default <- function(x,y, ...){
 
 print.pdim <- function(x, ...){
   if (x$balanced){
-    cat("Balanced Panel\n")
-    cat(paste("Number of Individuals        :  ",x$nT$n,"\n",sep=""))
-    cat(paste("Number of Time Observations  :  ",x$nT$T,"\n",sep=""))
-    cat(paste("Total Number of Observations :  ",x$nT$N,"\n",sep=""))
+    cat("Balanced Panel: ")
+    cat(paste("n=",x$nT$n,", ",sep=""))
+    cat(paste("T=",x$nT$T,", ",sep=""))
+    cat(paste("N=",x$nT$N,"\n",sep=""))
   }
   else{
-    cat("Unbalanced Panel\n")
-    cat(paste("Number of Individuals        :  ",x$nT$n,"\n",sep=""))
-    cat(paste("Number of Time Observations  :  from ",min(x$Tint$Ti)," to ",max(x$Tint$Ti),"\n",sep=""))
-    cat(paste("Total Number of Observations :  ",x$nT$N,"\n",sep=""))
+    cat("Unbalanced Panel: ")
+    cat(paste("n=",x$nT$n,", ",sep=""))
+    cat(paste("T=",min(x$Tint$Ti),"-",max(x$Tint$Ti),", ",sep=""))
+    cat(paste("N=",x$nT$N,"\n",sep=""))
   }
 }
 
@@ -112,5 +119,5 @@ indexes <- function(x){
 }
 
 print.indexes <- function(x, ...){
-  cat(paste("Individual index : ",x$id,"\nTime index       : ",x$time,"\n",sep=""))
+  cat(paste("Index : (individual=",x$id,") and  (time=",x$time,")\n",sep=""))
 }

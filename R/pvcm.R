@@ -1,60 +1,22 @@
-pvcm.extract <- function(formula,data,effect){
-  pvar <- attr(data,"pvar")
-  pdim <- attr(data,"pdim")
-  indexes <- attr(data,"indexes")
-  time.names <- pdim$panel.names$time.names
-  id.names <- pdim$panel.names$id.names
-  id.index.name <- indexes$id
-  time.index.name <- indexes$time
-  id <- data[[id.index.name]]
-  time <- data[[time.index.name]]
-  name.data <- paste(deparse(substitute(data)))
-  formod <- paste(deparse(formula),collapse="")
-  fortot <- as.formula(paste(formod,"+",id.index.name,"+",time.index.name))
-
-  cond <- id
-  other <- time
-  if (effect=="time"){
-    cond <- time
-    other <- id
-  }
-
-  mf <- model.frame(fortot,data=data)
-  nr <- nrow(mf)
-  if(nr!=nrow(data)){
-    for (i in names(mf)){
-      if (is.factor(mf[[i]])){
-        x <- mf[[i]]
-        if (length(unique(x)) < length(levels(x))){
-          mf[[i]] <- mf[[i]][,drop=TRUE]
-        }
-      }
-    }
-  }
-  id <- mf[[id.index.name]]
-  time <- mf[[time.index.name]]
-  mtx <- terms(formula)
-  X <- model.matrix(mtx,mf)[,-1,drop=F]
-  y <- model.response(mf)
-  yX <- cbind(y,X)
-  name.y <- paste(deparse(formula[[2]]))
-  colnames(yX)[1] <- name.y
-  pdim <- pdim(id,time)
-  pvar <- pvar(X,id,time)
-  ml <- split(as.data.frame(yX),cond)
-  ols <- lapply(ml,lm)
-  extr <- list(ml=ml,ols=ols,id=id,time=time)
-  extr <- structure(extr,pdim=pdim,pvar=pvar,indexes=indexes,data=name.data)
-  extr
-}
-
-pvcm <-  function(formula,data,effect="individual",model,...){
+pvcm <-  function(formula, data,subset ,na.action, effect = "individual",
+                  model = "within", index = NULL, ...){
   model.name <- model
-  cl <- match.call()
-
-  if (!any(class(data) %in% "pdata.frame")){
-    stop("argument data should be a pdata.frame\n")
+  data.name <- paste(deparse(substitute(data)))
+  new.data.name <- "mydata"
+  data2 <- data2plm.data(data,index)
+  data <- data2$data
+  id.name <- data2$id.name
+  time.name <- data2$time.name
+  for (i in 1:length(data)){
+    attr(data[[i]],"data") <- new.data.name
+    attr(data[[i]],"class") <- c("pserie",attr(data[[i]],"class"))
   }
+  indexes <- list(id=id.name,time=time.name)
+  class(indexes) <- "indexes"
+  attr(data,"indexes") <- indexes
+  nframe <- length(sys.calls())
+  assign(new.data.name,data,env=sys.frame(which=nframe))
+
   if(!(effect %in% names(effect.pvcm.list))){
     stop(paste("effect must be one of",oneof(effect.pvcm.list)))
   }
@@ -62,11 +24,47 @@ pvcm <-  function(formula,data,effect="individual",model,...){
   if(!(model.name %in% names(model.pvcm.list))){
     stop("model must be one of",oneof(model.pvcm.list))
   }
-  
+
+  cl <- match.call()
+  mf <- match.call(expand.dots=FALSE)
+  m <- match(c("formula","data","subset","weights","na.action","offset"),names(mf),0)
+  mf <- mf[c(1,m)]
+
+  mf$drop.unused.levels <- TRUE
+  mf$data <- as.name(new.data.name)
+  mf[[1]] <- as.name("model.frame")
+  mindexes <- mf
+  mindexes[["formula"]] <- formula(paste("~",id.name,"+",time.name,sep="",collapse=""))
+  mf$formula <- formula
+  mf <- eval(mf,sys.frame(which=nframe))
+  mindexes <- eval(mindexes,sys.frame(which=nframe))
+  y <- model.response(mf,"numeric")
+  int.row.names <- intersect(attr(mf,"row.names"),attr(mindexes,"row.names"))
+  mf <- mf[int.row.names,]
+  mindexes <- mindexes[int.row.names,]
+  attr(mf,"row.names") <- attr(mindexes,"row.names") <- int.row.names
+  X <- model.matrix(formula,mf)[,-1,drop=FALSE]
+  id <- mindexes[[id.name]]
+  time <- mindexes[[time.name]]
+  cond <- id
+  other <- time
+  if (effect=="time"){
+    cond <- time
+    other <- id
+  }
+  yX <- cbind(y,X)
+  name.y <- paste(deparse(formula[[2]]))
+  colnames(yX)[1] <- name.y
+  pdim <- pdim(id,time)
+  ml <- split(as.data.frame(yX),cond)
+  nr <- sapply(ml,function(x) dim(x)[1])>0
+  ml <- ml[nr]
+  ols <- lapply(ml,lm)
+  extr <- list(ml=ml,ols=ols,id=id,time=time)
   pmodel <- list(model.name=model.name,formula=formula,effect=effect)
-  
-  extr <- pvcm.extract(formula,data,effect)
-  extr <- structure(extr,pmodel=pmodel)
+  extr <- structure(extr,pdim=pdim,indexes=indexes,
+                    data=data.name,pmodel=pmodel)
+  extr$call <- cl
   
   result <- switch(model.name,
                    "within"=pvcm.within(extr,...),
@@ -103,7 +101,7 @@ pvcm.within <- function(extr,...){
   df.residuals <- N-ncond*ncol(coef)
   nopool <- list(coefficients=coef,residuals=residuals,fitted.values=fitted.values,
                  vcov=vcov,df.residuals=df.residuals,model=ml,std.error=std)
-  nopool <- structure(nopool,class="pvcm",pmodel=pmodel,pdim=pdim,pvar=pvar)
+  nopool <- structure(nopool,class="pvcm",pmodel=pmodel,pdim=pdim)
   nopool
 }
 
@@ -165,7 +163,7 @@ pvcm.random <- function(extr,...){
   names(beta) <- rownames(vcovb) <- colnames(vcovb) <- colnames(coefm)
   swamy <- list(coefficients=beta,residuals=residuals,fitted.values=fitted.values,
                  vcov=vcovb,df.residuals=df.residuals,model=ml,Delta=Delta[[1]])
-  swamy <- structure(swamy,pdim=pdim,pvar=pvar,pmodel=pmodel)
+  swamy <- structure(swamy,pdim=pdim,pmodel=pmodel)
   swamy
 }
 
@@ -188,36 +186,33 @@ summary.pvcm <- function(object,...){
   return(object)
 }
 
-print.summary.pvcm <- function(x,digits=5,length.line=70,...){
+print.summary.pvcm <- function(x,digits=max(3, getOption("digits") - 2), width = getOption("width"),...){
   pmodel <- attr(x,"pmodel")
   pdim <- attr(x,"pdim")
   effect <- pmodel$effect
   formula <- pmodel$formula
   model.name <- pmodel$model.name
-  centre("Model Description",length.line)
-  cat(paste(effect.pvcm.list[[effect]],"\n",sep=""))
-  cat(paste(model.pvcm.list[[model.name]],"\n",sep=""))
-  print.form(formula,"Model Formula             : ",length.line)
-  centre("Panel Dimensions",length.line)
+  cat(paste(effect.pvcm.list[effect]," ",sep=""))
+  cat(paste(model.pvcm.list[model.name],"\n",sep=""))
+  cat("\nCall:\n")
+  print(x$call)
+  cat("\n")
   print(pdim)
-  centre("Residuals",length.line)
-  save.digits <- unlist(options(digits=digits))
-  on.exit(options(digits=save.digits))
+  cat("\nResiduals:\n")
   print(summary(unlist(residuals(x))))
   if (model.name=="random"){
-  centre("Estimated mean of the coefficients",length.line)
+  cat("\nEstimated mean of the coefficients:\n")
     printCoefmat(x$CoefTable,digits=digits)
-    centre("Estimated variance of the coefficients",length.line)
+    cat("\nEstimated variance of the coefficients:\n")
     print(x$Delta,digits=digits)
   }
   if (model.name=="within"){
-    centre("Coefficients",length.line)
+    cat("\nCoefficients:\n")
     print(summary(x$coefficients))
   }
-  centre("Overall Statistics",length.line)
-  cat(paste("Total Sum of Squares       : ",signif(x$tss,digits),"\n",sep=""))
-  cat(paste("Residual Sum of Squares    : ",signif(x$ssr,digits),"\n",sep=""))
-  cat(paste("Rsq                        : ",signif(x$rsqr,digits),"\n",sep=""))
-  cat(paste(trait(length.line),"\n"))
+  cat("\n")
+  cat(paste("Total Sum of Squares: ",signif(x$tss,digits),"\n",sep=""))
+  cat(paste("Residual Sum of Squares: ",signif(x$ssr,digits),"\n",sep=""))
+  cat(paste("Multiple R-Squared: ",signif(x$rsqr,digits),"\n",sep=""))
   invisible(x)
 }

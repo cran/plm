@@ -5,7 +5,6 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   T <- pdim$nT$T
   n <- pdim$nT$n
   N <- pdim$nT$N
-
   K <- pdim$K <- ncol(X)
   coef.names <- colnames(X)
 
@@ -51,7 +50,7 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   if(is.null(W)){
     within <- lm(y.with~X.with-1)
     if (effect=="twoways"){
-      FE.time <- y.time-as.vector(X.time[,cond.variation & other.variation,drop=F]%*%within$coef)
+      fixef.time <- y.time-as.vector(X.time[,cond.variation & other.variation,drop=F]%*%within$coef)
     }
   }
   else{
@@ -67,15 +66,17 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     }
     within <- twosls(y.with,X.with,W.with)
   }
-  
+#  within$vcov <- within$vcov*within$df.residual/df.within
   within <- plmformat(within,coef.names[coef.within],rnames,
                       df.within,"within",pdim,pmodel,indexes,cl)
-
-  within$FE <- y.m-as.vector(X.m[,coef.within,drop=F]%*%within$coef)
-  attr(within$FE,"cm") <- tapply(within$FE,cond,mean)
+  fixef.id <- y.m-as.vector(X.m[,coef.within,drop=F]%*%within$coef)
+  attr(fixef.id,"cm") <- tapply(fixef.id,cond,mean)
   within$alpha <- as.vector(mean(y)-apply(X[,coef.within,drop=F],2,mean)%*%within$coef)
   if(effect=="twoways"){
-    within$FE.time <- FE.time
+    within$fixef <- list(id=fixef.id,time=fixef.time)
+  }
+  else{
+    within$fixef <- fixef.id
   }
   within
 }    
@@ -87,7 +88,6 @@ plm.between <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   else{
     effect <- pmodel$effect
   }
-    
   formula <- pmodel$formula
   effect <- pmodel$effect
 
@@ -118,12 +118,12 @@ plm.between <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
 
   X.m <- papply(X,mymean,cond)
   X.bet <- attr(X.m,"cm")[,cond.variation,drop=F]
+
   y.m <- papply(unclass(y),mymean,cond)
   y.bet <- attr(y.m,"cm")
 
   coef.within <- other.variation
   df.between <- n-Kb-1
-
   if (nrow(X.bet)<=ncol(X.bet)){
     stop("Between estimation impossible (insufficient number of observations)\n")
   }
@@ -166,6 +166,7 @@ plm.pooling <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
 }
 
 plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
+
   formula <- pmodel$formula
   effect <- pmodel$effect
   rnames <- rownames(X)
@@ -174,14 +175,19 @@ plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   N <- nrow(X)
   coef.names <- colnames(X)
 
-  X <- rbind(NA,X[2:N,]-X[1:(N-1)])
+  X <- rbind(NA,X[2:N,]-X[1:(N-1),])
+  y <- c(NA,y[2:N]-y[1:(N-1)])
   did <- c(1,as.numeric(id[2:N])-as.numeric(id[1:(N-1)]))
-  X <- X[did==0,]
 
+  X <- X[did==0,]
+  y <- y[did==0]
+  rnames <- rnames[did==0]
   if (is.null(W)){
     pooling <- lm(y~X)
   }
   else{
+  W <- rbind(NA,W[2:N,]-W[1:(N-1),])
+    W <- W[did==0,]
     pooling=twosls(y,X,W,TRUE)
   }
   X <- cbind(1,X)
@@ -227,7 +233,6 @@ plm.random <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     X.mean <- matrix(rep(apply(X,2,mean),N),ncol=K,byrow=T)
     y.time <- papply(unclass(y),mymean,time)
   }
-
   if (!balanced) random.method <- "swar"
   estec <-switch(random.method,
                  "walhus"=walhus(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
@@ -352,10 +357,10 @@ plm.ht <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   sigma2$one <- 0
   sigma2$idios <- sum(within$res^2)/(N-n)
   if (length(z)!=0){
-    zo <- twosls(within$FE,cbind(Z1,Z2),cbind(Z1,X1),TRUE)
+    zo <- twosls(within$fixef,cbind(Z1,Z2),cbind(Z1,X1),TRUE)
   }
   else{
-    zo <- lm(within$FE~1)
+    zo <- lm(within$fixef~1)
   }
   ssr <- sum(zo$residuals^2)/N
 

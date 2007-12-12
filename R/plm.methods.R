@@ -7,7 +7,7 @@ summary.plm <- function(object,...){
   z <- b/std.err
   p <- 2*(1-pnorm(abs(z)))
   CoefTable <- cbind(b,std.err,z,p)
-  colnames(CoefTable) <- c("Estimate","Std. Error","z-value","Pr(>|z|)")
+  colnames(CoefTable) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
   object$CoefTable <- CoefTable
   if (model.name=="random" || model.name=="ht"){
     sigma2 <- object$sigma2
@@ -31,20 +31,20 @@ summary.plm <- function(object,...){
   return(object)
 }
 
-print.summary.plm <- function(x,digits=5,length.line=70,...){
+print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
   pmodel <- attr(x,"pmodel")
   pdim <- attr(x,"pdim")
   effect <- pmodel$effect
   endog <- pmodel$endog
   instruments <- pmodel$instruments
   model.name <- pmodel$model
-  centre("Model Description",length.line)
-  cat(paste(effect.plm.list[[effect]],"\n",sep=""))
-  cat(paste(model.plm.list[[model.name]]," Model",sep=""))
+#  cat("Model Description\n")
+  cat(paste(effect.plm.list[effect]," ",sep=""))
+  cat(paste(model.plm.list[model.name]," Model",sep=""))
 
   if (model.name=="random"){
     random.method <- attr(x,"pmodel")$random.method
-    cat(paste(" (",random.method.list[[random.method]],"'s transformation)\n",sep=""))
+    cat(paste(" (",random.method.list[random.method],"'s transformation)\n",sep=""))
   }
   else{
     cat("\n")
@@ -54,124 +54,56 @@ print.summary.plm <- function(x,digits=5,length.line=70,...){
     inst.method <- attr(x,"pmodel")$inst.method
     if (model.name!="ht"){
       cat(paste("Instrumental variable estimation (",
-                inst.method.list[[inst.method]],"'s transformation)\n",sep=""))
+                inst.method.list[inst.method],"'s transformation)\n",sep=""))
     }
   }
-  
-  print.form(formula(x),"Model Formula            : ",length.line)
+  cat("\nCall:\n")
+  print(x$call)
 
   if (!is.null(instruments)){
     if (!is.null(endog)){
-      print.form(endog,"Endogenous Variables     : ",length.line)
+      cat("Endogenous Variables:\n")
+      print.form(endog,width)
     }
-    print.form(instruments,"Instrumental Variables   : ",length.line)
+    cat("Instrumental Variables:\n")
+    print.form(instruments,width)
   }
 
   if (model.name=="ht"){
-    cat("Time--Varying Variables    \n")
+    cat("\nTime--Varying Variables: ")
     names.x1 <- paste(x$varlist$x1,collapse=",")
     names.x2 <- paste(x$varlist$x2,collapse=",")
     names.z1 <- paste(x$varlist$z1,collapse=",")
     names.z2 <- paste(x$varlist$z2,collapse=",")
-    cat(paste("    exogenous variables   : ",names.x1,"\n"))
-    cat(paste("    endogenous variables  : ",names.x2,"\n"))
-    cat("Time--Invariant Variables  \n")
-    cat(paste("    exogenous variables   : ",names.z1,"\n"))
-    cat(paste("    endogenous variables  : ",names.z2,"\n"))
+    cat(paste("exo (",names.x1,") ",sep=""))
+    cat(paste("endo (",names.x2,")\n",sep=""))
+    cat("Time--Invariant Variables: ")
+    cat(paste("exo (",names.z1,") ",sep=""))
+    cat(paste("endo (",names.z2,")\n",sep=""))
 
   }
-  
-  centre("Panel Dimensions",length.line)
+  cat("\n")
   print(pdim)
   if (model.name=="random" || model.name=="ht"){
-    centre("Effects",length.line)
-    printCoefmat(x$sigma2Table)
+    cat("\nEffects:\n")
+    printCoefmat(x$sigma2Table,digits)
     print.theta(x,digits)
   }
-  centre("Residuals",length.line)
+  cat("\nResiduals :\n")
   save.digits <- unlist(options(digits=digits))
   on.exit(options(digits=save.digits))
-  print(summary(residuals(x)))
+  print(sumres(x))
   
-  centre("Coefficients",length.line)
+  cat("\nCoefficients :\n")
   printCoefmat(x$CoefTable,digits=digits)
-
-  centre("Overall Statistics",length.line)
-  cat(paste("Total Sum of Squares       : ",signif(x$tss,digits),"\n",sep=""))
-  cat(paste("Residual Sum of Squares    : ",signif(x$ssr,digits),"\n",sep=""))
-  cat(paste("Rsq                        : ",signif(x$rsq,digits),"\n",sep=""))
-  cat(paste("F                          : ",signif(x$fstatistic$statistic),"\n",sep=""))
-  cat(paste("P(F>0)                     : ",signif(x$fstatistic$p.value),"\n",sep=""))
-  cat(paste(trait(length.line),"\n"))
-  invisible(x)
-}
-
-print.plms <- function(x,digits=5,...){
-  for (i in 1:length(x)){
-    cat(paste("Model ",names(x)[i]," :\n"))
-    print(x[[i]],digits=digits)
-  }
-  invisible(x)
-}
-
-summary.plms <- function(object,...){
-  tab.random <- summary(object$random)$CoefTable[,1:2,drop=F]
-  tab.dim <- dim(tab.random)
-  tab.within <- summary(object$within)$CoefTable[,1:2,drop=F]
-  names.within <- rownames(tab.within)
-  names.random <- rownames(tab.random)
-  miss.within <- names.random[!names.random%in%names.within]
-  CoefTable <- cbind(matrix(NA,tab.dim[1],tab.dim[2]),tab.random)
-  CoefTable[names.within,1:2] <- tab.within
-  colnames(CoefTable) <- c("within","wse","random","rse")
-  object$CoefTable <- CoefTable
-  object$phtest <- phtest(object)
-  object$pFtest <- pFtest(object)
-  object$plmtest <- plmtest(object)
-  class(object) <- "summary.plms"
-  object
-}
-
-print.summary.plms <- function(x,digits=5,length.line=70,...){
-  pmodel <- attr(x,"pmodel")
-  pdim <- attr(x,"pdim")
-  effect <- pmodel$effect
-  endog <- pmodel$endog
-
-  centre("Model Description",length.line)
-  
-  cat(paste(effect.plm.list[[effect]],"\n",sep=""))
   cat("\n")
-
-  print.form(pmodel$formula,"Model Formula        : ",length.line)
-
-  if (!is.null(endog$instruments)){
-    if (!is.null(endog$endog)){
-      print.form(endog$endog,"Endogenous Variables : ",length.line)
-    }
-    print.form(endog$instruments,"Instrument Variables : ",length.line)
-  }
-  
-  centre("Panel Dimensions",length.line)
-  print(pdim)
-
-  centre("Coefficients",length.line)
-  printCoefmat(x$CoefTable,digits=digits,na.print=".")
+  cat(paste("Total Sum of Squares: ",signif(x$tss,digits),"\n",sep=""))
+  cat(paste("Residual Sum of Squares: ",signif(x$ssr,digits),"\n",sep=""))
+  cat(paste("Multiple R-Squared: ",signif(x$rsq,digits),"\n",sep=""))
+  fstat <- x$fstatistic
+  cat(paste("F-statistic: ",signif(fstat$statistic),
+            " on ",fstat$parameter["df1"]," and ",fstat$parameter["df2"],
+            " DF, p-value: ",signif(fstat$p.value,digits),"\n",sep=""))
   invisible(x)
-  centre("Tests",length.line)
-  phtest <- x$phtest
-  cat("Hausman Test                   : ",names(phtest$statistic),
-      "(",phtest$parameter,") = ",x$phtest$statistic,
-      " (p.value=",phtest$p.value,")\n",sep="")
-  pFtest <- x$pFtest
-  cat("F Test                         : ",names(pFtest$statistic),
-      "(",pFtest$parameter[[1]],",",pFtest$parameter[[2]],") = ",
-      pFtest$statistic," (p.value=",pFtest$p.value,")\n",sep="")
-  plmtest <- x$plmtest
-  cat("Lagrange Multiplier Test       : ",names(plmtest$statistic),
-      "(",plmtest$parameter,") = ",plmtest$statistic," (p.value=",plmtest$p.value,")\n",sep="")
-
-  cat(paste(trait(length.line),"\n"))
-  plmtest <- x$plmtest
-
 }
+

@@ -25,6 +25,7 @@ swar <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
 
   sigma2 <- list()
   if(!twoways){
+
     if(balanced){
       ssrbet <- T*sum(between$residuals^2)
       sigma2$one <- ssrbet/(n-Kb-1)
@@ -137,7 +138,7 @@ amemiya <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   if(!balanced)stop("amemiya variance decomposition not implemented for unbalanced panels")
   if(!twoways){
     if (effect=="individual") condvar <- id else condvar <- time
-    uest <- within$res+within$FE-within$alpha
+    uest <- within$res+within$fixef-within$alpha
     sigma2$one <- T/n*sum(tapply(uest,condvar,mean)^2)
     sigma2$idios <- sum(within$residuals^2)/(n*(T-1)-Kw)
     sigma2$id <- max((sigma2$one-sigma2$idios)/T,0)
@@ -175,7 +176,7 @@ nerlove <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   sigma2=list()
   if(!twoways & balanced){
     sigma2$idios <- sum(within$residuals^2)/N
-    sigma2$id <- sum((within$FE-mean(within$FE))^2)/(n-1)
+    sigma2$id <- sum((within$fixef-mean(within$fixef))^2)/(n-1)
     sigma2$one <- T*sigma2$id+sigma2$idios
     theta <- 1-sqrt(sigma2$idios/sigma2$one)
     z <- list(theta=theta,sigma2=sigma2)

@@ -17,3 +17,13 @@ Changes since version 0-2.1
 * phtest has been fixed to return only positive values of the statistic
 * pgmm objects now inherits from panelmodel like other estimators and prints correctly
 * a bug in summary.pgmm has been fixed
+
+Changes since version 0-2.2
+* the coefficients method for objects of class pgmm is now exported.
+* a bug in the plm method of plmtest has been fixed
+* in plmtest, the argument effect "id" is renamed "individual"
+* three testing functions are added : pbsytest (Bera, Sosa-Escudero and Yoon test), pARtest (Breush Godfrey Test) and pDWtest (Durbin-Watson test), pwartest, pBGtest, pwtest pbltest 
+!! la doc pour pbsystest et diff.pserie
+* plm, pvcm and pggls now have arguments "subset" and "na.action"
+* phtest, pFtest, plmtest now have a formula method
+* a bug is fixed for the vcov of the within model

@@ -1,9 +1,23 @@
-pggls <- function(formula,data,effect="individual",model,...){
-  cl <- match.call()
+pggls <- function(formula, data, subset, na.action, effect="individual",
+                  model = "within", index = NULL, ...){
+
   model.name <- model
-  if (!any(class(data) %in% "pdata.frame")){
-    stop("argument data should be a pdata.frame\n")
+  data.name <- paste(deparse(substitute(data)))
+  new.data.name <- "mydata"
+  data2 <- data2plm.data(data,index)
+  data <- data2$data
+  id.name <- data2$id.name
+  time.name <- data2$time.name
+  for (i in 1:length(data)){
+    attr(data[[i]],"data") <- new.data.name
+    attr(data[[i]],"class") <- c("pserie",attr(data[[i]],"class"))
   }
+  indexes <- list(id=id.name,time=time.name)
+  class(indexes) <- "indexes"
+  attr(data,"indexes") <- indexes
+  nframe <- length(sys.calls())
+  assign(new.data.name,data,env=sys.frame(which=nframe))
+
   if(!(effect %in% names(effect.pggls.list))){
     stop(paste("effect must be one of",oneof(effect.pggls.list)))
   }
@@ -12,9 +26,27 @@ pggls <- function(formula,data,effect="individual",model,...){
   }
 
   require(kinship)
-  x <- plm.extract(formula=formula,data=data)
-  pdim <- attr(x,"pdim")
-  pvar <- attr(x,"pvar")
+  cl <- match.call()
+  mf <- match.call(expand.dots=FALSE)
+  m <- match(c("formula","data","subset","weights","na.action","offset"),names(mf),0)
+  mf <- mf[c(1,m)]
+  mf$drop.unused.levels <- TRUE
+  mf$data <- as.name(new.data.name)
+  mf[[1]] <- as.name("model.frame")
+
+  mindexes <- mf
+  mindexes[["formula"]] <- formula(paste("~",id.name,"+",time.name,sep="",collapse=""))
+  mf <- eval(mf,sys.frame(which=nframe))
+  mindexes <- eval(mindexes,sys.frame(which=nframe))
+  y <- model.response(mf,"numeric")
+  int.row.names <- intersect(attr(mf,"row.names"),attr(mindexes,"row.names"))
+  mf <- mf[int.row.names,]
+  mindexes <- mindexes[int.row.names,]
+  attr(mf,"row.names") <- attr(mindexes,"row.names") <- int.row.names
+  X <- model.matrix(formula,mf)[,-1,drop=FALSE]
+  id <- factor(mindexes[[id.name]])
+  time <- factor(mindexes[[time.name]])
+  pdim <- pdim(id,time)
   balanced <- pdim$balanced
   time.names <- pdim$panel.names$time.names
   id.names <- pdim$panel.names$id.names
@@ -25,14 +57,10 @@ pggls <- function(formula,data,effect="individual",model,...){
   T <- pdim$nT$T
   n <- pdim$nT$n
   N <- pdim$nT$N
-  X <- x$X
-  y <- x$y
-  id <- x$id
-  time <- x$time
 
-  model.res <- switch(model,"random"="pooling",
-                      "within"="within")
+  model.res <- switch(model,"random"="pooling","within"="within")
   m <- plm(formula=formula,data=data,effect=effect,model=model.res)
+  
 
   coef.names <- colnames(X)
   K <- pdim$K <- ncol(X)
@@ -40,8 +68,6 @@ pggls <- function(formula,data,effect="individual",model,...){
   if (effect=="time"){
     cond <- time
     other <- id
-    cond.variation <- pvar$time.variation # is this needed?
-    other.variation <- pvar$id.variation  # idem
     ncond <- T
     nother <- n
     cond.names <- time.names
@@ -50,8 +76,6 @@ pggls <- function(formula,data,effect="individual",model,...){
   } else {
     cond <- id
     other <- time
-    other.variation <- pvar$id.variation  # idem
-    cond.variation <- pvar$time.variation # idem
     ncond <- n
     nother <- T
     cond.names <- id.names
@@ -65,7 +89,7 @@ pggls <- function(formula,data,effect="individual",model,...){
   resid <- m$residuals[myord]
   X <- m$model$X[myord,]
   y <- m$model[[1]][myord]
-  
+
   ## conditions hav to be reordered as well
   cond<-cond[myord]
   other<-other[myord]
@@ -89,7 +113,6 @@ pggls <- function(formula,data,effect="individual",model,...){
     nother<-nother-1
     other.names<-other.names[-1]
   }
-  
   tres <- array(NA,dim=c(nother,nother,ncond),dimnames=list(other.names,other.names,cond.names))
   lcnd <- levels(cond)
   if(pdim$balanced){
@@ -134,8 +157,9 @@ pggls <- function(formula,data,effect="individual",model,...){
   names(coef) <- rownames(vcov) <- colnames(vcov) <- coef.names
   fullGLS <- list(coefficients=coef,residuals=residuals,fitted.values=fitted.values,
                   vcov=vcov,df.residual=df.residual,model=m$model,sigma=subOmega,call=cl)
-  fullGLS <- structure(fullGLS,pdim=pdim,pvar=pvar,pmodel=pmodel)
+  fullGLS <- structure(fullGLS,pdim=pdim,pmodel=pmodel)
   class(fullGLS)=c("pggls","panelmodel")
+
   fullGLS
 
 }
@@ -157,28 +181,24 @@ summary.pggls <- function(object,...){
   return(object)
 }
 
-print.summary.pggls <- function(x,digits=5,length.line=70,...){
+print.summary.pggls <- function(x,digits=max(3, getOption("digits") - 2), width = getOption("width"),...){
   pmodel <- attr(x,"pmodel")
   pdim <- attr(x,"pdim")
   effect <- pmodel$effect
   formula <- pmodel$formula
   model.name <- pmodel$model.name
-  centre("Model Description",length.line)
-  cat(paste(effect.pggls.list[[effect]],"\n",sep=""))
-  cat(paste(model.pggls.list[[model.name]],"\n",sep=""))
-  print.form(formula,"Model Formula             : ",length.line)
-  centre("Panel Dimensions",length.line)
+  cat(paste(effect.pggls.list[effect]," ",sep=""))
+  cat(paste(model.pggls.list[model.name],"\n",sep=""))
+  cat("\nCall:\n")
+  print(x$call)
+  cat("\n")
   print(pdim)
-  centre("Residuals",length.line)
-  save.digits <- unlist(options(digits=digits))
-  on.exit(options(digits=save.digits))
+  cat("\nResiduals\n")
   print(summary(unlist(residuals(x))))
-  centre("Coefficients",length.line)
+  cat("\nCoefficients\n")
   printCoefmat(x$CoefTable,digits=digits)
-  centre("Overall Statistics",length.line)
-  cat(paste("Total Sum of Squares       : ",signif(x$tss,digits),"\n",sep=""))
-  cat(paste("Residual Sum of Squares    : ",signif(x$ssr,digits),"\n",sep=""))
-  cat(paste("Rsq                        : ",signif(x$rsqr,digits),"\n",sep=""))
-  cat(paste(trait(length.line),"\n"))
+  cat(paste("Total Sum of Squares: ",signif(x$tss,digits),"\n",sep=""))
+  cat(paste("Residual Sum of Squares: ",signif(x$ssr,digits),"\n",sep=""))
+  cat(paste("Multiple R-squared: ",signif(x$rsqr,digits),"\n",sep=""))
   invisible(x)
 }
