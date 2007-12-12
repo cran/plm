@@ -194,11 +194,12 @@ pvcovHC.pgmm <- function(x,...){
       D <- cbind(D,Dk)
     }
     vcovr <- B2+crossprod(t(D),B2)+t(crossprod(t(D),B2))+D%*%vcov1s%*%t(D)
+
   }
   else{
-    res1s <- lapply(yX,function(x) x[,1]-crossprod(t(x[,-1]),x$coefficients))
+    res1s <- lapply(yX,function(z) z[,1]-crossprod(t(z[,-1]),x$coefficients))
     K <- ncol(yX[[1]])
-    WX <- suml(mapply(function(x,y) crossprod(x[,-1],y),yX,x$W,SIMPLIFY=FALSE))
+    WX <- suml(mapply(function(z,y) crossprod(z[,-1],y),yX,x$W,SIMPLIFY=FALSE))
     B1 <- vcov(x)
     vcovr <- B1%*%(WX%*%A1%*%solve(A2)%*%A1%*%t(WX))%*%B1
   }

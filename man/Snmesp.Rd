@@ -26,11 +26,18 @@
   }
 }
 \source{
-    Alonso--Borrego, C\'esar  and  M.  Arellano (1999) \dQuote{Symmetrically Normalized Instrumental-Variable Estimation Using Panel Data}, \emph{Journal of Business and Economic Statistics}, \bold{17(1)}, 36--49.
+
+  Alonso--Borrego, C. and  Arellano, M. (1999) Symmetrically
+  Normalized Instrumental-Variable Estimation Using Panel Data,
+  \emph{Journal of Business and Economic Statistics}, \bold{17(1)},
+  36--49.
 
 }
 \references{
-      Journal of Business Economics and Statistics web site : \url{http://www.amstat.org/publications/jbes/}.
+
+  Journal of Business Economics and Statistics web site :
+  \url{http://www.amstat.org/publications/jbes/}.
+
 }
 
 \keyword{datasets}

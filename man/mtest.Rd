@@ -1,6 +1,6 @@
 \name{mtest}
 \alias{mtest}
-\title{Arellano and Bond test of serial correlation}
+\title{Arellano--Bond test of Serial Correlation}
 \description{
   Test of serial correlation for GMM models
 }
@@ -20,7 +20,7 @@ mtest(object, order=1, vcov=NULL)
 }
 
 \details{
-  The Arellano and Bond test is a test of correlation based on the
+  The Arellano--Bond test is a test of correlation based on the
   residuals of the estimation. By default, the computation is done with
   the normal covariance matrix of the coefficients. A robust estimator
   of this covariance matrix can be supplied with the \code{vcov}
@@ -28,22 +28,23 @@ mtest(object, order=1, vcov=NULL)
 }
 \references{
 
-  Arellano, Manuel & Bond, Stephen (1991), Some Tests of Specification
+  Arellano, M. and  Bond, S. (1991), Some Tests of Specification
   for Panel Data: Monte Carlo Evidence and an Application to Employment
-  Equations, \emph{The Review of Economic Studies}, vol. 58(2), april
+  Equations, \emph{The Review of Economic Studies}, vol. \bold{58}(2), april
   1991, pp.227--297.
 
 }
 
+\seealso{\code{\link{pgmm}}}
+
 \author{Yves Croissant}
   
 \examples{
-data(EmplUK)
-pdata.frame(EmplUK,"firm","year")
-ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2)),EmplUK,
-           effect="twoways",model="twosteps",
-           gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
-mtest(ar,1)
-mtest(ar,2,pvcovHC)
+data("EmplUK", package = "plm")
+ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2)),
+    data = EmplUK, effect = "twoways", model = "twosteps",
+    gmm.inst = ~ log(emp), lag.gmm = list(c(2,99)))
+mtest(ar, 1)
+mtest(ar, 2, pvcovHC)
 }
 \keyword{htest}

@@ -1,5 +1,5 @@
 %\VignetteIndexEntry{Introduction to plm}
-\documentclass{article}
+\documentclass[a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage{ucs}
 \usepackage[utf8x]{inputenc}
@@ -36,100 +36,6 @@ library(Ecdat)
 
 These data are used in  \textsc{Baltagi} (2001).
 
-\section{Reading data}
-
-With \texttt{plm}, data are stored in an object of class
-\texttt{pdata.frame},  which is a \texttt{data.frame} with additional
-attributes describing the structure of the data set.
-A \texttt{pdata.frame} may be created from an ordinary \texttt{data.frame}
-using the \texttt{pdata.frame} function or from a text file using the
-\texttt{pread.table} function.
-
-
-\subsection{Reading the data from a data.frame}
-
-We illustrate the use of the \texttt{pdata.frame} function with the
-\texttt{Produc} data :
-
-
-<<>>=
-data(Produc)
-pdata.frame(Produc,"state","year","pprod")
-@ 
-
-The  \texttt{pdata.frame} function has  4 arguments :
-
-\begin{itemize}
-\item the name of the  \texttt{data.frame},
-\item \texttt{id} : the individual index,
-\item \texttt{time} : the time index,
-\item \texttt{name} : the name under which the \texttt{pdata.frame}
-  will be stored.
-\end{itemize}
-
-Observations are assumed to be sorted by individuals first, and by
-period. The third argument is optional, if \texttt{NULL} a new
-variable called \texttt{time} is added. The fourth argument is also
-optional, if \texttt{NULL} the \texttt{pdata.frame} is stored under
-the same name as the \texttt{data.frame}.
-
-
-<<>>=
-data(Hedonic)
-pdata.frame(Hedonic,"townid")
-@ 
-
-In case of a balanced panel, the \texttt{id} may be the number of
-individuals. In this case, two new variables (called \texttt{id} and
-\texttt{time}) are added.
-
-<<>>=
-data(Wages)
-pdata.frame(Wages,595)
-@ 
-
-A description of the data is obtained using the \texttt{summary}
-method :
-
-<<>>=
-summary(Hedonic)
-@ 
-
-The printing consists on four sections :
-
-\begin{itemize}
-\item \texttt{indexes} indicates the names of the index variables,
-\item \texttt{panel dimensions} gives information about the dimension
-  of the panel,
-\item \texttt{Time/individual variation} indicates whether some
-  variables have only individual or time variation,
-\item \texttt{Descriptive statistics} gives descriptive statistics
-  about the variables.
-\end{itemize}
-
-\subsection{Reading the data from a text file}
-
-\texttt{pread.table} reads panel data from a text file, with the
-following syntax : 
-
-\begin{verbatim}
-pread.table("c:/mes documents/essai/mydata.txt",
-         "firm","year","dataname",header=T,sep=";",dec=",")
-\end{verbatim}
-
-The arguments of  \texttt{pread.table} are :
-
-\begin{itemize}
-\item the text file,
-\item \texttt{id} : the individual index,
-\item \texttt{time} : the time index,
-\item \texttt{name} : the name under which the  \texttt{pdata.frame}
-  will be stored  (if \texttt{NULL}, the name of the \texttt{pdata.frame}
-  is the name of the file without the path and the extension),
-\item further arguments that will be passed to  \texttt{read.table}.
-\end{itemize}
-
-
 
 
 \section{Model estimation}
@@ -151,12 +57,30 @@ All these functions share the same 4 first arguments :
 
 \begin{itemize}
 \item \texttt{formula} : the symbolic description of the model to be estimated,
-\item \texttt{data} : the \texttt{pdata.frame} containing the data,
+\item \texttt{data} : a \texttt{data.frame},
 \item \texttt{effect} : the kind of effects to include in the model,
   \emph{i.e.} individual effects, time effects or both,
 \item \texttt{model} : the kind of model to be estimated, most of the
-time a model with fixed effects or a model with random effects.
+time a model with fixed effects or a model with random effects,
+\item \texttt{indexes} : the indexes.
 \end{itemize}
+
+
+\begin{itemize}
+\item \texttt{NULL} (the default value), it is then assumed
+  that the first two columns contain the individual and the time
+  index,
+\item a character string, which should be the name of the individual
+  index,
+\item a character vector of length two containing the names of the
+  individual and the time index,
+\item an integer which is the number of individuals (only in case of
+  balanced panel with observations sorted by individual.
+\end{itemize}
+
+The \texttt{plm.data} function is then called, which returns a
+\texttt{data.frame} with the two first columns containing the
+individual and the time indexes.
 
 The results of this four functions are stored in an object which class has the
 same name of the function. They all inherit from class \texttt{panelmodel}. A
@@ -165,9 +89,6 @@ same name of the function. They all inherit from class \texttt{panelmodel}. A
 \texttt{df.residual} and \texttt{call}.
 
 Functions that extract these elements and to print the object are provided.
-
-
-
 
 \subsection{Estimation of the basic models with plm}
 
@@ -182,26 +103,21 @@ In the first case, the estimated models are :
 \item the error components model (\texttt{random}).
 \end{itemize}
 
-The basic use of \texttt{plm} is to indicate the model formula and the \texttt{pdata.frame}
-\footnote{The following example is from \textsc{Baltagi} (2001), pp. 25--28.} :
+The basic use of \texttt{plm} is to indicate the model formula, the
+\texttt{data.frame} and the name of the model to be estimated
+\footnote{The following example is from \textsc{Baltagi} (2001),
+  pp. 25--28.} :
 
 <<>>=
-zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod)
-@ 
-
-The result of the estimation is stored in a \texttt{plms} object which
-is a list of 4 estimated models, each of them being objects of class \texttt{plm}.
-Each individual model can be easily extracted :
-
-<<>>=
-zzwith <- zz$within
+data("Produc",package="Ecdat")
+zzwith <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc)
 @ 
 
 A particular model to be estimated may also be indicated by filling
 the \texttt{model} argument of \texttt{plm}.
 
 <<>>=
-zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random")
+zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,model="random")
 @ 
 
 
@@ -211,16 +127,9 @@ print(zzra)
 
 \texttt{summary} and \texttt{print.summary} methods are provided. 
 
-\begin{itemize}
-\item for  \texttt{plms} objects, coefficients and standard errors
-  of the fixed effects and the error components models are printed,
-\item for  \texttt{plm} object, the table of coefficients and some
-  statistics are printed.
-\end{itemize}
-
 
 <<>>=
-summary(zz)
+summary(zzwith)
 summary(zzra)
 @ 
 
@@ -231,24 +140,23 @@ information about the variance of the components of the errors.
 
 <<>>=
 zzwithmod <- update(zzwith,.~.-unemp-log(emp)+emp)
-zzmod <- update(zz,.~.-unemp-log(emp)+emp)
 summary(zzwithmod)
 @ 
 
-Fixed effects may be extracted easily from a \texttt{plms} or a
-\texttt{plm} object using  \texttt{FE} :
+Fixed effects may be extracted easily from a \texttt{plm} object using
+\texttt{fixef} :
 
 <<>>=
-FE(zzmod)[1:10]
+fixef(zzwithmod)[1:10]
 @ 
 
-The \texttt{FE} function returns an object of class \texttt{FE}. A
+The \texttt{fixef} function returns an object of class \texttt{fixef}. A
 summary method is provided, which prints the effects (in deviation
 from the overall intercept), their standard
 errors and the test of equality to the overall intercept.
 
 <<>>=
-summary(FE(zzmod))[1:10,]
+summary(fixef(zzwithmod))[1:10,]
 @ 
 
 
@@ -273,7 +181,7 @@ parameter are available, depending on the value of the argument \texttt{random.m
 For exemple, to use the \texttt{amemiya} estimator :
 
 <<>>=
-zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random",random.method="amemiya")
+zzra <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,model="random",random.method="amemiya")
 @ 
 
 
@@ -291,10 +199,9 @@ For example, to estimate a two--ways effect model for the
 \texttt{Grunfeld} data :
 
 <<>>=
-data(Grunfeld)
-pdata.frame(Grunfeld,"firm","year")
-z <- plm(inv~value+capital,data=Grunfeld,effect="twoways",random.method="amemiya")
-summary(z$random)
+data("Grunfeld",package="Ecdat")
+z <- plm(inv~value+capital,data=Grunfeld,model="random",effect="twoways",random.method="amemiya")
+summary(z)
 
 @ 
 
@@ -315,58 +222,55 @@ indicating the variables used as instruments.
 
 
 <<>>=
-data(Wages)
-pdata.frame(Wages,595)
-form=lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sex+black+ed
-ht=plm(form,data=Wages,instruments=~sex+black+bluecol+south+smsa+ind,model="ht")
+data("Wages",package="Ecdat")
+Wages <- plm.data(Wages,595)
+form <- lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sex+black+ed|sex+black+bluecol+south+smsa+ind
+ht <- plm(form,data=Wages,model="ht")
 summary(ht)
 
 @ 
 
 \subsubsection{Instrumental variables estimation}
 
-One or all of the models may be estimated using instrumental variables
-by indicating the list of the instrumental variables. This can be done
-using one of the two following techniques :
 
-\begin{itemize}
-\item specifying the total list of instruments  (using the
-  \texttt{instruments} argument of \texttt{plm}),
-\item specifying, on the one hand the external instruments in the argument
-  \texttt{instrument} and on  the other hand the variables of the
-  model that are assumed to be endogenous in the argument \texttt{endog}.
-\end{itemize}
-
-The instrumental variables estimator used may be indicated with the
-\texttt{inst.method} argument :
-\begin{itemize}
-\item \texttt{bvk}, from  \textsc{Balestra} and
-  \textsc{Varadharajan--Krishnakumar} (1987), the default value,
-\item \texttt{baltagi}, from \textsc{Baltagi} (1981).
-\end{itemize}
+One or all of the models may be estimated using instrumental
+variables. The instruments are specified whether as a one side formula
+in the argument \texttt{instruments}, or at the end of the formula
+after a | sign. The following four commands are similar :
 
 We illustrate instrumental variables estimation with the
-\texttt{Crime} data\footnote{See
-  \textsc{Baltagi} (2001), pp.119--120.}. 
-The same estimation is done using the first syntax  (\texttt{cr1}) and
-the second (\texttt{cr2}). The  \texttt{prbarr} and \texttt{polpc}
-variables are
-assumed to be endogenous and there are two external instruments \texttt{taxpc} and \texttt{mix} :
+\texttt{Crime} data\footnote{See \textsc{Baltagi} (2001),
+  pp.119--120.}.  The \texttt{prbarr} and \texttt{polpc} variables are
+assumed to be endogenous and there are two external instruments
+\texttt{taxpc} and \texttt{mix} :
 
 <<>>=
-data(Crime)
-pdata.frame(Crime,"county","year")
-form=log(crmrte)~log(prbarr)+log(polpc)+log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+year
-inst=~log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+log(taxpc)+log(mix)+year
-inst2=~log(taxpc)+log(mix)
-endog=~log(prbarr)+log(polpc)
-cr=plm(form,data=Crime)
-cr1=plm(form,data=Crime,instruments=inst)
-cr2=plm(form,data=Crime,instruments=inst2,endog=endog)
-summary(cr2$random)
+data("Crime",package="Ecdat")
+
+form <- log(crmrte)~log(prbarr)+log(polpc)+log(prbconv)+log(prbpris)+log(avgsen)+log(density)+log(wcon)+log(wtuc)+log(wtrd)+log(wfir)+log(wser)+log(wmfg)+log(wfed)+log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+region+smsa+year
+
+inst <- ~.-log(prbarr)-log(polpc)+log(taxpc)+log(mix)
+cr <- plm(form,data=Crime,model="random",instruments=inst,pvar=TRUE)
+
+form2 <- log(crmrte)~log(prbarr)+log(polpc)+
+  log(prbconv)+log(prbpris)+log(avgsen)+
+  log(density)+log(wcon)+log(wtuc)+log(wtrd)+
+  log(wfir)+log(wser)+log(wmfg)+log(wfed)+
+  log(wsta)+log(wloc)+log(pctymle)+log(pctmin)+
+  region+smsa+year | .-log(prbarr)-log(polpc)+log(taxpc)+log(mix)
+
+cr1 <- plm(form,data=Crime,model="random",instruments=inst,pvar=TRUE)
+cr2 <- plm(form2,data=Crime,model="random",pvar=TRUE)
+summary(cr2)
 
 @ 
 
+The instrumental variables estimator used may be indicated with the
+\texttt{inst.method} argument:
+\begin{itemize}
+\item \texttt{bvk}, from  \textsc{Balestra and Varadharajan} (1987), the default value,
+\item \texttt{baltagi}, from \textsc{Baltagi} (1981).
+\end{itemize}
 
 
 \subsubsection{Unbalanced panel}
@@ -380,10 +284,10 @@ following example is based on the \texttt{Hedonic} data\footnote{See \textsc{Bal
   (2001), p. 174.}:
 
 <<>>=
-form=mv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+blacks+lstat
-ba=plm(form,data=Hedonic)
-summary(ba$random)
-
+data("Hedonic",package="Ecdat")
+form <- mv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+blacks+lstat
+ba <- plm(form,model="random",data=Hedonic,index="townid")
+summary(ba)
 @ 
 
 
@@ -441,9 +345,8 @@ The  following example is from \textsc{Arellano} (2003). Employment in
 different firms is explained by past values of employment and wages
 (two lags). All available lags are used up to $t-2$.
 
-<<>>=
-data(Snmesp)
-pdata.frame(Snmesp,"firm","year")
+<<gmm>>=
+data("Snmesp",package="plm")
 z <-  pgmm(dynformula(n~w,lag=list(c(1,2),c(1,2))),effect="twoways",model="twosteps",Snmesp,gmm.inst=~n+w,
           lag.gmm=c(2,99),transformation=c("d"))
 summary(z)
@@ -472,15 +375,15 @@ The function \texttt{pggls} estimates general FGLS models, with either fixed of 
 The ''random effect'' general FGLS is estimated by
  
 <<>>=
-zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="random")
+zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,model="random")
 summary(zz)
 @ 
 
 The fixed effects \texttt{pggls} (see \textsc{Wooldridge} (2002, p.276)) is based on estimation of a within model in the first step; the rest follows as above. It is estimated by
 
 <<>>=
-zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=pprod,model="within")
-summary(zz)
+#zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,model="within")
+#summary(zz)
 @ 
 
 The \texttt{pggls} function is similar to \texttt{plm} in many respects (e.g., Hausman tests may be carried out on \texttt{pggls} objects much the same way they are done on \texttt{plm} ones). An exception is that the estimate of the group covariance matrix of errors (\verb!zz$sigma!, 17x17 matrix, not shown) is reported in the model objects instead of the usual estimated variances of the two error components.
@@ -504,16 +407,14 @@ not\footnote{The following examples are from
 
 <<>>=
 
-form=inv~value+capital
-znp=pvcm(form,data=Grunfeld,model="within")
-zplm=plm(form,data=Grunfeld)
+form <- inv~value+capital
+znp <- pvcm(form,data=Grunfeld,model="within")
+zplm <- plm(form,data=Grunfeld,model="within")
 pooltest(zplm,znp)
-pooltest(zplm,znp,effect=T)
-pooltest(zplm$within,znp)
 
-z=plm(form,data=Grunfeld,effect="time")
-znpt=pvcm(form,data=Grunfeld,effect="time",model="within")
-pooltest(z,znpt,effect=F)
+z <- plm(form,data=Grunfeld,effect="time")
+znpt <- pvcm(form,data=Grunfeld,effect="time",model="within")
+pooltest(z,znpt)
 
 @
 
@@ -569,13 +470,13 @@ Some examples of the use of \texttt{pFtest} are shown below\footnote{See \textsc
 
 <<>>=
 library(Ecdat)
-gi <- plm(inv ~ value + capital, data=Grunfeld)
-gt <- plm(inv ~ value + capital, data=Grunfeld,effect="time")
-gd <- plm(inv ~ value + capital, data=Grunfeld,effect="twoways")
-pFtest(gi)
-pFtest(gi$within,gi$pooling)
-pFtest(gt)
-pFtest(gd)
+gp <- plm(inv ~ value + capital, data=Grunfeld,model="pooling")
+gw <- plm(inv ~ value + capital, data=Grunfeld,model="within")
+gt <- plm(inv ~ value + capital, data=Grunfeld,model="within",effect="time")
+gd <- plm(inv ~ value + capital, data=Grunfeld,model="within",effect="twoways")
+pFtest(gw,gp)
+pFtest(gt,gp)
+pFtest(gd,gw)
 
 @ 
 
@@ -599,9 +500,9 @@ Some examples of the use of \texttt{phtest} are shown below
 
 
 <<>>=
-g <- plm(inv~value+capital,data=Grunfeld)
-phtest(g)
-phtest(g$between, g$random)
+gw <- plm(inv~value+capital,data=Grunfeld,model="within")
+gr <- plm(inv~value+capital,data=Grunfeld,model="random")
+phtest(gw,gr)
 
 @ 
 
@@ -644,8 +545,7 @@ Main use of \texttt{pvcovHC} is together with testing functions from \texttt{lmt
 
 <<>>=
 library(lmtest)
-data(Airline)
-pdata.frame(Airline,"airline","year")
+data("Airline",package="Ecdat")
 form <- log(cost)~log(output)+log(pf)+lf
 z <- plm(form,data=Airline,model="within")
 coeftest(z,pvcovHC)
@@ -660,8 +560,7 @@ coeftest(z,pvcovHC(z,type="white2",weights="HC3"))
 For some tests, e.g. for multiple model comparisons by \texttt{waldtest}, one should always provide a function\footnote{Joint zero-restriction testing still allows providing the \texttt{vcov} of the unrestricted model as a matrix, see the documentation of package \texttt{lmtest}}. In this case, optional parameters are provided as shown below (see also Zeileis, 2004, p.12):
 
 <<>>=
-waldtest(z,update(z,.~.-log(pf)-lf),
-  vcov=function(x) pvcovHC(x,type="white2",weights="HC3"))
+waldtest(z,update(z,.~.-log(pf)-lf),vcov=function(x) pvcovHC(x,type="white2",weights="HC3"))
 @ 
 
 \texttt{linear.hypothesis} from package \texttt{car} may be used to test for linear restrictions:

@@ -2,14 +2,22 @@ phtest <- function(x,...){
   UseMethod("phtest")
 }
 
-phtest.plms <- function(x,...){
-  data.name <- paste(deparse(substitute(x)))
-  within <- x$within
-  random <- x$random
-  phtest(within,random,data.name)
+phtest.formula <- function(x,data,model=c("within","random"),effect="individual",...){
+  if(length(model)!=2) stop("two models should be indicated")
+  
+  for (i in 1:2){
+    model.name <- model[i]
+    if(!(model.name %in% names(model.plm.list))){
+      stop("model must be one of ",oneof(model.plm.list))
+    }
+  }
+  form <- x
+  x <- plm(form,data,model=model[1],effect=effect)
+  x2 <- plm(form,data,model=model[2],effect=effect)
+  phtest(x,x2,data=deparse(substitute(data)))
 }
 
-phtest.panelmodel <- function(x,x2,data=NULL,...){
+phtest.panelmodel <- function(x,x2,...){
   # x is assumed to have a greater variance than x2
   coef.wi <- coefficients(x)
   coef.re <- coefficients(x2)
@@ -23,15 +31,10 @@ phtest.panelmodel <- function(x,x2,data=NULL,...){
   dvcov <- vcov.re[coef.h,coef.h]-vcov.wi[coef.h,coef.h]
   stat <- abs(t(dbeta)%*%solve(dvcov)%*%dbeta)
   pval <- (1-pchisq(stat,df=df))
-  names(stat) <- "chi2"
+  names(stat) <- "chisq"
   parameter <- df
   names(parameter) <- "df"
-  if (is.null(data)){
-    data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(x2)))
-  }
-  else{
-    data.name <- data
-  }
+  data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(x2)))
 
   res <- list(statistic = stat,
                 p.value = pval,
@@ -47,44 +50,46 @@ plmtest <- function(x,...){
   UseMethod("plmtest")
 }
 
-plmtest.plms <- function(x,effect="id",type="bp", ...){
-  data.name <- paste(deparse(substitute(x)))
-  pooling <- x$pooling
-  data.name <- pooling$call$data
-  class(data)
-  id.name <- attr(pooling,"indexes")$id
-  time.name <- attr(pooling,"indexes")$time
-  id <- eval(data.name)[[id.name]]
-  time <- eval(data.name)[[time.name]]
-  n <- attr(pooling,"pdim")$nT$n
-  T <- attr(pooling,"pdim")$nT$T
-  balanced <- attr(x,"pdim")$pdim$balanced
-  res <- pooling$res
+plmtest.plm <- function(x,effect="individual",type="bp", ...){
+  data.name <- x$call$data
+
+  id <- x$index$id
+  time <- x$index$time
+  pdim <- attr(x,"pdim")
+  
+  n <- pdim$nT$n
+  T <- pdim$nT$T
+  balanced <- pdim$balanced
+  res <- resid(x)
   plmtest(res,n=n,T=T,balanced=balanced,id=id,time=time,effect=effect,type=type,data=data.name)
 }
 
-plmtest.plm <- function(x,effect="id",type="bp", ...){
-  data.name <- paste(deparse(substitute(x)))
-  id.name <- attr(x,"indexes")$id
-  time.name <- attr(x,"indexes")$time
-  id <- eval(data.name)[[id.name]]
-  time <- eval(data.name)[[time.name]]
-  n <- attr(x,"pdim")$nT$n
-  T <- attr(x,"pdim")$nT$T
-  balanced <- attr(x,"pdim")$pdim$balanced
-  res <- x$res
+plmtest.formula <- function(x,data,effect="individual",type="bp", ...){
+  data <- plm.data(data, ...)
+  x <- plm(x,data,model="pooling")
+  data.name <- x$call$data
+
+  id <- x$index$id
+  time <- x$index$time
+  pdim <- pdim(data)
+  
+  n <- pdim$nT$n
+  T <- pdim$nT$T
+  balanced <- pdim$balanced
+  res <- resid(x)
   plmtest(res,n=n,T=T,balanced=balanced,id=id,time=time,effect=effect,type=type,data=data.name)
 }
 
-plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="id",type="bp",data=NULL, ...){
-  if(effect=="id"){
+
+plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="individual",type="bp",data=NULL, ...){
+  if(effect=="individual"){
     if(type != "honda" & type != "bp"){
       warning("type must be one of honda or bp, bp used")
       type="bp"
     }
     stat <-  sqrt(n*T/(2*(T-1)))*(crossprod(tapply(x,id,mean))*T^2/sum(x^2)-1)
     stat <- switch(type,honda=stat,bp=stat^2)
-    names(stat) <- switch(type,honda="normal",bp="chi2")
+    names(stat) <- switch(type,honda="normal",bp="chisq")
     parameter <- switch(type,honda=NULL,bp=1)
     pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
   }
@@ -95,7 +100,7 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
     }
     stat <- sqrt(n*T/(2*(n-1)))*(crossprod(tapply(x,time,mean))*n^2/sum(x^2)-1)
     stat <- switch(type,honda=stat,bp=stat^2)
-    names(stat) <- switch(type,honda="normal",bp="chi2")
+    names(stat) <- switch(type,honda="normal",bp="chisq")
     parameter <- switch(type,honda=NULL,bp=1)
     pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
   }
@@ -112,14 +117,14 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
                    honda=(stat1+stat2)/sqrt(2),
                    kw=sqrt((T-1)/(n+T-2))*stat1+sqrt((n-1)/(n+T-2))*stat2)
     parameter <- 2
-    names(stat) <- switch(type,ghm="chi2",honda="normal",bp="chi2",kw="normal")
+    names(stat) <- switch(type,ghm="chisq",honda="normal",bp="chisq",kw="normal")
     pval <- switch(type,ghm=1-pchisq(stat,df=2),honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=2),kw=(1-pnorm(abs(stat))))
   }
 
   method.type <- switch(type,
                    honda="Honda",
-                   bp="Breush-Pagan",
-                   ghm="Gourierroux, Holly and Monfort",
+                   bp="Breusch-Pagan",
+                   ghm="Gourieroux, Holly and Monfort",
                    kw="King and Wu")
   method.effect <- switch(effect,
                           id="individual effects",
@@ -149,20 +154,17 @@ pFtest <- function(x,...){
   UseMethod("pFtest")
 }
 
-pFtest.plms <- function(x,...){
-  data.name <- paste(deparse(substitute(x)))
-  within <- x$within
-  pooling <- x$pooling
-  pFtest(within,pooling,data.name)
+pFtest.formula <- function(x,data,effect="individual",...){
+  form <- x
+  x <- plm(form,data,effect=effect,model="within")
+  z <- plm(form,data,effect=effect,model="pooling")
+  pFtest(x,z,...)
 }
+  
+  
 
-pFtest.plm <- function(x,z,data=NULL, ...){
-  if (is.null(data)){
-    data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(z)))
-  }
-  else{
-    data.name <- data
-  }
+pFtest.plm <- function(x,z, ...){
+  data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(z)))
   within <- x
   pooling <- z
   df1 <- df.residual(pooling)-df.residual(within)
@@ -192,7 +194,8 @@ Ftest <- function(x,...){
                 "between"=pdim$Kb,
                 "pooling"=pdim$K,
                 "random"=pdim$K,
-                "ht"=pdim$K
+                "ht"=pdim$K,
+                "fd"=pdim$K
                 )
   stat <- (x$tss-x$ssr)/x$ssr*df1/df2
   names(stat) <- "F"
@@ -244,22 +247,19 @@ pooltest <- function(x,...){
   UseMethod("pooltest")
 }
 
-
-pooltest.plms <- function(x,nopool,effect=FALSE,...){
-  if(effect){
-    z <- x$within
-  }
-  else{
-    z <- x$pooling
-  }
-  pooltest(z,nopool)
+pooltest.formula <- function(x, data, effect="individual", model="within",...){
+  data <- plm.data(data,...)
+  plm.model <- plm(x,data,effect=effect,model=model)
+  pvcm.model <- pvcm(x,data,effect=effect,model="within")
+  pooltest(plm.model,pvcm.model)
 }
+  
 
-pooltest.plm <- function(x,nopool,...){
+pooltest.plm <- function(x,z,...){
   rss <- sum(residuals(x)^2)
-  uss <- sum(unlist(residuals(nopool))^2)
+  uss <- sum(unlist(residuals(z))^2)
   dlr <- df.residual(x)
-  dlu <- df.residual(nopool)
+  dlu <- df.residual(z)
   df1 <- dlr-dlu
   df2 <- dlu
   stat <- (rss-uss)/uss*df2/df1
@@ -267,7 +267,9 @@ pooltest.plm <- function(x,nopool,...){
   parameter <- c(df1,df2)
   names(parameter) <- c("df1","df2")
   names(stat)="F"
-  data.name <- paste(deparse(substitute(plms)))
+  x.name <- paste(deparse(substitute(x)))
+  z.name <- paste(deparse(substitute(z)))
+  data.name <- paste(x.name,z.name,sep=" and ",collapse="")
   res <- list(statistic = stat,
               parameter=parameter,
               p.value = pval,

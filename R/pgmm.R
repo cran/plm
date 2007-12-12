@@ -18,6 +18,8 @@ pgmm.formula <- function(formula,data,effect,model,instruments,gmm.inst,lag.gmm,
     }
   }
   if (!is.list(lag.gmm)){
+      var.gmm <- attr(terms(gmm.inst),"term.labels")
+      J <- length(var.gmm)
     lag.gmm <- rep(list(lag.gmm),J)
   }
   max.lag.gmm <- max(sapply(lag.gmm,function(x) x[1]))
@@ -44,7 +46,8 @@ extract.data <- function(formula,data,time.name,id.name){
   }
   else{
     formula <- update(formula,~.-1)
-  }    
+  }
+  indexes <- attr(data,"indexes")
   yX <- model.frame(formula,data,na.action=NULL)
   yX$time <- data[[time.name]]
   yX <- split(yX,data[[id.name]])
@@ -58,18 +61,38 @@ extract.data <- function(formula,data,time.name,id.name){
   }    
 }
 
-pgmm <- function(formula,data,effect="individual",model="twosteps",instruments=NULL,gmm.inst,lag.gmm,transformation="d",fsm=NULL,...){
+pgmm <- function(formula, data, effect = "individual",
+                 model = "twosteps",
+                 instruments = NULL, gmm.inst, lag.gmm, transformation = "d", fsm = NULL, index = NULL, ...){
+
+  model.name <- model
+  data.name <- paste(deparse(substitute(data)))
+  new.data.name <- "mydata"
+  data2 <- data2plm.data(data,index)
+  data <- data2$data
+  id.name <- data2$id.name
+  time.name <- data2$time.name
+  for (i in 1:length(data)){
+    attr(data[[i]],"data") <- new.data.name
+    attr(data[[i]],"class") <- c("pserie",attr(data[[i]],"class"))
+  }
+  indexes <- list(id=id.name,time=time.name)
+  class(indexes) <- "indexes"
+  pdim <- pdim(data)
+  data <- structure(data,pdim=pdim,indexes=indexes)
+  nframe <- length(sys.calls())
+  assign(new.data.name,data,env=sys.frame(which=nframe))
   if(is.null(fsm)){
     fsm <- switch(transformation,
                   "d"="G",
                   "ld"="full"
-                )
+                  )
   }
   cl <- match.call()
-  model.name <- model
   if (is.null(effect)) effect <- "none"
-  pdim <- attr(data,"pdim")
-  cl <- match.call()
+  
+  time.names <- pdim$panel.names$time.names
+  id.names <- pdim$panel.names$id.names
   z <- pgmm.formula(formula,data,effect,model,instruments,gmm.inst,lag.gmm,transformation)
   pmodel <- list(formula=formula,effect=effect,instruments=instruments,
                  model.name=model,transformation=transformation,time.lost=z$time.lost)
@@ -82,12 +105,10 @@ pgmm <- function(formula,data,effect="individual",model="twosteps",instruments=N
   }
   time.lost <- z$time.lost
   data.name <- deparse(substitute(data))
-  id.name <- attr(data,"index")$id
-  time.name <- attr(data,"index")$time
-  time.names <- attr(data,"pdim")$panel.names$time.names
-  id.names <- attr(data,"pdim")$panel.names$id.names
-  T <- pdim(data)$nT$T
+
+  T <- pdim$nT$T
   ti <- split(data[[time.name]],data[[id.name]])
+
   yX <- extract.data(formula,data,time.name,id.name)
   yX <- lapply(yX,function(x) if(time.lost==1) x else x[-c(1:(time.lost-1)),])
   W <- extract.data(gmm.desc$gmm.inst,data,time.name,id.name)
@@ -102,7 +123,7 @@ pgmm <- function(formula,data,effect="individual",model="twosteps",instruments=N
   }
   if (transformation=="ld"){
     Wl <- extract.data(gmm.desc.level$gmm.inst,data,time.name,id.name)
-    Wl <- lapply(Wl,function(x) x[-1,])
+    Wl <- lapply(Wl,function(x) x[-1,,drop=FALSE])
     Jl <- makeJ(time.names[-1],gmm.desc.level$gmm.inst,gmm.desc.level$lag.gmm,time.lost-1)
     Wl <- lapply(Wl,momatrix,Jl,time.names[-1])
     Wl <- lapply(Wl,function(x){prems <- which(time.names==rownames(x)[1]);z <- rbind(0,x);rownames(z)[1] <- time.names[prems-1];z})
@@ -317,144 +338,6 @@ momatrix <- function(x,J,ttot){
   maty
 }
 
-
-
-
-dynformula <- function(formula,lag.form=NULL,diff.form=NULL,log.form=NULL){
-  endog <- attr(terms(formula),"term.labels")
-  if(length(formula)==3){
-    exo <- deparse(formula[[2]])
-    lhs <- TRUE
-  }
-  else{
-    exo <- NULL
-    lhs <- FALSE
-  }
-  
-  K <- length(endog)
-
-  if (is.null(lag.form)){
-    lag.form <- rep(list(0),K+lhs)
-  }
-  else{
-    if (!is.list(lag.form)){
-      lag.form <- list(lag.form)
-    }
-    if (!is.null(names(lag.form))){
-      nam <- names(lag.form)
-      olag.form <- lag.form
-      if (any(nam=="")){
-        if (sum(nam=="")!=1) stop("Only one unnamed element is adminited\n")
-        else default <- lag.form[[""]]
-        lag.form <- rep(list(default),K+lhs)
-        names(lag.form) <- c(exo,endog)
-        na <- nam[nam!=""]
-        lag.form[nam] <- olag.form
-      }
-      else{
-        lag.form <- rep(list(0),K+lhs)
-        names(lag.form) <- c(exo,endog)
-        lag.form[nam] <- olag.form
-      }
-    }
-    else{
-      if (length(lag.form)==1){
-        lag.form <- rep(lag.form,c(K+lhs))
-      }
-      else if (!length(lag.form) %in% c(K,K+lhs)) stop("irrelevant length for lag.form\n")
-    }
-  }
-  if (is.null(diff.form)){
-    diff.form <- rep(list(FALSE),K+lhs)
-  }
-  else{
-    if (!is.list(diff.form)) diff.form <- list(diff.form)
-    if (!is.null(names(diff.form))){
-      nam <- names(diff.form)
-      odiff.form <- diff.form
-      if (any(nam=="")){
-        if (sum(nam=="")!=1) stop("Only one unnamed element is adminited\n")
-        else default <- diff.form[[""]]
-        diff.form <- rep(list(default),K+lhs)
-        names(diff.form) <- c(exo,endog)
-        na <- nam[nam!=""]
-        diff.form[nam] <- odiff.form
-      }
-      else{
-        diff.form <- rep(list(FALSE),K+lhs)
-        names(diff.form) <- c(exo,endog)
-        diff.form[nam] <- odiff.form
-      }
-    }
-    else{
-      if (length(diff.form)==1){
-        diff.form <- rep(diff.form,c(K+lhs))
-      }
-      else if (!length(diff.form) %in% c(K,K+lhs)) stop("irrelevant length for diff.form\n")
-    }
-  }
-  
-  if (is.null(log.form)){
-    log.form <- rep(list(FALSE),K+lhs)
-  }
-  else{
-    if (!is.list(log.form)) log.form <- list(log.form)
-    if (!is.null(names(log.form))){
-      nam <- names(log.form)
-      olog.form <- log.form
-      if (any(nam=="")){
-        if (sum(nam=="")!=1) stop("Only one unnamed element is adminited\n")
-        else default <- log.form[[""]]
-        log.form <- rep(list(default),K+lhs)
-        names(log.form) <- c(exo,endog)
-        na <- nam[nam!=""]
-        log.form[nam] <- olog.form
-      }
-      else{
-        log.form <- rep(list(FALSE),K+lhs)
-        names(log.form) <- c(exo,endog)
-        log.form[nam] <- olog.form
-      }
-    }
-    else{
-      if (length(log.form)==1){
-        log.form <- rep(log.form,c(K+lhs))
-      }
-      else if (!length(log.form) %in% c(K,K+lhs)) stop("irrelevant length for log.form\n")
-    }
-  }
-
-  chendog <- c()
-  if (lhs){
-    if (log.form[[1]]) exo <- paste("log(",exo,")",sep="")
-    if (length(lag.form)==K){
-      lag.form <- c(0,lag.form)
-    }
-    if (length(lag.form[[1]])==1 && lag.form[[1]]!=0){
-      lag.form[[1]] <- c(1,lag.form[[1]])
-    }
-    if (length(lag.form[[1]])!=1){
-      chendog <- c(chendog,gg(exo,lag.form[[1]],diff.form[[1]]))
-    }
-  }
-  
-  j <- 1*lhs
-  for (i in endog){
-    j <- j+1
-    if (log.form[[j]]) i <- paste("log(",i,")",sep="")
-    chendog <- c(chendog,gg(i,lag.form[[j]],diff.form[[j]]))
-  }
-  chendog <- paste(chendog,collapse="+")
-  if (!is.null(exo)){
-    if (diff.form[[1]]) exo <- paste("diff(",exo,")",sep="")
-    formod <- as.formula(paste(exo,"~",chendog,sep=""))
-  }
-  else{
-    formod <- as.formula(paste("~",chendog,sep=""))
-  }
-  structure(formod,class=c("dynformula","formula"),lag=lag.form,diff=diff.form,log=log.form,var=c(exo,endog))
-}
-
 gg <- function(name,lags,diff){
   lags <- switch(length(lags),
                  "1"=c(0,lags),
@@ -521,10 +404,6 @@ FSM <- function(t,fsm){
          )
 }
 
-  
-
-
-
 summary.pgmm <- function(object,robust=FALSE,...){
   model.name <- attr(object,"pmodel")$model
   transformation <- attr(object,"pmodel")$transformation
@@ -551,52 +430,48 @@ summary.pgmm <- function(object,robust=FALSE,...){
   object
 }
 
-print.summary.pgmm <- function(x,digits=5,length.line=70,...){
+print.summary.pgmm <- function(x,digits=max(3, getOption("digits") - 2), width = getOption("width"),...){
   transformation <- attr(x,"pmodel")$transformation
   pdim <- attr(x,"pdim")
   pmodel <- attr(x,"pmodel")
   effect <- pmodel$effect
   formula <- pmodel$formula
   model.name <- pmodel$model.name
-  centre("Model Description",length.line)
-  cat(paste(effect.pvcm.list[[effect]],"\n",sep=""))
-  cat(paste(model.pvcm.list[[model.name]],"\n",sep=""))
-  print.form(formula,"Model Formula              : ",length.line)
-  centre("Panel Dimensions",length.line)
+  cat(paste(effect.pgmm.list[effect]," ",sep=""))
+  cat(paste(model.pgmm.list[model.name],"\n",sep=""))
+  cat("\nCall:\n")
+  print(x$call)
+  cat("\n")
+  print(pdim)
   ntot <- apply(sapply(x$model,dim),1,sum)[1]
-  cat("Number of Observations Used  : ",ntot,"\n")
+  cat("\nNumber of Observations Used: ",ntot,"\n")
   
-  centre("Residuals",length.line)
-  save.digits <- unlist(options(digits=digits))
-  on.exit(options(digits=save.digits))
+  cat("\nResiduals\n")
   print(summary(unlist(residuals(x))))
+  cat("\nCoefficients\n")
+  printCoefmat(x$CoefTable,digits=digits)
 
-  centre("Model Description",length.line)
-  print(x$CoefTable)
-  centre("Specification tests",length.line)
-
-  cat("Sargan Test                   : ",names(x$sargan$statistic),
+  cat("\nSargan Test: ",names(x$sargan$statistic),
       "(",x$sargan$parameter,") = ",x$sargan$statistic,
       " (p.value=",x$sargan$p.value,")\n",sep="")
 
-  cat("Autocorrelation test (1)      : ",names(x$m1$statistic),
+  cat("Autocorrelation test (1): ",names(x$m1$statistic),
       " = ",x$m1$statistic,
       " (p.value=",x$m1$p.value,")\n",sep="")
   
-  cat("Autocorrelation test (2)      : ",names(x$m2$statistic),
+  cat("Autocorrelation test (2): ",names(x$m2$statistic),
       " = ",x$m2$statistic,
       " (p.value=",x$m2$p.value,")\n",sep="")
-  cat("Wald test for coefficients    : ",names(x$wald.coef$statistic),
+  cat("Wald test for coefficients: ",names(x$wald.coef$statistic),
       "(",x$wald.coef$parameter,") = ",x$wald.coef$statistic,
       " (p.value=",x$wald.coef$p.value,")\n",sep="")
   
   
   if (x$call$effect=="twoways"){
-    cat("Wald test for time dummies    : ",names(x$wald.td$statistic),
+    cat("Wald test for time dummies: ",names(x$wald.td$statistic),
         "(",x$wald.td$parameter,") = ",x$wald.td$statistic,
         " (p.value=",x$wald.td$p.value,")\n",sep="")
   }
-  cat(paste(trait(length.line),"\n"))
   invisible(x)
 }
 
@@ -656,7 +531,7 @@ sargan <- function(object){
   stat <- as.numeric(crossprod(z,t(crossprod(z,A))))
   parameter <- p-Ktot
   names(parameter) <- "df"
-  names(stat) <- "chi2"
+  names(stat) <- "chisq"
   method <- "Sargan test"
   pval <- 1-pchisq(stat,df=parameter)
   sargan <- list(statistic = stat,
@@ -701,7 +576,7 @@ wald <- function(x,param="coef",vcov=NULL){
   coef <- coefficients[start:end]
   vv <- vv[start:end,start:end]
   stat <- t(coef)%*%solve(vv)%*%coef
-  names(stat) <- "chi2"
+  names(stat) <- "chisq"
   parameter <- length(coef)
   pval <- 1-pchisq(stat,df=parameter)
   wald <- list(statistic = stat,
@@ -771,7 +646,6 @@ mtest <- function(object,order=1,vcov=NULL){
     Elb <- lapply(Elb,function(x) c(x,rep(0,length(x)+1)))
     resid <- lapply(resid,function(x) c(x,rep(0,length(x)+1)))
   }
-    
   EVE <- suml(mapply(function(x,y) t(y)%*%x%*%t(x)%*%y,Eb,Elb,SIMPLIFY=FALSE))
   EX <- suml(mapply(crossprod,El,X,SIMPLIFY=FALSE))
   XZ <- suml(mapply(crossprod,W,X,SIMPLIFY=FALSE))
@@ -800,4 +674,144 @@ coef.pgmm <- function(object,...){
     coefficients <- object$coefficients[[2]]
   }
   coefficients
+}
+
+
+dynformula <- function(formula,lag.form=NULL,diff.form=NULL,log.form=NULL){
+  endog <- attr(terms(formula),"term.labels")
+  if(length(formula)==3){
+    exo <- deparse(formula[[2]])
+    lhs <- TRUE
+  }
+  else{
+    exo <- NULL
+    lhs <- FALSE
+  }
+  
+  K <- length(endog)
+
+  if (is.null(lag.form)){
+    lag.form <- rep(list(0),K+lhs)
+  }
+  else{
+    if (!is.list(lag.form)){
+      lag.form <- list(lag.form)
+    }
+    if (!is.null(names(lag.form))){
+      nam <- names(lag.form)
+      olag.form <- lag.form
+
+      unnamed <- nam%in%""
+      sum.unnamed <- sum(unnamed)
+      if (sum.unnamed>0){
+        if (sum.unnamed!=1) stop("Only one unnamed element is adminited\n")
+        else default <- lag.form[[which(unnamed)]]
+        lag.form <- rep(list(default),K+lhs)
+        names(lag.form) <- c(exo,endog)
+        lag.form[nam] <- olag.form
+      }
+      else{
+        lag.form <- rep(list(0),K+lhs)
+        names(lag.form) <- c(exo,endog)
+        lag.form[nam] <- olag.form
+      }
+    }
+    else{
+      if (length(lag.form)==1){
+        lag.form <- rep(lag.form,c(K+lhs))
+      }
+      else if (!length(lag.form) %in% c(K,K+lhs)) stop("irrelevant length for lag.form\n")
+    }
+  }
+  if (is.null(diff.form)){
+    diff.form <- rep(list(FALSE),K+lhs)
+  }
+  else{
+    if (!is.list(diff.form)) diff.form <- list(diff.form)
+    if (!is.null(names(diff.form))){
+      nam <- names(diff.form)
+      odiff.form <- diff.form
+      unnamed <- nam%in%""
+      sum.unnamed <- sum(unnamed)
+      if (sum.unnamed>0){
+        if (sum.unnamed!=1) stop("Only one unnamed element is adminited\n")
+        else default <- diff.form[[which(unnamed)]]
+        diff.form <- rep(list(default),K+lhs)
+        names(diff.form) <- c(exo,endog)
+        diff.form[nam] <- odiff.form
+      }
+      else{
+        diff.form <- rep(list(FALSE),K+lhs)
+        names(diff.form) <- c(exo,endog)
+        diff.form[nam] <- odiff.form
+      }
+    }
+    else{
+      if (length(diff.form)==1){
+        diff.form <- rep(diff.form,c(K+lhs))
+      }
+      else if (!length(diff.form) %in% c(K,K+lhs)) stop("irrelevant length for diff.form\n")
+    }
+  }
+
+  if (is.null(log.form)){
+    log.form <- rep(list(FALSE),K+lhs)
+  }
+  else{
+    if (!is.list(log.form)) log.form <- list(log.form)
+    if (!is.null(names(log.form))){
+      nam <- names(log.form)
+      olog.form <- log.form
+      unnamed <- nam%in%""
+      sum.unnamed <- sum(unnamed)
+      if (sum.unnamed>0){
+        if (sum.unnamed!=1) stop("Only one unnamed element is adminited\n")
+        else default <- log.form[[which(unnamed)]]
+        log.form <- rep(list(default),K+lhs)
+        names(log.form) <- c(exo,endog)
+        log.form[nam] <- olog.form
+      }
+      else{
+        log.form <- rep(list(FALSE),K+lhs)
+        names(log.form) <- c(exo,endog)
+        log.form[nam] <- olog.form
+      }
+    }
+    else{
+      if (length(log.form)==1){
+        log.form <- rep(log.form,c(K+lhs))
+      }
+      else if (!length(log.form) %in% c(K,K+lhs)) stop("irrelevant length for log.form\n")
+    }
+  }
+
+  chendog <- c()
+  if (lhs){
+    if (log.form[[1]]) exo <- paste("log(",exo,")",sep="")
+    if (length(lag.form)==K){
+      lag.form <- c(0,lag.form)
+    }
+    if (length(lag.form[[1]])==1 && lag.form[[1]]!=0){
+      lag.form[[1]] <- c(1,lag.form[[1]])
+    }
+    if (length(lag.form[[1]])!=1){
+      chendog <- c(chendog,gg(exo,lag.form[[1]],diff.form[[1]]))
+    }
+  }
+
+  j <- 1*lhs
+  for (i in endog){
+    j <- j+1
+    if (log.form[[j]]) i <- paste("log(",i,")",sep="")
+    chendog <- c(chendog,gg(i,lag.form[[j]],diff.form[[j]]))
+  }
+  chendog <- paste(chendog,collapse="+")
+  if (!is.null(exo)){
+    if (diff.form[[1]]) exo <- paste("diff(",exo,")",sep="")
+    formod <- as.formula(paste(exo,"~",chendog,sep=""))
+  }
+  else{
+    formod <- as.formula(paste("~",chendog,sep=""))
+  }
+  structure(formod,class=c("dynformula","formula"),lag=lag.form,diff=diff.form,log=log.form,var=c(exo,endog))
 }

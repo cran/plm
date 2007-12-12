@@ -3,22 +3,22 @@
 \alias{pvcovHC.panelmodel}
 \alias{pvcovHC.pgmm}
 
-\title{Robust covariance matrix estimators}
+\title{Robust Covariance Matrix Estimators}
 \description{
-  Robust covariance matrix estimators {\em à la White} for panel models.
+  Robust covariance matrix estimators {\em \`a la White} for panel models.
 }
 \usage{
 pvcovHC(x,...)
-\method{pvcovHC}{panelmodel}(x,type="white1",weights="HC0", ...)
+\method{pvcovHC}{panelmodel}(x, type = "white1", weights = "HC0", ...)
 \method{pvcovHC}{pgmm}(x,...)
 }
 
 \arguments{
   \item{x}{an object of class \code{"panelmodel"} which should be the result of
-    a random or a within model or a model of class \code{pgmm},}
+    a random effect or a within model or a model of class \code{"pgmm"},}
   \item{type}{one of \code{"white1","white2","arellano"},}
   \item{weights}{one of \code{"HC0","HC1","HC2","HC3","HC4"},}
-  \item{...}{further arguments.}
+  \item{\dots}{further arguments.}
 }
 
 \value{
@@ -37,40 +37,41 @@ e.g. for Wald-type testing: as \code{vcov} to \code{coeftest()},
 \code{waldtest()} and other methods in the \code{lmtest} package; and as
 \code{vcov} to \code{linear.hypothesis()} in the \code{car} package (see the examples). Notice that the \code{vcov} argument may be supplied a function (which is the safest) or a matrix (see Zeileis (2004), 4.1-2 and examples below).  
 
-A special procedure, proposed by Windmeijer (2005) for \code{pgmm} objects.
+A special procedure, proposed by Windmeijer (2005) for \code{pgmm}
+objects is provided.
 
 }
 
 \author{Giovanni Millo \& Yves Croissant}
 
 \references{
-Arellano M. (1987), Computing robust standard errors for within group estimators, 
+Arellano, M. (1987) Computing robust standard errors for within group estimators, 
 \emph{Oxford bulletin of Economics and Statistics}, \bold{49}, 431--434.
 
-Cribari-Neto F. (2004), Asymptotic inference under heteroskedasticity
+Cribari-Neto, F. (2004) Asymptotic inference under heteroskedasticity
 of unknown form. \emph{Computational Statistics \& Data Analysis}
 \bold{45}, 215--233.
 
-Greene W. H. (1993), \emph{Econometric Analysis}, 2nd ed. Macmillan Publishing Company, New York.
+Greene, W. H. (1993) \emph{Econometric Analysis}, 2nd ed. Macmillan Publishing Company, New York.
 
-MacKinnon J. G., White H. (1985), Some heteroskedasticity-consistent
+MacKinnon, J. G. and  White H. (1985) Some heteroskedasticity-consistent
 covariance matrix estimators with improved finite sample properties.
 \emph{Journal of Econometrics} \bold{29}, 305--325.
 
 
-Weidmeijer, F. (2005), A finite sample correction for the variance of
+Weidmeijer, F. (2005) A finite sample correction for the variance of
 linear efficicent two--step GMM estimators, \emph{Journal of
-  Econometrics}, 126, pp.25--51.
+  Econometrics}, \bold{126}, pp.25--51.
 
-White H. (1980), \emph{Asymptotic Theory for Econometricians}, Ch. 6, Academic Press, Orlando (FL).
+White H. (1980) \emph{Asymptotic Theory for Econometricians}, Ch. 6, Academic Press, Orlando (FL).
 
-White H. (1984), A heteroskedasticity-consistent covariance matrix and
+White H. (1984) A heteroskedasticity-consistent covariance matrix and
 a direct test for heteroskedasticity. \emph{Econometrica} \bold{48},
 817--838.
 
-Wooldridge J. M. (2003), \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press
+Wooldridge J. M. (2003) \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press
 
-Zeileis A. (2004), Econometric Computing with HC and HAC Covariance Matrix
+Zeileis A. (2004) Econometric Computing with HC and HAC Covariance Matrix
 Estimators. \emph{Journal of Statistical Software}, \bold{11}(10), 1--17.
 URL \url{http://http://www.jstatsoft.org/v11/i10/}.
 
@@ -80,11 +81,8 @@ URL \url{http://http://www.jstatsoft.org/v11/i10/}.
 \examples{
 library(lmtest)
 library(car)
-library(Ecdat)
-library(plm)
-data(Produc)
-Produc <-pdata.frame(Produc,"state","year")
-zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,model="random")
+data("Produc", package="Ecdat")
+zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="random")
 ## standard coefficient significance test
 coeftest(zz)
 ## robust significance test
@@ -99,13 +97,13 @@ waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=pvcovHC)
 linear.hypothesis(zz, "2*log(pc)=log(emp)", vcov=pvcovHC)
 
 ## Robust inference for GMM models
-data(EmplUK)
-pdata.frame(EmplUK,"firm","year")
-ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2)),EmplUK,
-           effect="twoways",model="twosteps",
-           gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
+data("EmplUK", package="plm")
+ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2)),
+    data=EmplUK, effect="twoways", model="twosteps",
+    gmm.inst=~log(emp), lag.gmm=list(c(2,99)))
 rv <- pvcovHC(ar)
-mtest(ar,order=2,vcov=rv)
+mtest(ar, order=2, vcov=rv)
 
 }
 \keyword{regression}
+

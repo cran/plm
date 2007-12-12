@@ -7,21 +7,25 @@
   General FGLS estimators for panel data (balanced or unbalanced)
 }
 \usage{
-pggls(formula,data,effect="individual",model, ...)
+pggls(formula, data, subset, na.action, effect = "individual", model = "within",
+index = NULL, ...)
 \method{summary}{pggls}(object, ...)
-\method{print}{summary.pggls}(x,digits=5,length.line=70, ...)
+\method{print}{summary.pggls}(x,digits = max(3, getOption("digits") -
+2), width = getOption("width"),...)
 }
 
 \arguments{
   \item{formula}{a symbolic description for the model to be estimated,}
-  \item{object,x}{an object of class \code{pggls},}
-  \item{data}{the data, must be an object of class \code{pdata.frame}
-    and is mandatory,}
+  \item{object, x}{an object of class \code{pggls},}
+  \item{data}{a \code{data.frame},}
+  \item{subset}{see \code{lm},}
+  \item{na.action}{see \code{lm},}
   \item{effect}{the effects introduced in the model, one of \code{"individual"} or \code{"time"},}
   \item{model}{one of \code{"within"} or \code{"random"},}
+  \item{index}{the indexes, see \code{\link{plm.data}},}
   \item{digits}{digits,}
-  \item{length.line}{the maximum length of the lines in the print output,}
-  \item{...}{further arguments.}
+  \item{width}{the maximum length of the lines in the print output,}
+  \item{\dots}{further arguments.}
 }
 
 \value{
@@ -59,18 +63,14 @@ pggls(formula,data,effect="individual",model, ...)
 \author{Giovanni Millo}
 
 \references{
-  Kiefer, N. M. (1980), Estimation of Fixed Effects Models for Time Series of Cross-Sections with Arbitrary Intertemporal Covariance, \emph{Journal of Econometrics}, \bold{14}, 195--202. 
+  Kiefer, N. M. (1980) Estimation of Fixed Effects Models for Time Series of Cross-Sections with Arbitrary Intertemporal Covariance, \emph{Journal of Econometrics}, \bold{14}, 195--202. 
 
-  Wooldridge J. M. (2003), \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press
-}
-\seealso{
-  \code{\link{pdata.frame}} for the creation of a \code{pdata.frame}.
+  Wooldridge J. M. (2003) \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press
 }
 \examples{
-library(Ecdat)
-data(Produc)
-Produc <-pdata.frame(Produc,"state","year")
-zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,model="random")
+
+data("Produc", package="Ecdat")
+zz <- pggls(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="random")
 summary(zz)
 }
 \keyword{regression}

@@ -1,24 +1,29 @@
 \name{pooltest}
 \alias{pooltest}
 \alias{pooltest.plm}
-\alias{pooltest.plms}
-\title{Test of poolability}
+\alias{pooltest.formula}
+\title{Test of Poolability}
 \description{
   A Chow  test for the poolability of the data.
 }
 \usage{
-pooltest(x,...)
-\method{pooltest}{plms}(x,nopool,effect=FALSE,...)
-\method{pooltest}{plm}(x,nopool,...)
+pooltest(x, ...)
+\method{pooltest}{plm}(x, z, ...)
+\method{pooltest}{formula}(x, data, effect = "individual", model = "within", ...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"plms"} or \code{"plm"},}
-  \item{nopool}{an object of class \code{"pvcm"} obtained with \code{effect="within"},}
-  \item{effect}{if \code{x} is a \code{plms} and \code{effect=TRUE} the \code{nopool} model is compared to
-    the \code{within} model, if \code{FALSE} to the \code{pooling}
-    model.}
-  \item{...}{further arguments.}
+  \item{x}{an object of class  \code{"plm"},}
+  \item{z}{an object of class \code{"pvcm"} obtained with
+    \code{model="within"},}
+  \item{data}{a \code{data.frame},}
+  \item{effect}{one of \code{"individual"} or \code{"time"},}
+
+  \item{model}{one of \code{"pooling"} or \code{"within"}; intercepts
+  are assumed to be identical in the first case and different in the
+  second case.}
+
+  \item{\dots}{further arguments.}
 }
 
 \value{
@@ -34,13 +39,18 @@ pooltest(x,...)
 
 
 \examples{
-library(Ecdat)
-data(Gasoline)
-Gasoline <- pdata.frame(Gasoline,"country","year")
+data("Gasoline", package="Ecdat")
 form <- lgaspcar~lincomep+lrpmg+lcarpcap
-gas <-  plm(form,data=Gasoline)
-gasnp <-  pvcm(form,data=Gasoline,model="within")
-pooltest(gas,gasnp)
-pooltest(gas,gasnp,effect=TRUE)
+gasw <-  plm(form, data=Gasoline, model="within")
+gasp <-  plm(form, data=Gasoline, model="pooling")
+gasnp <-  pvcm(form, data=Gasoline, model="within")
+pooltest(gasw, gasnp)
+pooltest(gasp, gasnp)
+
+pooltest(form, data=Gasoline, effect="individual", model="within")
+pooltest(form, data=Gasoline, effect="individual", model="pooling")
+
+
+
 }
 \keyword{htest}

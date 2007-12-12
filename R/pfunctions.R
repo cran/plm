@@ -5,7 +5,11 @@ papply <- function(x, ...){
 papply.pserie <- function(x,func,effect="individual",...){
   na.x <- is.na(x)
   data.name <- attr(x,"data")
-  data <- get(data.name)
+  sc <- sapply(sys.calls(),function(x) as.character(x[[1]]))
+  leframe <- which(!is.na(match(sc,c("pgmm","pgls","pgmm","pvcm"))))
+  leframe <- ifelse(length(leframe)==1,leframe,1)
+  
+  data <- get(data.name,sys.frame(which=leframe))
   indexes <- attr(data,"indexes")
   cond <- switch(effect,
                  "individual"= data[[indexes$id]],
@@ -56,7 +60,7 @@ Between.pserie <- function(x,effect="individual", ...){
 
 Between.default <- function(x,cond, ...){
   if (is.numeric(x)){
-    res <- papply(x,mymean,effect)
+    res <- papply(x,mymean,cond)
   }
   else{
     stop("The Between function only applies to numeric vectors\n")
@@ -83,7 +87,11 @@ between <- function(x,...){
 between.pserie <- function(x,effect="individual", ...){
   data.name <- attr(x,"data")
   classx <- class(x)
-  data <- get(data.name)
+  sc <- sapply(sys.calls(),function(x) as.character(x[[1]]))
+  leframe <- which(!is.na(match(sc,c("pgmm","pgls","pgmm","pvcm"))))
+  leframe <- ifelse(length(leframe)==1,leframe,1)
+
+  data <- get(data.name,sys.frame(which=leframe))
   indexes <- attr(data,"indexes")
   cond <- switch(effect,
                  "individual"= data[[indexes$id]],
@@ -160,6 +168,7 @@ diff.pserie <- function(x,lag=0,...){
 }
 
 lag.pserie <- function(x,k=1,...){
+  
   N <- length(x)
   data.name <- attr(x,"data")
   classx <- class(x)
@@ -167,7 +176,15 @@ lag.pserie <- function(x,k=1,...){
     levelsx <- levels(x)
     nlevelsx <- length(levelsx)
   }
-  data <- get(data.name)
+  sc <- sapply(sys.calls(),function(x) as.character(x[[1]]))
+  leframe <- which(!is.na(match(sc,c("pgmm","pggls","plm","pvcm"))))
+  if (length(leframe>1)) leframe <- leframe[length(leframe)]
+  leframe <- ifelse(length(leframe)==1,leframe,1)
+
+  # il faut evaluer  dans le frame en position 1,
+  # celui qui correspond à la fonction pgmm
+  # print(ls(sys.frame(which=1)))
+  data <- get(data.name,sys.frame(which=leframe))
   id.name <- attr(data,"indexes")$id
   time.name <- attr(data,"indexes")$time
   id <- data[[id.name]]
@@ -236,47 +253,81 @@ tss <- function(x){
   sum(x^2)-n*mean(x)^2
 }
 
-FE <- function(x){
-  UseMethod("FE")
+
+sumres <- function(x){
+  sr <- summary(residuals(x))
+  srm <- sr["Mean"]
+  if (abs(srm)<1e-15){
+    sr <- sr[c(1:3,5:6)]
+  }
+  sr
 }
 
-FE.plm <- function(x){
-  model.name <- attr(x,"pmodel")$model
+fixef.plm <- function(object, effect = NULL, ...){
+  pmodel <- attr(object,"pmodel")
+  model.name <- pmodel$model
   if (model.name!="within"){
-    stop("FE function only implemented for within models\n")
+    stop("fixef function only implemented for within models\n")
   }
   else{
-    FE <- attr(x$FE,"cm")
+    if (pmodel$effect!="twoways"){
+      fixef <- attr(object$fixef,"cm")
+    }
+    else{
+      if (is.null(effect)){
+        stop("effect should be indicated\n")
+      }
+      else{
+        if (effect=="individual"){
+          fixef <- attr(object$fixef$id,"cm")
+        }
+        else{
+          fixef <- attr(object$fixef$time,"cm")
+        }
+      }
+    }
   }
-  bet <- update(x,model="between")
-  xb <- bet$model[[2]]
-  sigma2 <- sum(residuals(bet)^2)/df.residual(bet)
-  vcov <- vcov(x)
-  T <- attr(bet,"pdim")$nT$T
-  seFE <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
-  intercept <- x$alpha
-  FE <- structure(FE,se=seFE,intercept=intercept,class="FE")
-  FE
+  if (pmodel$effect!="twoways"){
+    bet <- update(object,model="between")
+    xb <- bet$model[[2]]
+    sigma2 <- sum(residuals(bet)^2)/df.residual(bet)
+    vcov <- vcov(object)
+    T <- attr(bet,"pdim")$nT$T
+    sefixef <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
+    intercept <- object$alpha
+    fixef <- structure(fixef,se=sefixef,intercept=intercept,class="fixef")
+  }
+  else{
+    class(fixef) <- "fixef"
+  }
+  fixef
 }
 
-print.FE <- function(x,digits=5,...){
-  attr(x,"se") <- attr(x,"intercept") <- attr(x,"class") <- NULL
+print.fixef <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
+  if (!is.null(attr(x,"intercept"))){
+    attr(x,"se") <- attr(x,"intercept") <- attr(x,"class") <- NULL
+  }
+  else{
+    attr(x,"class") <- NULL
+  }
   print.default(x)
 }
 
-summary.FE <- function(object,...){
+summary.fixef <- function(object,...){
+  if (is.null(attr(object,"intercept"))) stop("summary method not defined for two-ways effects")
   se <- attr(object,"se")
   alpha <- attr(object,"intercept")
   zvalue <- (object-alpha)/se
   res <- cbind(object-alpha,se,zvalue,(1-pnorm(abs(zvalue)))*2)
-  colnames(res) <- c("FE","std.error","t-value","p-value")
+  colnames(res) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
+  class(res) <- "summary.fixef"
   res
 }
-  
-FE.plms <- function(x){
-  x <- x$within
-  FE(x)
+
+print.summary.fixef <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
+  printCoefmat(x,digits=digits)
 }
+  
 
 suml <- function(x){
   n <- length(x)
