@@ -13,7 +13,8 @@
 }
 \usage{
 pbsytest(x, ...)
-\method{pbsytest}{formula}(x, data, test = c("AR","RE","J"), ...)
+\method{pbsytest}{formula}(x, data, test = c("AR","RE","J"), index =
+NULL, ...)
 }
 
 \arguments{
@@ -22,6 +23,7 @@ pbsytest(x, ...)
   \item{test}{a character string indicating which test to perform :
     first-order serial correlation (\code{AR}), random effects
     (\code{RE}) or joint test for either of them (\code{J}).}
+  \item{index}{the index of the \code{data.frame},}
   \item{\dots}{further arguments.}
 }
 

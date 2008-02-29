@@ -2,7 +2,7 @@ phtest <- function(x,...){
   UseMethod("phtest")
 }
 
-phtest.formula <- function(x,data,model=c("within","random"),effect="individual",...){
+phtest.formula <- function(x, data, model = c("within","random"), effect = "individual", index=NULL, ...){
   if(length(model)!=2) stop("two models should be indicated")
   
   for (i in 1:2){
@@ -12,12 +12,12 @@ phtest.formula <- function(x,data,model=c("within","random"),effect="individual"
     }
   }
   form <- x
-  x <- plm(form,data,model=model[1],effect=effect)
-  x2 <- plm(form,data,model=model[2],effect=effect)
-  phtest(x,x2,data=deparse(substitute(data)))
+  x <- plm(form,data,model=model[1],effect=effect,index=index)
+  x2 <- plm(form,data,model=model[2],effect=effect,index=index)
+  phtest(x,x2)
 }
 
-phtest.panelmodel <- function(x,x2,...){
+phtest.panelmodel <- function(x, x2, ...){
   # x is assumed to have a greater variance than x2
   coef.wi <- coefficients(x)
   coef.re <- coefficients(x2)
@@ -30,17 +30,22 @@ phtest.panelmodel <- function(x,x2,...){
   df <- length(dbeta)
   dvcov <- vcov.re[coef.h,coef.h]-vcov.wi[coef.h,coef.h]
   stat <- abs(t(dbeta)%*%solve(dvcov)%*%dbeta)
-  pval <- (1-pchisq(stat,df=df))
+#  pval <- (1-pchisq(stat,df=df))
+  pval <- pchisq(stat,df=df,lower.tail=FALSE)
   names(stat) <- "chisq"
   parameter <- df
   names(parameter) <- "df"
-  data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(x2)))
-
+#  data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(x2)))
+  data.name <- paste(deparse(x$call$formula))
+  alternative <- "one model is inconsistent"
+#  null.value <- "both models are consistent"
   res <- list(statistic = stat,
-                p.value = pval,
-                parameter = parameter,
-                method = "Hausman Test",
-                data.name = data.name)
+              p.value = pval,
+              parameter = parameter,
+              method = "Hausman Test",
+              data.name = data.name,
+ #             null.value=null.value,
+              alternative=alternative)
   class(res) <- "htest"
   return(res)
 }
@@ -50,9 +55,9 @@ plmtest <- function(x,...){
   UseMethod("plmtest")
 }
 
-plmtest.plm <- function(x,effect="individual",type="bp", ...){
-  data.name <- x$call$data
-
+plmtest.plm <- function(x, effect = "individual", type = "honda", ...){
+  data.name <- paste(deparse(x$call$formula))
+  if (is.null(x$call$model) || x$call$model!="pooling") stop("the argument must be a pooling model")
   id <- x$index$id
   time <- x$index$time
   pdim <- attr(x,"pdim")
@@ -61,13 +66,15 @@ plmtest.plm <- function(x,effect="individual",type="bp", ...){
   T <- pdim$nT$T
   balanced <- pdim$balanced
   res <- resid(x)
-  plmtest(res,n=n,T=T,balanced=balanced,id=id,time=time,effect=effect,type=type,data=data.name)
+  plmtest(res,n=n,T=T,balanced=balanced,
+          id=id,time=time,effect=effect,
+          type=type,data=data.name)
 }
 
-plmtest.formula <- function(x,data,effect="individual",type="bp", ...){
-  data <- plm.data(data, ...)
+plmtest.formula <- function(x, data, effect = "individual", type = "honda", index=NULL, ...){
+  data.name <- paste(deparse(x))
+  data <- plm.data(data,index=index)
   x <- plm(x,data,model="pooling")
-  data.name <- x$call$data
 
   id <- x$index$id
   time <- x$index$time
@@ -77,11 +84,15 @@ plmtest.formula <- function(x,data,effect="individual",type="bp", ...){
   T <- pdim$nT$T
   balanced <- pdim$balanced
   res <- resid(x)
-  plmtest(res,n=n,T=T,balanced=balanced,id=id,time=time,effect=effect,type=type,data=data.name)
+  plmtest(res,n=n,T=T,balanced=balanced,
+          id=id,time=time,effect=effect,
+          type=type,data=data.name)
 }
 
 
-plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="individual",type="bp",data=NULL, ...){
+plmtest.default <-  function(x, n = NULL, T = NULL, balanced = NULL,
+                             id = NULL, time = NULL, effect = "individual",
+                             type= "bp" , data = NULL, ...){
   if(effect=="individual"){
     if(type != "honda" & type != "bp"){
       warning("type must be one of honda or bp, bp used")
@@ -91,7 +102,10 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
     stat <- switch(type,honda=stat,bp=stat^2)
     names(stat) <- switch(type,honda="normal",bp="chisq")
     parameter <- switch(type,honda=NULL,bp=1)
-    pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
+#    pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
+    pval <- switch(type,
+                   honda=pnorm(abs(stat),lower.tail=FALSE)/2,
+                   bp=pchisq(stat,df=1,lower.tail=FALSE))
   }
   if(effect=="time"){
     if(type != "honda" & type != "bp"){
@@ -102,7 +116,10 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
     stat <- switch(type,honda=stat,bp=stat^2)
     names(stat) <- switch(type,honda="normal",bp="chisq")
     parameter <- switch(type,honda=NULL,bp=1)
-    pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
+#    pval <- switch(type,honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=1))
+    pval <- switch(type,
+                   honda=pnorm(abs(stat),lower.tail=FALSE)/2,
+                   bp=pchisq(stat,df=1,lower.tail=FALSE))
   }
   if(effect=="twoways"){
     if(type != "honda" & type != "bp" & type !="ghm" & type != "kw"){
@@ -118,7 +135,11 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
                    kw=sqrt((T-1)/(n+T-2))*stat1+sqrt((n-1)/(n+T-2))*stat2)
     parameter <- 2
     names(stat) <- switch(type,ghm="chisq",honda="normal",bp="chisq",kw="normal")
-    pval <- switch(type,ghm=1-pchisq(stat,df=2),honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=2),kw=(1-pnorm(abs(stat))))
+#    pval <- switch(type,ghm=1-pchisq(stat,df=2),honda=(1-pnorm(abs(stat)))/2,bp=1-pchisq(stat,df=2),kw=(1-pnorm(abs(stat))))
+    pval <- switch(type,ghm=pchisq(stat,df=2,lower.tail=FALSE),
+                   honda=pnorm(abs(stat),lower.tail=FALSE)/2,
+                   bp=pchisq(stat,df=2,lower.tail=FALSE),
+                   kw=pnorm(abs(stat),lower.tail=FALSE))
   }
 
   method.type <- switch(type,
@@ -146,6 +167,8 @@ plmtest.default <-  function(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,eff
                 parameter=parameter,
                 data.name = data)
   }
+#  res$null.value <- "no effects"
+  res$alternative <- "significant effects"
   class(res) <- "htest"
   res
 }
@@ -154,17 +177,18 @@ pFtest <- function(x,...){
   UseMethod("pFtest")
 }
 
-pFtest.formula <- function(x,data,effect="individual",...){
+pFtest.formula <- function(x, data, effect = "individual", index=NULL,...){
   form <- x
-  x <- plm(form,data,effect=effect,model="within")
-  z <- plm(form,data,effect=effect,model="pooling")
+  x <- plm(form,data,effect=effect,model="within",index=index)
+  z <- plm(form,data,effect=effect,model="pooling",index=index)
   pFtest(x,z,...)
 }
   
   
 
-pFtest.plm <- function(x,z, ...){
-  data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(z)))
+pFtest.plm <- function(x, z, ...){
+#  data.name <- paste(deparse(substitute(x)), "and",  deparse(substitute(z)))
+  data.name <-  paste(deparse(x$call$formula))
   within <- x
   pooling <- z
   df1 <- df.residual(pooling)-df.residual(within)
@@ -175,19 +199,25 @@ pFtest.plm <- function(x,z, ...){
   names(stat) <- "F"
   parameter <- c(df1,df2)
   names(parameter) <- c("df1","df2")
-  pval <- 1-pf(stat,df1,df2)
+#  pval <- 1-pf(stat,df1,df2)
+  pval <- pf(stat,df1,df2,lower.tail=FALSE)
+#  null.value <- "no effects"
+  alternative <- "significant effects"
   res <- list(statistic = stat,
               p.value = pval,
               method = "F test for effects",
               parameter=parameter,
-              data.name=data.name)
+              data.name=data.name,
+#              null.value=null.value,
+              alternative=alternative)
   class(res) <- "htest"
   res
 }
   
-Ftest <- function(x,...){
+Ftest <- function(x, ...){
   pdim <- attr(x,"pdim")
   model.name <- attr(x,"pmodel")$model
+  data.name <- x$call$formula
   df1 <- x$df.residual
   df2 <- switch(model.name,
                 "within"=pdim$Kw,
@@ -199,19 +229,19 @@ Ftest <- function(x,...){
                 )
   stat <- (x$tss-x$ssr)/x$ssr*df1/df2
   names(stat) <- "F"
-  pval <- 1-pf(stat,df1,df2)
+  pval <- pf(stat,df1,df2,lower.tail=FALSE)
   parameter <- c(df1,df2)
   names(parameter) <- c("df1","df2")
   res <- list(statistic = stat,
               parameter = parameter,
               p.value = pval,
-              method = "F test",
-              data.name = "data.name")
+              method = "F test"
+              )
   class(res) <- "htest"
   res
 }
 
-pwaldtest <- function(x,...){
+pwaldtest <- function(x, ...){
   pdim <- attr(x,"pdim")
   df <- switch(x$model.name,
                 "within"=pdim$Kw,
@@ -232,7 +262,8 @@ pwaldtest <- function(x,...){
   stat <- coef%*%solve(vcv)%*%coef
   names(stat) <- "chisq"
   names(parameter) <- "df"
-  pval <- 1-pchisq(stat,df)
+#  pval <- 1-pchisq(stat,df)
+  pval <- pchisq(stat,df,lower.tail=FALSE)
   res <- list(statistic = stat,
               p.value = pval,
               parameter = parameter,
@@ -247,15 +278,17 @@ pooltest <- function(x,...){
   UseMethod("pooltest")
 }
 
-pooltest.formula <- function(x, data, effect="individual", model="within",...){
-  data <- plm.data(data,...)
-  plm.model <- plm(x,data,effect=effect,model=model)
-  pvcm.model <- pvcm(x,data,effect=effect,model="within")
+pooltest.formula <- function(x, data, effect = "individual", model = "within", index=NULL, ...){
+  plm.model <- plm(x,data,effect=effect,model=model,index=index)
+  pvcm.model <- pvcm(x,data,effect=effect,model="within",index=index)
+  print(summary(plm.model))
+  print(summary(pvcm.model))
   pooltest(plm.model,pvcm.model)
 }
   
 
-pooltest.plm <- function(x,z,...){
+pooltest.plm <- function(x, z, ...){
+  data.name <- paste(deparse(x$call$formula))
   rss <- sum(residuals(x)^2)
   uss <- sum(unlist(residuals(z))^2)
   dlr <- df.residual(x)
@@ -263,18 +296,20 @@ pooltest.plm <- function(x,z,...){
   df1 <- dlr-dlu
   df2 <- dlu
   stat <- (rss-uss)/uss*df2/df1
-  pval <- 1-pf(stat,df1,df2)
+#  pval <- 1-pf(stat,df1,df2)
+  pval <- pf(stat,df1,df2,lower.tail=FALSE)
   parameter <- c(df1,df2)
   names(parameter) <- c("df1","df2")
   names(stat)="F"
-  x.name <- paste(deparse(substitute(x)))
-  z.name <- paste(deparse(substitute(z)))
-  data.name <- paste(x.name,z.name,sep=" and ",collapse="")
+#  x.name <- paste(deparse(substitute(x)))
+#  z.name <- paste(deparse(substitute(z)))
+#  data.name <- paste(x.name,z.name,sep=" and ",collapse="")
   res <- list(statistic = stat,
               parameter=parameter,
               p.value = pval,
               data.name=data.name,
-              null.value = "stability",
+#              null.value = "stability",
+              alternative = "unstability",
               method = "F statistic")
   class(res) <- "htest"
   res

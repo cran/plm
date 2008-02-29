@@ -5,7 +5,8 @@ summary.plm <- function(object,...){
   std.err <- sqrt(diag(vcov(object)))
   b <- coefficients(object)
   z <- b/std.err
-  p <- 2*(1-pnorm(abs(z)))
+#  p <- 2*(1-pnorm(abs(z)))
+  p <- 2*pnorm(abs(z),lower.tail=FALSE)
   CoefTable <- cbind(b,std.err,z,p)
   colnames(CoefTable) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
   object$CoefTable <- CoefTable
@@ -28,7 +29,7 @@ summary.plm <- function(object,...){
   object$rsqr <- 1-object$ssr/object$tss
   object$fstatistic <- Ftest(object)
   class(object) <- c("summary.plm","plm")
-  return(object)
+  object
 }
 
 print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
@@ -60,7 +61,7 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),width=ge
   cat("\nCall:\n")
   print(x$call)
 
-  if (!is.null(instruments)){
+  if (!is.null(instruments) && model.name!="ht"){
     if (!is.null(endog)){
       cat("Endogenous Variables:\n")
       print.form(endog,width)
@@ -70,16 +71,16 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),width=ge
   }
 
   if (model.name=="ht"){
-    cat("\nTime--Varying Variables: ")
+#    cat("\nTime-Varying Variables: ")
     names.x1 <- paste(x$varlist$x1,collapse=",")
     names.x2 <- paste(x$varlist$x2,collapse=",")
     names.z1 <- paste(x$varlist$z1,collapse=",")
     names.z2 <- paste(x$varlist$z2,collapse=",")
-    cat(paste("exo (",names.x1,") ",sep=""))
-    cat(paste("endo (",names.x2,")\n",sep=""))
-    cat("Time--Invariant Variables: ")
-    cat(paste("exo (",names.z1,") ",sep=""))
-    cat(paste("endo (",names.z2,")\n",sep=""))
+    cat(paste("\nT.V. exo  : ",names.x1,"\n",sep=""))
+    cat(paste("T.V. endo : ",names.x2,"\n",sep=""))
+#    cat("Time-Invariant Variables: ")
+    cat(paste("T.I. exo  : ",names.z1,"\n",sep=""))
+    cat(paste("T.I. endo : ",names.z2,"\n",sep=""))
 
   }
   cat("\n")
@@ -103,7 +104,7 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),width=ge
   fstat <- x$fstatistic
   cat(paste("F-statistic: ",signif(fstat$statistic),
             " on ",fstat$parameter["df1"]," and ",fstat$parameter["df2"],
-            " DF, p-value: ",signif(fstat$p.value,digits),"\n",sep=""))
+            " DF, p-value: ",format.pval(fstat$p.value,digits=digits),"\n",sep=""))
   invisible(x)
 }
 

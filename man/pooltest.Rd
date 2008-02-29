@@ -9,7 +9,8 @@
 \usage{
 pooltest(x, ...)
 \method{pooltest}{plm}(x, z, ...)
-\method{pooltest}{formula}(x, data, effect = "individual", model = "within", ...)
+\method{pooltest}{formula}(x, data, effect = "individual", model =
+"within", index = NULL, ...)
 }
 
 \arguments{
@@ -22,6 +23,7 @@ pooltest(x, ...)
   \item{model}{one of \code{"pooling"} or \code{"within"}; intercepts
   are assumed to be identical in the first case and different in the
   second case.}
+  \item{index}{the index of the \code{data.frame},}
 
   \item{\dots}{further arguments.}
 }

@@ -94,7 +94,7 @@ pgmm(formula, data, effect = "individual", model = "twosteps",
 %   c(1,1) for all instruments.
   
   \code{pgmm} is an attempt to adapt GMM estimators available with the
-  PDP library for GAUSS (see Arellano and Bound 1998) and OX (see
+  DPD library for GAUSS (see Arellano and Bound 1998) and OX (see
   Doornik, Arelanno and Bond 2006) and with the xtabound2 library for
   STATA (see Roodman 2006).
 }  

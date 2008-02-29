@@ -25,6 +25,10 @@ plm.data <- function(x,indexes=NULL){
     for (i in x.char){
     x[[i]] <- factor(x[[i]])
   }
+
+  # replace Inf by NA
+  for (i in names(x)) x[[i]][!is.finite(x[[i]])] <- NA
+  
   # check and remove complete NA series
   na.check <- sapply(x,function(x) sum(!is.na(x))==0)
   na.serie <- names(x)[na.check]
@@ -40,6 +44,7 @@ plm.data <- function(x,indexes=NULL){
   # check and remove cst series
   cst.check <- sapply(x,function(x) myvar(as.numeric(x))==0)
   cst.serie <- names(x)[cst.check]
+
   if (length(cst.serie)>0){
     if (length(cst.serie)==1){
       cat(paste("serie",cst.serie," is constant and has been removed\n"))
@@ -67,12 +72,16 @@ plm.data <- function(x,indexes=NULL){
     }
   }
   else{
+    if (!id.name %in% names(x))
+      stop(paste("variable ",id.name," does not exist",sep="")
+           )
     if (is.factor(x[[id.name]])){
       id <- x[[id.name]] <- x[[id.name]][drop=T]
     }
     else{
       id <- x[[id.name]] <- as.factor(x[[id.name]])
     }
+    
     if (is.null(time.name)){
       Ti <- table(id)
       n <- length(Ti)
@@ -84,6 +93,9 @@ plm.data <- function(x,indexes=NULL){
       time <- x[[time.name]] <- time <- as.factor(time)
     }
     else{
+    if (!time.name %in% names(x))
+      stop(paste("variable ",time.name," does not exist",sep="")
+           )
       if (is.factor(x[[time.name]])){
         time <- x[[time.name]] <- x[[time.name]][drop=T]
       }

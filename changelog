@@ -23,7 +23,13 @@ Changes since version 0-2.2
 * a bug in the plm method of plmtest has been fixed
 * in plmtest, the argument effect "id" is renamed "individual"
 * three testing functions are added : pbsytest (Bera, Sosa-Escudero and Yoon test), pARtest (Breush Godfrey Test) and pDWtest (Durbin-Watson test), pwartest, pBGtest, pwtest pbltest 
-!! la doc pour pbsystest et diff.pserie
 * plm, pvcm and pggls now have arguments "subset" and "na.action"
 * phtest, pFtest, plmtest now have a formula method
 * a bug is fixed for the vcov of the within model
+* the pdata.frame function and class is suppressed. The package now use ordinary data.frames. 
+
+Changes since version 0-3.1
+* in plm.formula, [int.row.names] is replaced by [as.character(int.row.names)]
+* the degree of freedom for a within time effect model was wrong and has been corrected.
+* the arguments type and weights in pvcovHC.panelmodel are renamed method and type respectively. The default method (type in previous versions) is arellano and not white1
+* honda is now the default option for plmtest

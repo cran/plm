@@ -5,13 +5,14 @@
   Semi-parametric test for the presence of (individual or time) unobserved effects in panel models.
 }
 \usage{
-pwtest(x, data, effect = c("individual","time"), ...)
+pwtest(x, data, effect = c("individual","time"), index = NULL, ...)
 }
 
 \arguments{
   \item{x}{an object of class \code{"formula"},}
   \item{data}{a \code{data.frame}}
   \item{effect}{one of \code{"individual"} or \code{"time"}}
+  \item{index}{the index of the \code{data.frame},}
   \item{\dots}{further arguments.}
 }
 

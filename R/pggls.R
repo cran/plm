@@ -169,7 +169,8 @@ summary.pggls <- function(object,...){
   std.err <- sqrt(diag(object$vcov))
   b <- object$coefficients
   z <- b/std.err
-  p <- 2*(1-pnorm(abs(z)))
+#  p <- 2*(1-pnorm(abs(z)))
+  p <- 2*pnorm(abs(z),lower.tail=FALSE)
   CoefTable <- cbind(b,std.err,z,p)
   colnames(CoefTable) <- c("Estimate","Std. Error","z-value","Pr(>|z|)")
   object$CoefTable <- CoefTable
