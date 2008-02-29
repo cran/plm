@@ -9,13 +9,16 @@
 \usage{
 pdwtest(x, ...)
 \method{pdwtest}{panelmodel}(x, ...)
-\method{pdwtest}{formula}(x, data, model, ...)
+\method{pdwtest}{formula}(x, data, model, index = NULL, ...)
 }
 
 \arguments{
   \item{x}{an object of class \code{"panelmodel"} or of class \code{"formula"},}
   \item{data}{a \code{data.frame}}
-  \item{model}{one of \code{"within"}, \code{"random"} or \code{"pooling"}}
+  \item{model}{one of \code{"within"}, \code{"random"} or
+    \code{"pooling"}}
+  \item{index}{the index of the \code{data.frame},}
+
   \item{\dots}{further arguments to be passed on to \code{dwtest}.}
 }
 

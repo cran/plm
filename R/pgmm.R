@@ -89,11 +89,14 @@ pgmm <- function(formula, data, effect = "individual",
                   )
   }
   cl <- match.call()
+  cl$formula <- formula
+  cl$gmm.inst <- gmm.inst
+
   if (is.null(effect)) effect <- "none"
-  
   time.names <- pdim$panel.names$time.names
   id.names <- pdim$panel.names$id.names
   z <- pgmm.formula(formula,data,effect,model,instruments,gmm.inst,lag.gmm,transformation)
+
   pmodel <- list(formula=formula,effect=effect,instruments=instruments,
                  model.name=model,transformation=transformation,time.lost=z$time.lost)
   if (transformation=="ld"){
@@ -144,6 +147,7 @@ pgmm <- function(formula, data, effect = "individual",
   else{
     time.dummies <- NULL
   }
+
   if (transformation=="ld"){
     result <- pgmm.sys(yX,W,Wl,In,time.dummies,model,fsm,cl)
   }
@@ -283,7 +287,7 @@ pgmm.sys <- function(yX,W,Wl,In,time.dummies,model,fsm,cl){
   list(coefficients=coefficients,residuals=residuals,
        fitted.values=fitted.values,vcov=vcov,
        df.residual=df.residual,
-       model=yXl,W=WS,K=K,A1=A1,A2=A2,call=cl)
+       model=yXl,W=WS,K=K,A1=A1,A2=A2,call=cl,Wd=W,Wl=Wl)
 }
 
 
@@ -417,7 +421,8 @@ summary.pgmm <- function(object,robust=FALSE,...){
   std.err <- sqrt(diag(vv))
   b <- coef(object)
   z <- b/std.err
-  p <- 2*(1-pnorm(abs(z)))
+#  p <- 2*(1-pnorm(abs(z)))
+  p <- 2*pnorm(abs(z),lower.tail=FALSE)
   CoefTable <- cbind(b,std.err,z,p)
   colnames(CoefTable) <- c("Estimate","Std. Error","z-value","Pr(>|z|)")
   object$CoefTable <- CoefTable[1:rowsel,,drop=FALSE]
@@ -453,24 +458,24 @@ print.summary.pgmm <- function(x,digits=max(3, getOption("digits") - 2), width =
 
   cat("\nSargan Test: ",names(x$sargan$statistic),
       "(",x$sargan$parameter,") = ",x$sargan$statistic,
-      " (p.value=",x$sargan$p.value,")\n",sep="")
+      " (p.value=",format.pval(x$sargan$p.value,digits=digits),")\n",sep="")
 
   cat("Autocorrelation test (1): ",names(x$m1$statistic),
       " = ",x$m1$statistic,
-      " (p.value=",x$m1$p.value,")\n",sep="")
+      " (p.value=",format.pval(x$m1$p.value,digits=digits),")\n",sep="")
   
   cat("Autocorrelation test (2): ",names(x$m2$statistic),
       " = ",x$m2$statistic,
-      " (p.value=",x$m2$p.value,")\n",sep="")
+      " (p.value=",format.pval(x$m2$p.value,digits=digits),")\n",sep="")
   cat("Wald test for coefficients: ",names(x$wald.coef$statistic),
       "(",x$wald.coef$parameter,") = ",x$wald.coef$statistic,
-      " (p.value=",x$wald.coef$p.value,")\n",sep="")
+      " (p.value=",format.pval(x$wald.coef$p.value,digits=digits),")\n",sep="")
   
   
   if (x$call$effect=="twoways"){
     cat("Wald test for time dummies: ",names(x$wald.td$statistic),
         "(",x$wald.td$parameter,") = ",x$wald.td$statistic,
-        " (p.value=",x$wald.td$p.value,")\n",sep="")
+        " (p.value=",format.pval(x$wald.td$p.value,digits=digits),")\n",sep="")
   }
   invisible(x)
 }
@@ -511,7 +516,6 @@ sargan <- function(object){
   transformation <- attr(object,"pmodel")$transformation
   model.name <- attr(object,"pmodel")$model
   Ktot <- object$K$K+object$K$Ky+object$K$Kt
-  
   if (transformation=="ld"){
 #    WS <- mapply(bdiag,object$W[[1]],object$W[[2]])
     resS <- lapply(object$residuals,function(x) c(diff(x),x))
@@ -533,7 +537,8 @@ sargan <- function(object){
   names(parameter) <- "df"
   names(stat) <- "chisq"
   method <- "Sargan test"
-  pval <- 1-pchisq(stat,df=parameter)
+#  pval <- 1-pchisq(stat,df=parameter)
+  pval <- pchisq(stat,df=parameter,lower.tail=FALSE)
   sargan <- list(statistic = stat,
                  p.value = pval,
                  parameter = parameter,
@@ -578,7 +583,8 @@ wald <- function(x,param="coef",vcov=NULL){
   stat <- t(coef)%*%solve(vv)%*%coef
   names(stat) <- "chisq"
   parameter <- length(coef)
-  pval <- 1-pchisq(stat,df=parameter)
+#  pval <- 1-pchisq(stat,df=parameter)
+  pval <- pchisq(stat,df=parameter,lower.tail=FALSE)
   wald <- list(statistic = stat,
                p.value = pval,
                parameter = parameter,
@@ -655,7 +661,8 @@ mtest <- function(object,order=1,vcov=NULL){
   num <- suml(mapply(crossprod,Eb,Elb,SIMPLIFY=FALSE))
   stat <- num/sqrt(denom)
   names(stat) <- "normal"
-  pval <- 1-pnorm(abs(stat))
+#  pval <- 1-pnorm(abs(stat))
+  pval <- pnorm(abs(stat),lower.tail=FALSE)
   mtest <- list(statistic = stat,
                 p.value = pval,
                 method = paste("Autocorrelation test of degree",order))
@@ -679,6 +686,7 @@ coef.pgmm <- function(object,...){
 
 dynformula <- function(formula,lag.form=NULL,diff.form=NULL,log.form=NULL){
   endog <- attr(terms(formula),"term.labels")
+  is.int <- attr(terms(formula),"intercept")
   if(length(formula)==3){
     exo <- deparse(formula[[2]])
     lhs <- TRUE
@@ -813,5 +821,7 @@ dynformula <- function(formula,lag.form=NULL,diff.form=NULL,log.form=NULL){
   else{
     formod <- as.formula(paste("~",chendog,sep=""))
   }
-  structure(formod,class=c("dynformula","formula"),lag=lag.form,diff=diff.form,log=log.form,var=c(exo,endog))
+  if (is.int==0) formod <- update(formod,.~.-1)
+  structure(formod,class=c("dynformula","formula"),lag=lag.form,
+            diff=diff.form,log=log.form,var=c(exo,endog))
 }

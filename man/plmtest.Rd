@@ -8,8 +8,9 @@
 }
 \usage{
 plmtest(x, ...)
-\method{plmtest}{plm}(x, effect = "individual", type = "bp", ...)
-\method{plmtest}{formula}(x, data, effect = "individual", type = "bp", ...)
+\method{plmtest}{plm}(x, effect = "individual", type = "honda", ...)
+\method{plmtest}{formula}(x, data, effect = "individual", type = "honda",
+index = NULL, ...)
 %\method{plmtest}{default}(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="id",type="bp",data=NULL, ...)
 }
 
@@ -20,7 +21,9 @@ plmtest(x, ...)
     individual effects (\code{"individual"}), time effects (\code{"time"}) or both (\code{"twoways"}),}
   \item{type}{a character string indicating the  test to be
     computed : \code{"bp"} for Breush-Pagan (1980), \code{"ghm"} for Gourieroux, Holly and
-    Monfort (1982), \code{"honda"} for Honda (1985) or \code{"kw"} for King and Wu (1997),}
+    Monfort (1982), \code{"honda"} for Honda (1985) or \code{"kw"} for
+    King and Wu (1997),}
+  \item{index}{the index of the \code{data.frame},}
   \item{...}{further arguments.}
 }
 

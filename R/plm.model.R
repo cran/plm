@@ -13,7 +13,6 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   other.variation <- pvar$time.variation
   cond.variation <- pvar$id.variation
   ncond <- n
-
   if (effect=="time"){
     cond <- time
     other <- id
@@ -41,7 +40,7 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   }
   else{
     coef.within <- other.variation
-    df.within <- N-n-Kw
+    df.within <- N-ncond-Kw
   }
   if (nrow(X.with)<=ncol(X.with)){
     stop("Within estimation impossible (insufficient number of observations)\n")
@@ -54,7 +53,7 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     }
   }
   else{
-    if (ncol(W)<ncol(X)+1) stop("Insufficient number of instruments\n")
+    if (ncol(W)<ncol(X+1)) stop("Insufficient number of instruments\n")
     W.m <- W.m <- papply(W,mymean,cond)
     if(effect=="twoways"){
       W.time <- papply(W,mymean,time)
@@ -143,25 +142,40 @@ plm.between <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   between  
 }    
 
-plm.pooling <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
+plm.pooling <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,interc=TRUE,...){
   formula <- pmodel$formula
   effect <- pmodel$effect
   rnames <- rownames(X)
-
   K <- pdim$K <- ncol(X)
   N <- nrow(X)
   coef.names <- colnames(X)
   if (is.null(W)){
-    pooling <- lm(y~X)
+    if (interc){
+      pooling <- lm(y~X)
+    }
+    else{
+      pooling <- lm(y~X-1)
+    }
   }
   else{
     if (ncol(W)<ncol(X)+1) stop("Insufficient number of instruments\n")
-    pooling=twosls(y,X,W,TRUE)
+      pooling=twosls(y,X,W,interc)
+    
   }
-  pooling <- plmformat(pooling,c("(intercept)",coef.names),rnames,
-                       N-K-1,"pooling",pdim,pmodel,indexes,cl)
-  pooling$model[[2]] <- cbind(1,pooling$model[[2]])
-  colnames(pooling$model[[2]])[1] <- "(intercept)"
+  if (interc){
+    cnames <- c("(intercept)",coef.names)
+  }
+  else{
+    cnames <- coef.names
+  }
+  pooling <- plmformat(pooling,
+                       cnames,
+                       rnames,N-K-interc,"pooling",
+                       pdim,pmodel,indexes,cl)
+  if (interc){
+    pooling$model[[2]] <- cbind(1,pooling$model[[2]])
+    colnames(pooling$model[[2]])[1] <- "(intercept)"
+  }
   pooling
 }
 
@@ -171,30 +185,35 @@ plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   effect <- pmodel$effect
   rnames <- rownames(X)
 
+  n <- pdim$nT$n
+  N <- pdim$nT$N
+  T <- pdim$nT$T-1
+  Ti <- pdim$Tint$Ti-1
+  nt <- pdim$Tint$nt[-1]
+  N <- pdim$nT$N <- N-n
+  time.names <- pdim$panel.names$time.names[-1]
+  pdim$nT <- list(n=n,T=T,N=N)
+  pdim$Tint <- list(Ti=Ti,nt=nt)
+  pdim$panel.names$time.names <- time.names[-1]
   K <- pdim$K <- ncol(X)
   N <- nrow(X)
   coef.names <- colnames(X)
-
   X <- rbind(NA,X[2:N,]-X[1:(N-1),])
   y <- c(NA,y[2:N]-y[1:(N-1)])
   did <- c(1,as.numeric(id[2:N])-as.numeric(id[1:(N-1)]))
-
   X <- X[did==0,]
   y <- y[did==0]
   rnames <- rnames[did==0]
   if (is.null(W)){
-    pooling <- lm(y~X)
+    pooling <- lm(y~X-1)
   }
   else{
-  W <- rbind(NA,W[2:N,]-W[1:(N-1),])
+    W <- rbind(NA,W[2:N,]-W[1:(N-1),])
     W <- W[did==0,]
-    pooling=twosls(y,X,W,TRUE)
+    pooling=twosls(y,X,W,FALSE)
   }
-  X <- cbind(1,X)
-  
-  colnames(X)[1] <- "(intercept)"
-  pooling <- plmformat(pooling,c("(intercept)",coef.names),rnames,
-                       N-K-1,"pooling",pdim,pmodel,indexes,cl)
+  pooling <- plmformat(pooling,coef.names,rnames,
+                       N-K-n,"pooling",pdim,pmodel,indexes,cl)
 }
 
 

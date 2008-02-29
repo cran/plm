@@ -263,9 +263,9 @@ Fixed effects may be extracted easily from a \texttt{plm} object using
 \end{Sinput}
 \begin{Soutput}
     ALABAMA     ARIZONA    ARKANSAS  CALIFORNIA    COLORADO CONNECTICUT 
-   1.171753    1.306239    1.187700    1.619198    1.458215    1.706034 
+-0.15044698 -0.01596112 -0.13449962  0.29699815  0.13601482  0.38383408 
    DELAWARE     FLORIDA     GEORGIA       IDAHO 
-   1.203575    1.556497    1.446017    1.100205 
+-0.11862549  0.23429687  0.12381708 -0.22199517 
 \end{Soutput}
 \end{Schunk}
 
@@ -410,11 +410,11 @@ Call:
 plm(formula = lwage ~ wks + south + smsa + married + exp + I(exp^2) + 
     bluecol + ind + union + sex + black + ed, data = Wages, model = "ht", 
     instruments = ~sex + black + bluecol + south + smsa + ind)
-Instrumental Variables:
-~sex + black + bluecol + south + smsa + ind
 
-Time--Varying Variables: exo (bluecolyes,southyes,smsayes,ind) endo (wks,marriedyes,exp,I(exp^2),unionyes)
-Time--Invariant Variables: exo (sexmale,blackyes) endo (ed)
+T.V. exo  : bluecolyes,southyes,smsayes,ind
+T.V. endo : wks,marriedyes,exp,I(exp^2),unionyes
+T.I. exo  : sexmale,blackyes
+T.I. endo : ed
 
 Balanced Panel: n=595, T=7, N=4165
 
@@ -436,7 +436,7 @@ southyes     7.4398e-03  3.1955e-02  0.2328   0.81590
 smsayes     -4.1833e-02  1.8958e-02 -2.2066   0.02734 *  
 marriedyes  -2.9851e-02  1.8980e-02 -1.5728   0.11578    
 exp          1.1313e-01  2.4710e-03 45.7851 < 2.2e-16 ***
-I(exp^2)    -4.1886e-04  5.4598e-05 -7.6718 1.688e-14 ***
+I(exp^2)    -4.1886e-04  5.4598e-05 -7.6718 1.696e-14 ***
 bluecolyes  -2.0705e-02  1.3781e-02 -1.5024   0.13299    
 ind          1.3604e-02  1.5237e-02  0.8928   0.37196    
 unionyes     3.2771e-02  1.4908e-02  2.1982   0.02794 *  
@@ -449,7 +449,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 243.04
 Residual Sum of Squares: 95.947
 Multiple R-Squared: 0.60522
-F-statistic: 489.524 on 4151 and 13 DF, p-value: 3.3307e-16
+F-statistic: 489.524 on 4151 and 13 DF, p-value: 3.3651e-16
 \end{Soutput}
 \end{Schunk}
 
@@ -553,7 +553,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 1354.7
 Residual Sum of Squares: 557.64
 Multiple R-Squared: 0.58836
-F-statistic: 33.1494 on 603 and 26 DF, p-value: 7.7716e-16
+F-statistic: 33.1494 on 603 and 26 DF, p-value: 7.3608e-16
 \end{Soutput}
 \end{Schunk}
 
@@ -613,7 +613,7 @@ zn           3.9575e-05  6.8778e-04   0.0575 0.9541153
 indus        2.0794e-03  4.3403e-03   0.4791 0.6318706    
 chasyes     -1.0591e-02  2.8960e-02  -0.3657 0.7145720    
 nox         -5.8630e-03  1.2455e-03  -4.7074 2.509e-06 ***
-rm           9.1773e-03  1.1792e-03   7.7828 7.105e-15 ***
+rm           9.1773e-03  1.1792e-03   7.7828 7.095e-15 ***
 age         -9.2715e-04  4.6468e-04  -1.9952 0.0460159 *  
 dis         -1.3288e-01  4.5683e-02  -2.9088 0.0036279 ** 
 rad          9.6863e-02  2.8350e-02   3.4168 0.0006337 ***
@@ -627,7 +627,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 893.08
 Residual Sum of Squares: 8.6843
 Multiple R-Squared: 0.99028
-F-statistic: 3854.18 on 492 and 13 DF, p-value: 0
+F-statistic: 3854.18 on 492 and 13 DF, p-value: < 2.22e-16
 \end{Soutput}
 \end{Schunk}
 
@@ -776,9 +776,9 @@ different firms is explained by past values of employment and wages
 Twoways effects Two steps model
 
 Call:
-pgmm(formula = dynformula(n ~ w, lag = list(c(1, 2), c(1, 2))), 
-    data = Snmesp, effect = "twoways", model = "twosteps", gmm.inst = ~n + 
-        w, lag.gmm = c(2, 99), transformation = c("d"))
+pgmm(formula = n ~ lag(n, 1) + lag(n, 2) + lag(w, 1) + lag(w, 
+    2), data = Snmesp, effect = "twoways", model = "twosteps", 
+    gmm.inst = ~n + w, lag.gmm = c(2, 99), transformation = c("d"))
 
 Balanced Panel: n=738, T=8, N=5904
 
@@ -797,11 +797,11 @@ lag(w, 2) -0.0525764  0.0249418 -2.1080  0.03503 *
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 
-Sargan Test: chisq(36) = 36.91417 (p.value=0.4264798)
-Autocorrelation test (1): normal = -6.709587 (p.value=9.75886e-12)
-Autocorrelation test (2): normal = 0.1986467 (p.value=0.4212696)
-Wald test for coefficients: chisq(4) = 234.7444 (p.value=0)
-Wald test for time dummies: chisq(5) = 44.47645 (p.value=1.853645e-08)
+Sargan Test: chisq(36) = 36.91417 (p.value=0.42648)
+Autocorrelation test (1): normal = -6.709587 (p.value=9.7588e-12)
+Autocorrelation test (2): normal = 0.1986467 (p.value=0.42127)
+Wald test for coefficients: chisq(4) = 234.7444 (p.value=< 2.22e-16)
+Wald test for time dummies: chisq(5) = 44.47645 (p.value=1.8536e-08)
 \end{Soutput}
 \end{Schunk}
 
@@ -819,9 +819,8 @@ estimated.
 Twoways effects Two steps model
 
 Call:
-pgmm(formula = dynformula(n ~ 1, lag = list(c(1, 2))), data = Snmesp, 
-    effect = "twoways", model = "twosteps", gmm.inst = ~n, lag.gmm = c(2, 
-        99), transformation = c("d"))
+pgmm(formula = n ~ lag(n, 1) + lag(n, 2), data = Snmesp, effect = "twoways", 
+    model = "twosteps", gmm.inst = ~n, lag.gmm = c(2, 99), transformation = c("d"))
 
 Balanced Panel: n=738, T=8, N=5904
 
@@ -838,11 +837,11 @@ lag(n, 2) 0.037680   0.021952  1.7165  0.08607 .
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 
-Sargan Test: chisq(18) = 14.40912 (p.value=0.7020586)
-Autocorrelation test (1): normal = -5.947032 (p.value=1.365243e-09)
-Autocorrelation test (2): normal = 0.2629247 (p.value=0.3963043)
-Wald test for coefficients: chisq(2) = 105.3612 (p.value=0)
-Wald test for time dummies: chisq(5) = 59.15637 (p.value=1.815559e-11)
+Sargan Test: chisq(18) = 14.40912 (p.value=0.70206)
+Autocorrelation test (1): normal = -5.947032 (p.value=1.3652e-09)
+Autocorrelation test (2): normal = 0.2629247 (p.value=0.39630)
+Wald test for coefficients: chisq(2) = 105.3612 (p.value=< 2.22e-16)
+Wald test for time dummies: chisq(5) = 59.15637 (p.value=1.8156e-11)
 \end{Soutput}
 \end{Schunk}
 
@@ -925,8 +924,9 @@ not\footnote{The following examples are from
 \begin{Soutput}
 	F statistic
 
-data:  zplm and znp 
+data:  inv ~ value + capital 
 F = 5.7805, df1 = 18, df2 = 170, p-value = 1.219e-10
+alternative hypothesis: unstability 
 \end{Soutput}
 \begin{Sinput}
 > z <- plm(form, data = Grunfeld, effect = "time")
@@ -936,8 +936,9 @@ F = 5.7805, df1 = 18, df2 = 170, p-value = 1.219e-10
 \begin{Soutput}
 	F statistic
 
-data:  z and znpt 
-F = 1.2267, df1 = 48, df2 = 140, p-value = 0.1804
+data:  inv ~ value + capital 
+F = 1.5495, df1 = 38, df2 = 140, p-value = 0.03553
+alternative hypothesis: unstability 
 \end{Soutput}
 \end{Schunk}
 
@@ -975,23 +976,25 @@ Some examples of the use of \texttt{plmtest} are shown below\footnote{See \texts
 \begin{Schunk}
 \begin{Sinput}
 > library(Ecdat)
-> g <- plm(inv ~ value + capital, data = Grunfeld)
+> g <- plm(inv ~ value + capital, data = Grunfeld, model = "pooling")
 > plmtest(g)
 \end{Sinput}
 \begin{Soutput}
-	Lagrange Multiplier Test - (Breusch-Pagan)
+	Lagrange Multiplier Test - (Honda)
 
-data:  Grunfeld 
-chisq = 5.2632, df = 1, p-value = 0.02178
+data:  inv ~ value + capital 
+normal = 28.2518, p-value < 2.2e-16
+alternative hypothesis: significant effects 
 \end{Soutput}
 \begin{Sinput}
 > plmtest(g, effect = "time")
 \end{Sinput}
 \begin{Soutput}
-	Lagrange Multiplier Test - time effects (Breusch-Pagan)
+	Lagrange Multiplier Test - time effects (Honda)
 
-data:  Grunfeld 
-chisq = 0.0417, df = 1, p-value = 0.8381
+data:  inv ~ value + capital 
+normal = -2.5404, p-value = 0.002768
+alternative hypothesis: significant effects 
 \end{Soutput}
 \begin{Sinput}
 > plmtest(g, type = "honda")
@@ -999,8 +1002,9 @@ chisq = 0.0417, df = 1, p-value = 0.8381
 \begin{Soutput}
 	Lagrange Multiplier Test - (Honda)
 
-data:  Grunfeld 
-normal = -2.2942, p-value = 0.005445
+data:  inv ~ value + capital 
+normal = 28.2518, p-value < 2.2e-16
+alternative hypothesis: significant effects 
 \end{Soutput}
 \begin{Sinput}
 > plmtest(g, type = "ghm", effect = "twoways")
@@ -1009,8 +1013,9 @@ normal = -2.2942, p-value = 0.005445
 	Lagrange Multiplier Test - two-ways effects (Gourieroux, Holly and
 	Monfort)
 
-data:  Grunfeld 
-chisq = 0.0417, df = 2, p-value = 0.9793
+data:  inv ~ value + capital 
+chisq = 798.1615, df = 2, p-value < 2.2e-16
+alternative hypothesis: significant effects 
 \end{Soutput}
 \begin{Sinput}
 > plmtest(g, type = "kw", effect = "twoways")
@@ -1018,8 +1023,9 @@ chisq = 0.0417, df = 2, p-value = 0.9793
 \begin{Soutput}
 	Lagrange Multiplier Test - two-ways effects (King and Wu)
 
-data:  Grunfeld 
-normal = -1.774, df = 2, p-value = 0.03803
+data:  inv ~ value + capital 
+normal = 21.8322, df = 2, p-value < 2.2e-16
+alternative hypothesis: significant effects 
 \end{Soutput}
 \end{Schunk}
 
@@ -1046,8 +1052,9 @@ Some examples of the use of \texttt{pFtest} are shown below\footnote{See \textsc
 \begin{Soutput}
 	F test for effects
 
-data:  gw and gp 
+data:  inv ~ value + capital 
 F = 49.1766, df1 = 9, df2 = 188, p-value < 2.2e-16
+alternative hypothesis: significant effects 
 \end{Soutput}
 \begin{Sinput}
 > pFtest(gt, gp)
@@ -1055,8 +1062,9 @@ F = 49.1766, df1 = 9, df2 = 188, p-value < 2.2e-16
 \begin{Soutput}
 	F test for effects
 
-data:  gt and gp 
-F = 0.5229, df1 = 9, df2 = 188, p-value = 0.8569
+data:  inv ~ value + capital 
+F = 0.2345, df1 = 19, df2 = 178, p-value = 0.9997
+alternative hypothesis: significant effects 
 \end{Soutput}
 \begin{Sinput}
 > pFtest(gd, gw)
@@ -1064,8 +1072,9 @@ F = 0.5229, df1 = 9, df2 = 188, p-value = 0.8569
 \begin{Soutput}
 	F test for effects
 
-data:  gd and gw 
+data:  inv ~ value + capital 
 F = 1.4032, df1 = 19, df2 = 169, p-value = 0.1309
+alternative hypothesis: significant effects 
 \end{Soutput}
 \end{Schunk}
 
@@ -1097,8 +1106,9 @@ Some examples of the use of \texttt{phtest} are shown below
 \begin{Soutput}
 	Hausman Test
 
-data:  gw and gr 
+data:  inv ~ value + capital 
 chisq = 2.3304, df = 2, p-value = 0.3119
+alternative hypothesis: one model is inconsistent 
 \end{Soutput}
 \end{Schunk}
 
@@ -1151,9 +1161,9 @@ Main use of \texttt{pvcovHC} is together with testing functions from \texttt{lmt
 t test of coefficients:
 
              Estimate Std. Error t value  Pr(>|t|)    
-log(output)  0.919285   0.019105 48.1165 < 2.2e-16 ***
-log(pf)      0.417492   0.013533 30.8507 < 2.2e-16 ***
-lf          -1.070396   0.216620 -4.9413  4.11e-06 ***
+log(output)  0.919285   0.029498 31.1640 < 2.2e-16 ***
+log(pf)      0.417492   0.017362 24.0457 < 2.2e-16 ***
+lf          -1.070396   0.384669 -2.7826  0.006707 ** 
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 \end{Soutput}
@@ -1163,7 +1173,7 @@ else one may do the covariance computation inside the call to \texttt{coeftest},
 
 \begin{Schunk}
 \begin{Sinput}
-> coeftest(z, pvcovHC(z, type = "white2", weights = "HC3"))
+> coeftest(z, pvcovHC(z, method = "white2", type = "HC3"))
 \end{Sinput}
 \begin{Soutput}
 t test of coefficients:
@@ -1182,7 +1192,7 @@ For some tests, e.g. for multiple model comparisons by \texttt{waldtest}, one sh
 \begin{Schunk}
 \begin{Sinput}
 > waldtest(z, update(z, . ~ . - log(pf) - lf), vcov = function(x) pvcovHC(x, 
-+     type = "white2", weights = "HC3"))
++     method = "white2", type = "HC3"))
 \end{Sinput}
 \begin{Soutput}
 Wald test
@@ -1215,11 +1225,9 @@ Model 2: restricted model
 
 Note: Coefficient covariance matrix supplied.
 
-  Res.Df  Df  Chisq Pr(>Chisq)    
-1    811                          
-2    812  -1 34.484  4.297e-09 ***
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+  Res.Df  Df  Chisq Pr(>Chisq)
+1    811                      
+2    812  -1 2.2928     0.1300
 \end{Soutput}
 \end{Schunk}
 

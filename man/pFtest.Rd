@@ -10,7 +10,7 @@
 \usage{
 pFtest(x, ...)
 \method{pFtest}{plm}(x, z, ...)
-\method{pFtest}{formula}(x, data, effect = "individual", ...)
+\method{pFtest}{formula}(x, data, effect = "individual", index = NULL, ...)
 }
 
 \arguments{
@@ -18,8 +18,8 @@ pFtest(x, ...)
   \item{z}{an object of class \code{"plm"},}
   \item{effect}{the effects introduced in the model, one of \code{"individual"}, \code{"time"} or \code{"twoways"},}
   \item{data}{a \code{data.frame},}
-  \item{\dots}{further arguments, especially the \code{index} argument
-  if the formula method is used.}
+  \item{index}{the index of the \code{data.frame},}
+  \item{\dots}{further arguments.}
 }
 \value{
   An object of class \code{"htest"}.

@@ -9,7 +9,8 @@
 \usage{
 pbgtest(x,...)
 \method{pbgtest}{panelmodel}(x, order = NULL, ...)
-\method{pbgtest}{formula}(x, data, model = "random", order = NULL, ...)
+\method{pbgtest}{formula}(x, data, model = "random", order = NULL,
+index = NULL, ...)
 }
 
 \arguments{
@@ -19,6 +20,7 @@ pbgtest(x,...)
   \item{order}{an integer indicating the order of serial correlation to
     be tested for. Defaults to the minimum numerosity over the time
     dimension,}
+  \item{index}{the index of the \code{data.frame},}
   \item{\dots}{further arguments.}
 }
 

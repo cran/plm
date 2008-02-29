@@ -10,7 +10,7 @@
 phtest(x, ...)
 \method{phtest}{panelmodel}(x, x2, ...)
 \method{phtest}{formula}(x, data, model = c("within","random"),
-    effect = "individual", ...)
+    effect = "individual", index = NULL, ...)
 }
 
 \arguments{
@@ -19,6 +19,7 @@ phtest(x, ...)
   \item{model}{a vector containing the names of two models,}
   \item{effect}{the effects introduced in the model, one of \code{"individual"}, \code{"time"} or \code{"twoways"},}
   \item{data}{a \code{data.frame},}
+  \item{index}{the index of the \code{data.frame},}
   \item{\dots}{further arguments.}
 }
 

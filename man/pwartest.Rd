@@ -8,12 +8,13 @@
   
 }
 \usage{
-pwartest(x, data, ...)
+pwartest(x, data, index = NULL, ...)
 }
 
 \arguments{
   \item{x}{an object of class \code{formula},}
   \item{data}{an object of class \code{pdata.frame}}
+  \item{index}{the index of the \code{data.frame},}
   \item{...}{further arguments to be passed on to \code{linear.hypothesis} or to \code{pvcovHC}}
 }
 
@@ -51,8 +52,8 @@ panels. Furthermore, it is robust to general heteroskedasticity.
 \seealso{
     \code{\link{pdwtest}}, \code{\link{pbgtest}}
 }
-\examples{
-data("EmplUK", package="plm")
-pwartest(log(emp) ~ log(wage) + log(capital), data=EmplUK)
-}
+% \examples{
+% data("EmplUK", package="plm")
+% pwartest(log(emp) ~ log(wage) + log(capital), data=EmplUK)
+% }
 \keyword{htest}

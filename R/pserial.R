@@ -7,14 +7,14 @@ pbgtest <- function (x, ...)
     UseMethod("pbgtest")
 }
 
-pbgtest.formula<-function(x, data, model="random",order=NULL,...) {
+pbgtest.formula<-function(x, data, model="random",order=NULL, index=NULL, ...) {
   ## formula method for pbgtest;
   ## defaults to a RE model
-  mymod <- plm(formula=x, data=data, model=model, ...)
+  mymod <- plm(formula=x, data=data, model=model, index=index,...)
   pbgtest(mymod,order)
 }
 
-pbgtest.panelmodel<-function(x,order=NULL, ...) {
+pbgtest.panelmodel<-function(x, order = NULL, ...) {
   ## residual serial correlation test based on the residuals of the demeaned
   ## model (see Wooldridge p.288) and the regular bgtest() in {lmtest}
 
@@ -44,16 +44,17 @@ pbgtest.panelmodel<-function(x,order=NULL, ...) {
   
   ## bgtest is the bgtest, exception made for the method attribute
   bgtest <- bgtest(lm(demy~demX-1),order=order)
-  bgtest$method <- "Breusch-Godfrey/Wooldridge test for serial correlation in panel models \n\n H0: no serial correlation in idiosyncratic residuals"
-
+  bgtest$method <- "Breusch-Godfrey/Wooldridge test for serial correlation in panel models"
+  bgtest$alternative <- "serial correlation in idiosyncratic errors"
+  bgtest$data.name <- paste(deparse(x$call$formula))
+  names(bgtest$statistic) <- "chisq"
   # is it really working ? I'm wondering how the order of the test is taken into account ???
-  
   return(bgtest)
 }
 
 ### pwtest
 
-pwtest <- function(x,data,effect=c("individual","time"), ...) {
+pwtest <- function(x, data, effect = c("individual","time"), index=NULL, ...) {
 
   ## "RE" test à la Wooldridge, see 10.4.4
   ## (basically the scaled and standardized estimator for sigma from REmod)
@@ -67,7 +68,7 @@ pwtest <- function(x,data,effect=c("individual","time"), ...) {
 
   ## tind is actually not needed here
 
-  data <- plm.data(data, ...)
+  data <- plm.data(data,index=index)
 
   ## extract indices
   indices <- list(uno=as.numeric(data[,1]),
@@ -145,14 +146,15 @@ pwtest <- function(x,data,effect=c("individual","time"), ...) {
     ## RE estimator? (see page 261) 
 
     Wstat <- W/seW
-    names(Wstat) <- "Z"
-    pW <- 2*pnorm(abs(Wstat),lower.tail=F) # unlike LM, test is two-tailed!
+    names(Wstat) <- "z"
+    pW <- 2*pnorm(abs(Wstat),lower.tail=FALSE) # unlike LM, test is two-tailed!
 
   ##(insert usual htest features)
   dname <- paste(deparse(substitute(formula)))
   RVAL <- list(statistic = Wstat, parameter = NULL,
                method = paste("Wooldridge's test for unobserved ",
-                               match.arg(effect),"effects \n \n H_0: no unobserved effect"),
+                               match.arg(effect),"effects "),
+               alternative = "unobserved effect",
                p.value = pW,
                data.name =   dname)
   class(RVAL) <- "htest"
@@ -163,31 +165,29 @@ pwtest <- function(x,data,effect=c("individual","time"), ...) {
 
 ### pwartest
 
-pwartest<-function(x, data, ...) {
+pwartest <- function(x, data, index=NULL, ...) {
   ## small-sample serial correlation test for FE models
   ## ref.: Wooldridge (2003) 10.5.4 
   if(!require(car)) stop("Library 'car' is needed")
-
-  data <- plm.data(data, ...)
-  
+  data <- plm.data(data,index=index)
   ## fetch within residuals
-  femod<-plm(x,data,model="within")
-  FEres<-femod$residuals
+  femod <- plm(x,data,model="within")
+  FEres <- femod$residuals
 
   ## this is a bug fix for incorrect naming of the "data" attr.
   ## for the pseries in pdata.frame()
-  attr(FEres, "data")<-paste(deparse(substitute(data)))
-#  FEres.1<-lag(FEres,k=1)
+  attr(FEres, "data") <- paste(deparse(substitute(data)))
+#  FEres.1 <- lag(FEres,k=1)
   N <- length(FEres)
 #  FEres.1 <- c(NA,FEres[2:N]-FEres[1:(N-1)])
   FEres.1 <- c(NA,FEres[1:(N-1)])
   id <- as.numeric(femod$indexes$id)
   lagid <- id-c(NA,id[1:(N-1)])
   FEres.1[lagid!=0] <- NA
-  data$FEres<-FEres
-  data$FEres.1<-FEres.1
+  data$FEres <- FEres
+  data$FEres.1 <- FEres.1
   ## pooling model FEres vs. lag(FEres)
-  auxmod<-plm(FEres~FEres.1,data,model="pooling")
+  auxmod <- plm(FEres~FEres.1,data,model="pooling")
 
   ## calc. theoretical rho under H0: no serial corr. in errors
 #  t.<-attr(data, "pdim")$nT$T
@@ -195,22 +195,28 @@ pwartest<-function(x, data, ...) {
   rho.H0 <- -1/(t.-1)
 
   ## test H0: rho=rho.H0 with HAC t-test (HC0-3 parm may be passed)
-  myvcov<-function(x) pvcovHC(x, type="arellano", ...)
+  myvcov <- function(x) pvcovHC(x, method="arellano", ...)
 
-  myH0<-paste("FEres.1 = ", as.character(rho.H0), sep="")
+  myH0 <- paste("FEres.1 = ", as.character(rho.H0), sep="")
 
-  lhtest<-linear.hypothesis(model=auxmod, myH0, vcov.=myvcov, ...)
-  
+  lhtest <- linear.hypothesis(model=auxmod, myH0, vcov.=myvcov, ...)
+#  print(lhtest)
+#  print(lhtest$Df)
+#  print(names(lhtest))
+#  print.default(lhtest)
   ##(insert usual htest features)  
   FEARstat <- lhtest[2,3]
-  names(FEARstat) <- dimnames(lhtest)[[2]][3] 
+  names(FEARstat) <- dimnames(lhtest)[[2]][3]
+  if (names(FEARstat)=="Chisq") names(FEARstat) <- "chisq"
   ## this is either 'F' or 'Chisq' and is the name of 3rd
   ## column because we are supplying a vcov matrix
-  pFEAR<-lhtest[2,4]
+  pFEAR <- lhtest[2,4]
 
   dname <- paste(deparse(substitute(x)))
-  RVAL <- list(statistic = FEARstat, parameter = NULL,
-               method = paste("Wooldridge's test for serial correlation in FE panels \n \n H_0: no serial correlation"),
+  RVAL <- list(statistic = FEARstat,
+               parameter = NULL,
+               method = "Wooldridge's test for serial correlation in FE panels",
+               alternative = "serial correlation",
                p.value = pFEAR,
                data.name =   dname)
   class(RVAL) <- "htest"
@@ -225,7 +231,7 @@ pbsytest <- function (x, ...){
 }
 
 
-pbsytest.formula <- function(x,data,test=c("AR","RE","J"), ...) {
+pbsytest.formula <- function(x,data,test=c("AR","RE","J"), index=NULL, ...) {
 
   ## Bera., Sosa-Escudero and Yoon type LM test for random effects
   ## under serial correlation (H0: no random effects) or the inverse;
@@ -238,7 +244,7 @@ pbsytest.formula <- function(x,data,test=c("AR","RE","J"), ...) {
   ######### plm to my code
   formula <- x
 
-  data <- plm.data(data, ...)
+  data <- plm.data(data,index=index)
 
   ## extract indices
   index <- as.numeric(data[,1])
@@ -281,56 +287,62 @@ pbsytest.formula <- function(x,data,test=c("AR","RE","J"), ...) {
   ## begin test
     
             ## estimate pooled model
-            poolmod <- lm.fit(X,y)
+  poolmod <- lm.fit(X,y)
 
             ## extract pooled res. for BP statistic
-            poolres <- resid(poolmod)
+  poolres <- resid(poolmod)
 
             ## calc. A and B:
-            S1 <- sum( tapply(poolres,ind,sum)^2 )
-            S2 <- sum( poolres^2 )
+  S1 <- sum( tapply(poolres,ind,sum)^2 )
+  S2 <- sum( poolres^2 )
             
-            A <- S1/S2-1
+  A <- S1/S2-1
 		
-		unind <- unique(ind)
-		uu <- rep(NA,length(unind))
-		uu1 <- rep(NA,length(unind))
-		for(i in 1:length(unind)) {
-		  u.t <- poolres[ind==unind[i]]
-		  u.t.1 <- u.t[-length(u.t)]
-		  u.t <- u.t[-1]
-		  uu[i] <- crossprod(u.t)
-		  uu1[i] <- crossprod(u.t,u.t.1)
-		  }
-
-            B <- sum(uu1)/sum(uu)
-
-            switch(match.arg(test),
-              AR={LM <- (n * t^2 * (B - (A/t))^2) / ((t-1)*(1-(2/t)))
-                  df=1
-                  names(LM) <- paste("Chisq(", df, ")", sep="")
-                  pLM <- pchisq(LM,df=1,lower.tail=F)
-                  tname <- "Bera, Sosa-Escudero and Yoon locally robust test"
-                  myH0 <- "AR(1) residuals sub random effects"
-                  },
-              RE={LM <- (A - 2*B) * sqrt( (n * t) / (2*(t-1)*(1-(2/t))) )
-                  names(LM) <- "Z"
-                  df=NULL
-                  pLM <- pnorm(LM,lower.tail=F)
-                  tname <- "Bera, Sosa-Escudero and Yoon locally robust test"
-                  myH0 <- "random effects sub AR(1) residuals"
-                  },              
-              J={LM <- (n * t^2) / (2*(t-1)*(t-2)) * (A^2 - 4*A*B + 2*t*B^2) 
-                  df=2
-                  names(LM) <- paste("Chisq(", df, ")", sep="")
-                  pLM <- pchisq(LM,df=1,lower.tail=F)
-                  tname <- "Baltagi and Li AR-RE joint test"
-                  myH0 <- "AR(1) residuals or random effects"
-                  })
+  unind <- unique(ind)
+  uu <- rep(NA,length(unind))
+  uu1 <- rep(NA,length(unind))
+  for(i in 1:length(unind)) {
+    u.t <- poolres[ind==unind[i]]
+    u.t.1 <- u.t[-length(u.t)]
+    u.t <- u.t[-1]
+    uu[i] <- crossprod(u.t)
+    uu1[i] <- crossprod(u.t,u.t.1)
+  }
+  
+  B <- sum(uu1)/sum(uu)
+  
+  switch(match.arg(test),
+         AR={LM <- (n * t^2 * (B - (A/t))^2) / ((t-1)*(1-(2/t)))
+             df <- c(df=1)
+#                  names(LM) <- paste("Chisq(", df, ")", sep="")
+             names(LM) <- "chisq"
+             pLM <- pchisq(LM,df=1,lower.tail=FALSE)
+             tname <- "Bera, Sosa-Escudero and Yoon locally robust test"
+             myH0 <- "AR(1) errors sub random effects"
+           },
+         RE={LM <- (A - 2*B) * sqrt( (n * t) / (2*(t-1)*(1-(2/t))) )
+#                  names(LM) <- "Z"
+             names(LM) <- "z"
+             df <- NULL
+             pLM <- pnorm(LM,lower.tail=FALSE)
+             tname <- "Bera, Sosa-Escudero and Yoon locally robust test"
+             myH0 <- "random effects sub AR(1) errors"
+           },              
+         J={LM <- (n * t^2) / (2*(t-1)*(t-2)) * (A^2 - 4*A*B + 2*t*B^2) 
+            df <- c(df=2)
+#                 names(LM) <- paste("Chisq(", df, ")", sep="")
+            names(LM) <- "chisq"
+            pLM <- pchisq(LM,df=1,lower.tail=FALSE)
+            tname <- "Baltagi and Li AR-RE joint test"
+            myH0 <- "AR(1) errors or random effects"
+          }
+         )
 
   dname <- paste(deparse(substitute(formula)))
-  RVAL <- list(statistic = LM, parameter = df,
-               method = paste(tname, " \n \n H_0: no ", myH0),
+  RVAL <- list(statistic = LM,
+               parameter = df,
+               method = tname,
+               alternative = myH0,
                p.value = pLM,
                data.name =   dname)
   class(RVAL) <- "htest"
@@ -345,10 +357,10 @@ pdwtest <- function (x, ...)
     UseMethod("pdwtest")
 }
 
-pdwtest.formula <- function(x, data, model="random", ...) {
+pdwtest.formula <- function(x, data, model="random", index=NULL, ...) {
   ## formula method for pdwtest;
   ## defaults to a RE model
-  mymod <- plm(formula=x, data=data, model=model, ...)
+  mymod <- plm(formula=x, data=data, model=model, index=index, ...)
   pdwtest(mymod, ...)
 }
 
@@ -371,15 +383,17 @@ pdwtest.panelmodel <- function(x,...) {
  ## dw test on the demeaned model:
 
  ## check package availability and load if necessary
- lm.ok <- require("lmtest")
- if(!lm.ok) stop("package lmtest is needed but not available")
-
+  lm.ok <- require("lmtest")
+  if(!lm.ok) stop("package lmtest is needed but not available")
+  
  ## ARtest is the bgtest, exception made for the method attribute
- ARtest <- dwtest(lm(demy~demX-1),...)
- ARtest$method <- "Durbin-Watson test for serial correlation in panel models \n\n H0: no serial correlation in idiosyncratic residuals"
-
- return(ARtest)
- }
+  ARtest <- dwtest(lm(demy~demX-1),...)
+  ARtest$method <- "Durbin-Watson test for serial correlation in panel models"
+  ARtest$alternative <- "serial correlation in idiosyncratic errors"
+  ARtest$data.name <- paste(deparse(x$call$formula))
+#  names(ARtest$statistic) <- "chisq"
+  return(ARtest)
+}
 
 
 ### pbltest
@@ -397,14 +411,14 @@ pdwtest.panelmodel <- function(x,...) {
 ## on N=3000, T=10 and even 20000x10 (55'') is no problem;
 ## lme() hits the memory limit at ca. 20000x20)
 
-pbltest <- function(x,data,alternative=c("twosided","onesided"), ...) {
+pbltest <- function(x,data,alternative=c("twosided","onesided"), index=NULL, ...) {
  ## TODO: lme fails if there are any NAs in the data: reduce!
 
  ## usage: pbltest(modd.reg,data=dati0)
 
  ## this version (pbltest0) based on a "formula, pdataframe" interface
 
-  data <- plm.data(data, ...)
+  data <- plm.data(data,index=index)
   gindex <- names(data)[1]
   tindex <- names(data)[2]
 
@@ -481,28 +495,36 @@ pbltest <- function(x,data,alternative=c("twosided","onesided"), ...) {
   J11 <- n.^2 * t.^2 * (t.-1) / (det(Jmat) * 4*sigma2.1^2 * sigma2.e^2)
   ## this is the same as J11 <- solve(Jmat)[1,1], see BL page 73
 
-  switch(match.arg(alternative), onesided = {
-    LMr.m <- Drho * sqrt(J11)
-    pval <- pnorm(LMr.m,lower.tail=F)
-    names(LMr.m) <- "Z"
-    method1 <- "one-sided"
-    method2 <- "H0: rho = 0, HA: rho > 0" 
-   }, twosided = {
-    LMr.m <- Drho^2 * J11
-    pval <- pchisq(LMr.m,1,lower.tail=F)
-    names(LMr.m) <- "Chisq(1)"
-    method1 <- "two-sided"
-    method2 <- "H0: rho = 0, HA: rho != 0" 
-   })
-
-  dname <- paste(deparse(substitute(formula)))
-  method <- paste("Baltagi and Li", method1,
-    "LM test for AR(1)/MA(1) errors in RE panel models \n\n",method2)
+  switch(match.arg(alternative),
+         onesided = {
+           LMr.m <- Drho * sqrt(J11)
+           pval <- pnorm(LMr.m,lower.tail=FALSE)
+                                        #    names(LMr.m) <- "Z"
+           names(LMr.m) <- "z"
+           method1 <- "one-sided"
+           method2 <- "H0: rho = 0, HA: rho > 0"
+           parameter <- NULL
+         },
+         twosided = {
+           LMr.m <- Drho^2 * J11
+           pval <- pchisq(LMr.m,1,lower.tail=FALSE)
+#    names(LMr.m) <- "Chisq(1)"
+           names(LMr.m) <- "chisq"
+           parameter <- c(df=1)
+           method1 <- "two-sided"
+           method2 <- "H0: rho = 0, HA: rho != 0" 
+         }
+         )
+  dname <- paste(deparse(substitute(x)))
+  method <- paste("Baltagi and Li", method1,"LM test")
+  alternative <- "AR(1)/MA(1) errors in RE panel models"
 
   res <- list(statistic = LMr.m,
-                p.value = pval,
-                method = method,
-                data.name = dname)
+              p.value = pval,
+              method = method,
+              alternative = alternative,
+              parameter = parameter,
+              data.name = dname)
 
   class(res) <- "htest"
   res

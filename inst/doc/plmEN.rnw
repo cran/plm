@@ -451,7 +451,7 @@ Some examples of the use of \texttt{plmtest} are shown below\footnote{See \texts
 
 <<>>=
 library(Ecdat)
-g <- plm(inv ~ value + capital, data=Grunfeld)
+g <- plm(inv ~ value + capital, data=Grunfeld, model="pooling")
 plmtest(g)
 plmtest(g,effect="time")
 plmtest(g,type="honda")
@@ -554,13 +554,13 @@ coeftest(z,pvcovHC)
 else one may do the covariance computation inside the call to \texttt{coeftest}, thus passing on a matrix:
 
 <<>>=
-coeftest(z,pvcovHC(z,type="white2",weights="HC3"))
+coeftest(z,pvcovHC(z,method="white2",type="HC3"))
 @ 
 
 For some tests, e.g. for multiple model comparisons by \texttt{waldtest}, one should always provide a function\footnote{Joint zero-restriction testing still allows providing the \texttt{vcov} of the unrestricted model as a matrix, see the documentation of package \texttt{lmtest}}. In this case, optional parameters are provided as shown below (see also Zeileis, 2004, p.12):
 
 <<>>=
-waldtest(z,update(z,.~.-log(pf)-lf),vcov=function(x) pvcovHC(x,type="white2",weights="HC3"))
+waldtest(z,update(z,.~.-log(pf)-lf),vcov=function(x) pvcovHC(x,method="white2",type="HC3"))
 @ 
 
 \texttt{linear.hypothesis} from package \texttt{car} may be used to test for linear restrictions:

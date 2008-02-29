@@ -1,7 +1,6 @@
 plm <-  function(formula, data, subset, na.action, effect="individual",
                  model = "within", instruments = NULL,
                  random.method = "swar", inst.method = "bvk", index = NULL, pvar = TRUE, ...){
-  
   model.name <- model
   if (model.name=="ht") pvar <- TRUE
   data.name <- paste(deparse(substitute(data)))
@@ -19,7 +18,7 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
   attr(data,"indexes") <- indexes
   nframe <- length(sys.calls())
   assign(new.data.name,data,env=sys.frame(which=nframe))
-   
+
   if(!(effect %in% names(effect.plm.list))){
     stop(paste("effect must be one of ",oneof(effect.plm.list)))
   }
@@ -76,7 +75,7 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
     minst <- eval(minst,sys.frame(which=nframe))   
   }
   mindexes <- eval(mindexes,sys.frame(which=nframe))
-  y <- model.response(mf,"numeric")
+
   if(!is.null(instruments)){
     int.row.names <- intersect(attr(mf,"row.names"),
                                intersect(attr(minst,"row.names"),
@@ -85,14 +84,19 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
   else{
     int.row.names <- intersect(attr(mf,"row.names"),
                                attr(mindexes,"row.names"))
-  }    
-  mf <- mf[int.row.names,]
-  mindexes <- mindexes[int.row.names,]
-  y <- y[int.row.names]
+  }
+  mf <- mf[as.character(int.row.names),,drop=F]
+  for (i in names(mf)){
+    if(is.factor(mf[[i]])){
+      mf[[i]] <- mf[[i]][drop=TRUE]
+    }
+  }
+  mindexes <- mindexes[as.character(int.row.names),,drop=F]
   attr(mf,"row.names") <- attr(mindexes,"row.names") <- int.row.names
+
   if(!is.null(instruments)){
-    attr(minst,"row.names") <- attr(mindexes,"row.names") <- int.row.names
-    minst <- minst[int.row.names,,drop=F]
+    attr(minst,"row.names") <- int.row.names
+    minst <- minst[as.character(int.row.names),,drop=F]
     W <- model.matrix(instruments,minst)
   }
   else{
@@ -100,7 +104,15 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
   }
   cl$formula <- formula
   if (!is.null(instruments)) cl$instruments <- instruments.init
-  X <- model.matrix(formula,mf)[,-1,drop=FALSE]
+  y <- model.response(mf,"numeric")
+  if (attr(terms(formula),"intercept")==1){
+    X <- model.matrix(formula,mf)[,-1,drop=FALSE]
+    interc <- TRUE
+  }
+  else{
+    X <- model.matrix(formula,mf)
+    interc <- FALSE
+  }
   id <- mindexes[[id.name]][drop=T]
   time <- mindexes[[time.name]][drop=T]
   pmodel <- list(model.name=model.name,formula=formula,effect=effect,
@@ -115,10 +127,12 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
     names(id.variation) <- names(time.variation) <- colnames(X)
     pvar <- structure(list(id.variation=id.variation,time.variation=time.variation),class="pvar")
   }
+
+  
   result <- switch(model.name,
                    "within"=plm.within(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                    "between"=plm.between(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                   "pooling"=plm.pooling(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
+                   "pooling"=plm.pooling(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl, interc, ...),
                    "random"=plm.random(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                    "ht"=plm.ht(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                    "fd"=plm.fd(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...)

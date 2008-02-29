@@ -1,13 +1,14 @@
 #exportPattern("^[^\\.]")
 export(plm,pvcm,pgmm,pggls,plm.data,plmtest,phtest,pFtest,
 pvar,pdim,pooltest, pvcovHC,dynformula,sargan,mtest,
-pbsytest,pdwtest,pbgtest,pbltest,pwartest,pwtest)
+pbsytest,pdwtest,pbgtest,pbltest,pwartest,pwtest,pwfdtest)
 #       theta.method.list,effect.list,trinst.list,model.list)
 import(stats)
 importFrom(kinship,bdsmatrix)
 importFrom(nlme,fixef)
 S3method(pdim,data.frame)
 S3method(pdim,plm)
+S3method(pdim,default)
 #S3method(print,indexes)
 #S3method(pdim,default)
 S3method(print,pdim)

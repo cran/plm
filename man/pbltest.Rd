@@ -8,16 +8,17 @@
 
 }
 \usage{
-pbltest(x, data, alternative = c("twosided","onesided"), ...)
+pbltest(x, data, alternative = c("twosided","onesided"), index = NULL, ...)
 }
 
 \arguments{
   \item{x}{a model formula,}
   \item{data}{a \code{data.frame},}
   \item{alternative}{one of \code{"twosided"},
-  \code{"onesided"}. Selects either $H_A: \rho \neq 0$ or $H_A: \rho >
-  0$ (i.e., the Normal or the Chi-squared version of the test),}
-\item{\dots}{further arguments.}
+    \code{"onesided"}. Selects either $H_A: \rho \neq 0$ or $H_A: \rho >
+    0$ (i.e., the Normal or the Chi-squared version of the test),}
+  \item{index}{the index of the \code{data.frame},}
+  \item{\dots}{further arguments.}
 
 }
 

@@ -257,7 +257,7 @@ tss <- function(x){
 sumres <- function(x){
   sr <- summary(residuals(x))
   srm <- sr["Mean"]
-  if (abs(srm)<1e-15){
+  if (abs(srm)<1e-10){
     sr <- sr[c(1:3,5:6)]
   }
   sr
@@ -295,7 +295,7 @@ fixef.plm <- function(object, effect = NULL, ...){
     T <- attr(bet,"pdim")$nT$T
     sefixef <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
     intercept <- object$alpha
-    fixef <- structure(fixef,se=sefixef,intercept=intercept,class="fixef")
+    fixef <- structure(fixef-intercept,se=sefixef,intercept=intercept,class="fixef")
   }
   else{
     class(fixef) <- "fixef"
@@ -305,6 +305,7 @@ fixef.plm <- function(object, effect = NULL, ...){
 
 print.fixef <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
   if (!is.null(attr(x,"intercept"))){
+#    if (diff) intercept <- attr(x,"intercept")
     attr(x,"se") <- attr(x,"intercept") <- attr(x,"class") <- NULL
   }
   else{
@@ -317,8 +318,8 @@ summary.fixef <- function(object,...){
   if (is.null(attr(object,"intercept"))) stop("summary method not defined for two-ways effects")
   se <- attr(object,"se")
   alpha <- attr(object,"intercept")
-  zvalue <- (object-alpha)/se
-  res <- cbind(object-alpha,se,zvalue,(1-pnorm(abs(zvalue)))*2)
+  zvalue <- (object)/se
+  res <- cbind(object,se,zvalue,(1-pnorm(abs(zvalue)))*2)
   colnames(res) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
   class(res) <- "summary.fixef"
   res

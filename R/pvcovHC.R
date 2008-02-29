@@ -2,7 +2,7 @@ pvcovHC <- function(x,...){
   UseMethod("pvcovHC")
 }
 
-pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
+pvcovHC.panelmodel <-function(x,method="arellano",type="HC0", ...) {
   ## Robust vcov for panel models (random or within type plm obj.)
   ##
   ## This function takes the demeaned data from the
@@ -30,19 +30,19 @@ pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
   ## in vcovHC/meatHC. Sure this makes sense for white1, but it
   ## is open to question for white2 and arellano. We'll see.
 
-  if(!(type %in% names(robust.list))){
-    stop(paste("type must be one of",oneof(robust.list)))
+  if(!(method %in% names(robust.list))){
+    stop(paste("method must be one of",oneof(robust.list)))
   }
   
-  if (!(weights %in% names(weights.list))){
-    stop(paste("weights must be one of",oneof(weights.list)))
+  if (!(type %in% names(weights.list))){
+    stop(paste("type must be one of",oneof(weights.list)))
   }
 
   if (!any(class(x)=="panelmodel")){
     stop("x has to be a panelmodel object\n")
   }
   
-  if(!(attr(x,"pmodel")$model %in% c("random","within","pooling"))) {
+  if(!(attr(x,"pmodel")$model %in% c("random","within","pooling","fd"))) {
     stop("Model has to be either random, within or pooling model")
     }
 
@@ -50,7 +50,6 @@ pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
   demX <- x$model[[2]]
   demy <- x$model[[1]]
 
-#  print(demX)
   ## name intercept: a fix for the "" name of demX_1 ##
   dimnames(demX)[[2]][1]<-attr(x$vcov,"dimnames")[[1]][1]
 
@@ -107,13 +106,13 @@ pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
                          diag(crossprod(tx,solve(crossprod(x),tx)))}
 
     ## this is computationally heavy, do only if needed
-    switch(weights, HC0 = {diaghat<-NULL},
+    switch(type, HC0 = {diaghat<-NULL},
                     HC1 = {diaghat<-NULL},
                     HC2 = {diaghat<-try(dhat(demX), silent = TRUE)}, 
                     HC3 = {diaghat<-try(dhat(demX), silent = TRUE)},
                     HC4 = {diaghat<-try(dhat(demX), silent = TRUE)})
     df <- nT - k
-    switch(weights, HC0 = {
+    switch(type, HC0 = {
             omega <- function(residuals, diaghat, df) residuals
         }, HC1 = {
             omega <- function(residuals, diaghat, df) residuals * 
@@ -135,7 +134,7 @@ pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
 
   ## define Omegai(e_i) function for Omega_i diag. blocks in E^2
   ## in Greene's formula (top of page 315)
-  switch(type,
+  switch(method,
                white1 = {Omegai<-function(x) diag(x^2)},
                white2 = {Omegai<-function(x) {
                          n<-length(x)
@@ -148,7 +147,7 @@ pvcovHC.panelmodel <-function(x,type="white1",weights="HC0", ...) {
       groupinds<-tind[[i]]
       xi<-demX[groupinds,]
       ui<-uhat[groupinds]
-      salame[,,i]<-crossprod(xi,Omegai(ui))%*%xi  #/length(ui)?? see unbal.
+      salame[,,i]<-crossprod(xi,Omegai(ui))%*%xi
       }
 
   ## meat
