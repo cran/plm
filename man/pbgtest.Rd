@@ -28,6 +28,8 @@ index = NULL, ...)
   An object of class \code{"htest"}.
 }
 
+\author{Giovanni Millo}
+
 \details{
   
   This Lagrange multiplier test uses the auxiliary model on
@@ -57,8 +59,10 @@ the order of correlation to test for.
 \seealso{
   
     \code{\link{pdwtest}} for the analogous Durbin--Watson
-    test,\code{bgtest} for the Breusch--Godfrey test for serial
-    correlation in the linear model.
+    test, \code{bgtest} for the Breusch--Godfrey test for serial
+    correlation in the linear model. \code{\link{pbltest}}, 
+    \code{\link{pbsytest}}, \code{\link{pwartest}} and \code{\link{pwfdtest}}
+    for other serial correlation tests for panel models.
 
   }
 \examples{

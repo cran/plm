@@ -19,23 +19,23 @@ pvar(x, ...)
   \item{\dots}{further arguments.}
 }
 
+\details{
+
+  \code{pvar} is called by \code{\link{plm}}, except if
+  \code{pvar=FALSE}. It is used to omit time--invariant variables
+  from the estimation. It is therefore
+  useful for whithin models, but also for random effect models
+  estimated by the Swamy and Arora method (which uses the results of the
+  within model). It can be time consuming for ``big'' panels.
+
+}
+
+
 \value{ an object of class \code{pvar} containing the following elements
   : \item{id.var}{ a logical vector with \code{TRUE} values if the
   variable has individual variation, \code{FALSE} otherwise,}
   \item{time.var}{ a logical vector with \code{TRUE} values if the
     variable has time variation, \code{FALSE} otherwise,} }
-
-
-\details{
-
-  \code{pvar} is called by \code{\link{plm}}, except if
-  \code{pvar=FALSE}. It is used to omit from the estimation of the
-  within variables which don't have any time variation. It is therefore
-  usefull for whithin models, but also for random effect models
-  estimated by the Swamy and Arrora method which use the results of the
-  within model. It can be time consuming for ``big'' panels.
-
-}
 
 \author{Yves Croissant}
 

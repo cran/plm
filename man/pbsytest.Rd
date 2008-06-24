@@ -27,10 +27,6 @@ NULL, ...)
   \item{\dots}{further arguments.}
 }
 
-\value{
-  An object of class \code{"htest"}.
-}
-
 \details{
 
   These Lagrange multiplier tests are robust vs. local misspecification
@@ -40,12 +36,19 @@ NULL, ...)
   effects; or they test the null of no random effects allowing for local
   departures from the assumption of no serial correlation in
   residuals. They use only the residuals of the pooled OLS model and
-  correct for local misspecification as outlined in Bera and \emph{al.} (2001).
+  correct for local misspecification as outlined in Bera \emph{et al.} (2001).
 
 The joint test is due to Baltagi and Li (1991) and is added for
 convenience under this same interface.
 
 }
+
+\value{
+  An object of class \code{"htest"}.
+}
+
+\author{Giovanni Millo}
+
 \references{
 
   Bera, A.K., Sosa-Escudero, W. and  Yoon, M. (2001), Tests for the error

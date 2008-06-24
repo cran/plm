@@ -5,7 +5,7 @@
 \alias{print.summary.plm}
 \title{Panel Data Estimators}
 \description{
-  Linear models for panel data estimated using the \code{lm} function to
+  Linear models for panel data estimated using the \code{lm} function on
   transformed data.
 }
 \usage{
@@ -30,9 +30,9 @@ plm(formula, data, subset, na.action, effect = "individual",
   \code{"individual"}, \code{"time"} or \code{"twoways"},}
 
   \item{model}{one of \code{"pooling"}, \code{"within"},
-    \code{"between"}, \code{"random",} and \code{"ht"},}
+    \code{"between"}, \code{"random",} \code{"fd"} and \code{"ht"},}
 
-  \item{instruments}{a one side formula containing instrumental
+  \item{instruments}{a one--sided formula containing instrumental
     variables,}
 
   \item{random.method}{method of estimation for the variance components
@@ -47,6 +47,37 @@ plm(formula, data, subset, na.action, effect = "individual",
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print output,}
   \item{\dots}{further arguments.}
+}
+
+\details{
+  \code{plm} is a general function for the estimation of linear
+  panel models. It supports the following estimation methods:
+  pooled OLS (\code{model="pooling"}), fixed effects (\code{"within"}),
+  random effects (\code{"random"}), first--difference (\code{"fd}) and
+  between (\code{"between"}). It supports unbalanced panels and two--ways
+  effects (although not with all methods).
+
+  For random effect models, 4 estimators of the transformation
+  parameter are available : \code{swar} (Swamy and Arora),
+  \code{amemiya}, \code{walhus} (Wallace and Hussain) and \code{nerlove}.
+
+  Instrumental variables estimation is obtained using different
+  syntaxes. If for example, the model is \code{y~x1+x2+x3}, \code{x1},
+  \code{x2} are endogenous and \code{z1}, \code{z2} are external
+  instruments, the model can be estimated with :
+
+  \itemize{
+    \item \code{formula=y~x1+x2+x3, instruments=~x3+z1+z2},
+    \item \code{formula=y~x1+x2+x3, instruments=~.-x1-x2+z1+z2},
+    \item \code{formula=y~x1+x2+x3 | x3+z1+z2},
+    \item \code{formula=y~x1+x2+x3 | .-x1-x2+z1+z2}.
+  }
+
+  Balestra and Varadharajan--Krishnakumar's or Baltagi's method is used if
+  \code{inst.method="bvk"} or if  \code{inst.method="baltagi"}.
+  
+  The Hausman and Taylor estimator is computed if \code{model="ht"}.
+  
 }
 
 \value{
@@ -75,39 +106,8 @@ plm(formula, data, subset, na.action, effect = "individual",
     
     It has \code{print}, \code{summary} and \code{print.summary} methods.
 
-    A specific \code{summary} method is provided for objects of class
-    \code{"plms"}, which returns an object of class \code{summary.plms}
-    and prints a table of the coefficients of the within and random
-    models and their standard errors.
-    
 }
-\details{
-  \code{plm} is a general function for the estimation of linear
-  panel models. It offers limited support for unbalanced panels and
-  estimation of two--ways effects models.
 
-  For random effect models, 4 estimators of the transformation
-  parameter are available : \code{swar} (Swamy and Arora),
-  \code{amemiya}, \code{walhus} (Wallace and Hussain) and \code{nerlove}.
-
-  Instrumental variables estimation is obtained using different
-  syntaxes. If for example, the model is \code{y~x1+x2+x3}, \code{x1},
-  \code{x2} are endogenous and \code{z1}, \code{z2} are external
-  instruments, the model can be estimated with :
-
-  \itemize{
-    \item \code{formula=y~x1+x2+x3, instruments=~x3+z1+z2},
-    \item \code{formula=y~x1+x2+x3, instruments=~.-x1-x2+z1+z2},
-    \item \code{formula=y~x1+x2+x3 | x3+z1+z2},
-    \item \code{formula=y~x1+x2+x3 | .-x1-x2+z1+z2}.
-  }
-
-  Balestra and Varadharajan--Krishnakumar's or Baltagi's method is used if
-  \code{inst.method="bvk"} or if  \code{inst.method="baltagi"}.
-  
-  The Hausman and Taylor estimator is computed if \code{model="ht"}.
-  
-}
 
 \author{Yves Croissant}
 

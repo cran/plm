@@ -92,7 +92,7 @@ plmtest.formula <- function(x, data, effect = "individual", type = "honda", inde
 
 plmtest.default <-  function(x, n = NULL, T = NULL, balanced = NULL,
                              id = NULL, time = NULL, effect = "individual",
-                             type= "bp" , data = NULL, ...){
+                             type= "honda" , data = NULL, ...){
   if(effect=="individual"){
     if(type != "honda" & type != "bp"){
       warning("type must be one of honda or bp, bp used")

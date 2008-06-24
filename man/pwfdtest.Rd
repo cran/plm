@@ -18,17 +18,13 @@ or first-differenced panel models}
   \code{linear.hypothesis} or to \code{pvcovHC}}
 }
 
-\value{
-  An object of class \code{"htest"}.
-}
-
 \details{
 
   As Wooldridge (2003, 10.6.3) observes, if the idiosyncratic errors in
   the model in levels are uncorrelated (which we label hypothesis
   \code{"fe"}), then the errors of the model in first differences (FD)
-  must be serially correlated with $cor(\hat{e}_{it},
-  \hat{e}_{is})=-0.5$ for each $t,s$.  If on the contrary the levels
+  must be serially correlated with \eqn{cor(\hat{e}_{it}, \hat{e}_{is})=-0.5}
+  for each \eqn{t,s}.  If on the contrary the levels
   model's errors are a random walk, then there must be no serial
   correlation in the FD errors (hypothesis \code{"fd"}). Both the fixed
   effects (FE) and the first differenced (FD) estimators remain
@@ -37,19 +33,19 @@ or first-differenced panel models}
 
 Wooldridge (ibid.) suggests basing a test for either hypothesis on a
 pooled regression of FD residuals on their first lag:
-$\hat{e}_{i,t}=\alpha + \delta \hat{e}_{i,t-1} + \eta_{i,t}$. Rejecting
-the restriction $\delta = -0.5$ makes us conclude against the null of no
+\eqn{\hat{e}_{i,t}=\alpha + \delta \hat{e}_{i,t-1} + \eta_{i,t}}. Rejecting
+the restriction \eqn{\delta = -0.5} makes us conclude against the null of no
 serial correlation in errors of the levels equation (\code{"fe"}). The
 null hypothesis of no serial correlation in differenced errors
 (\code{"fd"}) is tested in a similar way, but based on the
-zero-restriction on $\delta$. Rejecting \code{"fe"} favours the use of
+zero-restriction on \eqn{\delta}. Rejecting \code{"fe"} favours the use of
 the first-difference estimator and the contrary, although it is possible
 that both be rejected.
 
 \code{pwartest} estimates the \code{fd} model and retrieves residuals,
 then estimates an AR(1) \code{pooling} model on them. The test statistic
 is obtained by applying \code{linear.hypothesis()} to the latter model
-to test the relevant restriction on $\delta$, setting the covariance
+to test the relevant restriction on \eqn{\delta}, setting the covariance
 matrix to \code{pvcovHC} with the option \code{method=''arellano''} to
 control for serial correlation.
 
@@ -61,11 +57,19 @@ regardless of whether the maintained specification has fixed or random
 effects (see Drukker, 2003).
 
 }
+
+\value{
+  An object of class \code{"htest"}.
+}
+
+\author{Giovanni Millo}
+
 \references{
 
   Drukker, D.M. (2003) Testing for serial correlation in linear
     panel-data models, The Stata Journal 3, N.2, pages 168-177.
-    Wooldridge, J.M. (2003) Econometric analysis of cross-section and
+
+  Wooldridge, J.M. (2003) Econometric analysis of cross-section and
     panel data, MIT Press, 10.6.3, page 282.
 
   }

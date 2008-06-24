@@ -12,17 +12,20 @@ sargan(object)
   \item{object}{an object of class \code{"pgmm"}.}
 }
 
+\details{
+  The Hansen--Sargan test calculate the quadratic form of the moment
+  restrictions that is  minimized while computing the GMM
+  estimator. It follows asymptotically a Chi--square with a number of
+  degrees of freedom equal to the difference of the number of moment conditions and
+  the number of coefficients.
+}
+
 \value{
   An object of class \code{"htest"}.
 }
 
-\details{
-  The Hansen--Sargan test calculate the quadratic form of the moment
-  restrictions that is  minimized while computing the GMM
-  estimator. It follows asymptotically a chi--square with a number of
-  degrees of freedom equal to the difference of the number of moment conditions and
-  the number of coefficients.
-}
+\author{Yves Croissant}
+  
 \references{
   Hansen, L.P. (1982), Large Sample Properties of Generalized Methods of
   Moments Estimators, \emph{Econometrica}, 50, 1029--54.
@@ -33,8 +36,6 @@ sargan(object)
 
 \seealso{\code{\link{pgmm}}}
 
-\author{Yves Croissant}
-  
 \examples{
 data("EmplUK", package="plm")
 ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2)),

@@ -4,7 +4,7 @@
 \alias{plmtest.formula}
 \title{Lagrange Multiplier Tests for Panel Models}
 \description{
-  Test of individual and/or time effect for panel models.
+  Test of individual and/or time effects for panel models.
 }
 \usage{
 plmtest(x, ...)
@@ -27,10 +27,6 @@ index = NULL, ...)
   \item{...}{further arguments.}
 }
 
-\value{
-  An object of class \code{"htest"}.
-}
-
 \details{
   
   These Lagrange multiplier tests use only the residuals of the pooling
@@ -38,6 +34,13 @@ index = NULL, ...)
   model of class \code{plm} or an object of class \code{formula}.
 
 }
+
+\value{
+  An object of class \code{"htest"}.
+}
+
+\author{Yves Croissant}
+
 \references{
 
   Breusch, T.S. and  Pagan, A.R. (1980) The Lagrange multiplier test and
@@ -57,14 +60,13 @@ index = NULL, ...)
   pp.523--529.
 
 }
+
 \seealso{
   
   \code{\link{pFtest}} for individual and/or time effects tests based on
   the within model.
 
 }
-
-\author{Yves Croissant}
 
 \examples{
 data("Grunfeld", package="Ecdat")

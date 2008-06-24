@@ -15,15 +15,11 @@ pbltest(x, data, alternative = c("twosided","onesided"), index = NULL, ...)
   \item{x}{a model formula,}
   \item{data}{a \code{data.frame},}
   \item{alternative}{one of \code{"twosided"},
-    \code{"onesided"}. Selects either $H_A: \rho \neq 0$ or $H_A: \rho >
-    0$ (i.e., the Normal or the Chi-squared version of the test),}
+    \code{"onesided"}. Selects either \eqn{H_A: \rho \neq 0} or \eqn{H_A: \rho 0}
+       (i.e., the Normal or the Chi-squared version of the test),}
   \item{index}{the index of the \code{data.frame},}
   \item{\dots}{further arguments.}
 
-}
-
-\value{
-  An object of class \code{"htest"}.
 }
 
 \details{
@@ -38,6 +34,14 @@ allows testing for positive serial correlation only, if set to
 \code{onesided}.
 
 }
+
+\value{
+  An object of class \code{"htest"}.
+}
+
+\author{Giovanni Millo}
+
+
 \references{
 
   Baltagi, B.H. and Li, Q. (1995) Testing AR(1) against MA(1)
@@ -50,7 +54,10 @@ allows testing for positive serial correlation only, if set to
 
 }
 \seealso{
-    \code{\link{pdwtest}}, \code{\link{pbgtest}}.
+    \code{\link{pdwtest}}, \code{bgtest}, 
+    \code{\link{pbsytest}}, \code{\link{pwartest}} and \code{\link{pwfdtest}}
+    for other serial correlation tests for panel models.
+
 }
 \examples{
 data("Grunfeld", package="Ecdat")

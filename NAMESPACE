@@ -1,7 +1,8 @@
 #exportPattern("^[^\\.]")
 export(plm,pvcm,pgmm,pggls,plm.data,plmtest,phtest,pFtest,
 pvar,pdim,pooltest, pvcovHC,dynformula,sargan,mtest,
-pbsytest,pdwtest,pbgtest,pbltest,pwartest,pwtest,pwfdtest)
+pbsytest,pdwtest,pbgtest,pbltest,pwartest,pwtest,pwfdtest,pcdtest)
+#       ,pcdres)
 #       theta.method.list,effect.list,trinst.list,model.list)
 import(stats)
 importFrom(kinship,bdsmatrix)
@@ -54,3 +55,5 @@ S3method(pdwtest,formula)
 S3method(pdwtest,panelmodel)
 S3method(pbgtest,formula)
 S3method(pbgtest,panelmodel)
+S3method(pcdtest,formula)
+S3method(pcdtest,panelmodel)
