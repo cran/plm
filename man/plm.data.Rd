@@ -3,8 +3,8 @@
 
 \title{Data Frame Special Format for Panel Data}
 \description{
-  This function transform a data frame in a format suitable for the use
-  of the estimation functions of plm.
+  This function transforms a data frame in a format suitable for using
+  with the estimation functions of \code{plm}.
 }
 \usage{
  x <- plm.data(x, index = NULL)
@@ -40,7 +40,7 @@
 
 \examples{
 
-#There are 595 individuals
+# There are 595 individuals
 
 data("Wages", package="Ecdat")
 Wages <- plm.data(Wages, 595)

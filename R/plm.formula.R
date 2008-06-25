@@ -113,6 +113,21 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
     X <- model.matrix(formula,mf)
     interc <- FALSE
   }
+
+  if (model=="ht"){
+    l <- lapply(mf,function(x) if (is.factor(x)) levels(x))
+    l <- l[!sapply(l,is.null)]
+    v <- c()
+    for (i in 1:length(l)){
+      nli <- names(l)[[i]]
+      r <- paste(nli,l[[i]],sep="")
+      ov <- rep(nli,length(r))
+      names(ov) <- r
+      v <- c(v,ov)
+    }
+    attr(X,"var.effects") <- v
+  }
+
   id <- mindexes[[id.name]][drop=T]
   time <- mindexes[[time.name]][drop=T]
   pmodel <- list(model.name=model.name,formula=formula,effect=effect,
@@ -141,3 +156,4 @@ plm <-  function(formula, data, subset, na.action, effect="individual",
   result$indexes <- list(id=id,time=time)
   result
 }
+

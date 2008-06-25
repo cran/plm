@@ -4,7 +4,7 @@
 \alias{pFtest.plm}
 \title{F Test for Effects}
 \description{
-  Test of individuals and/or time effects based on the comparison of the
+  Test of individual and/or time effects based on the comparison of the
   \code{within} and the \code{pooling} model.
 }
 \usage{
@@ -29,8 +29,8 @@ pFtest(x, ...)
 
   For the \code{plm} method, the argument of this function is two
  \code{plm} objects, the first being a within model, the second a
- pooling model. The effects tested are whether individual, time or
- twoways effects depending on the effects introduced in the model.
+ pooling model. The effects tested are either individual, time or
+ twoways, depending on the effects introduced in the model.
 
 }
 \seealso{

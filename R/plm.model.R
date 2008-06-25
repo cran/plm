@@ -198,12 +198,13 @@ plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   K <- pdim$K <- ncol(X)
   N <- nrow(X)
   coef.names <- colnames(X)
-  X <- rbind(NA,X[2:N,]-X[1:(N-1),])
+  X <- rbind(NA,X[2:N,,drop=FALSE]-X[1:(N-1),,drop=FALSE])
   y <- c(NA,y[2:N]-y[1:(N-1)])
   did <- c(1,as.numeric(id[2:N])-as.numeric(id[1:(N-1)]))
   X <- X[did==0,]
   y <- y[did==0]
   rnames <- rnames[did==0]
+
   if (is.null(W)){
     pooling <- lm(y~X-1)
   }
@@ -313,6 +314,7 @@ plm.random <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
 }
 
 plm.ht <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
+  var.effects <- attr(X,"var.effects")
   within <- plm.within(y,X,NULL,id,time,pvar,pdim,pmodel,indexes,cl,...)
   formula <- pmodel$formula
   effect <- pmodel$effect
@@ -414,6 +416,17 @@ plm.ht <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
                   N-K-1,"ht",pdim,pmodel,indexes,cl)
   ht$theta <- theta
   ht$sigma2 <- sigma2
-  ht$varlist=list(x1=x1,x2=x2,z1=z1,z2=z2)
+  
+  transl <- function(x,y){
+    co <- match(x,names(y))
+    x[!is.na(co)] <- y[na.omit(co)]
+    x
+  }
+
+  ht$varlist=list(x1=transl(x1,var.effects),
+    x2=transl(x2,var.effects),
+    z1=transl(z1,var.effects),
+    z2=transl(z2,var.effects))
+  
   ht
 }

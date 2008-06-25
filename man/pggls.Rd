@@ -57,8 +57,9 @@ index = NULL, ...)
   intragroup heteroskedasticity and serial correlation. This structure,
   by converse, is assumed identical across groups and thus general FGLS
   estimation is inefficient under groupwise heteroskedasticity. Care
-  shall also be taken that this method requires estimation of T(T+1)/2
-  variance parameters, thus efficiency requires N  > >T (if \code{effect="individual"}, else the opposite).}
+  shall also be taken that this method requires estimation of \eqn{T(T+1)/2}
+  variance parameters, thus efficiency requires N  > > T 
+  (if \code{effect="individual"}, else the opposite).}
 
 \author{Giovanni Millo}
 

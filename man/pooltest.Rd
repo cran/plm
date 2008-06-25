@@ -28,13 +28,13 @@ pooltest(x, ...)
   \item{\dots}{further arguments.}
 }
 
-\value{
-  An object of class \code{"htest"}.
+\details{
+  \code{pooltest} is an \emph{F} test of stability (or Chow
+  test) for the coefficients of a panel model.
 }
 
-\details{
-  \code{pooltest} is a \emph{F} test of stability (or Chow
-  test) for the coefficients of a panel model.
+\value{
+  An object of class \code{"htest"}.
 }
 
 \author{Yves Croissant}
@@ -51,8 +51,6 @@ pooltest(gasp, gasnp)
 
 pooltest(form, data=Gasoline, effect="individual", model="within")
 pooltest(form, data=Gasoline, effect="individual", model="pooling")
-
-
-
 }
+
 \keyword{htest}

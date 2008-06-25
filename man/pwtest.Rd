@@ -16,10 +16,6 @@ pwtest(x, data, effect = c("individual","time"), index = NULL, ...)
   \item{\dots}{further arguments.}
 }
 
-\value{
-  An object of class \code{"htest"}.
-}
-
 \details{
   
   This semi-parametric test checks the null hypothesis of zero
@@ -36,15 +32,23 @@ T-asymptotics and has power against time effects and, more generally,
 against cross-sectional correlation.
 
 }
+
+\value{
+  An object of class \code{"htest"}.
+}
+
+\author{Giovanni Millo}
+
 \references{
   Wooldridge, J.M. (2002) \emph{Econometric analysis of cross-section and panel data},
     MIT Press, 10.4.4., page 264.
 }
 \seealso{
   
-  \code{\link{pbltest}}, \code{\link{pbgtest}}, \code{\link{pdwtest}} for tests for serial
-  correlation in panel models. \code{\link{plmtest}} for tests for random
-  effects.
+  \code{\link{pbltest}}, \code{\link{pbgtest}}, \code{\link{pdwtest}},
+  \code{\link{pbsytest}}, \code{\link{pwartest}}, \code{\link{pwfdtest}}
+  for tests for serial correlation in panel models. \code{\link{plmtest}}
+  for tests for random effects.
   
 }
 \examples{

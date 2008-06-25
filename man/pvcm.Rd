@@ -4,7 +4,7 @@
 \alias{print.summary.pvcm}
 \title{Variable Coefficients Models for Panel Data}
 \description{
-  Estimators for random and fixed effect models with variable coefficients.
+  Estimators for random and fixed effects models with variable coefficients.
 }
 \usage{
 pvcm(formula, data, subset, na.action, effect = "individual", model,
@@ -17,17 +17,31 @@ pvcm(formula, data, subset, na.action, effect = "individual", model,
 
 \arguments{
   \item{formula}{a symbolic description for the model to be estimated,}
-  \item{object,x}{an object of class \code{"pvcm"},}
+  \item{object, x}{an object of class \code{"pvcm"},}
   \item{data}{a \code{data.frame},}
   \item{subset}{see \code{lm},}
   \item{na.action}{see \code{lm},}
-  \item{effect}{the effects introduced in the model, one of
-    \code{"individual"} or \code{"time"},}
-  \item{model}{one of \code{"within"} or \code{"random"},}
+  \item{effect}{the effects introduced in the model: one of
+    \code{"individual"}, \code{"time"},}
+  \item{model}{one of \code{"within"}, \code{"random"},}
   \item{index}{the indexes, see \code{\link{plm.data}},}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print output,}
   \item{...}{further arguments.}
+}
+
+\details{
+  \code{pvcm} estimates variable coefficients models. 
+  Time or individual effects are introduced, respectively, if
+  \code{effect="time"} or \code{effect="individual"}
+  (the default value). 
+  
+  Coefficients are assumed to be fixed if \code{model="within"} and
+  random if \code{model="random"}. In the first case, a different
+  model is estimated for each individual (or time period). In the second
+  case, the Swamy (1970) model is estimated. It is a
+  generalized least squares model which use the results of the previous model.
+  
 }
 
 \value{
@@ -47,19 +61,6 @@ pvcm(formula, data, subset, na.action, effect = "individual", model,
       each individual (within models only),}
     %  }
     \code{pvcm} objects have \code{print}, \code{summary} and \code{print.summary} methods.
-}
-\details{
-  The \code{pvcm} function enables the estimation of variable
-  coefficients models. Time or individual effects are introduced if
-  \code{effect} is fixed to \code{"time"} or \code{"individual"}
-  (the default value). 
-  
-  Coefficients are assumed to be fixed if \code{model="within"} and
-  random if \code{model="random"}. In the first case, a different
-  model is estimated for each individual (or time period). In the second
-  case, the Swamy (1970) model is estimated. It is a
-  generalized least squares model which use the results of the previous model.
-  
 }
 
 \author{Yves Croissant}

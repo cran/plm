@@ -33,7 +33,7 @@ pgmm(formula, data, effect = "individual", model = "twosteps",
     : either \code{"d"} (the default value) for the ``difference GMM''
     model or \code{"ld"} for the ``system GMM'',}
   \item{fsm}{the matrix for the one step estimator : one of \code{"I"}
-    (identity matrix) or \code{"G"} ($=D'D$ where $D$ is the first
+    (identity matrix) or \code{"G"} (\eqn{=D'D} where \eqn{D} is the first
     difference operator) if \code{transformation="d"}, one of
     \code{"GI"} or \code{"full"} if \code{transformation="ld"},}
   \item{index}{the indexes, see \code{\link{plm.data}},}
@@ -66,7 +66,7 @@ pgmm(formula, data, effect = "individual", model = "twosteps",
   It has \code{print}, \code{summary} and \code{print.summary} methods.
 }
 \details{
-  \code{pgmm} estimate a model for panel data with the general method of
+  \code{pgmm} estimates a model for panel data with the general method of
   moments estimator. The description of the model to estimate is
   provided with a \code{\link{dynformula}}. The GMM instruments are
   provided by filling the \code{pgmm.inst} argument with a one side
@@ -93,9 +93,9 @@ pgmm(formula, data, effect = "individual", model = "twosteps",
 %   equations. Moreover, the \code{lag.gmm} for the level equation is
 %   c(1,1) for all instruments.
   
-  \code{pgmm} is an attempt to adapt GMM estimators available with the
-  DPD library for GAUSS (see Arellano and Bound 1998) and OX (see
-  Doornik, Arelanno and Bond 2006) and with the xtabound2 library for
+  \code{pgmm} is an attempt to adapt GMM estimators available within the
+  DPD library for GAUSS (see Arellano and Bond 1998) and OX (see
+  Doornik, Arellano and Bond 2006) and with the xtabound2 library for
   STATA (see Roodman 2006).
 }  
   \references{
@@ -135,13 +135,13 @@ pgmm(formula, data, effect = "individual", model = "twosteps",
 
 data("EmplUK", package="plm")
 
-## Arelanno Bound 91 table 4b 
+## Arellano Bond 91 table 4b 
 z1 <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,0,1)),
     data=EmplUK, effect="twoways", model="twosteps",
     gmm.inst=~log(emp),lag.gmm=list(c(2,99)))
 
 
-## Blundel and Bond tab4 (cf DPD for OX p.12 col.4)
+## Blundell and Bond tab4 (cf DPD for OX p.12 col.4)
 
 z2 <- pgmm(dynformula(log(emp)~log(wage)+log(capital),list(1,1,1)),
     data=EmplUK, effect="twoways", model="onestep",

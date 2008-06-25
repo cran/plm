@@ -5,7 +5,7 @@
 
 \title{Robust covariance matrix estimators}
 \description{
-  Robust covariance matrix estimators {\em \`a la White} for panel models.
+  Robust covariance matrix estimators \emph{\`a la White} for panel models.
 }
 \usage{
 pvcovHC(x,...)

@@ -22,10 +22,6 @@ pdwtest(x, ...)
   \item{\dots}{further arguments to be passed on to \code{dwtest}.}
 }
 
-\value{
-  An object of class \code{"htest"}.
-}
-
 \details{
   
   This Durbin--Watson test uses the auxiliary model on (quasi-)demeaned
@@ -38,6 +34,13 @@ pdwtest(x, ...)
   \code{dwtest}.
 
 }
+
+\value{
+  An object of class \code{"htest"}.
+}
+
+\author{Giovanni Millo}
+
 \references{
   Baltagi, B.H. (2005) \emph{Econometric analysis of panel data}, Wiley, p.98.
 
@@ -46,9 +49,12 @@ pdwtest(x, ...)
 }
 \seealso{
 
-  \code{pbgtest} for the analogous Breusch--Godfrey test,
-  \code{dwtest} for the Durbin-Watson test for serial correlation
-  in the linear model.
+    \code{\link{pbgtest}} for the analogous Breusch--Godfrey 
+    test, \code{dwtest} for the Breusch--Godfrey test for serial
+    correlation in the linear model. \code{\link{pbltest}}, 
+    \code{\link{pbsytest}}, \code{\link{pwartest}} and \code{\link{pwfdtest}}
+    for other serial correlation tests for panel models.
+
 
 }
 \examples{
