@@ -90,3 +90,23 @@ Changes since version 0-3.2
 
 	* the estimation of a model with only one explanatory variable
 	using plm with method = "fd" is now working correctly
+
+Changes since version 1-0.0
+
+	* lag and diff methods for pseries are now exported and therefore
+	behave correctly
+
+	* for two-ways within models with instrumental variables, K is
+	replaced by K+1 for the computation of the overall mean matrix of
+	the instruments. Time fixef are now computed. The error message
+	"impossible ..." is removed
+
+	* a bug in the time random effect model is corrected
+
+	* a model.matrix method for panelmodel is provided
+
+	* models without intercept (-1 in the formula) should now be
+	consistently estimated with plm, pggls and pvcm.
+	
+	* plm depends now on the Formula package which provides
+	useful tools for formula with two parts

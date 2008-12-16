@@ -7,7 +7,7 @@
   General FGLS estimators for panel data (balanced or unbalanced)
 }
 \usage{
-pggls(formula, data, subset, na.action, effect = "individual", model = "within",
+pggls(formula, data, subset, na.action, effect = c("individual","time"), model = c("within","random"),
 index = NULL, ...)
 \method{summary}{pggls}(object, ...)
 \method{print}{summary.pggls}(x,digits = max(3, getOption("digits") -

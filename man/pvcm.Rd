@@ -7,8 +7,8 @@
   Estimators for random and fixed effects models with variable coefficients.
 }
 \usage{
-pvcm(formula, data, subset, na.action, effect = "individual", model,
-    index = NULL, ...)
+pvcm(formula, data, subset, na.action, effect = c("individual","time"),
+     model = c("within","random"), index = NULL, ...)
 \method{summary}{pvcm}(object, ...)
 \method{print}{summary.pvcm}(x, digits = max(3, getOption("digits") -2),
     width = getOption("width"), ...)

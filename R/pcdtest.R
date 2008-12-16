@@ -54,8 +54,8 @@ pcdtest.formula<-function(x,data,index=NULL,
   if(is.null(model)) {
              ## estimate the separate regressions
 
-             X<-mymod$model$X
-             y<-mymod$model$y
+             X<-model.matrix(mymod)
+             y<-model.response(model.frame(mymod))
 
              ## get indices
              tind <- as.numeric(mymod$indexes$time)

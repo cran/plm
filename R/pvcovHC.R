@@ -47,11 +47,11 @@ pvcovHC.panelmodel <-function(x,method="arellano",type="HC0", ...) {
     }
 
   ## extract demeaned data from the plm
-  demX <- x$model[[2]]
-  demy <- x$model[[1]]
+  demX <- model.matrix(x)
+  demy <- model.response(model.frame(x))
 
   ## name intercept: a fix for the "" name of demX_1 ##
-  dimnames(demX)[[2]][1]<-attr(x$vcov,"dimnames")[[1]][1]
+  dimnames(demX)[[2]][1]<-attr(vcov(x),"dimnames")[[1]][1]
 
   n<-attr(x,"pdim")$nT$n
   t<-attr(x,"pdim")$nT$T
