@@ -1,98 +1,47 @@
-pggls <- function(formula, data, subset, na.action, effect="individual",
-                  model = "within", index = NULL, ...){
-
-  model.name <- model
-  data.name <- paste(deparse(substitute(data)))
-  new.data.name <- "mydata"
-  data2 <- data2plm.data(data,index)
-  data <- data2$data
-  id.name <- data2$id.name
-  time.name <- data2$time.name
-  for (i in 1:length(data)){
-    attr(data[[i]],"data") <- new.data.name
-    attr(data[[i]],"class") <- c("pserie",attr(data[[i]],"class"))
-  }
-  indexes <- list(id=id.name,time=time.name)
-  class(indexes) <- "indexes"
-  attr(data,"indexes") <- indexes
-  nframe <- length(sys.calls())
-  assign(new.data.name,data,env=sys.frame(which=nframe))
-
-  if(!(effect %in% names(effect.pggls.list))){
-    stop(paste("effect must be one of",oneof(effect.pggls.list)))
-  }
-  if(!(model.name %in% names(model.pggls.list))){
-    stop("model must be one of",oneof(model.pggls.list))
-  }
-
+pggls <- function(formula, data, subset, na.action,
+                  effect = c("individual","time"),
+                  model = c("within","random"), index = NULL, ...){
   require(kinship)
+  effect <- match.arg(effect)
+  model.name <- match.arg(model)
+  data.name <- paste(deparse(substitute(data)))
   cl <- match.call()
-  mf <- match.call(expand.dots=FALSE)
-  m <- match(c("formula","data","subset","weights","na.action","offset"),names(mf),0)
-  mf <- mf[c(1,m)]
-  mf$drop.unused.levels <- TRUE
-  mf$data <- as.name(new.data.name)
-  mf[[1]] <- as.name("model.frame")
-
-  mindexes <- mf
-  mindexes[["formula"]] <- formula(paste("~",id.name,"+",time.name,sep="",collapse=""))
-  mf <- eval(mf,sys.frame(which=nframe))
-  mindexes <- eval(mindexes,sys.frame(which=nframe))
-  y <- model.response(mf,"numeric")
-  int.row.names <- intersect(attr(mf,"row.names"),attr(mindexes,"row.names"))
-  mf <- mf[int.row.names,]
-  mindexes <- mindexes[int.row.names,]
-  attr(mf,"row.names") <- attr(mindexes,"row.names") <- int.row.names
-  X <- model.matrix(formula,mf)[,-1,drop=FALSE]
-  id <- factor(mindexes[[id.name]])
-  time <- factor(mindexes[[time.name]])
-  pdim <- pdim(id,time)
+  plm.model <- match.call(expand.dots=FALSE)
+  m <- match(c("formula","data","subset","na.action","effect","model","index"),names(plm.model),0)
+  plm.model <- plm.model[c(1,m)]
+  plm.model[[1]] <- as.name("plm")
+  plm.model$model <- ifelse(model.name=="within","within","pooling")
+  plm.model <- eval(plm.model,parent.frame())
+  id <- plm.model$indexes[[1]]
+  time <- plm.model$indexes[[2]]
+  pdim <- pdim(plm.model)
   balanced <- pdim$balanced
   time.names <- pdim$panel.names$time.names
   id.names <- pdim$panel.names$id.names
-
-  pmodel <- list(model.name=model,formula=formula,effect=effect)
   nt <- pdim$Tint$nt
   Ti <- pdim$Tint$Ti
   T <- pdim$nT$T
   n <- pdim$nT$n
   N <- pdim$nT$N
-
-  model.res <- switch(model,"random"="pooling","within"="within")
-  m <- plm(formula=formula,data=data,effect=effect,model=model.res)
-  
-
-  coef.names <- colnames(X)
-  K <- pdim$K <- ncol(X)
+  coef.names <- names(coef(plm.model))
+  K <- length(coef.names)
   
   if (effect=="time"){
-    cond <- time
-    other <- id
-    ncond <- T
-    nother <- n
-    cond.names <- time.names
-    other.names <- id.names
-    groupsdim <- nt
-  } else {
-    cond <- id
-    other <- time
-    ncond <- n
-    nother <- T
-    cond.names <- id.names
-    other.names <- time.names
-    groupsdim <- Ti
+    cond <- time ; other <- id ; ncond <- T ; nother <- n
+    cond.names <- time.names ; other.names <- id.names ; groupsdim <- nt
   }
-  
-  myord <- order(cond,other)
+  else {
+    cond <- id ; other <- time ; ncond <- n ; nother <- T ;
+    cond.names <- id.names ; other.names <- time.names ; groupsdim <- Ti
+  }
+    myord <- order(cond,other)
   
   ## reorder data
-  resid <- m$residuals[myord]
-  X <- m$model$X[myord,]
-  y <- m$model[[1]][myord]
-
-  ## conditions hav to be reordered as well
-  cond<-cond[myord]
-  other<-other[myord]
+  resid <- resid(plm.model)[myord]
+  X <- model.matrix(plm.model)[myord,]
+  y <- model.response(model.frame(plm.model))[myord]
+  cond <- cond[myord]
+  other <- other[myord]
   
   ## drop first time period (see Wooldridge 10.5, eq. 10.61)
   drop1<-FALSE
@@ -108,12 +57,13 @@ pggls <- function(formula, data, subset, na.action, effect="individual",
     y0 <- y
     X <- X[t1,]
     y <- y[t1]
-    cond<-cond[t1]
-    other<-other[t1]
-    nother<-nother-1
-    other.names<-other.names[-1]
+    cond <- cond[t1]
+    other <- other[t1]
+    nother <- nother-1
+    other.names <- other.names[-1]
   }
   tres <- array(NA,dim=c(nother,nother,ncond),dimnames=list(other.names,other.names,cond.names))
+
   lcnd <- levels(cond)
   if(pdim$balanced){
     for (i in 1:ncond){
@@ -147,22 +97,21 @@ pggls <- function(formula, data, subset, na.action, effect="individual",
     y <- y0
   }
   residuals <- y-as.vector(crossprod(t(X),coef))
-  coef.names <- switch(model,"within"=coef.names,
-                       "random"=c("(intercept)",coef.names)
-                               )
+#  coef.names <- switch(model,"within"=coef.names,
+#                       "random"=c("(intercept)",coef.names)
+#                               )
   df.residual <- nrow(X)-ncol(X)
   fitted.values <- y-residuals
-  model <- data.frame(y,X)
-  names(model)[[1]] <- deparse(formula[[2]])
   names(coef) <- rownames(vcov) <- colnames(vcov) <- coef.names
   fullGLS <- list(coefficients=coef,residuals=residuals,fitted.values=fitted.values,
-                  vcov=vcov,df.residual=df.residual,model=m$model,sigma=subOmega,call=cl)
-  fullGLS <- structure(fullGLS,pdim=pdim,pmodel=pmodel)
-  class(fullGLS)=c("pggls","panelmodel")
+                  vcov=vcov,df.residual=df.residual,model=model.frame(plm.model),sigma=subOmega,call=cl)
+  fullGLS <- structure(fullGLS,pdim=pdim,pmodel=attr(plm.model,"pmodel"))
+  class(fullGLS) <- c("pggls","panelmodel")
 
   fullGLS
 
 }
+
 
 summary.pggls <- function(object,...){
   pmodel <- attr(object,"pmodel")
@@ -203,3 +152,4 @@ print.summary.pggls <- function(x,digits=max(3, getOption("digits") - 2), width 
   cat(paste("Multiple R-squared: ",signif(x$rsqr,digits),"\n",sep=""))
   invisible(x)
 }
+

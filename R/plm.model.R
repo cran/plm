@@ -1,34 +1,24 @@
-plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
-  formula <- pmodel$formula
+plm.within <- function(y, X, W, id, time, pvar, pdim, pmodel, indexes, cl, ...){
   effect <- pmodel$effect
   rnames <- rownames(X)
-  T <- pdim$nT$T
-  n <- pdim$nT$n
-  N <- pdim$nT$N
-  K <- pdim$K <- ncol(X)
+  T <- pdim$nT$T ; n <- pdim$nT$n ; N <- pdim$nT$N ; K <- pdim$K <- ncol(X)
   coef.names <- colnames(X)
-
-  cond <- id
-  other <- time
-  other.variation <- pvar$time.variation
-  cond.variation <- pvar$id.variation
-  ncond <- n
-  if (effect=="time"){
-    cond <- time
-    other <- id
-    cond.variation <- pvar$time.variation
-    other.variation <- pvar$id.variation
-    ncond <- T
+  if(effect == "time"){
+    cond <- time ; other <- id ; cond.variation <- pvar$time.variation
+    other.variation <- pvar$id.variation ; ncond <- T
   }
+  else{
+    cond <- id ; other <- time ; cond.variation <- pvar$id.variation
+    other.variation <- pvar$time.variation ; ncond <- n
 
+  }
   Kw <- pdim$Kw <- sum(other.variation)
   Kd <- pdim$Kd <- sum(cond.variation & other.variation)
-
+  if (Kw == 0) stop("the within model can't be computed because all the variables are individual specific")
   X.m <- papply(X,mymean,cond)
   X.with <- (X-X.m)[,other.variation,drop=F]
   y.m <- papply(unclass(y),mymean,cond)
   y.with <- y-y.m
-
   if(effect=="twoways"){
     X.time <- papply(X,mymean,time)
     X.mean <- matrix(rep(apply(X,2,mean),N),ncol=K,byrow=T)
@@ -42,152 +32,104 @@ plm.within <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     coef.within <- other.variation
     df.within <- N-ncond-Kw
   }
-  if (nrow(X.with)<=ncol(X.with)){
-    stop("Within estimation impossible (insufficient number of observations)\n")
-  }
+  if (nrow(X.with) <= ncol(X.with)) stop("Within estimation impossible (insufficient number of observations)\n")
   
-  if(is.null(W)){
-    within <- lm(y.with~X.with-1)
-    if (effect=="twoways"){
-      fixef.time <- y.time-as.vector(X.time[,cond.variation & other.variation,drop=F]%*%within$coef)
-    }
-  }
+  if(is.null(W)) within <- lm(y.with~X.with-1)
   else{
-    if (ncol(W)<ncol(X+1)) stop("Insufficient number of instruments\n")
+    if (ncol(W) < ncol(X+1)) stop("Insufficient number of instruments\n")
     W.m <- W.m <- papply(W,mymean,cond)
     if(effect=="twoways"){
       W.time <- papply(W,mymean,time)
-      W.mean <- matrix(rep(apply(W,2,mean),N),ncol=K,byrow=T)
+                                        #K+1 et non K W contient une constante
+      W.mean <- matrix(rep(apply(W,2,mean),N),ncol=K+1,byrow=T)
       W.with <- (W-W.m-W.time+W.mean)[,cond.variation & other.variation]
     }
-    else{
-      W.with <- W-W.m
-    }
+    else W.with <- W-W.m
     within <- twosls(y.with,X.with,W.with)
   }
-#  within$vcov <- within$vcov*within$df.residual/df.within
   within <- plmformat(within,coef.names[coef.within],rnames,
                       df.within,"within",pdim,pmodel,indexes,cl)
   fixef.id <- y.m-as.vector(X.m[,coef.within,drop=F]%*%within$coef)
   attr(fixef.id,"cm") <- tapply(fixef.id,cond,mean)
   within$alpha <- as.vector(mean(y)-apply(X[,coef.within,drop=F],2,mean)%*%within$coef)
   if(effect=="twoways"){
+    fixef.time <- y.time-as.vector(X.time[,cond.variation & other.variation,drop=F]%*%within$coef)
     within$fixef <- list(id=fixef.id,time=fixef.time)
   }
-  else{
-    within$fixef <- fixef.id
-  }
+  else within$fixef <- fixef.id
   within
 }    
 
-plm.between <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
-  if (pmodel$effect=="twoways"){
-    effect <- "individual"
+plm.between <- function(y, X, W, id, time, pvar, pdim, pmodel, indexes, cl, ...){
+  response.name <- deparse(pmodel$formula[[2]])
+  effect <- pmodel$effect
+  interc <- pmodel$has.intercept
+  balanced <- pdim$balanced
+  T <- pdim$nT$T ; n <- pdim$nT$n ; N <- pdim$nT$N ; K <- pdim$K <- ncol(X)
+  coef.names <- colnames(X)
+  if(effect == "time"){
+    cond <- time ; other <- id ; cond.variation <- pvar$time.variation
+    other.variation <- pvar$id.variation ; ncond <- T
   }
   else{
-    effect <- pmodel$effect
+    cond <- id ; other <- time ; cond.variation <- pvar$id.variation
+    other.variation <- pvar$time.variation ; ncond <- n
+
   }
-  formula <- pmodel$formula
-  effect <- pmodel$effect
-
-  balanced <- pdim$balanced
-
-  T <- pdim$nT$T
-  n <- pdim$nT$n
-  N <- pdim$nT$N
-
-  K <- pdim$K <- ncol(X)
-  coef.names <- colnames(X)
-
-  cond <- id
-  other <- time
-  other.variation <- pvar$time.variation
-  cond.variation <- pvar$id.variation
-  ncond <- n
-
-  if (effect=="time"){
-    cond <- time
-    other <- id
-    cond.variation <- pvar$time.variation
-    other.variation <- pvar$id.variation
-    ncond <- T
-  }
-
   Kb <- pdim$Kb <- sum(cond.variation)
-
   X.m <- papply(X,mymean,cond)
   X.bet <- attr(X.m,"cm")[,cond.variation,drop=F]
-
+  if (ncol(X.bet) == 0) X.bet <- NULL
+  if (is.null(X.bet)) stop("the between model is empty")
   y.m <- papply(unclass(y),mymean,cond)
   y.bet <- attr(y.m,"cm")
-
   coef.within <- other.variation
   df.between <- n-Kb-1
   if (nrow(X.bet)<=ncol(X.bet)){
     stop("Between estimation impossible (insufficient number of observations)\n")
   }
-  
   if(is.null(W)){
-    between <- lm(y.bet~X.bet)
+    if (interc) between <- lm(y.bet~X.bet) else between <- lm(y.bet~X.bet-1)
   }
   else{
     if (ncol(W)<ncol(X)+1) stop("Insufficient number of instruments\n")
     W.m <- papply(W,mymean,cond)
     W.bet <- attr(W.m,"cm")
-    between <- twosls(y.bet,X.bet,W.bet,TRUE)
+    between <- twosls(y.bet,X.bet,W.bet,interc)
   }
   rnames <- rownames(X.bet)
-  between <- plmformat(between,c("(intercept)",coef.names[cond.variation]),rnames,
+  between <- plmformat(between,coef.names[cond.variation],rnames,
                        df.between,"between",pdim,pmodel,indexes,cl)
   between  
 }    
 
-plm.pooling <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,interc=TRUE,...){
-  formula <- pmodel$formula
+plm.pooling <- function(y, X, W, id, time, pvar, pdim, pmodel, indexes, cl, ...){
+  response.name <- deparse(pmodel$formula[[2]])
   effect <- pmodel$effect
+  interc <- pmodel$has.intercept
   rnames <- rownames(X)
   K <- pdim$K <- ncol(X)
   N <- nrow(X)
   coef.names <- colnames(X)
   if (is.null(W)){
-    if (interc){
-      pooling <- lm(y~X)
-    }
-    else{
-      pooling <- lm(y~X-1)
-    }
+    if (interc) pooling <- lm(y~X) else pooling <- lm(y~X-1)
   }
   else{
     if (ncol(W)<ncol(X)+1) stop("Insufficient number of instruments\n")
-      pooling=twosls(y,X,W,interc)
-    
+    pooling <- twosls(y,X,W,interc)
   }
-  if (interc){
-    cnames <- c("(intercept)",coef.names)
-  }
-  else{
-    cnames <- coef.names
-  }
-  pooling <- plmformat(pooling,
-                       cnames,
-                       rnames,N-K-interc,"pooling",
-                       pdim,pmodel,indexes,cl)
-  if (interc){
-    pooling$model[[2]] <- cbind(1,pooling$model[[2]])
-    colnames(pooling$model[[2]])[1] <- "(intercept)"
-  }
+  pooling <- plmformat(pooling, coef.names, rnames,N-K-interc,"pooling",
+                       pdim, pmodel, indexes, cl)
   pooling
 }
 
-plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
-
-  formula <- pmodel$formula
+plm.fd <- function(y, X, W, id, time, pvar, pdim, pmodel, indexes, cl, ...){
+  interc <- pmodel$has.intercept
+  response.name <- deparse(pmodel$formula[[2]])
   effect <- pmodel$effect
   rnames <- rownames(X)
-
-  n <- pdim$nT$n
-  N <- pdim$nT$N
-  T <- pdim$nT$T-1
+  T <- pdim$nT$T ; n <- pdim$nT$n ; N <- pdim$nT$N ; K <- pdim$K <- ncol(X)
+  coef.names <- colnames(X)
   Ti <- pdim$Tint$Ti-1
   nt <- pdim$Tint$nt[-1]
   N <- pdim$nT$N <- N-n
@@ -204,86 +146,74 @@ plm.fd <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   X <- X[did==0,]
   y <- y[did==0]
   rnames <- rnames[did==0]
-
-  if (is.null(W)){
-    pooling <- lm(y~X-1)
-  }
+  
+  if (is.null(W)) if (interc) fd <- lm(y~X) else fd <- lm(y~X-1)
   else{
     W <- rbind(NA,W[2:N,]-W[1:(N-1),])
     W <- W[did==0,]
-    pooling=twosls(y,X,W,FALSE)
+    fd <- twosls(y,X,W,interc)
   }
-  pooling <- plmformat(pooling,coef.names,rnames,
-                       N-K-n,"pooling",pdim,pmodel,indexes,cl)
+  fd <- plmformat(fd,coef.names,rnames,
+                  N-K-n,"pooling",pdim,pmodel,indexes,cl)
+  fd
 }
 
-
-plm.random <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
+plm.random <- function(y, X, W, id, time, pvar, pdim, pmodel, indexes, cl, ...){
+  response.name <- deparse(pmodel$formula[[2]])
   random.method <- pmodel$random.method
-  formula <- pmodel$formula
+  interc <- pmodel$has.intercept
   effect <- pmodel$effect
   rnames <- rownames(X)
   inst.method <- pmodel$inst.method
   balanced <- pdim$balanced
-  Ti <- pdim$Tint$Ti
-  T <- pdim$nT$T
-  n <- pdim$nT$n
-  N <- pdim$nT$N
-  K <- pdim$K <- ncol(X)
+  Ti <- pdim$Tint$Ti ;  nt <- pdim$Tint$nt ; T <- pdim$nT$T ; n <- pdim$nT$n ;
+  N <- pdim$nT$N ; K <- pdim$K <- ncol(X)
   coef.names <- colnames(X)
-
-  cond <- id
-  other <- time
-  other.variation <- pvar$time.variation
-  cond.variation <- pvar$id.variation
-  ncond <- n
-
   if (effect=="time"){
-    cond <- time
-    other <- id
-    cond.variation <- pvar$time.variation
-    other.variation <- pvar$id.variation
-    ncond <- T
+    cond <- time ; other <- id ; cond.variation <- pvar$time.variation ;
+    other.variation <- pvar$id.variation ; ncond <- T ; ns <- nt
   }
+  else{
+    cond <- id ; other <- time ; cond.variation <- pvar$id.variation ;
+    other.variation <- pvar$time.variation ; ncond <- n ; ns <- Ti
+  }    
   X.m <- papply(X,mymean,cond)
   y.m <- papply(unclass(y),mymean,cond)
-  
   if(effect=="twoways"){
     X.time <- papply(X,mymean,time)
     X.mean <- matrix(rep(apply(X,2,mean),N),ncol=K,byrow=T)
     y.time <- papply(unclass(y),mymean,time)
   }
   if (!balanced) random.method <- "swar"
+
   estec <-switch(random.method,
                  "walhus"=walhus(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                  "amemiya"=amemiya(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
                  "swar"=swar(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                 "nerlove"=nerlove(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),               
-                 {
-                   warning("theta must be one of walhus, amemiya, swar or nerlove")
-                   theta="swar"
-                   swar(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...)
-                 }
+                 "nerlove"=nerlove(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...)
                  )
+
   sigma2 <- estec$sigma2
-  if (balanced){
-    theta <- estec$theta
-  }
+  if (balanced) theta <- estec$theta
   else{
-    sigma2$one <- (Ti*sigma2$id+sigma2$idios)[cond]
-    theta <- 1-sqrt(sigma2$idios/(sigma2$idios+Ti*sigma2$id))
+    sigma2$one <- (ns*sigma2$id+sigma2$idios)[cond]
+    theta <- 1-sqrt(sigma2$idios/(sigma2$idios+ns*sigma2$id))
     theta <- theta[cond]
   }
   if(is.null(W)){
     if(effect=="twoways"){
-      X.re=cbind(1-theta$id-theta$time+theta$total,X-theta$id*X.m-theta$time*X.time+theta$total*X.mean)
-      y.re=y-theta$id*y.m-theta$time*y.time+theta$total*mean(y)
+      X.re <- cbind(1-theta$id-theta$time+theta$total,X-theta$id*X.m-theta$time*X.time+theta$total*X.mean)
+      y.re <- y-theta$id*y.m-theta$time*y.time+theta$total*mean(y)
     }  
     else{
-      X.re <- cbind(1-theta,X-theta*X.m)
+      if (interc){
+        X.re <- cbind(1-theta,X-theta*X.m)
+        colnames(X.re)[1] <- "(intercept)"
+      }
+      else X.re <- X-theta*X.m
+      rownames(X.re) <- rownames(X)
       y.re <- y-theta*y.m
     }
-    colnames(X.re)[1] <- "(intercept)"
     random <- lm(y.re~X.re-1)
   }
   else{
@@ -291,34 +221,31 @@ plm.random <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
       warning("Instrumental variable random effect estimation not implemented for two-ways panels")
     }
     else{
-      if (ncol(W)<ncol(X)+1) stop("Insufficient number of instruments\n")
-      X.re <- cbind(1-theta,X-theta*X.m)/sqrt(sigma2$idios)
+      if (ncol(W) < ncol(X)+1) stop("Insufficient number of instruments\n")
+      if (interc) X.re <- cbind(1-theta,X-theta*X.m)/sqrt(sigma2$idios)
+      else X.re <- (X-theta*X.m)/sqrt(sigma2$idios)
+      rownames(X.re) <- rownames(X)
       y.re <- (y-theta*y.m)/sqrt(sigma2$idios)
       W.m <- papply(W,mymean,cond)
       W.with <- W-W.m
-      
-      if(inst.method=="baltagi"){
-        W.re <- cbind(W.with,W.m)
-      }
-      if(inst.method=="bvk"){
-        W.re <- cbind(W.with/sqrt(sigma2$idios)+W.m/sqrt(sigma2$one))
-      }
-      random <- twosls(y.re,X.re,W.re)
+      if(inst.method=="baltagi") W.re <- cbind(W.with,W.m)
+      if(inst.method=="bvk") W.re <- cbind(W.with/sqrt(sigma2$idios)+W.m/sqrt(sigma2$one))
+      random <- twosls(y.re,X.re,W.re,FALSE)
     }
   }
-  random <- plmformat(random,c("(intercept)",coef.names),rnames,
+  random <- plmformat(random,coef.names,rnames,
                       N-K-1,"random",pdim,pmodel,indexes,cl)
   random$theta <- theta
   random$sigma2 <- sigma2
   random
 }
 
-plm.ht <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
+plm.ht <- function(y, X, W, id, time, pvar, pdim, pmodel, indexes, cl, ...){
   var.effects <- attr(X,"var.effects")
   within <- plm.within(y,X,NULL,id,time,pvar,pdim,pmodel,indexes,cl,...)
-  formula <- pmodel$formula
   effect <- pmodel$effect
   rnames <- rownames(X)
+  interc <- pmodel$has.intercept
   balanced <- pdim$balanced
   T <- pdim$nT$T
   n <- pdim$nT$n
@@ -412,7 +339,7 @@ plm.ht <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   rownames(X.ra) <- names(y.ra) <- rownames(W)<- 1:N
   ht <- twosls(y.ra,X.ra,W)
   K <- pdim$K <- ncol(X.ra)
-  ht <- plmformat(ht,c("(intercept)",coef.names),rnames,
+  ht <- plmformat(ht,coef.names,rnames,
                   N-K-1,"ht",pdim,pmodel,indexes,cl)
   ht$theta <- theta
   ht$sigma2 <- sigma2
@@ -423,10 +350,10 @@ plm.ht <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
     x
   }
 
-  ht$varlist=list(x1=transl(x1,var.effects),
-    x2=transl(x2,var.effects),
-    z1=transl(z1,var.effects),
-    z2=transl(z2,var.effects))
+  ht$varlist <- list(x1=transl(x1,var.effects),
+                     x2=transl(x2,var.effects),
+                     z1=transl(z1,var.effects),
+                     z2=transl(z2,var.effects))
   
   ht
 }

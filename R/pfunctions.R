@@ -263,7 +263,8 @@ sumres <- function(x){
   sr
 }
 
-fixef.plm <- function(object, effect = NULL, ...){
+fixef.plm <- function(object, effect = c("individual","time"), ...){
+  effect <- match.arg(effect)
   pmodel <- attr(object,"pmodel")
   model.name <- pmodel$model
   if (model.name!="within"){
@@ -289,11 +290,14 @@ fixef.plm <- function(object, effect = NULL, ...){
   }
   if (pmodel$effect!="twoways"){
     bet <- update(object,model="between")
-    xb <- bet$model[[2]]
+    xb <- model.matrix(bet)
     sigma2 <- sum(residuals(bet)^2)/df.residual(bet)
-    vcov <- vcov(object)
+    # the between model contains a constant, the within one don't
+    vcov <- vcov(object)[names(coef(bet))[-1],names(coef(bet))[-1]]
     T <- attr(bet,"pdim")$nT$T
-    sefixef <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
+    s2 <- sum(resid(object)^2)/df.residual(object)
+#    sefixef <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
+    sefixef <- sqrt(s2/T+apply(xb[,rownames(vcov),drop=FALSE],1,function(x) t(x)%*%vcov%*%x))
     intercept <- object$alpha
     fixef <- structure(fixef-intercept,se=sefixef,intercept=intercept,class="fixef")
   }

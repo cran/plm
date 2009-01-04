@@ -2,12 +2,14 @@ swar <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
   effect <- pmodel$effect
   twoways <- pmodel$effect=="twoways"
   balanced <- pdim$balanced
-  T <- pdim$nT$T
-  n <- pdim$nT$n
-  Kb <- pdim$Kb
-  K <- pdim$K
-  N <- pdim$nT$N
-  Ti <- pdim$Tint$Ti
+  T <- pdim$nT$T ; n <- pdim$nT$n ; Kb <- pdim$Kb ; K <- pdim$K
+  N <- pdim$nT$N ; Ti <- pdim$Tint$Ti ; nt <- pdim$Tint$nt
+  if (effect == "individual"){
+    ncond <- n ; ns <- Ti ; nother <- T
+  }
+  if (effect == "time"){
+    ncond <- T ; ns <-  nt ; nother <- n
+  }
   within <- plm.within(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...)
   Kw <- attr(within,"pdim")$Kw
   if (twoways){
@@ -25,25 +27,17 @@ swar <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
 
   sigma2 <- list()
   if(!twoways){
-
     if(balanced){
-      ssrbet <- T*sum(between$residuals^2)
-      sigma2$one <- ssrbet/(n-Kb-1)
-      sigma2$idios <- sum(within$residuals^2)/(N-n-Kw)
-      sigma2$id <- (sigma2$one-sigma2$idios)/T
+      ssrbet <- nother*sum(between$residuals^2)
+      sigma2$one <- ssrbet/(ncond-Kb-1)
+      sigma2$idios <- sum(within$residuals^2)/(N-ncond-Kw)
+      sigma2$id <- (sigma2$one-sigma2$idios)/nother
+      if (sigma2$id < 0) stop("the estimated variance of the individual effect is negative")
       theta <- 1-sqrt(sigma2$idios/sigma2$one)
       z <- list(sigma2=sigma2,theta=theta)
     }
     else{
-      data.name <- within$call$data
-      if (effect=="individual"){
-#        condvar <- eval(data.name)[[indexes$id]]
-        condvar <- id
-      }
-      else{
-        condvar <- time
-#        condvar <- eval(data.name)[[indexes$time]]
-      }
+      if (effect=="individual") condvar <- id else condvar <- time
       X.m <- papply(cbind(1,X),mymean,condvar)
       X.sum <- attr(papply(cbind(1,X),mysum,condvar),"cm")
       X.m.X <- crossprod(X.m)
@@ -60,11 +54,11 @@ swar <- function(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...){
       else{
         tr <- sum(diag(solve(crossprod(X.m))%*%crossprod(X.sum)))
       }
-      sigma2$idios <- sum(within$residuals^2)/(N-n-Kw)
-      ssrbet <- sum(between$residuals^2*Ti)
-      sigma2$id <- (ssrbet-(n-Kb-1)*sigma2$idios)/(N-tr)
+      sigma2$idios <- sum(within$residuals^2)/(N-ncond-Kw)
+      ssrbet <- sum(between$residuals^2*ns)
+      sigma2$id <- (ssrbet-(ncond-Kb-1)*sigma2$idios)/(N-tr)
+      if (sigma2$id < 0) stop("the estimated variance of the individual effect is negative")
       z <- list(sigma2=sigma2)
-      
     }
   }
   else{

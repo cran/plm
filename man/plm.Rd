@@ -9,9 +9,10 @@
   transformed data.
 }
 \usage{
-plm(formula, data, subset, na.action, effect = "individual",
-    model = "within", instruments = NULL, random.method = "swar",
-    inst.method = "bvk", index = NULL, pvar = TRUE, ...)
+plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
+    model = c("within","random","ht","between","pooling","fd"),
+    instruments = NULL, random.method = c("swar","walhus","amemiya","nerlove"),
+    inst.method = c("bvk","baltagi"), index = NULL, pvar = TRUE, ...)
 \method{summary}{plm}(object, ...)
 \method{print}{summary.plm}(x, digits = max(3, getOption("digits") - 2),
     width = getOption("width"), ...)
@@ -53,7 +54,7 @@ plm(formula, data, subset, na.action, effect = "individual",
   \code{plm} is a general function for the estimation of linear
   panel models. It supports the following estimation methods:
   pooled OLS (\code{model="pooling"}), fixed effects (\code{"within"}),
-  random effects (\code{"random"}), first--difference (\code{"fd}) and
+  random effects (\code{"random"}), first--difference (\code{"fd"}) and
   between (\code{"between"}). It supports unbalanced panels and two--ways
   effects (although not with all methods).
 
