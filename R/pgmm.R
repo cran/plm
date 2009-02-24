@@ -412,7 +412,7 @@ summary.pgmm <- function(object,robust=FALSE,...){
   model.name <- attr(object,"pmodel")$model
   transformation <- attr(object,"pmodel")$transformation
   if (robust){
-    vv <- pvcovHC(object)
+    vv <- vcovHC(object)
   }
   else{
     vv <- vcov(object)
@@ -430,7 +430,7 @@ summary.pgmm <- function(object,robust=FALSE,...){
   object$m1 <- mtest(object,1,vv)
   object$m2 <- mtest(object,2,vv)
   object$wald.coef <- wald(object,"param",vv)
-  if (object$call$effect=="twoways") object$wald.td <- wald(object,"time",vv)
+  if (describe(object, "effect") == "twoways") object$wald.td <- wald(object,"time",vv)
   class(object) <- "summary.pgmm"
   object
 }
@@ -472,7 +472,7 @@ print.summary.pgmm <- function(x,digits=max(3, getOption("digits") - 2), width =
       " (p.value=",format.pval(x$wald.coef$p.value,digits=digits),")\n",sep="")
   
   
-  if (x$call$effect=="twoways"){
+  if (describe(x, "effect") == "twoways"){
     cat("Wald test for time dummies: ",names(x$wald.td$statistic),
         "(",x$wald.td$parameter,") = ",x$wald.td$statistic,
         " (p.value=",format.pval(x$wald.td$p.value,digits=digits),")\n",sep="")

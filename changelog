@@ -100,13 +100,44 @@ Changes since version 1-0.0
 	replaced by K+1 for the computation of the overall mean matrix of
 	the instruments. Time fixef are now computed. The error message
 	"impossible ..." is removed
-
+	
 	* a bug in the time random effect model is corrected
-
+	
 	* a model.matrix method for panelmodel is provided
-
+	
 	* models without intercept (-1 in the formula) should now be
 	consistently estimated with plm, pggls and pvcm.
 	
 	* plm depends now on the Formula package which provides
 	useful tools for formula with two parts
+
+
+Changes since version 1-0.1
+	
+	* the plm function has been completely rewriten,
+
+	* the names of some arguments have changed (random.methods ->
+	ercomp, inst.method -> ivar), the old names are accepted with a
+	warning,
+
+	* the model argument of plm objects are now ordinary data.frame,
+	and not data.frame with elements y and X. Moreover, this
+	data.frame contains untransformed data
+
+	* the data sets which are relevant for panel data estimation that
+	where previously in the Ecdat package are now in the plm package
+
+	* in pvcm a bug when the estimation was made on a subset is fixed
+
+	* ercomp is a stand alone function which returns the estimation of
+	the components of the variance of the errors,
+	
+	* the estimation of two-ways within model is now implemented for
+	unbalanced panels,
+
+	* the fixef method is much improved, the fixed effects may be
+	computed in levels, in deviation from the first level or in
+	deviation from the overall mean
+	
+
+	

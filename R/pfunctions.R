@@ -2,6 +2,15 @@ papply <- function(x, ...){
   UseMethod("papply")
 }
 
+papply.default <- function(x,func,cond,...){
+  na.x <- is.na(x)
+  cm <- tapply(x,cond,func)
+  Cm <- cm[as.character(cond)]
+  Cm[na.x] <- NA
+  attr(Cm,"cm") <- cm
+  Cm
+}
+
 papply.pserie <- function(x,func,effect="individual",...){
   na.x <- is.na(x)
   data.name <- attr(x,"data")
@@ -34,17 +43,19 @@ papply.matrix <- function(x,func,cond,...){
   Cm
 }
 
-papply.default <- function(x,func,cond,...){
-  na.x <- is.na(x)
-  cm <- tapply(x,cond,func)
-  Cm <- cm[as.character(cond)]
-  Cm[na.x] <- NA
-  attr(Cm,"cm") <- cm
-  Cm
-}
-
 Between <- function(x,...){
   UseMethod("Between")
+}
+
+Between.default <- function(x,cond, ...){
+  if (is.numeric(x)){
+    res <- papply(x,mymean,cond)
+  }
+  else{
+    stop("The Between function only applies to numeric vectors\n")
+  }
+  attr(res,"cm") <- NULL
+  res
 }
 
 Between.pserie <- function(x,effect="individual", ...){
@@ -58,16 +69,6 @@ Between.pserie <- function(x,effect="individual", ...){
   res
 }
 
-Between.default <- function(x,cond, ...){
-  if (is.numeric(x)){
-    res <- papply(x,mymean,cond)
-  }
-  else{
-    stop("The Between function only applies to numeric vectors\n")
-  }
-  attr(res,"cm") <- NULL
-  res
-}
 
 Between.matrix <- function(x,cond, ...){
   if (is.numeric(x)){
@@ -82,6 +83,16 @@ Between.matrix <- function(x,cond, ...){
 
 between <- function(x,...){
   UseMethod("between")
+}
+
+between.default <- function(x,cond, ...){
+  if (is.numeric(x)){
+    res <- tapply(x,cond,mymean)
+  }
+  else{
+    stop("The between function only applies to numeric vectors\n")
+  }
+  res
 }
 
 between.pserie <- function(x,effect="individual", ...){
@@ -117,18 +128,15 @@ between.matrix <- function(x,cond, ...){
   res
 }
 
-between.default <- function(x,cond, ...){
-  if (is.numeric(x)){
-    res <- tapply(x,cond,mymean)
-  }
-  else{
-    stop("The between function only applies to numeric vectors\n")
-  }
-  res
-}
 
 within <- function(x,...){
   UseMethod("within")
+}
+
+within.default <- function(x,cond, ...){
+  res <- x-papply(x,mymean,cond)
+  attr(res,"cm") <- NULL
+  res
 }
 
 within.pserie <- function(x,effect="individual", ...){
@@ -142,15 +150,12 @@ within.pserie <- function(x,effect="individual", ...){
   res
 }
 
-within.default <- function(x,cond, ...){
-  res <- x-papply(x,mymean,cond)
-  attr(res,"cm") <- NULL
-  res
-}
-
 within.matrix <- function(x,cond, ...){
   if (is.numeric(x)){
     res <- x-papply(x,mymean,cond)
+    timevar <- apply(res,2,myvar) > 1E-12
+    res <- res[,timevar,drop = FALSE]
+    attr(res, "timeconst") <- colnames(x)[!timevar]
   }
   else{
     stop("The within function only applies to numeric vectors\n")
@@ -202,6 +207,32 @@ lag.pserie <- function(x,k=1,...){
 }
 
 
+pdiff <- function(x, cond, has.intercept = FALSE){
+  cond <- as.numeric(cond)
+  n <- ifelse(is.matrix(x),nrow(x),length(x))
+  cond <- c(NA,cond[2:n]-cond[1:(n-1)])
+  cond[cond != 0] <- NA
+  if (!is.matrix(x)){
+    result <- c(NA,x[2:n]-x[1:(n-1)])
+    result[is.na(cond)] <- NA
+    result <- na.omit(result)
+  }
+  else{
+    result <- rbind(NA,x[2:n,]-x[1:(n-1),])
+    result[is.na(cond),] <- NA
+    result <- na.omit(result)
+    result <- result[,apply(result,2,myvar) > 1E-12,drop = FALSE]
+    if (has.intercept){
+      result <- cbind(1,result)
+      colnames(result)[1] <- "(intercept)"
+    }
+
+  }
+  attr(result,"na.action") <- NULL
+  result
+}
+
+
 myvar <- function(x){
   if(any(is.na(x))) x <- x[!is.na(x)]
   n <- length(x)
@@ -228,157 +259,4 @@ mysum <- function(x){
               "0"=NA,
               sum(x))
   z
-}
-
-twosls <- function(y,X,W,intercept=FALSE){
-  Xhat <- lm(X~W)$fit
-  if(!is.matrix(Xhat)){
-    Xhat <- matrix(Xhat,ncol=1)
-    colnames(Xhat) <- colnames(X)
-  }
-  if(intercept){
-    model <- lm(y~Xhat)
-    residuals <- y-as.vector(cbind(1,X)%*%model$coef)
-  }
-  else{
-    model <- lm(y~Xhat-1)
-    residuals <- y-as.vector(as.matrix(X)%*%model$coef)
-  }
-  model$residuals <- as.vector(residuals)
-  model
-}
-  
-tss <- function(x){
-  n <- length(x)
-  sum(x^2)-n*mean(x)^2
-}
-
-
-sumres <- function(x){
-  sr <- summary(residuals(x))
-  srm <- sr["Mean"]
-  if (abs(srm)<1e-10){
-    sr <- sr[c(1:3,5:6)]
-  }
-  sr
-}
-
-fixef.plm <- function(object, effect = c("individual","time"), ...){
-  effect <- match.arg(effect)
-  pmodel <- attr(object,"pmodel")
-  model.name <- pmodel$model
-  if (model.name!="within"){
-    stop("fixef function only implemented for within models\n")
-  }
-  else{
-    if (pmodel$effect!="twoways"){
-      fixef <- attr(object$fixef,"cm")
-    }
-    else{
-      if (is.null(effect)){
-        stop("effect should be indicated\n")
-      }
-      else{
-        if (effect=="individual"){
-          fixef <- attr(object$fixef$id,"cm")
-        }
-        else{
-          fixef <- attr(object$fixef$time,"cm")
-        }
-      }
-    }
-  }
-  if (pmodel$effect!="twoways"){
-    bet <- update(object,model="between")
-    xb <- model.matrix(bet)
-    sigma2 <- sum(residuals(bet)^2)/df.residual(bet)
-    # the between model contains a constant, the within one don't
-    vcov <- vcov(object)[names(coef(bet))[-1],names(coef(bet))[-1]]
-    T <- attr(bet,"pdim")$nT$T
-    s2 <- sum(resid(object)^2)/df.residual(object)
-#    sefixef <- sqrt(apply(xb,1,function(x) t(x)%*%vcov%*%x))
-    sefixef <- sqrt(s2/T+apply(xb[,rownames(vcov),drop=FALSE],1,function(x) t(x)%*%vcov%*%x))
-    intercept <- object$alpha
-    fixef <- structure(fixef-intercept,se=sefixef,intercept=intercept,class="fixef")
-  }
-  else{
-    class(fixef) <- "fixef"
-  }
-  fixef
-}
-
-print.fixef <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
-  if (!is.null(attr(x,"intercept"))){
-#    if (diff) intercept <- attr(x,"intercept")
-    attr(x,"se") <- attr(x,"intercept") <- attr(x,"class") <- NULL
-  }
-  else{
-    attr(x,"class") <- NULL
-  }
-  print.default(x)
-}
-
-summary.fixef <- function(object,...){
-  if (is.null(attr(object,"intercept"))) stop("summary method not defined for two-ways effects")
-  se <- attr(object,"se")
-  alpha <- attr(object,"intercept")
-  zvalue <- (object)/se
-  res <- cbind(object,se,zvalue,(1-pnorm(abs(zvalue)))*2)
-  colnames(res) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
-  class(res) <- "summary.fixef"
-  res
-}
-
-print.summary.fixef <- function(x,digits= max(3, getOption("digits") - 2),width=getOption("width"),...){
-  printCoefmat(x,digits=digits)
-}
-  
-
-suml <- function(x){
-  n <- length(x)
-  if (!is.null(dim(x[[1]]))){
-    d <- dim(x[[1]])
-    s <- matrix(0,d[1],d[2])
-    for (i in 1:n){
-      s <- s+x[[i]]
-    }
-  }
-  else{
-    s <- rep(0,length(x[[n]]))
-    for (i in 1:n){
-      s <- s+x[[i]]
-    }
-  }
-  s
-}
-
-oppl <- function(x,y,func){
-  n <- length(x)
-  z <- list()
-  if (!is.list(y)){
-    for (i in 1:n){
-      t <- paste("\"",func,"\"","(x[[i]],y)",sep="")
-      z[[i]] <- eval(parse(text=t))
-    }
-  }
-  else{
-    for (i in 1:n){
-      t <- paste("\"",func,"\"","(x[[i]],y[[i]])",sep="")
-      z[[i]] <- eval(parse(text=t))
-    }
-  }
-  z
-}
-
-is.one.side.formula <- function(x){
-  class(x)=="formula" && length(x)==2
-}
-
-rbindl <- function(x){
-  n <- length(x)
-  d <- dim(x[[1]])
-  s <- c()
-  for (i in 1:n){
-    s <- rbind(s,x[[i]])
-  }
 }

@@ -9,8 +9,7 @@
 \usage{
 pooltest(x, ...)
 \method{pooltest}{plm}(x, z, ...)
-\method{pooltest}{formula}(x, data, effect = "individual", model =
-"within", index = NULL, ...)
+\method{pooltest}{formula}(x, data, ...)
 }
 
 \arguments{
@@ -18,19 +17,15 @@ pooltest(x, ...)
   \item{z}{an object of class \code{"pvcm"} obtained with
     \code{model="within"},}
   \item{data}{a \code{data.frame},}
-  \item{effect}{one of \code{"individual"} or \code{"time"},}
-
-  \item{model}{one of \code{"pooling"} or \code{"within"}; intercepts
-  are assumed to be identical in the first case and different in the
-  second case.}
-  \item{index}{the index of the \code{data.frame},}
-
-  \item{\dots}{further arguments.}
+  \item{\dots}{further arguments passed to plm.}
 }
 
-\details{
-  \code{pooltest} is an \emph{F} test of stability (or Chow
-  test) for the coefficients of a panel model.
+\details{ \code{pooltest} is an \emph{F} test of stability (or Chow
+  test) for the coefficients of a panel model. The estimated \code{plm}
+  object should be \code{"pooling"} model or a \code{"within"} model
+  (the default); intercepts are assumed to be identical in the first
+  case and different in the second case.
+
 }
 
 \value{

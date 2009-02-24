@@ -8,10 +8,10 @@
 }
 \usage{
 plmtest(x, ...)
-\method{plmtest}{plm}(x, effect = "individual", type = "honda", ...)
-\method{plmtest}{formula}(x, data, effect = "individual", type = "honda",
-index = NULL, ...)
-%\method{plmtest}{default}(x,n=NULL,T=NULL,balanced=NULL,id=NULL,time=NULL,effect="id",type="bp",data=NULL, ...)
+\method{plmtest}{plm}(x, effect = c("individual", "time", "twoways"),
+                         type = c("honda","bp", "ghm", "kw"), ...)
+\method{plmtest}{formula}(x, data, ..., effect = c("individual", "time", "twoways"),
+                         type = c("honda","bp", "ghm", "kw"))
 }
 
 \arguments{
@@ -23,8 +23,7 @@ index = NULL, ...)
     computed : \code{"bp"} for Breush-Pagan (1980), \code{"ghm"} for Gourieroux, Holly and
     Monfort (1982), \code{"honda"} for Honda (1985) or \code{"kw"} for
     King and Wu (1997),}
-  \item{index}{the index of the \code{data.frame},}
-  \item{...}{further arguments.}
+  \item{...}{further arguments passed to \code{plm}.}
 }
 
 \details{
@@ -69,11 +68,11 @@ index = NULL, ...)
 }
 
 \examples{
-data("Grunfeld", package="Ecdat")
-g <- plm(inv~value+capital, data=Grunfeld, model="pooling")
+data("Grunfeld", package="plm")
+g <- plm(inv~value+capital, data = Grunfeld, model = "pooling")
 plmtest(g)
 plmtest(g, effect="time")
-plmtest(inv~value+capital, data=Grunfeld, type="honda")
+plmtest(inv~value+capital, data = Grunfeld, type = "honda")
 plmtest(inv~value+capital, data=Grunfeld, type="ghm",effect="twoways")
 plmtest(inv~value+capital, data=Grunfeld, type="kw",effect="twoways")
 }

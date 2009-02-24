@@ -45,6 +45,6 @@ ar <- pgmm(dynformula(log(emp)~log(wage)+log(capital)+log(output),list(2,1,2,2))
     data = EmplUK, effect = "twoways", model = "twosteps",
     gmm.inst = ~ log(emp), lag.gmm = list(c(2,99)))
 mtest(ar, 1)
-mtest(ar, 2, pvcovHC)
+mtest(ar, 2, vcovHC)
 }
 \keyword{htest}

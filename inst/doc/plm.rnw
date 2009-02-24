@@ -558,20 +558,24 @@ options(prompt= "R> ")
 
 <<echo=TRUE,results=hide>>=
 library("plm")
+#library(nlme)
+#library(MASS)
+#library(kinship)
+#source("~/R/plm/chargement.R")
 @ 
 
-The four datasets used are \code{EmplUK} data available in \pkg{plm}
-which was used by \citet{AREL:BOND:91}, the \code{Grunfeld} data
-available in package \pkg{Ecdat} \citep{CROI:06} which is used in
-several econometric books, the \code{Produc} data used by
-\citet{MUNN:90} and the \code{Wages} used by \citet{CORN:RUPE:88}.
+The four datasets used are \code{EmplUK} which was used by
+\citet{AREL:BOND:91}, the \code{Grunfeld} data \citep{KLEI:ZEIL:08}
+which is used in several econometric books, the \code{Produc} data
+used by \citet{MUNN:90} and the \code{Wages} used by
+\citet{CORN:RUPE:88}.
 
 
 <<>>=
 data("EmplUK", package="plm")
-data("Produc", package="Ecdat")
-data("Grunfeld", package="Ecdat")
-data("Wages",package="Ecdat")
+data("Produc", package="plm")
+data("Grunfeld", package="plm")
+data("Wages",package="plm")
 
 @
 
@@ -600,18 +604,9 @@ once for all. As an alternative, one could keep specifying \code{index = 595}
 into every command.
 
 Datasets that have indexes but are, or are suspected to be, in the
-wrong order can be set in the same way, specifying the names of the 
-\code{id} and \code{time} indexes instead of the number of individuals.
-For the sake of illustration, here is an example on the \code{EmplUK}
-dataset (although this is in the correct order already):
-
-<<setdata2>>=
-EmplUK <- plm.data(EmplUK, index = c("firm", "year"))
-
-@
-
-
-
+wrong order can be set in the same way, specifying the names of the
+\code{id} and \code{time} indexes instead of the number of
+individuals.  
 
 \subsection{Data transformation}
 
@@ -770,9 +765,9 @@ parameter are available, depending on the value of the argument \code{random.met
 For example, to use the \code{amemiya} estimator:
 
 <<>>=
-emp.amem <- plm(log(emp)~log(wage)+log(capital),data=EmplUK,model="random",random.method="amemiya")
-@ 
+grun.amem <- plm(inv~value+capital,data=Grunfeld,model="random",random.method="amemiya")
 
+@ 
 
 \subsubsection{Introducing time or two-ways effects}
 
@@ -829,9 +824,9 @@ The Hausman-Taylor model \citep[see][]{HAUS:TAYL:81} may be estimated with \code
 the \code{model} argument to \code{"ht"}.
 
 <<>>=
-form <- lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sex+black+ed|sex+black+bluecol+south+smsa+ind
-ht <- plm(form,data=Wages,model="ht")
-summary(ht)
+#form <- lwage~wks+south+smsa+married+exp+I(exp^2)+bluecol+ind+union+sex+black+ed|sex+black+bluecol+south+smsa+ind
+#ht <- plm(form,data=Wages,model="ht")
+#summary(ht)
 @ 
 
 
@@ -1243,7 +1238,7 @@ homoskedasticity of the idiosyncratic errors has been derived by
 option in \code{pbsytest}:
 
 <<pbsytestJoint>>=
-pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,test="J")
+pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,test="j")
 @
 
 Rejection of the joint test, though, gives no information on the
@@ -1287,7 +1282,7 @@ version\footnote{Corresponding to $RSO^*_{\mu}$ in the original
 must be non-negative:
 
 <<pbsytestRE>>=
-pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,test="RE")
+pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,test="re")
 @
 
 \subsubsection{Conditional LM test for AR(1) or MA(1) errors under random effects}
@@ -1406,7 +1401,7 @@ are lagged and a \code{pooling} AR(1) model is estimated. The test
 statistic is obtained by applying \code{linear.hypothesis()} to the
 latter model to test the above restriction on $\delta$, supplying a
 heteroskedasticity- and autocorrelation-consistent covariance matrix
-(\code{pvcovHC} with the appropriate options, in particular
+(\code{vcovHC} with the appropriate options, in particular
 \code{method="arellano"})\footnote{see Subsection~\ref{subsec:robust}.}.
 
 <<pwartest>>=
@@ -1624,7 +1619,7 @@ it is enough that neighbouring pairs correspond to nonzero elements in
 \label{subsec:robust}
 
 Robust estimators of the covariance matrix of coefficients are
-provided, mostly for use in Wald-type tests. \code{pvcovHC}
+provided, mostly for use in Wald-type tests. \code{vcovHC}
 estimates three ``flavours'' of White's heteroskedasticity-consistent
 covariance matrix\footnote{See \citet{WHIT:80} and \citet{WHIT:84}.}
 (known as the \emph{sandwich} estimator). Interestingly, in the
@@ -1688,7 +1683,7 @@ performance\footnote{The HC3 and HC4 weighting schemes are
   thousands, where on the other hand it makes little sense to apply
   small sample corrections.}.
 
-The main use of \code{pvcovHC} is together with testing functions from the
+The main use of \code{vcovHC} is together with testing functions from the
 \pkg{lmtest} and \pkg{car} packages. These typically allow passing the
 \code{vcov} parameter either as a matrix or as a function 
 \citep[see][]{ZEIL:04}. If one is happy with the defaults, it is easiest to
@@ -1697,7 +1692,7 @@ pass the function itself:
 <<>>=
 library("lmtest")
 re <- plm(inv~value+capital,data=Grunfeld,model="random")
-coeftest(re,pvcovHC)
+coeftest(re,vcovHC)
 @
 
 
@@ -1705,7 +1700,7 @@ else one may do the covariance computation inside the call to
 \code{coeftest}, thus passing on a matrix:
 
 <<results=hide>>=
-coeftest(re,pvcovHC(re,method="white2",type="HC3"))
+coeftest(re,vcovHC(re,method="white2",type="HC3"))
 @ 
 
 For some tests, e.g. for multiple model comparisons by
@@ -1716,17 +1711,17 @@ For some tests, e.g. for multiple model comparisons by
 shown below \citep[see also][p.12]{ZEIL:04}:
 
 <<>>=
-waldtest(re,update(re,.~.-capital),vcov=function(x) pvcovHC(x,method="white2",type="HC3"))
+waldtest(re,update(re,.~.-capital),vcov=function(x) vcovHC(x,method="white2",type="HC3"))
 @ 
 
 Moreover, \code{linear.hypothesis} from package \pkg{car} may be used to test for linear restrictions:
 
 <<>>=
 library("car")
-linear.hypothesis(re, "2*value=capital", vcov.=pvcovHC)
+linear.hypothesis(re, "2*value=capital", vcov.=vcovHC)
 @
 
-A specific \code{pvcovHC} method for \code{pgmm} objects is also
+A specific \code{vcovHC} method for \code{pgmm} objects is also
 provided which implements the robust covariance matrix proposed by
 \citet{WIND:05} for generalized method of moments estimators.
 
@@ -1924,8 +1919,6 @@ estimated by \textsc{gls} and then by \textsc{ml}
 
 <<re>>=
 
-data(Grunfeld, package="Ecdat")
-
 reGLS<-plm(inv~value+capital,data=Grunfeld,model="random")
 
 reML<-lme(inv~value+capital,data=Grunfeld,random=~1|firm)
@@ -2016,10 +2009,12 @@ time-dependence\footnote{Take heed that here, in contrast to the usual
   meaning of serial correlation in time series, we always speak of
   serial correlation {\em between the errors of each group}.} may be
 fitted by \code{gls()}, specifying the correlation structure in the
-\code{correlation} option:
+\code{correlation} option\footnote{note that the time index is coerced
+  to numeric before the estimation.}:
 
 
 <<lmAR1>>=
+Grunfeld$year <- as.numeric(as.character(Grunfeld$year))
 lmAR1ML<-gls(inv~value+capital,data=Grunfeld,
              correlation=corAR1(0,form=~year|firm))
 @

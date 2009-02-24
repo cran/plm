@@ -69,13 +69,15 @@ pcdtest(x, ...)
 }
 
 \examples{
-data(Grunfeld, package="Ecdat")
+data(Grunfeld, package="plm")
 ## test on heterogeneous model (separate time series regressions)
-pcdtest(inv ~ value + capital, data=Grunfeld)
+pcdtest(inv ~ value + capital, data=Grunfeld,
+        index = c("firm","year"))
 ## test on twoways fixed effects homogeneous model
-pcdtest(inv ~ value + capital, data=Grunfeld, model="within", effect="twoways")
+pcdtest(inv ~ value + capital, data=Grunfeld, model="within",
+        effect="twoways", , index = c("firm","year"))
 ## test on model object
-g <- plm(inv ~ value + capital, data=Grunfeld)
+g <- plm(inv ~ value + capital, data=Grunfeld, index = c("firm","year"))
 pcdtest(g)
 ## scaled LM test
 pcdtest(g,test="sclm")

@@ -1,6 +1,7 @@
 \name{pbsytest}
 \alias{pbsytest}
 \alias{pbsytest.formula}
+\alias{pbsytest.panelmodel}
 \title{Bera, Sosa-Escudero and Yoon Locally--Robust Lagrange Mulitiplier
   Tests for Panel Models}
 
@@ -12,18 +13,18 @@
 
 }
 \usage{
-pbsytest(x, ...)
-\method{pbsytest}{formula}(x, data, test = c("AR","RE","J"), index =
-NULL, ...)
+pbsytest(x,...)
+\method{pbsytest}{panelmodel}(x, test = c("ar","re","j"), ...)
+\method{pbsytest}{formula}(x, data, ..., test = c("ar","re","j"))
 }
 
 \arguments{
-  \item{x}{an object of class \code{"formula"},}
-  \item{data}{a \code{"data.frame"},}
+  \item{x}{an object of class \code{"formula"} or of class
+    \code{panelmodel},}
+  \item{data}{a \code{data.frame},}
   \item{test}{a character string indicating which test to perform :
-    first-order serial correlation (\code{AR}), random effects
-    (\code{RE}) or joint test for either of them (\code{J}).}
-  \item{index}{the index of the \code{data.frame},}
+    first-order serial correlation (\code{ar}), random effects
+    (\code{re}) or joint test for either of them (\code{j}).}
   \item{\dots}{further arguments.}
 }
 
@@ -36,9 +37,10 @@ NULL, ...)
   effects; or they test the null of no random effects allowing for local
   departures from the assumption of no serial correlation in
   residuals. They use only the residuals of the pooled OLS model and
-  correct for local misspecification as outlined in Bera \emph{et al.} (2001).
+  correct for local misspecification as outlined in Bera \emph{et al.}
+  (2001).
 
-The joint test is due to Baltagi and Li (1991) and is added for
+  The joint test is due to Baltagi and Li (1991) and is added for
 convenience under this same interface.
 
 }
@@ -51,7 +53,7 @@ convenience under this same interface.
 
 \references{
 
-  Bera, A.K., Sosa-Escudero, W. and  Yoon, M. (2001), Tests for the error
+   Bera, A.K., Sosa-Escudero, W. and  Yoon, M. (2001), Tests for the error
    component model in the presence of local misspecification,
    \emph{Journal of Econometrics}, \bold{101}, pp. 1-23.
 
@@ -70,12 +72,12 @@ convenience under this same interface.
 }
 \examples{
 ## Example in Bera et al.
-data(Grunfeld, package="Ecdat")
+data(Grunfeld, package="plm")
 ## Bera et al. use a subset of the original Grunfeld data,
 ## so results are slightly different here
 ## default is AR testing
-pbsytest(inv ~ value + capital, data=Grunfeld)
-pbsytest(inv ~ value + capital, data=Grunfeld, test="RE")
-pbsytest(inv ~ value + capital, data=Grunfeld, test="J")
+pbsytest(inv ~ value + capital, data=Grunfeld, index = c("firm","year"))
+pbsytest(inv ~ value + capital, data=Grunfeld, test="re", index = c("firm","year"))
+pbsytest(inv ~ value + capital, data=Grunfeld, test="j", index = c("firm","year"))
 }
 \keyword{htest}

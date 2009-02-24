@@ -10,7 +10,8 @@
 }
 
 \usage{
-\method{fixef}{plm}(object, effect, ...)
+\method{fixef}{plm}(object, effect = c("individual", "time"),
+                      type = c("level", "dfirst", "dmean"), ...)
 \method{print}{fixef}(x, digits = max(3, getOption("digits") - 2),
 width = getOption("width"),...)
 \method{summary}{fixef}(object, ...)
@@ -23,7 +24,8 @@ width = getOption("width"),...)
     of class \code{"fixef"} for the \code{print} and the \code{summary}
     method,}
   \item{effect}{one of \code{"individual"} or \code{"time"}, only
-  relevant in case of two--ways effects models,}
+    relevant in case of two--ways effects models,}
+  \item{type}{one of \code{level}, \code{dmean} or \code{dfirst}.}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print output,}
   \item{\dots}{further arguments.}
@@ -49,13 +51,13 @@ width = getOption("width"),...)
 \author{Yves Croissant}
 
 \examples{
-data("Grunfeld",package="Ecdat")
+data("Grunfeld",package="plm")
 gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 fixef(gi)
 summary(fixef(gi))
 # extract time effects in a twoways effect model
-gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within",
-    effect = "twoways")
+gi <- plm(inv ~ value + capital, data = Grunfeld,
+          model = "within", effect = "twoways")
 fixef(gi,effect = "time")
 }
 \keyword{attribute}

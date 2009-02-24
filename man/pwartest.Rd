@@ -1,5 +1,8 @@
 \name{pwartest}
 \alias{pwartest}
+\alias{pwartest.panelmodel}
+\alias{pwartest.formula}
+
 \title{Wooldridge Test for AR(1) Errors in FE Panel Models}
 \description{
 
@@ -8,14 +11,15 @@
   
 }
 \usage{
-pwartest(x, data, index = NULL, ...)
+pwartest(x,...)
+\method{pwartest}{panelmodel}(x, ...)
+\method{pwartest}{formula}(x, data, ...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{formula},}
-  \item{data}{an object of class \code{pdata.frame}}
-  \item{index}{the index of the \code{data.frame},}
-  \item{...}{further arguments to be passed on to \code{linear.hypothesis} or to \code{pvcovHC}}
+  \item{x}{an object of class \code{formula} or of class \code{panelmodel},}
+  \item{data}{a \code{data.frame},}
+  \item{...}{further arguments to be passed on to \code{linear.hypothesis} or to \code{vcovHC}.}
 }
 
 \details{
@@ -33,7 +37,7 @@ pwartest(x, data, index = NULL, ...)
 residuals, then estimates an AR(1) \code{pooling} model on them. The
 test statistic is obtained by applying \code{linear.hypothesis()} to the
 latter model to test the above restriction on \eqn{\delta}, setting the
-covariance matrix to \code{pvcovHC} with the option
+covariance matrix to \code{vcovHC} with the option
 \code{method="arellano"} to control for serial correlation.
 
 Unlike the \code{\link{pbgtest}} and \code{\link{pdwtest}}, this test does not rely on

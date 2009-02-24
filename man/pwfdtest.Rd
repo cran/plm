@@ -1,21 +1,27 @@
 \name{pwfdtest}
 \alias{pwfdtest}
+\alias{pwfdtest.formula}
+\alias{pwfdtest.panelmodel}
 
 \title{Wooldridge first-difference-based test for AR(1) errors in levels
 or first-differenced panel models}
 
 \description{ First-differencing-based test of serial correlation for
   (the idiosyncratic component of) the errors in either levels or
-  first-differenced panel models.  } \usage{ pwartest(x, data,
-  h0=c("fd","fe"), ...)
+  first-differenced panel models.  }
+
+\usage{
+pwfdtest(x,...)
+\method{pwfdtest}{panelmodel}(x, ..., h0 = c("fd","fe"))
+\method{pwfdtest}{formula}(x, data, ..., h0 = c("fd","fe"))
 }
 
 \arguments{
   \item{x}{an object of class \code{formula},}
-  \item{data}{an object of class \code{pdata.frame}}
+  \item{data}{a \code{data.frame},}
   \item{h0}{the null hypothesis: one of "fd","fe"}
   \item{...}{further arguments to be passed on to
-  \code{linear.hypothesis} or to \code{pvcovHC}}
+  \code{linear.hypothesis} or to \code{vcovHC}}
 }
 
 \details{
@@ -46,7 +52,7 @@ that both be rejected.
 then estimates an AR(1) \code{pooling} model on them. The test statistic
 is obtained by applying \code{linear.hypothesis()} to the latter model
 to test the relevant restriction on \eqn{\delta}, setting the covariance
-matrix to \code{pvcovHC} with the option \code{method=''arellano''} to
+matrix to \code{vcovHC} with the option \code{method=''arellano''} to
 control for serial correlation.
 
 Unlike the \code{pbgtest} and \code{pdwtest}, this test does not rely on

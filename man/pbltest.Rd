@@ -60,7 +60,7 @@ allows testing for positive serial correlation only, if set to
 
 }
 \examples{
-data("Grunfeld", package="Ecdat")
-pbltest(inv ~ value + capital, data=Grunfeld)
+data("Grunfeld", package="plm")
+pbltest(inv ~ value + capital, data = Grunfeld)
 }
 \keyword{htest}

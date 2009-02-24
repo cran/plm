@@ -2,18 +2,6 @@ pvar <- function(x, ...){
   UseMethod("pvar")
 }
 
-pvar.matrix <- function(x,id,time, ...){
-  x <- as.data.frame(x)
-  pvar.default(x,id,time)
-}
-
-pvar.data.frame <- function(x,indexes=NULL, ...){
-  x <- plm.data(x,indexes)
-  id <- x[[1]]
-  time <- x[[2]]
-  pvar.default(x,id,time)
-}
-
 pvar.default <- function(x,id,time, ...){
   name.var <- names(x)
   time.variation=rep(TRUE,length(x))
@@ -42,6 +30,26 @@ pvar.default <- function(x,id,time, ...){
   dim.var
 }
 
+pvar.matrix <- function(x,id,time, ...){
+  x <- as.data.frame(x)
+  pvar.default(x,id,time)
+}
+
+pvar.data.frame <- function(x,indexes=NULL, ...){
+  x <- plm.data(x,indexes)
+  id <- x[[1]]
+  time <- x[[2]]
+  pvar.default(x,id,time)
+}
+
+pvar.pdata.frame <- function(x, ...){
+  K <- ncol(x)
+  id <- x[["(id)"]]
+  time <- x[["(time)"]]
+  x <- x[,c(1:(K-2))]
+  pvar.default(x, id, time)
+}
+
 print.pvar <- function(x,y=NULL, ...){
   varnames <- names(x$time.variation)
   if(any(!x$time.variation)){
@@ -58,17 +66,6 @@ print.pvar <- function(x,y=NULL, ...){
 
 pdim <- function(x, ...){
   UseMethod("pdim")
-}
-
-pdim.data.frame <- function(x,indexes=NULL, ...){
-  x <- plm.data(x,indexes)
-  id <- x[[1]][drop=T]
-  time <- x[[2]][drop=T]
-  pdim(id,time)
-}
-
-pdim.plm <- function(x,...){
-  attr(x,"pdim")
 }
 
 pdim.default <- function(x,y, ...){
@@ -96,6 +93,34 @@ pdim.default <- function(x,y, ...){
   z
 }  
 
+pdim.data.frame <- function(x,indexes=NULL, ...){
+  x <- plm.data(x,indexes)
+  id <- x[[1]][drop=T]
+  time <- x[[2]][drop=T]
+  pdim(id,time)
+}
+
+pdim.pdata.frame <- function(x,...){
+  id <- x[["(id)"]]
+  time <- x[["(time)"]]
+  pdim(id,time)
+}
+
+pdim.panelmodel <- function(x, ...){
+  x <- model.frame(x)
+  pdim(x)
+}
+
+pdim.pvcm <- function(x, ...){
+  data <- model.frame(x)
+  effect <- describe(x, "effect")
+  condvar <- ifelse(effect == "individual", "(id)", "(time)")
+  id <- sapply(data, function(x) x[[condvar]])
+  data <- unsplit(data, id)
+  class(data) <- c("pdata.frame", "data.frame")
+  pdim(data)
+}
+
 print.pdim <- function(x, ...){
   if (x$balanced){
     cat("Balanced Panel: ")
@@ -120,4 +145,9 @@ indexes <- function(x){
 
 print.indexes <- function(x, ...){
   cat(paste("Index : (individual=",x$id,") and  (time=",x$time,")\n",sep=""))
+}
+  
+has.intercept.panelmodel <- function(object, ...){
+  object <- attr(model.frame(object),"formula")
+  has.intercept(object)
 }
