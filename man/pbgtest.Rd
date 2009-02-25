@@ -9,18 +9,14 @@
 \usage{
 pbgtest(x,...)
 \method{pbgtest}{panelmodel}(x, order = NULL, ...)
-\method{pbgtest}{formula}(x, data, model = "random", order = NULL,
-index = NULL, ...)
+\method{pbgtest}{formula}(x, ..., order = NULL)
 }
 
 \arguments{
   \item{x}{an object of class \code{"panelmodel"} or of class \code{"formula"},}
-  \item{data}{a \code{data.frame}}
-  \item{model}{one of \code{within}, \code{random} or \code{pooling}}
   \item{order}{an integer indicating the order of serial correlation to
     be tested for. Defaults to the minimum numerosity over the time
     dimension,}
-  \item{index}{the index of the \code{data.frame},}
   \item{\dots}{further arguments.}
 }
 
@@ -34,7 +30,7 @@ index = NULL, ...)
   
   This Lagrange multiplier test uses the auxiliary model on
 (quasi-)demeaned data taken from a model of class \code{plm} which may
-be a \code{pooling}, \code{random} or \code{within} model. It performs a
+be a \code{pooling} (the default), \code{random} or \code{within} model. It performs a
 Breusch--Godfrey test (using \code{bgtest} from package \code{lmtest}) on
 the residuals of the (quasi-)demeaned model, which should be serially
 uncorrelated under the null of no serial correlation in idiosyncratic
@@ -66,7 +62,7 @@ the order of correlation to test for.
 
   }
 \examples{
-data("Grunfeld",package="Ecdat")
+data("Grunfeld",package="plm")
 g <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
 pbgtest(g)
 pbgtest(g, order = 4)

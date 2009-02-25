@@ -1,19 +1,21 @@
 \name{pwtest}
 \alias{pwtest}
+\alias{pwtest.panelmodel}
+\alias{pwtest.formula}
 \title{Wooldridge's Test for Unobserved Effects in Panel Models}
 \description{
   Semi-parametric test for the presence of (individual or time) unobserved effects in panel models.
 }
 \usage{
-pwtest(x, data, effect = c("individual","time"), index = NULL, ...)
+pwtest(x,...)
+\method{pwtest}{panelmodel}(x, ...)
+\method{pwtest}{formula}(x, data, ...)
 }
 
 \arguments{
   \item{x}{an object of class \code{"formula"},}
-  \item{data}{a \code{data.frame}}
-  \item{effect}{one of \code{"individual"} or \code{"time"}}
-  \item{index}{the index of the \code{data.frame},}
-  \item{\dots}{further arguments.}
+  \item{data}{a \code{data.frame},}
+  \item{\dots}{further arguments passed to \code{plm}.}
 }
 
 \details{

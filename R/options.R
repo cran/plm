@@ -43,3 +43,6 @@ oneof <- function(x){
   x <- paste(x,last,sep=" and ")
   x
 }
+
+plm.arg <- c("formula", "data", "subset", "na.action", "effect", "model",
+             "instruments", "random.method", "inst.method", "index", "pvar")

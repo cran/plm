@@ -11,8 +11,8 @@
 \usage{
 plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
     model = c("within","random","ht","between","pooling","fd"),
-    instruments = NULL, random.method = c("swar","walhus","amemiya","nerlove"),
-    inst.method = c("bvk","baltagi"), index = NULL, pvar = TRUE, ...)
+    ercomp = c("swar","walhus","amemiya","nerlove"),
+    ivar = c("bvk","baltagi"), index = NULL, ...)
 \method{summary}{plm}(object, ...)
 \method{print}{summary.plm}(x, digits = max(3, getOption("digits") - 2),
     width = getOption("width"), ...)
@@ -33,18 +33,14 @@ plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
   \item{model}{one of \code{"pooling"}, \code{"within"},
     \code{"between"}, \code{"random",} \code{"fd"} and \code{"ht"},}
 
-  \item{instruments}{a one--sided formula containing instrumental
-    variables,}
-
-  \item{random.method}{method of estimation for the variance components
+  \item{ercomp}{method of estimation for the variance components
     in the random effect model, one of \code{"swar"} (the default
     value), \code{"amemiya"}, \code{"walhus"} and \code{"nerlove"},}
 
-  \item{inst.method}{the instrumental variable transformation : one of
+  \item{ivar}{the instrumental variable transformation : one of
     \code{"bvk"} and \code{"baltagi"},}
 
   \item{index}{the indexes,}
-  \item{pvar}{if \code{TRUE}, the \code{pvar} function is called,}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print output,}
   \item{\dots}{further arguments.}
@@ -62,14 +58,14 @@ plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
   parameter are available : \code{swar} (Swamy and Arora),
   \code{amemiya}, \code{walhus} (Wallace and Hussain) and \code{nerlove}.
 
-  Instrumental variables estimation is obtained using different
-  syntaxes. If for example, the model is \code{y~x1+x2+x3}, \code{x1},
+  Instrumental variables estimation is obtained using two-parts formula,
+  the second part indicating the instrumental variables used. This can
+  be a complete list of instrumental variables or an update of the first
+  part. If, for example, the model is \code{y~x1+x2+x3}, \code{x1},
   \code{x2} are endogenous and \code{z1}, \code{z2} are external
   instruments, the model can be estimated with :
 
   \itemize{
-    \item \code{formula=y~x1+x2+x3, instruments=~x3+z1+z2},
-    \item \code{formula=y~x1+x2+x3, instruments=~.-x1-x2+z1+z2},
     \item \code{formula=y~x1+x2+x3 | x3+z1+z2},
     \item \code{formula=y~x1+x2+x3 | .-x1-x2+z1+z2}.
   }
@@ -89,24 +85,20 @@ plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
   
   %  \describe{
   \item{coefficients}{the vector of coefficients,}
-  \item{residuals}{the vector of residuals,}
-  \item{fitted.values}{the vector of fitted.values,}
   \item{vcov}{the covariance matrix of the coefficients,}
+  \item{residuals}{the vector of residuals,}
   \item{df.residual}{degrees of freedom of the residuals,}
-  \item{model}{a data.frame containing the variables used for the
-    estimation,}
+  \item{formula}{an object of class \code{'pFormula'} descrbing the model,}
+  \item{model}{a data.frame of class \code{'pdata.frame'} containing the variables used for the
+    estimation: the response is in first position and the two indexes in
+    the last positions,}
+  \item{ercomp}{an object of class \code{'ercomp'} providing the
+    estimation of the components of the errors (for random effect models only),}
   \item{call}{the call,}
-  \item{FE}{the fixed effects (only for within models),}
-  \item{alpha}{the overall intercept (only for within models),}
-  \item{theta}{the parameter of transformation (only for random effect
-    models),}
-  \item{sigma2}{the variance of the different elements of the error
-    (only for random effect models),}
-  \item{indexes}{a list containing the two index vectors (id and time).}
-    %  }
-    
-    It has \code{print}, \code{summary} and \code{print.summary} methods.
 
+    
+  It has \code{print}, \code{summary} and \code{print.summary} methods.
+    
 }
 
 

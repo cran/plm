@@ -9,16 +9,13 @@
 \usage{
 pdwtest(x, ...)
 \method{pdwtest}{panelmodel}(x, ...)
-\method{pdwtest}{formula}(x, data, model, index = NULL, ...)
+\method{pdwtest}{formula}(x, data, ...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"panelmodel"} or of class \code{"formula"},}
-  \item{data}{a \code{data.frame}}
-  \item{model}{one of \code{"within"}, \code{"random"} or
-    \code{"pooling"}}
-  \item{index}{the index of the \code{data.frame},}
-
+  \item{x}{an object of class \code{"panelmodel"} or of class
+    \code{"formula"},}
+  \item{data}{a \code{data.frame},}
   \item{\dots}{further arguments to be passed on to \code{dwtest}.}
 }
 
@@ -26,12 +23,12 @@ pdwtest(x, ...)
   
   This Durbin--Watson test uses the auxiliary model on (quasi-)demeaned
   data taken from a model of class \code{plm} which may be a
-  \code{pooling}, \code{random} or \code{within} model. It performs a dw
-  test (using \code{dwtest} from package \code{lmtest}) on the residuals
-  of the (quasi-)demeaned model, which should be serially uncorrelated
-  under the null of no serial correlation in idiosyncratic errors. The
-  function takes the demeaned data, estimates the model and calls
-  \code{dwtest}.
+  \code{pooling} (the default), \code{random} or \code{within} model. It
+  performs a dw test (using \code{dwtest} from package \code{lmtest}) on
+  the residuals of the (quasi-)demeaned model, which should be serially
+  uncorrelated under the null of no serial correlation in idiosyncratic
+  errors. The function takes the demeaned data, estimates the model and
+  calls \code{dwtest}.
 
 }
 
@@ -58,8 +55,8 @@ pdwtest(x, ...)
 
 }
 \examples{
-data("Grunfeld", package="Ecdat")
-g <- plm(inv ~ value + capital, data=Grunfeld, model="random")
+data("Grunfeld", package="plm")
+g <- plm(inv ~ value + capital, data = Grunfeld, model="random")
 pdwtest(g)
 pdwtest(g, alternative="two.sided")
 ## formula interface

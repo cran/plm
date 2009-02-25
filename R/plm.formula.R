@@ -1,126 +1,91 @@
 plm <-  function(formula, data, subset, na.action,
                  effect=c('individual','time','twoways'),
                  model = c('within','random','ht','between','pooling','fd'),
-                 instruments = NULL,
-                 random.method = c('swar','walhus','amemiya','nerlove'),
-                 inst.method = c('bvk','baltagi'),
-                 index = NULL, pvar = TRUE, ...){
+                 ercomp = c('swar','walhus','amemiya','nerlove'),
+                 ivar = c('bvk','baltagi'),
+                 index = NULL,
+                 ...){
 
+  # for backward compatibility, accept the old names of the arguments
+  # with a warning
+  dots <- list(...)
+  if (!is.null(dots$random.method)){
+    ercomp <- dots$random.method
+    deprec.ercomp.arg <- paste("the argument which indicates the method used to estimate",
+                               "the components of the errors is now called ercomp")
+    warning(deprec.ercomp.arg)
+  }
+  if (!is.null(dots$inst.method)){
+    ivar <- dots$inst.method
+    deprec.ivar.arg <- paste("the argument which indicates the method used for",
+                               "instrumental variables is now called ivar")
+    warning(deprec.ivar.arg)
+  }
+  if (!is.null(dots$instruments)){
+    formula <- as.formula(paste(deparse(formula),"|",deparse(dots$instruments[[2]])))
+    deprec.instruments <- paste("the use of the instruments argument is deprecated,",
+                                "use two-part formulas instead")
+    warning(deprec.instruments)
+  }
+  
   # check and match the arguments
   effect <- match.arg(effect)
-  model.name <- match.arg(model)
-  random.method <- match.arg(random.method)
-  inst.method <- match.arg(inst.method)
-
-  if (!is.null(instruments)) formula <- as.Formula(formula,instruments)
-  else formula <- Formula(formula)
+  if (!any(is.na(model))) model <- match.arg(model)
+  ercomp <- match.arg(ercomp)
+  ivar <- match.arg(ivar)
   
-  if (length(formula) == 2){
-    iv.estimation <- TRUE
-    instruments <- formula(formula,part="second",response=FALSE)
-    complete.formula <- formula(formula,part="both")
-    formula <- formula(formula)
-    instruments <- update(formula,instruments)
-  }
-  else{
-    iv.estimation <- FALSE
-    complete.formula <- formula
-  }
-  
-  # force pvar to be computed if hausman taylor model is chosen
-  if (model.name=="ht") pvar <- TRUE
-  if(effect=="twoways") model.choice <- "twoways" else model.choice <- "oneway"
-
-  # eval the pdata.frame
-  data.name <- paste(deparse(substitute(data)))
+  # gestion des index (a revoir en relation avec pdata.frame)
+  data <- plm.data(data,index)
+  data[[1]] <- factor(data[[1]])
+  data[[2]] <- factor(data[[2]])
+  index <- names(data)[1:2]
+  names(index) <- c("id","time")
   new.data.name <- "mydata"
-  data2 <- data2plm.data(data,index)
-  data <- data2$data
-  id.name <- data2$id.name
-  time.name <- data2$time.name
-  for (i in 1:length(data)){
-    attr(data[[i]],"data") <- new.data.name
-    attr(data[[i]],"class") <- c("pserie",attr(data[[i]],"class"))
-  }
-  indexes <- list(id=id.name,time=time.name)
-  class(indexes) <- "indexes"
-  attr(data,"indexes") <- indexes
+  attr(data,"indexes") <- as.list(index)
   nframe <- length(sys.calls())
-  assign(new.data.name,data,env=sys.frame(which=nframe))
+  assign(new.data.name,data, env = sys.frame(which = nframe))
+  for (i in 1:length(mydata)){
+    attr(mydata[[i]], "data") <- new.data.name
+    attr(mydata[[i]], "class") <- c("pserie", attr(mydata[[i]], "class"))
+  }
   
+  ##    the logic of that is that from now we know the name and the data
+  ##    and will later on attach it to every variable it contains so that
+  ##    the transformation functions (diff, within ...) can be used
+  
+  # Create a Formula object, with index as extra attributes
+  formula <- pFormula(formula, extra = index)
+  # in case of 2part formula, check whether the second part should be updated
+  if (length(formula) == 2) formula <- expand.formula(formula)
   # eval the model.frame
   cl <- match.call()
   mf <- match.call(expand.dots=FALSE)
-  m <- match(c("formula","data","subset","na.action"),names(mf),0)
+  m <- match(c("formula", "data", "subset", "na.action"),names(mf),0)
   mf <- mf[c(1,m)]
   mf$drop.unused.levels <- TRUE
   mf$data <- as.name(new.data.name)
   mf[[1]] <- as.name("model.frame")
-  mindexes <- mf
-  mf$formula <- complete.formula
-  mf <- eval(mf,sys.frame(which=nframe))
-  mindexes[["formula"]] <- formula(paste("~",id.name,"+",time.name,sep="",collapse=""))
-  mindexes <- eval(mindexes,sys.frame(which=nframe))
-  int.row.names <- intersect(attr(mf,"row.names"),
-                             attr(mindexes,"row.names"))
-  mf <- mf[as.character(int.row.names),,drop=F]
-  for (i in names(mf)) if(is.factor(mf[[i]])) mf[[i]] <- mf[[i]][drop=TRUE]
-
-  mindexes <- mindexes[as.character(int.row.names),,drop=F]
-  attr(mf,"row.names") <- attr(mindexes,"row.names") <- int.row.names
-
-  y <- model.response(mf,"numeric")
-  X <- model.matrix(formula,mf)
-  if (attr(terms(formula),'intercept')==1){
-    X <- X[,-1,drop=FALSE]
-    has.intercept <- TRUE
+  mf$formula <- formula
+  mf$include.extra <- TRUE
+  data <- eval(mf,sys.frame(which = nframe))
+  class(data) <- c("pdata.frame", "data.frame")
+  if (is.na(model)) attr(data, "formula") <- formula
+  if (!is.na(model)){
+    result <- switch(model,
+                     "within"  = plm.within (formula, data, effect),
+                     "between" = plm.between(formula, data, effect),
+                     "pooling" = plm.pooling(formula, data),
+                     "random"  = plm.random (formula, data, effect, ercomp, ivar),
+                     "ht"      = plm.ht     (formula, data),
+                     "fd"      = plm.fd     (formula, data)
+                     )
+    result$call <- cl
   }
   else{
-    has.intercept <- FALSE
+    result <- data
   }
-  if (iv.estimation) W <- model.matrix(instruments,mf) else W <- NULL
-  
-  if (model.name == "ht"){
-    l <- lapply(mf,function(x) if (is.factor(x)) levels(x))
-    l <- l[!sapply(l,is.null)]
-    v <- c()
-    for (i in 1:length(l)){
-      nli <- names(l)[[i]]
-      r <- paste(nli,l[[i]],sep="")
-      ov <- rep(nli,length(r))
-      names(ov) <- r
-      v <- c(v,ov)
-    }
-    attr(X,"var.effects") <- v
-  }
-  id <- mindexes[[id.name]][drop=T]
-  time <- mindexes[[time.name]][drop=T]
-  pmodel <- list(model.name = model.name,
-                 formula = formula,
-                 effect = effect,
-                 random.method = random.method,
-                 inst.method = inst.method,
-                 instruments = instruments,
-                 has.intercept = has.intercept)
-  
-  pdim <- pdim(id,time)
-  if (pvar) pvar <- pvar(X,id,time)
-  else{
-    id.variation <- time.variation <- rep(TRUE,ncol(X))
-    names(id.variation) <- names(time.variation) <- colnames(X)
-    pvar <- structure(list(id.variation=id.variation,time.variation=time.variation),class="pvar")
-  }
-
-  result <- switch(model.name,
-                   "within" =plm.within (y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                   "between"=plm.between(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                   "pooling"=plm.pooling(y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                   "random" =plm.random (y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                   "ht"     =plm.ht     (y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...),
-                   "fd"     =plm.fd     (y,X,W,id,time,pvar,pdim,pmodel,indexes,cl,...)
-                   )
-  result$call <- cl
-  result$indexes <- list(id=id,time=time)
   result
 }
+
+
 

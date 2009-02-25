@@ -34,9 +34,9 @@ pcdtest<-function (x, ...)
     UseMethod("pcdtest")
  }
 
-pcdtest.formula<-function(x,data,index=NULL,
-                       model=NULL,test=c("cd","sclm","lm"),
-                       w=NULL, ...) {
+pcdtest.formula <- function(x, data, index = NULL,
+                            model = NULL, test = c("cd","sclm","lm"),
+                            w = NULL, ...) {
 
   data <- plm.data(data,index=index)
   
@@ -45,80 +45,79 @@ pcdtest.formula<-function(x,data,index=NULL,
   mymod <- plm(x,data,model="pooling")
 
   ## check feasibility of separate regressions
-  if(is.null(model) & min(attr(mymod,"pdim")$Tint$Ti)<length(mymod$coefficients)+1) {
+  if(is.null(model) & min(pdim(mymod)$Tint$Ti)<length(mymod$coefficients)+1) {
     warning("Insufficient number of observations in time to estimate heterogeneous model: using within residuals",
             call.=FALSE)
             model<-"within"
             }
 
   if(is.null(model)) {
-             ## estimate the separate regressions
+    ## estimate the separate regressions
 
-             X<-model.matrix(mymod)
-             y<-model.response(model.frame(mymod))
+    X<-model.matrix(mymod)
+    y<-model.response(model.frame(mymod))
 
-             ## get indices
-             tind <- as.numeric(mymod$indexes$time)
-             ind <- as.numeric(mymod$indexes$id)
+    ## get indices
+    tind <- as.numeric(model.frame(mymod)[["(time)"]])
+    ind <- as.numeric(model.frame(mymod)[["(id)"]])
 
-             ## det. number of groups and df
-             unind<-unique(ind)
-             n<-length(unind)
+    ## det. number of groups and df
+    unind<-unique(ind)
+    n<-length(unind)
 
-             ## one regression for each group i in 1..n
-             ## and retrieve residuals
-             ## putting them into a list (might be unbalanced => t1!=t2)
+    ## one regression for each group i in 1..n
+    ## and retrieve residuals
+    ## putting them into a list (might be unbalanced => t1!=t2)
 
-             ## "pre-allocate" an empty list of length n
-             tres<-vector("list", n)
+    ## "pre-allocate" an empty list of length n
+    tres<-vector("list", n)
 
-             ## list of n:
-             ## t_i (time series-) residuals
-             ## for each x-sect. 1..n
-             for(i in 1:n) {
-               tX<-X[ind==unind[i],]
-               ty<-y[ind==unind[i]]
-               tres[[i]]<-lm.fit(tX,ty)$resid
-               ## name resids after the time index
-               names(tres[[i]])<-tind[ind==unind[i]]
-               }
-
-    } else {
-
-            ## estimate whatever model and fetch residuals
-            mymod <- plm(x,data,model=model, ...)
-            myres <- mymod$residuals
-
-            ## get indices
-            tind <- as.numeric(mymod$indexes$time)
-            ind <- as.numeric(mymod$indexes$id)
-
-            ## det. number of groups and df
-            unind<-unique(ind)
-            n<-length(unind)
-            ## det. minimum group numerosity
-            t<-min(attr(mymod,"pdim")$Tint$Ti)
-            ## det. total number of obs. (robust vs. unbalanced panels)
-            nT<-length(ind)
-            k<-length(mymod$coefficients)
-
-            ## "pre-allocate" an empty list of length n
-            tres<-vector("list", n)
-
-
-            ## use model residuals, group by group
-            ## list of n:
-            ## t_i residuals for each x-sect. 1..n
-            for(i in 1:n) {
-              tres[[i]]<-myres[ind==unind[i]]
-              ## name resids after the time index
-              names(tres[[i]])<-tind[ind==unind[i]]
-              }
-
+    ## list of n:
+    ## t_i (time series-) residuals
+    ## for each x-sect. 1..n
+    for(i in 1:n) {
+      tX<-X[ind==unind[i],]
+      ty<-y[ind==unind[i]]
+      tres[[i]]<-lm.fit(tX,ty)$resid
+      ## name resids after the time index
+      names(tres[[i]])<-tind[ind==unind[i]]
     }
-    return(pcdres(tres=tres, n=n, w=w,
-                  form=paste(deparse(substitute(x))),
-                  test=match.arg(test)))
+    
+  }
+  else{
+    
+    ## estimate whatever model and fetch residuals
+    mymod <- plm(x,data,model=model, ...)
+    myres <- mymod$residuals
+
+    ## get indices
+    tind <- as.numeric(model.frame(mymod)[["(time)"]])
+    ind <- as.numeric(model.frame(mymod)[["(id)"]])
+    ## det. number of groups and df
+    unind<-unique(ind)
+    n<-length(unind)
+    ## det. minimum group numerosity
+    t<-min(pdim(mymod)$Tint$Ti)
+    ## det. total number of obs. (robust vs. unbalanced panels)
+    nT<-length(ind)
+    k<-length(mymod$coefficients)
+
+    ## "pre-allocate" an empty list of length n
+    tres<-vector("list", n)
+
+
+    ## use model residuals, group by group
+    ## list of n:
+    ## t_i residuals for each x-sect. 1..n
+    for(i in 1:n) {
+      tres[[i]]<-myres[ind==unind[i]]
+      ## name resids after the time index
+      names(tres[[i]])<-tind[ind==unind[i]]
+    }
+  }
+  return(pcdres(tres=tres, n=n, w=w,
+                form=paste(deparse(substitute(x))),
+                test=match.arg(test)))
 }
 
 pcdtest.panelmodel<-function(x,test=c("cd","sclm","lm"),
@@ -128,17 +127,17 @@ pcdtest.panelmodel<-function(x,test=c("cd","sclm","lm"),
   ## after estimating relevant model
 
   ## fetch residuals
-  myres <- x$residuals
+  myres <- resid(x)
 
   ## get indices
-  tind <- as.numeric(x$indexes$time)
-  ind <- as.numeric(x$indexes$id)
+  tind <- as.numeric(model.frame(x)[["(time)"]])
+  ind <- as.numeric(model.frame(x)[["(id)"]])
 
   ## det. number of groups and df
   unind<-unique(ind)
   n<-length(unind)
   ## det. minimum group numerosity
-  t<-min(attr(x,"pdim")$Tint$Ti)
+  t <- pdim(x)$Tint$Ti
   ## det. total number of obs. (robust vs. unbalanced panels)
   nT<-length(ind)
   k<-length(x$coefficients)

@@ -1,9 +1,12 @@
 pggls <- function(formula, data, subset, na.action,
                   effect = c("individual","time"),
                   model = c("within","random"), index = NULL, ...){
-  require(kinship)
+
+
+  # check and match the arguments
   effect <- match.arg(effect)
   model.name <- match.arg(model)
+
   data.name <- paste(deparse(substitute(data)))
   cl <- match.call()
   plm.model <- match.call(expand.dots=FALSE)
@@ -12,23 +15,25 @@ pggls <- function(formula, data, subset, na.action,
   plm.model[[1]] <- as.name("plm")
   plm.model$model <- ifelse(model.name=="within","within","pooling")
   plm.model <- eval(plm.model,parent.frame())
-  id <- plm.model$indexes[[1]]
-  time <- plm.model$indexes[[2]]
+
+  id <- model.frame(plm.model)[["(id)"]]
+  time <- model.frame(plm.model)[["(time)"]]
   pdim <- pdim(plm.model)
   balanced <- pdim$balanced
-  time.names <- pdim$panel.names$time.names
-  id.names <- pdim$panel.names$id.names
   nt <- pdim$Tint$nt
   Ti <- pdim$Tint$Ti
   T <- pdim$nT$T
   n <- pdim$nT$n
   N <- pdim$nT$N
+  time.names <- pdim$panel.names$time.names
+  id.names <- pdim$panel.names$id.names
+
   coef.names <- names(coef(plm.model))
   K <- length(coef.names)
   
   if (effect=="time"){
     cond <- time ; other <- id ; ncond <- T ; nother <- n
-    cond.names <- time.names ; other.names <- id.names ; groupsdim <- nt
+    cond.names <- time.names ; other.names <- id.names; groupsdim <- nt
   }
   else {
     cond <- id ; other <- time ; ncond <- n ; nother <- T ;
@@ -44,7 +49,7 @@ pggls <- function(formula, data, subset, na.action,
   other <- other[myord]
   
   ## drop first time period (see Wooldridge 10.5, eq. 10.61)
-  drop1<-FALSE
+  drop1 <- FALSE
   ## the function turns out to work irrespective of dropping
   ## one time period or not!! absolutely the same results...
   ## The 'if' parameterization is just for debugging. Set drop1=T
@@ -103,9 +108,11 @@ pggls <- function(formula, data, subset, na.action,
   df.residual <- nrow(X)-ncol(X)
   fitted.values <- y-residuals
   names(coef) <- rownames(vcov) <- colnames(vcov) <- coef.names
+  pmodel <- attr(plm.model,"pmodel")
+  pmodel$model.name <- model
   fullGLS <- list(coefficients=coef,residuals=residuals,fitted.values=fitted.values,
                   vcov=vcov,df.residual=df.residual,model=model.frame(plm.model),sigma=subOmega,call=cl)
-  fullGLS <- structure(fullGLS,pdim=pdim,pmodel=attr(plm.model,"pmodel"))
+  fullGLS <- structure(fullGLS,pdim=pdim,pmodel=pmodel)
   class(fullGLS) <- c("pggls","panelmodel")
 
   fullGLS
