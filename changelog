@@ -120,6 +120,10 @@ Changes since version 1-0.1
 	ercomp, inst.method -> ivar), the old names are accepted with a
 	warning,
 
+	* the instuments argument is removed, instrumental variable
+	estimation is performed using extended formula. The instruments
+	argument is still accepted with a warning,
+
 	* the model argument of plm objects are now ordinary data.frame,
 	and not data.frame with elements y and X. Moreover, this
 	data.frame contains untransformed data
@@ -138,6 +142,29 @@ Changes since version 1-0.1
 	* the fixef method is much improved, the fixed effects may be
 	computed in levels, in deviation from the first level or in
 	deviation from the overall mean
-	
 
+	* in pbsytest, the arguments test are now in lowercases,
+
+	* the pvcovHC function is replaced by suitable vcovHC methods for
+	panelmodel and pgmm models
 	
+Changes since version 1-1.0
+
+	* in fixef, the effect argument default is now NULL:
+	fixef(model_with_time_effect) now works correctly
+
+	* in pFtest, the error message "the arguments should be a within
+	and a pooling model" is removed so that two within models may be
+	provided
+
+	* for backward compatibility reasons, the pvcovHC is reintroduced.
+
+	* for backward compatibility reasons, argument test of pbsytest
+	may be indicated in upper case
+
+	* we switched back to old names for two arguments of plm ercomp ->
+	random.methods ivar -> inst.method -> ivar
+
+	* amemiya method is not implement for unbalanced panels: an error
+	message is now returned.
+ 

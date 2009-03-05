@@ -1,38 +1,24 @@
 plm <-  function(formula, data, subset, na.action,
                  effect=c('individual','time','twoways'),
                  model = c('within','random','ht','between','pooling','fd'),
-                 ercomp = c('swar','walhus','amemiya','nerlove'),
-                 ivar = c('bvk','baltagi'),
+                 random.method = c('swar','walhus','amemiya','nerlove'),
+                 inst.method = c('bvk','baltagi'),
                  index = NULL,
                  ...){
 
-  # for backward compatibility, accept the old names of the arguments
-  # with a warning
   dots <- list(...)
-  if (!is.null(dots$random.method)){
-    ercomp <- dots$random.method
-    deprec.ercomp.arg <- paste("the argument which indicates the method used to estimate",
-                               "the components of the errors is now called ercomp")
-    warning(deprec.ercomp.arg)
-  }
-  if (!is.null(dots$inst.method)){
-    ivar <- dots$inst.method
-    deprec.ivar.arg <- paste("the argument which indicates the method used for",
-                               "instrumental variables is now called ivar")
-    warning(deprec.ivar.arg)
-  }
   if (!is.null(dots$instruments)){
     formula <- as.formula(paste(deparse(formula),"|",deparse(dots$instruments[[2]])))
     deprec.instruments <- paste("the use of the instruments argument is deprecated,",
                                 "use two-part formulas instead")
     warning(deprec.instruments)
   }
-  
+
   # check and match the arguments
   effect <- match.arg(effect)
   if (!any(is.na(model))) model <- match.arg(model)
-  ercomp <- match.arg(ercomp)
-  ivar <- match.arg(ivar)
+  random.method <- match.arg(random.method)
+  inst.method <- match.arg(inst.method)
   
   # gestion des index (a revoir en relation avec pdata.frame)
   data <- plm.data(data,index)
@@ -66,6 +52,7 @@ plm <-  function(formula, data, subset, na.action,
   mf$data <- as.name(new.data.name)
   mf[[1]] <- as.name("model.frame")
   mf$formula <- formula
+#  mf$formula <- do.call("pFormula", list(mf$formula, extra = index))
   mf$include.extra <- TRUE
   data <- eval(mf,sys.frame(which = nframe))
   class(data) <- c("pdata.frame", "data.frame")
@@ -75,7 +62,7 @@ plm <-  function(formula, data, subset, na.action,
                      "within"  = plm.within (formula, data, effect),
                      "between" = plm.between(formula, data, effect),
                      "pooling" = plm.pooling(formula, data),
-                     "random"  = plm.random (formula, data, effect, ercomp, ivar),
+                     "random"  = plm.random (formula, data, effect, random.method, inst.method),
                      "ht"      = plm.ht     (formula, data),
                      "fd"      = plm.fd     (formula, data)
                      )

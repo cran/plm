@@ -1,3 +1,7 @@
+pvcovHC <- function(x, ...){
+  UseMethod("vcovHC")
+}
+
 vcovHC.panelmodel <-function(x,
                               method = c("arellano", "white1", "white2"),
                               type = c("HC0", "HC1", "HC2", "HC3", "HC4"),

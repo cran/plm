@@ -263,7 +263,7 @@ pbsytest.formula <- function(x, data, ..., test=c("ar","re","j")) {
 
   ######### from here generic testing interface from
   ######### plm to my code
-
+  if (length(test) == 1) test <- tolower(test)
   test <- match.arg(test)
   
   cl <- match.call(expand.dots = TRUE)

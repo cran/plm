@@ -85,11 +85,11 @@ plm.fd <- function(formula, data){
   result  
 }
 
-plm.random <- function(formula, data, effect, ercomp, ivar){
+plm.random <- function(formula, data, effect, random.method, ivar){
   has.instruments <- length(formula) == 2
   pdim <- pdim(data)
   balanced <- pdim$balanced
-  estec <- ercomp(formula, data, effect, method = ercomp)
+  estec <- ercomp(formula, data, effect, method = random.method)
   sigma2 <- estec$sigma2
   theta <- estec$theta
   if (effect == "individual") cond <- data[["(id)"]]
@@ -228,7 +228,7 @@ plm.ht <- function(formula, data){
                  formula      = formula, 
                  model        = data,
                  varlist      = varlist,
-                 ercomp      = estec)
+                 ercomp       = estec)
   names(result$coefficients) <- colnames(result$vcov) <-
     rownames(result$vcov) <- colnames(X)
   class(result) <- c("plm","panelmodel")
