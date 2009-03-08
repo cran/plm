@@ -10,7 +10,7 @@
 }
 
 \usage{
-\method{fixef}{plm}(object, effect = c("individual", "time"),
+\method{fixef}{plm}(object, effect = NULL,
                       type = c("level", "dfirst", "dmean"), ...)
 \method{print}{fixef}(x, digits = max(3, getOption("digits") - 2),
 width = getOption("width"),...)

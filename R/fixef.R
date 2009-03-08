@@ -1,14 +1,19 @@
-fixef.plm <- function(object, effect = c("individual", "time"),
+fixef.plm <- function(object, effect = NULL,
                       type = c("level", "dfirst", "dmean"), ...){
-  effect <- match.arg(effect)
+  model.effect <- describe(object, "effect")
+  if (is.null(effect)){
+    effect <- ifelse(model.effect == "time", "time", "individual")
+  }
+  else{
+    if (!effect %in% c("individual", "time")) stop("wrong effect argument")
+    if (model.effect != "twoways" && model.effect != effect) stop("wrong effect argument")
+  }
+    
   type <- match.arg(type)
   mf <- model.frame(object)
   if (!is.null(object$call)){
     if (describe(object, "model") != "within")
       stop("fixef is relevant only for within models")
-    if (describe(object, "effect") != "twoways"
-        && describe(object, "effect") != effect)
-      stop("wrong effect argument")
   }
   formula <- object$formula
   data <- object$model

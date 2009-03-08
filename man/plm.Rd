@@ -11,8 +11,8 @@
 \usage{
 plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
     model = c("within","random","ht","between","pooling","fd"),
-    ercomp = c("swar","walhus","amemiya","nerlove"),
-    ivar = c("bvk","baltagi"), index = NULL, ...)
+    random.method = c("swar","walhus","amemiya","nerlove"),
+    inst.method = c("bvk","baltagi"), index = NULL, ...)
 \method{summary}{plm}(object, ...)
 \method{print}{summary.plm}(x, digits = max(3, getOption("digits") - 2),
     width = getOption("width"), ...)
@@ -33,11 +33,11 @@ plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
   \item{model}{one of \code{"pooling"}, \code{"within"},
     \code{"between"}, \code{"random",} \code{"fd"} and \code{"ht"},}
 
-  \item{ercomp}{method of estimation for the variance components
+  \item{random.method}{method of estimation for the variance components
     in the random effect model, one of \code{"swar"} (the default
     value), \code{"amemiya"}, \code{"walhus"} and \code{"nerlove"},}
 
-  \item{ivar}{the instrumental variable transformation : one of
+  \item{inst.method}{the instrumental variable transformation : one of
     \code{"bvk"} and \code{"baltagi"},}
 
   \item{index}{the indexes,}

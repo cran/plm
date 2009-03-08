@@ -1,6 +1,6 @@
 #exportPattern("^[^\\.]")
 export(plm,pvcm,pgmm,pggls,plm.data,plmtest,phtest,pFtest,
-pvar,pdim,pooltest,dynformula,sargan,mtest,ercomp,
+pvar,pdim,pooltest,dynformula,sargan,mtest,ercomp,pvcovHC,
 pbsytest,pdwtest,pbgtest,pbltest,pwartest,pwtest,pwfdtest,pcdtest)
 #       ,pcdres)
 #       theta.method.list,effect.list,trinst.list,model.list)

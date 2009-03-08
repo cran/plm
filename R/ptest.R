@@ -174,8 +174,8 @@ pFtest.plm <- function(x, z, ...){
   data.name <-  paste(deparse(x$call$formula))
   within <- x
   pooling <- z
-  if (! (describe(x, "model") == "within" && describe(z, "model") == "pooling"))
-    stop("the two arguments should be a within and a pooling model")
+#  if (! (describe(x, "model") == "within" && describe(z, "model") == "pooling"))
+#    stop("the two arguments should be a within and a pooling model")
   
   effect <- describe(x, "effect")
   df1 <- df.residual(pooling)-df.residual(within)

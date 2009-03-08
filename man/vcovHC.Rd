@@ -1,6 +1,7 @@
 \name{vcovHC}
 \alias{vcovHC.panelmodel}
 \alias{vcovHC.pgmm}
+\alias{pvcovHC}
 
 \title{Robust Covariance Matrix Estimators}
 \description{
