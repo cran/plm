@@ -92,6 +92,14 @@ model.frame.pFormula <- function(formula, ..., part = NULL, response = NULL,
   form <- formula(formula, part = part, response = response, include.extra = include.extra)
   result <- model.frame(form, ...)
   if (include.extra){
+    # so that terms don't include the index and that the good formula
+    # can be extracted
+    form <- formula(formula, part = part, response = response, include.extra = FALSE)
+    result2 <- model.frame(form, ...)
+    attr(result, "terms") <- attr(result2, "terms")
+  }
+  
+  if (include.extra){
     extra <- attr(formula,"extra")
     names(extra) <- paste("(",names(extra),")",sep="")
     names(result)[match(extra,names(result))] <- names(extra)
@@ -134,6 +142,7 @@ model.matrix.pFormula <- function(object, data,
       result <- switch(model,
                        "within" = X - Between(X,id) - Between(X,time) +
                        matrix(apply(X,2,mean),nrow(X),ncol(X),byrow=T),
+                       "pooling" = X,
                        "random" = X - theta$id * Between(X,id) - theta$time * Between(X,time) +
                        theta$total * matrix(apply(X,2,mean),nrow(X),ncol(X),byrow=T)
                        )
@@ -153,6 +162,7 @@ model.matrix.pFormula <- function(object, data,
         PHIB <- ginv(Q)%*%(PHI2-A%*%solve(DH)%*%PHI1)
         result <- X-Z1%*%solve(DH)%*%PHI1-Zb%*%PHIB
       }
+      if (model == "pooling") result <- X
     }
   }
   result

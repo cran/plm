@@ -15,13 +15,13 @@ fixef.plm <- function(object, effect = NULL,
     if (describe(object, "model") != "within")
       stop("fixef is relevant only for within models")
   }
-  formula <- object$formula
-  data <- object$model
+  formula <- formula(object)
+  data <- model.frame(object)
   Xb <- model.matrix(formula, data, part = "first", model = "between", effect = effect)
   yb <- pmodel.response(data, part = "first", model = "between", effect = effect)
   # the between model may contain time independent variables, the
   # within model don't. So select the relevant elements using nw
-  # (names of the within variables
+  # (names of the within variables)
   nw <- names(coef(object))
   fixef <- yb - as.vector(crossprod(t(Xb[,nw,drop=FALSE]),coef(object)))
   bet <- plm.between(formula, data, effect = effect)
@@ -36,7 +36,8 @@ fixef.plm <- function(object, effect = NULL,
   }
   else{
     Xb <- t(t(Xb[-1,])-Xb[1,])
-    sefixef <- sqrt(s2*(1/nother[-1]+1/nother[1])+apply(Xb[, nw, drop = FALSE],1,function(x) t(x)%*%vcov%*%x))
+    sefixef <- sqrt(s2*(1/nother[-1]+1/nother[1])+
+                    apply(Xb[, nw, drop = FALSE],1,function(x) t(x)%*%vcov%*%x))
   }
   fixef <- switch(type,
                   "level" = fixef,

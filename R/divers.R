@@ -1,3 +1,34 @@
+bdiag <- function(...){
+  if (nargs() == 1)
+    x <- as.list(...)
+  else
+    x <- list(...)
+  n <- length(x)
+  if(n==0) return(NULL)
+  x <- lapply(x, function(y) if(length(y)) as.matrix(y) else
+              stop("Zero-length component in x"))
+  d <- array(unlist(lapply(x, dim)), c(2, n))
+  rr <- d[1,]
+  cc <- d[2,]
+  rsum <- sum(rr)
+  csum <- sum(cc)
+  out <- array(0, c(rsum, csum))
+  ind <- array(0, c(4, n))
+  rcum <- cumsum(rr)
+  ccum <- cumsum(cc)
+  ind[1,-1] <- rcum[-n]
+  ind[2,] <- rcum
+  ind[3,-1] <- ccum[-n]
+  ind[4,] <- ccum
+  imat <- array(1:(rsum * csum), c(rsum, csum))
+  iuse <- apply(ind, 2, function(y, imat) imat[(y[1]+1):y[2],
+                                               (y[3]+1):y[4]], imat=imat)
+  iuse <- as.vector(unlist(iuse))
+  out[iuse] <- unlist(x)
+  return(out)
+} 
+
+
 twosls <- function(y, X, W){
   Xhat <- lm(X ~ W)$fit
   if(!is.matrix(Xhat)){
@@ -103,18 +134,23 @@ lev2var <- function(x, ...){
   # names of the vector being the names of the effect
   
   is.fact <- sapply(x, is.factor)
-  not.fact <- names(x)[!is.fact]
-  names(not.fact) <- not.fact
-  x <- x[is.fact]
-  wl <- lapply(x,levels)
-  # nl is the number of levels for each factor
-  nl <- sapply(wl,length)
-  # nf is a vector of length equal to the total number of levels
-  # containing the name of the factor
-  nf <- rep(names(nl),nl)
-  result <- unlist(wl)
-  names(result) <- nf
-  result <- paste(names(result),result,sep="")
-  names(nf) <- result
-  c(nf,not.fact)
+  if (sum(is.fact) > 0){
+    not.fact <- names(x)[!is.fact]
+    names(not.fact) <- not.fact
+    x <- x[is.fact]
+    wl <- lapply(x,levels)
+    # nl is the number of levels for each factor
+    nl <- sapply(wl,length)
+    # nf is a vector of length equal to the total number of levels
+    # containing the name of the factor
+    nf <- rep(names(nl),nl)
+    result <- unlist(wl)
+    names(result) <- nf
+    result <- paste(names(result),result,sep="")
+    names(nf) <- result
+    c(nf,not.fact)
+  }
+  else{
+    names(x)
+  }
 }

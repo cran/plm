@@ -158,8 +158,8 @@ vcovHC.panelmodel <-function(x,
 }
 
 vcovHC.pgmm <- function(x,...){
-  model.name <- attr(x,"pmodel")$model.name
-  transformation <- attr(x,"pmodel")$transformation
+  model <- ifelse(is.null(x$call$model), "onestep", x$call$model)
+  transformation <- ifelse(is.null(x$call$transformation), "d", x$call$transformation)
   A1 <- x$A1
   A2 <- x$A2
 
@@ -172,7 +172,7 @@ vcovHC.pgmm <- function(x,...){
     residuals <- x$residuals
   }    
   
-  if (model.name=="twosteps"){
+  if (model=="twosteps"){
     coef1s <- x$coefficients[[1]]
     res1s <- lapply(yX,function(x) x[,1]-crossprod(t(x[,-1]),coef1s))
     K <- ncol(yX[[1]])
