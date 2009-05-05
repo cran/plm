@@ -91,10 +91,41 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
 }
 
 fitted.plm <- function(object, ...){
-  X <- model.matrix(object)
+  model <- describe(object, "model")
+  effect <- describe(object, "effect")
+  X <- model.matrix(object, model = "pooling")
   beta <- coef(object)
-  as.numeric(crossprod(t(X),beta))
-  model.response(model.frame(object))
+  if (model == "within"){
+    if (has.intercept(object)) X <- X[,-1]
+    if (effect != "time") id <- model.frame(object)[,"(id)"]
+    if (effect != "individual") time <- model.frame(object)[,"(time)"]
+    fe <- switch(effect,
+                 individual = fixef(object, effect = "individual")[as.character(id)],
+                 time = fixef(object, effect="time")[as.character(time)],
+                 twoways = fixef(object, effect = "individual")[as.character(id)]+
+                           fixef(object, effect="time")[as.character(time)])
+    fv <- as.numeric(crossprod(t(X),beta))+fe
+  }
+  else{
+    fv <- as.numeric(crossprod(t(X),beta))
+  }
+  fv
+#  model.response(model.frame(object))
+}
+
+predict.plm <- function(object, newdata = NULL, ...){
+  tt <- terms(object)
+  if (is.null(newdata)){
+    result <- fitted(object, ...)
+  }
+  else{
+    Terms <- delete.response(tt)
+    m <- model.frame(Terms, newdata)
+    X <- model.matrix(Terms, m)
+    beta <- coef(object)
+    result <- as.numeric(crossprod(beta, t(X)))
+  }
+  result
 }
 
 deviance.panelmodel <- function(object, ...){

@@ -1,12 +1,17 @@
 Package: plm
-Version: 1.1-1
-Date: 2009-03-05
+Version: 1.1-2
+Date: 2009-04-28
 Title: Linear models for panel data
-Author: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>, Giovanni Millo <Giovanni_Millo@Generali.com>
+Author: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>, Giovanni
+        Millo <Giovanni_Millo@Generali.com>
 Maintainer: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>
 Depends: R (>= 1.8.0), stats, kinship, nlme, Formula, MASS, sandwich
 Suggests: lmtest, car
 Description: A set of estimators and tests for panel data
-License: GPL (>=2)
+License: GPL (>= 2)
 URL: http://www.r-project.org
-Packaged: Sun Mar  8 14:27:51 2009; zeileis
+Repository: CRAN
+Repository/R-Forge/Project: plm
+Repository/R-Forge/Revision: 4
+Date/Publication: 2009-05-05 08:01:00
+Packaged: 2009-05-05 03:24:56 UTC; rforge

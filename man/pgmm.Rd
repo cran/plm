@@ -7,9 +7,11 @@
   General method of moments estimator for static or dynamic models with panel data.
 }
 \usage{
-pgmm(formula, data, effect = "individual", model = "twosteps",
-   instruments = NULL, gmm.inst, lag.gmm, transformation = "d",
-   fsm = NULL, index = NULL,...)
+pgmm(formula, data, effect = c("individual","twoways", "none"),
+     model = c("onestep", "twosteps"),
+     instruments = NULL, gmm.inst, lag.gmm,
+     transformation = c("d", "ld"),
+     fsm = NULL, ...)
 \method{summary}{pgmm}(object,robust, ...)
 \method{print}{summary.pgmm}(x, digits = max(3, getOption("digits") - 2),
     width = getOption("width"),...)
@@ -36,7 +38,6 @@ pgmm(formula, data, effect = "individual", model = "twosteps",
     (identity matrix) or \code{"G"} (\eqn{=D'D} where \eqn{D} is the first
     difference operator) if \code{transformation="d"}, one of
     \code{"GI"} or \code{"full"} if \code{transformation="ld"},}
-  \item{index}{the indexes, see \code{\link{plm.data}},}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print
     output,}

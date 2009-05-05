@@ -38,10 +38,7 @@ width = getOption("width"),...)
 }
 
 \details{
-  The element \code{fixef} of a \code{plm} object corresponding to a within
-  model is a numerical vector which length is the total number of
-  observations. This function returns a vector which length is the number
-  of individuals. The summary method prints the effects in deviation
+  The summary method prints the effects in deviation
   from  the overall intercept, the standard error and the t--values.
 }
 \seealso{

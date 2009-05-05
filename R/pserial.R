@@ -642,7 +642,6 @@ pwfdtest.panelmodel <- function(x, ..., h0=c("fd","fe")) {
 
   myH0 <- paste("FDres.1 = ", as.character(rho.H0), sep="")
   lhtest <- linear.hypothesis(model=auxmod, myH0, vcov.=myvcov, ...)
-cat("ca roule\n")
   
   ##(insert usual htest features)  
   FDARstat <- lhtest[2,3]

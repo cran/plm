@@ -2,7 +2,7 @@ papply <- function(x, ...){
   UseMethod("papply")
 }
 
-papply.default <- function(x,func,cond,...){
+papply.default <- function(x, func, cond,...){
   na.x <- is.na(x)
   cm <- tapply(x,cond,func)
   Cm <- cm[as.character(cond)]
@@ -11,21 +11,21 @@ papply.default <- function(x,func,cond,...){
   Cm
 }
 
-papply.pserie <- function(x,func,effect="individual",...){
+papply.pserie <- function(x, func, effect = "individual",...){
   na.x <- is.na(x)
   data.name <- attr(x,"data")
   sc <- sapply(sys.calls(),function(x) as.character(x[[1]]))
-  leframe <- which(!is.na(match(sc,c("pgmm","pgls","pgmm","pvcm"))))
-  leframe <- ifelse(length(leframe)==1,leframe,1)
+  leframe <- which(!is.na(match( sc, c("pgmm","pgls","pgmm","pvcm"))))
+  leframe <- ifelse(length(leframe) == 1, leframe, 1)
   
-  data <- get(data.name,sys.frame(which=leframe))
+  data <- get(data.name, sys.frame(which = leframe))
   indexes <- attr(data,"indexes")
   cond <- switch(effect,
                  "individual"= data[[indexes$id]],
                  "time"= data[[indexes$time]],
                  stop("effect must be individual or time")
                  )
-  cm <- tapply(x,cond,func)
+  cm <- tapply(x, cond, func)
   Cm <- cm[as.character(cond)]
   Cm[na.x] <- NA
   attr(Cm,"cm") <- cm
@@ -34,7 +34,7 @@ papply.pserie <- function(x,func,effect="individual",...){
   Cm
 }
 
-papply.matrix <- function(x,func,cond,...){
+papply.matrix <- function(x, func, cond,...){
   na.x <- is.na(x)
   cm <- apply(x,2,tapply,cond,func)
   Cm <- cm[as.character(cond),,drop=F]
@@ -47,7 +47,7 @@ Between <- function(x,...){
   UseMethod("Between")
 }
 
-Between.default <- function(x,cond, ...){
+Between.default <- function(x, cond, ...){
   if (is.numeric(x)){
     res <- papply(x,mymean,cond)
   }
@@ -58,9 +58,9 @@ Between.default <- function(x,cond, ...){
   res
 }
 
-Between.pserie <- function(x,effect="individual", ...){
+Between.pserie <- function(x, effect = "individual", ...){
   if (is.numeric(x)){
-    res <- papply(x,mymean,effect)
+    res <- papply(x, mymean, effect)
   }
   else{
     stop("The Between function only applies to numeric vectors\n")
@@ -218,7 +218,7 @@ pdiff <- function(x, cond, has.intercept = FALSE){
     result <- na.omit(result)
   }
   else{
-    result <- rbind(NA,x[2:n,]-x[1:(n-1),])
+    result <- rbind(NA,x[2:n,,drop=FALSE]-x[1:(n-1),,drop=FALSE])
     result[is.na(cond),] <- NA
     result <- na.omit(result)
     result <- result[,apply(result,2,myvar) > 1E-12,drop = FALSE]
