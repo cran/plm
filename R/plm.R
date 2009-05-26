@@ -81,6 +81,8 @@ plm <-  function(formula, data, subset, na.action,
 plm.within <- function(formula, data, effect){
   pdim <- pdim(data)
   X <- model.matrix(formula, data, part = "first", model = "within", effect = effect)
+  if (ncol(X) == 0) stop("empty model: no time-varying variable")
+  print(dim(X))
   y <- pmodel.response(data, part = "first", model = "within", effect = effect)
   if (length(formula) == 2){
     W <- model.matrix(formula, data, part = "second", model = "within", effect = effect)
@@ -259,7 +261,6 @@ plm.ht <- function(formula, data){
   if (length(end.cst) > 0) NC <- X[ , end.cst, drop = FALSE] else NC <- NULL
 
   sigma2 <- list()
-  sigma2$one <- 0
   sigma2$idios <- deviance(within)/(N-n)
   if (length(tot.cst) !=0 ){
     zo <- twosls(fixef[as.character(id)],cbind(1,XC,NC),cbind(1,XC,XV))
@@ -267,14 +268,14 @@ plm.ht <- function(formula, data){
   else{
     zo <- lm(fixef~1)
   }
-  ssr <- deviance(zo)/N
+  sigma2$one <- deviance(zo)/n
 
   if(balanced){
-    sigma2$id <- ssr-sigma2$idios/T
+    sigma2$id <- (sigma2$one-sigma2$idios)/T
     theta <- 1-sqrt(sigma2$idios/(sigma2$idios+T*sigma2$id))
   }
   else{
-    sigma2$id <- ssr-sigma2$idios/T
+    sigma2$id <- (sigma2$one-sigma2$idios)*sum(1/Ti)
     theta <- 1-sqrt(sigma2$idios/(sigma2$idios+Ti*sigma2$id))
     theta <- theta[as.character(id)]
   }
