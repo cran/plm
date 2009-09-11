@@ -42,7 +42,7 @@ plm.data <- function(x,indexes=NULL){
   }
   x <- x[,!na.check]
   # check and remove cst series
-  cst.check <- sapply(x,function(x) myvar(as.numeric(x))==0)
+  cst.check <- sapply(x,function(x) var(as.numeric(x))==0)
   cst.serie <- names(x)[cst.check]
 
   if (length(cst.serie)>0){

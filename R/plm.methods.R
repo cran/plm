@@ -16,14 +16,14 @@ summary.plm <- function(object,...){
 print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
                               width=getOption("width"),...){
   formula <- formula(x)
-  has.instruments <- (length(formula) == 2)
+  has.instruments <- (length(formula)[2] == 2)
   effect <- describe(x, "effect")
   model <- describe(x, "model")
   cat(paste(effect.plm.list[effect]," ",sep=""))
   cat(paste(model.plm.list[model]," Model",sep=""))
 
   if (model=="random"){
-    ercomp <- describe(x, "ercomp")
+    ercomp <- describe(x, "random.method")
     cat(paste(" \n   (",
               random.method.list[ercomp],
               "'s transformation)\n",
@@ -33,7 +33,7 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
     cat("\n")
   }
   if (has.instruments){
-    ivar <- describe(x, "ivar")
+    ivar <- describe(x, "inst.method")
     if (model != "ht"){
       cat(paste("Instrumental variable estimation\n   (",
                 inst.method.list[ivar],
@@ -159,14 +159,18 @@ formula.plm <- function(x, ...){
 }
 
 # describe function: to extract the characteristics of the plm model
-describe <- function(x, what = c('model', 'effect', 'ercomp', 'ivar')){
-  cl <- x$call
+describe <- function(x, what = c('model', 'effect', 'random.method', 'inst.method')){
   what <- match.arg(what)
+  cl <- x$args
+##   if (is.name(cl$effect)) cl$effect <- eval(cl$effect, parent.frame())
+##   if (is.name(cl$model)) cl$model <- eval(cl$model, parent.frame())
+##   if (is.name(cl$random.method)) cl$random.method <- eval(cl$random.method, parent.frame())
+##   if (is.name(cl$inst.method)) cl$inst.method <- eval(cl$inst.method, parent.frame())
   switch(what,
          model  = ifelse(!is.null(cl$model), cl$model, "within"),
          effect = ifelse(!is.null(cl$effect), cl$effect, "individual"),
-         ercomp = ifelse(!is.null(cl$ercomp), cl$ercomp, "swar"),
-         ivar   = ifelse(!is.null(cl$ivar), cl$ivar, "bvk")
+         random.method = ifelse(!is.null(cl$random.method), cl$random.method, "swar"),
+         inst.method   = ifelse(!is.null(cl$inst.method), cl$inst.method, "bvk")
          )
 }
          
