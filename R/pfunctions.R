@@ -135,13 +135,25 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
 }
 
 "[.pdata.frame" <- function(x, i, j, drop = TRUE){
-  index <- "[.data.frame"(attr(x, "index"), i,)
-  #remove empty levels if any
-  index <- data.frame(lapply(index, function(x) x[drop = TRUE]))
-  data <- "[.data.frame"(x, i, j, drop = drop)
-  structure(data,
-            index = index,
-            class = c("pdata.frame", "data.frame"))
+  old.pdata.frame <- !inherits(x, "data.frame")
+  if (!old.pdata.frame){
+    # this part for backward compatibility (required by meboot)
+    index <- "[.data.frame"(attr(x, "index"), i,)
+    #remove empty levels if any
+    index <- data.frame(lapply(index, function(x) x[drop = TRUE]))
+  }
+  mydata <- `[.data.frame`(x, i, j, drop = drop)
+  if (is.null(dim(mydata))){
+    structure(mydata,
+              index = index,
+              class = c("pseries", class(mydata))
+              )
+  }
+  else{
+    structure(mydata,
+              index = index,
+              class = c("pdata.frame", "data.frame"))
+  }
 }
 
 print.pdata.frame <- function(x, ...){
@@ -162,7 +174,7 @@ print.pdata.frame <- function(x, ...){
   attr(x, "index") <- NULL
   class(x) <- "data.frame"
   structure(x[[y]],
-            class = c("pserie", class(x[[y]])),
+            class = c("pseries", class(x[[y]])),
             index = index,
             names = row.names(x))
 }  
@@ -171,7 +183,7 @@ print.pdata.frame <- function(x, ...){
   "[["(x, paste(as.name(y)))
 }
 
-print.pserie <- function(x, ...){
+print.pseries <- function(x, ...){
   attr(x, "index") <- NULL
   attr(x, "class") <- attr(x, "class")[-1]
   if (length(attr(x, "class")) == 1
@@ -184,7 +196,7 @@ print.pserie <- function(x, ...){
 ###################################################
 ### chunk number 5: as.matrix
 ###################################################
-as.matrix.pserie <- function(x, idbyrow = TRUE, ...){
+as.matrix.pseries <- function(x, idbyrow = TRUE, ...){
   index <- attr(x, "index")
   id <- index[[1]]
   time <- index[[2]]
@@ -212,21 +224,24 @@ as.matrix.pserie <- function(x, idbyrow = TRUE, ...){
 ###################################################
 ### chunk number 7: lag and diff
 ###################################################
-lag.pserie <- function(x, k = 1, ...){
+lag.pseries <- function(x, k = 1, ...){
   index <- attr(x, "index")
   id <- index[[1]]
   time <- index[[2]]
   isNAtime <- c(rep(1,k), diff(as.numeric(time), lag = k)) != k
   isNAid <- c(rep(1,k), diff(as.numeric(id), lag = k)) != 0
   isNA <- as.logical(isNAtime + isNAid)
+  if (is.factor(x)) levs <- levels(x)
   result <- c(rep(NA, k), x[1:(length(x)-k)])
   result[isNA] <- NA
+  if (is.factor(x)) result <- factor(result, labels = levs)
   structure(result,
             class = class(x),
             index = index)
 }
 
-diff.pserie <- function(x, lag = 1, ...){
+diff.pseries <- function(x, lag = 1, ...){
+  if (!is.numeric(x)) stop("diff is only relevant for numeric series")
   lagx <- lag(x, k = lag)
   x-lagx
 }
@@ -250,7 +265,7 @@ Tapply.default <- function(x, effect, func, ...){
   result
 }
 
-Tapply.pserie <- function(x, effect = c("individual", "time"), func, ...){
+Tapply.pseries <- function(x, effect = c("individual", "time"), func, ...){
   effect <- match.arg(effect)
   index <- attr(x, "index")
   effect <- switch(effect,
@@ -283,7 +298,7 @@ Between.default <- function(x, effect, ...){
   Tapply(x, effect, mean, ...)
 }
 
-Between.pserie <- function(x, effect = c("individual", "time"), ...){
+Between.pseries <- function(x, effect = c("individual", "time"), ...){
   effect <- match.arg(effect)
   Tapply(x, effect = effect, mean, ...)
 }
@@ -297,7 +312,7 @@ between.default <- function(x, effect, ...){
   tapply(x, effect, mean, ...)
 }
 
-between.pserie <- function(x, effect = c("individual", "time"), ...){
+between.pseries <- function(x, effect = c("individual", "time"), ...){
   effect <- match.arg(effect)
   index <- attr(x, "index")
   if (effect == "individual") effect <- index[[1]] else effect <- index[[2]]
@@ -321,7 +336,7 @@ Within.default <- function(x, effect, ...){
   x - Between(x, effect, ...)
 }
 
-Within.pserie <- function(x, effect = c("individual", "time"), ...){
+Within.pseries <- function(x, effect = c("individual", "time"), ...){
   effect <- match.arg(effect)
   Within.default(x, effect, ...)
 }
@@ -337,7 +352,7 @@ Within.matrix <- function(x, effect, ...){
 
 
 ###################################################
-### chunk number 12: methods for pserie
+### chunk number 12: methods for pseries
 ###################################################
 sumsq <- function(x, ...){
   xb <- mean(x, na.rm = TRUE)
@@ -345,25 +360,25 @@ sumsq <- function(x, ...){
 }
 
 
-summary.pserie <- function(object, ...){
+summary.pseries <- function(object, ...){
   id <- attr(object, "index")[[1]]
   time <- attr(object, "index")[[2]]
   xm <- mean(object, na.rm = TRUE)
   Bid <-  Between(object, na.rm = TRUE)
   Btime <-  Between(object, effect = "time", na.rm = TRUE)
   structure( c(total = sumsq(object), between_id= sumsq(Bid), between_time = sumsq(Btime)), 
-            class = c("summary.pserie", "numeric")
+            class = c("summary.pseries", "numeric")
             )
 }
 
-plot.summary.pserie <- function(x, ...){
+plot.summary.pseries <- function(x, ...){
   x <- as.numeric(x)
   share <- x[-1]/x[1]
   names(share) <- c("id", "time")
   barplot(share, ...)
 }
 
-print.summary.pserie <- function(x, ...){
+print.summary.pseries <- function(x, ...){
   digits <- getOption("digits")
   x <- as.numeric(x)
   share <- x[-1]/x[1]
@@ -381,7 +396,7 @@ as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, ...
   x <- lapply(x,
               function(z){
                 attr(z, "index") <- index
-                class(z) <- c("pserie", class(z))
+                class(z) <- c("pseries", class(z))
                 z
               }
               )

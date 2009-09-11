@@ -24,7 +24,7 @@ plm <-  function(formula, data, subset, na.action,
 
   # for backward compatibility, allows the instrument argument
   if (!is.null(dots$instruments)){
-    formula <- as.formula(paste(deparse(formula),"|",deparse(dots$instruments[[2]])))
+    as.Formula(formula, dots$instruments)
     deprec.instruments <- paste("the use of the instruments argument is deprecated,",
                                 "use two-part formulas instead")
     warning(deprec.instruments)
@@ -32,9 +32,8 @@ plm <-  function(formula, data, subset, na.action,
 
   # Check whether data is a pdata.frame and if not create it
   if (inherits(data, "pdata.frame") && !is.null(index))
-    warning("the index argument is ignored because data is a data.frame")
+    warning("the index argument is ignored because data is a pdata.frame")
   if (!inherits(data, "pdata.frame")) data <- pdata.frame(data, index)
-
   # Create a Formula object if necessary
   if (!inherits(formula, "pFormula")) formula <- pFormula(formula)
 
