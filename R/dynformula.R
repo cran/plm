@@ -27,7 +27,7 @@ dynformula <- function(formula, lag.form = NULL, diff.form = NULL, log.form = NU
   diff.form <- unlist(create.list(diff.form, K, has.int, has.resp, endog, exo, FALSE))
   log.form <- unlist(create.list(log.form, K, has.int, has.resp, endog, exo, FALSE))
 
-  structure(formula,class = c("dynformula","formula"), lag = lag.form,
+  structure(formula, class = c("dynformula","formula"), lag = lag.form,
             diff = diff.form, log = log.form, var = c(endog,exo))
 }
 
@@ -129,6 +129,5 @@ write.lags <- function(name,lags,diff){
 
 
 print.dynformula <- function(x,...){
-  attr(x,"lag") <- attr(x,"var") <- attr(x,"log") <- attr(x,"diff") <- NULL
-  print.formula(x)
+  print(formula(x), ...)
 }
