@@ -1,5 +1,5 @@
 \name{vcovHC}
-\alias{vcovHC.panelmodel}
+\alias{vcovHC.plm}
 \alias{vcovHC.pgmm}
 \alias{pvcovHC}
 
@@ -8,17 +8,20 @@
   Robust covariance matrix estimators \emph{a la White} for panel models.
 }
 \usage{
-\method{vcovHC}{panelmodel}(x, method = c("arellano", "white1", "white2"),
-                            type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
-                            ...) 
+\method{vcovHC}{plm}(x,
+                              method = c("arellano", "white1", "white2"),
+                              type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
+                              cluster = c("group","time"),
+                              ...)
 \method{vcovHC}{pgmm}(x,...)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"panelmodel"} which should be the result of
+  \item{x}{an object of class \code{"plm"} which should be the result of
     a random effect or a within model or a model of class \code{"pgmm"},}
   \item{method}{one of \code{"arellano","white1","white2"},}
   \item{type}{one of \code{"HC0","HC1","HC2","HC3","HC4"},}
+  \item{cluster}{one of \code{"group","time"}}
   \item{\dots}{further arguments.}
 }
 
@@ -27,16 +30,29 @@
 }
 
 \details{
-\code{vcovHC} is a function for estimating a robust covariance matrix of parameters for a fixed effects or random effects panel model according to the White method (White 1980, 1984; Arellano 1987).
+\code{vcovHC} is a function for estimating a robust covariance matrix of
+parameters for a fixed effects or random effects panel model according
+to the White method (White 1980, 1984; Arellano 1987). Observations may
+be clustered by \code{"group"} (\code{"time"}) to account for serial
+(cross-sectional) correlation.
 
-All types assume no intragroup correlation between errors and allow for heteroskedasticity across groups. As for the error covariance matrix of every single group of observations, \code{"white1"} allows for general heteroskedasticity but no serial correlation; \code{"white2"} is \code{"white1"} restricted to a common variance inside every group (see Greene (2003), 13.7.1-2 and Wooldridge (2003), 10.7.2); \code{"arellano"} (see ibid. and the original ref. Arellano (1987)) allows a fully general structure w.r.t. heteroskedasticity and serial correlation.
+All types assume no intragroup (serial) correlation between errors and
+allow for heteroskedasticity across groups (time periods). As for the
+error covariance matrix of every single group of observations,
+\code{"white1"} allows for general heteroskedasticity but no serial
+(cross-sectional) correlation; \code{"white2"} is \code{"white1"}
+restricted to a common variance inside every group (time period) (see
+Greene (2003), 13.7.1-2 and Wooldridge (2003), 10.7.2);
+\code{"arellano"} (see ibid. and the original ref. Arellano (1987))
+allows a fully general structure w.r.t. heteroskedasticity and serial
+(cross-sectional) correlation.
 
-Weighting schemes are analogous to those in \code{vcovHC} in package \code{sandwich} and are justified theoretically (although in the context of the standard linear model) by MacKinnon and White (1985) and Cribari-Neto (2004) (see Zeileis, 2004).  
- 
+Weighting schemes are analogous to those in \code{vcovHC} in package \code{sandwich} and are justified theoretically (although in the context of the standard linear model) by MacKinnon and White (1985) and Cribari-Neto (2004) (see Zeileis, 2004).
+
 The main use of \code{vcovHC} is to be an argument to other functions,
 e.g. for Wald-type testing: as \code{vcov} to \code{coeftest()},
 \code{waldtest()} and other methods in the \code{lmtest} package; and as
-\code{vcov} to \code{linear.hypothesis()} in the \code{car} package (see the examples). Notice that the \code{vcov} argument may be supplied a function (which is the safest) or a matrix (see Zeileis (2004), 4.1-2 and examples below).  
+\code{vcov} to \code{linear.hypothesis()} in the \code{car} package (see the examples). Notice that the \code{vcov} argument may be supplied a function (which is the safest) or a matrix (see Zeileis (2004), 4.1-2 and examples below).
 
 A special procedure, proposed by Windmeijer (2005) for \code{pgmm}
 objects is provided.
@@ -46,7 +62,7 @@ objects is provided.
 \author{Giovanni Millo \& Yves Croissant}
 
 \references{
-Arellano, M. (1987) Computing robust standard errors for within group estimators, 
+Arellano, M. (1987) Computing robust standard errors for within group estimators,
 \emph{Oxford bulletin of Economics and Statistics}, \bold{49}, 431--434.
 
 Cribari-Neto, F. (2004) Asymptotic inference under heteroskedasticity
@@ -80,17 +96,21 @@ URL \url{http://http://www.jstatsoft.org/v11/i10/}.
 }
 
 \examples{
-library(sandwich)
 library(lmtest)
 library(car)
-data("Produc", package="plm")
+data("Produc", package="Ecdat")
 zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="random")
 ## standard coefficient significance test
 coeftest(zz)
-## robust significance test
+## robust significance test, cluster by group
+## (robust vs. serial correlation)
 coeftest(zz, vcov=vcovHC)
 ## idem with parameters, pass vcov as a function argument
 coeftest(zz, vcov=function(x) vcovHC(x, method="arellano", type="HC1"))
+## idem, cluster by time period
+## (robust vs. cross-sectional correlation)
+coeftest(zz, vcov=function(x) vcovHC(x, method="arellano",
+ type="HC1", cluster="group"))
 ## idem with parameters, pass vcov as a matrix argument
 coeftest(zz, vcov=vcovHC(zz, method="arellano", type="HC1"))
 ## joint restriction test
