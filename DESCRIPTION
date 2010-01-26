@@ -1,6 +1,6 @@
 Package: plm
-Version: 1.2-1
-Date: 2009-09-11
+Version: 1.2-3
+Date: 2010-01-26
 Title: Linear Models for Panel Data
 Author: Yves Croissant <yves.croissant@let.ish-lyon.cnrs.fr>, Giovanni
         Millo <Giovanni_Millo@Generali.com>
@@ -11,6 +11,6 @@ Suggests: lmtest, car
 Description: A set of estimators and tests for panel data.
 License: GPL (>= 2)
 URL: http://www.R-project.org
-Packaged: 2009-09-29 09:16:51 UTC; zeileis
+Packaged: 2010-01-26 11:59:43 UTC; yves
 Repository: CRAN
-Date/Publication: 2009-09-29 09:26:13
+Date/Publication: 2010-01-26 13:46:20
