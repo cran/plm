@@ -2,7 +2,6 @@ pvcovHC <- function(x, ...){
   UseMethod("vcovHC")
 }
 
-
 vcovHC.plm <-function(x,method=c("arellano","white1","white2"),
                     type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
                     cluster=c("group","time"), ...) {
@@ -170,7 +169,7 @@ vcovHC.plm <-function(x,method=c("arellano","white1","white2"),
   salame<-array(dim=c(k,k,n))
   for(i in 1:n) {
       groupinds<-tind[[i]]
-      xi<-demX[groupinds,]
+      xi<-demX[groupinds,,drop=FALSE]
       ui<-uhat[groupinds]
       salame[,,i]<-crossprod(xi,Omegai(ui))%*%xi
       }
@@ -187,14 +186,16 @@ vcovHC.plm <-function(x,method=c("arellano","white1","white2"),
 }
 
 vcovHC.pgmm <- function(x,...){
-  model <- ifelse(is.null(x$call$model), "onestep", x$call$model)
-  transformation <- ifelse(is.null(x$call$transformation), "d", x$call$transformation)
+  model <- describe(x, "model")
+  transformation <- describe(x, "transformation")
   A1 <- x$A1
   A2 <- x$A2
 
   if (transformation=="ld"){
-    yX <- lapply(x$model,function(x) rbind(diff(x),x))
-    residuals <-lapply(x$residuals,function(x) c(diff(x),x))
+##     yX <- lapply(x$model,function(x) rbind(diff(x),x))
+##     residuals <-lapply(x$residuals,function(x) c(diff(x),x))
+    yX <- x$model
+    residuals <- x$residuals
   }
   else{
     yX <- x$model
@@ -206,24 +207,33 @@ vcovHC.pgmm <- function(x,...){
     res1s <- lapply(yX,function(x) x[,1]-crossprod(t(x[,-1]),coef1s))
     K <- ncol(yX[[1]])
     D <- c()
-    WX <- suml(mapply(function(x,y) crossprod(x,y[,-1]),x$W,yX,SIMPLIFY=FALSE))
-    We <- suml(mapply(function(x,y) crossprod(x,y),x$W,residuals,SIMPLIFY=FALSE))
+    WX <- Reduce("+",
+                 mapply(function(x, y) crossprod(x, y[,-1]), x$W, yX, SIMPLIFY = FALSE))
+    We <- Reduce("+", mapply(function(x, y) crossprod(x, y), x$W, residuals, SIMPLIFY = FALSE))
     B1 <- solve(t(WX)%*%A1%*%WX)
     B2 <- vcov(x)
     vcov1s <- B1%*%(t(WX)%*%A1%*%solve(A2)%*%A1%*%WX)%*%B1
     for (k in 2:K){
-      exk <- mapply(function(x,y){ z <- crossprod(t(x[,k]),t(y));-z-t(z)},yX,res1s)
-      wexkw <- suml(mapply(function(x,y) crossprod(x,crossprod(y,x)), x$W,exk,SIMPLIFY=FALSE))
-      Dk <- -B2%*%t(WX)%*%A2%*%wexkw%*%A2%*%We
+      exk <- mapply(
+                    function(x,y){
+                      z <- crossprod(t(x[,k]),t(y))
+                      - z - t(z)
+                    },
+                    yX, res1s, SIMPLIFY = FALSE)
+      wexkw <- Reduce("+",
+                      mapply(
+                             function(x,y)
+                             crossprod(x,crossprod(y,x)),
+                             x$W, exk, SIMPLIFY = FALSE))
+      Dk <- -B2 %*% t(WX) %*% A2 %*% wexkw %*% A2 %*% We
       D <- cbind(D,Dk)
     }
     vcovr <- B2+crossprod(t(D),B2)+t(crossprod(t(D),B2))+D%*%vcov1s%*%t(D)
-
   }
   else{
     res1s <- lapply(yX,function(z) z[,1]-crossprod(t(z[,-1]),x$coefficients))
     K <- ncol(yX[[1]])
-    WX <- suml(mapply(function(z,y) crossprod(z[,-1],y),yX,x$W,SIMPLIFY=FALSE))
+    WX <- Reduce("+", mapply(function(z,y) crossprod(z[,-1],y),yX,x$W,SIMPLIFY=FALSE))
     B1 <- vcov(x)
     vcovr <- B1%*%(WX%*%A1%*%solve(A2)%*%A1%*%t(WX))%*%B1
   }

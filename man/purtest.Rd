@@ -41,13 +41,17 @@ An object of class \code{'purtest'}: a list with the elements \code{'statistic'}
 }
 
 \details{
-All these tests except \code{'hadri'} are based on the estimation of augmented Dickey-Fuller regressions for each time series. A statistic is then computed using the t-statistic associated with  the lagged variable. The kind of test to be computed can be specified in several ways:
+All these tests except \code{'hadri'} are based on the estimation of augmented Dickey-Fuller regressions for each time series. A statistic is then computed using the t-statistic associated with  the lagged variable. 
+
+The kind of test to be computed can be specified in several ways:
 
 A \code{formula}/\code{data} interface (if \code{data} is a
 \code{data.frame}, an additional \code{index} argument should be
-specified); the formula should be of the form: \code{y~0}, \code{y~1} or \code{y~trend} for a test with no exogenous variable, with an intercept or with a time trend, respectively.
+specified); the formula should be of the form: \code{y~0}, \code{y~1},  or \code{y~trend} for a test with no exogenous variables, with an intercept, or with a time trend, respectively.
 
 A \code{data.frame}, a \code{matrix}, a \code{pseries}: in this case, the exogenous variables are specified using the \code{exo} argument.
+
+The Hadri statistic is the cross-sectional average of the individual KPSS statistics, standardized by their asymptotic mean and standard deviation.
 }
 
 \references{
@@ -63,7 +67,11 @@ Maddala G.S. and Wu S. (1999). ``A Comparative Study of Unit Root Tests with Pan
 \examples{
 data("Grunfeld", package = "plm")
 y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
-purtest(y, pmax = 4, type = "intercept", test = "madwu")
+
+purtest(y, pmax = 4, exo = "intercept", test = "madwu")
+
+## same via formula interface
+purtest(inv ~ 1, data = Grunfeld, index = "firm", pmax = 4, test = "madwu")
 }
 
 \author{Yves Croissant}
