@@ -83,9 +83,9 @@ names.exo <- c(none = 'None',
                 intercept = 'Individual Intercepts',
                 trend = 'Individual Intercepts and Trend')
 names.test <- c(levinlin = 'Levin-Lin-Chu Unit-Root Test',
-                ips = 'Im-Pesaran-Sim Unit-Root Test',
+                ips = 'Im-Pesaran-Shin Unit-Root Test',
                 madwu = 'Maddala-Wu Unit-Root Test',
-                hadri = 'Hadri')
+                hadri = 'Hadri Test')
 
 my.lm.fit <- function(X, y, dfcor = TRUE, ...){
   object <- lm.fit(X, y)
@@ -345,7 +345,7 @@ purtest <- function(object, data = NULL, index = NULL,
   n <- ncol(object)
 
   parameter <- NULL
-  alternative <- 'Unit Root'
+  alternative <- 'stationarity'
   method <- paste(names.test[test], "(ex. var. :",
                     names.exo[exo],")")
 
@@ -364,9 +364,9 @@ purtest <- function(object, data = NULL, index = NULL,
       adj <- c(1/15, 11/6300)
     }      
     sigma2 <- mean(unlist(resid)^2)
-    cumres2 <- lapply(resid, function(x) cumsum(x^2))
+    cumres2 <- lapply(resid, function(x) cumsum(x)^2)
     if (!Hcons){
-      S <- sum(unlist(cumres2))/(L^2 * n)
+      S <- sum(unlist(cumres2))/(L^2)
       LM <- S / sigma2
     }
     else{
@@ -374,11 +374,11 @@ purtest <- function(object, data = NULL, index = NULL,
       Sit2 <- mapply("/", cumres2, sigma2i)
       LM <- sum(unlist(Sit2))/ (L^2 * n)
     }
-    stat <- c(z = sqrt(n) * (LM - adj[1])  / (adj[2]))
+    stat <- c(z = sqrt(n) * (LM - adj[1])  / sqrt(adj[2]))
     pvalue <- 2 * (pnorm(abs(stat), lower.tail = FALSE))
     htest <- structure(list(statistic = stat,
                             parameter = NULL,
-                            alternative = "stationarity",
+                            alternative = "at least one series has a unit root",
                             data.name = data.name,
                             method = method,
                             p.value = pvalue),
