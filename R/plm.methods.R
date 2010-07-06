@@ -1,5 +1,9 @@
 summary.plm <- function(object,...){
   object$fstatistic <- Ftest(object, test = "F")
+  model <- describe(object, "model")
+  effect <- describe(object, "effect")
+  object$r.squared <- c(rsq  = r.squared(object),
+                        adjrsq = r.squared(object, dfcor = TRUE))
   # construct the table of coefficients
   std.err <- sqrt(diag(vcov(object)))
   b <- coefficients(object)
@@ -21,7 +25,7 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
   model <- describe(x, "model")
   cat(paste(effect.plm.list[effect]," ",sep=""))
   cat(paste(model.plm.list[model]," Model",sep=""))
-
+  
   if (model=="random"){
     ercomp <- describe(x, "random.method")
     cat(paste(" \n   (",
@@ -34,33 +38,17 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
   }
   if (has.instruments){
     ivar <- describe(x, "inst.method")
-    if (model != "ht"){
-      cat(paste("Instrumental variable estimation\n   (",
-                inst.method.list[ivar],
-                "'s transformation)\n",
-                sep=""))
-    }
+    cat(paste("Instrumental variable estimation\n   (",
+              inst.method.list[ivar],
+              "'s transformation)\n",
+              sep=""))
   }
   cat("\nCall:\n")
   print(x$call)
-
-  if (model == "ht"){
-#    cat("\nTime-Varying Variables: ")
-    names.xv <- paste(x$varlist$xv,collapse=",")
-    names.nv <- paste(x$varlist$nv,collapse=",")
-    names.xc <- paste(x$varlist$xc,collapse=",")
-    names.nc <- paste(x$varlist$nc,collapse=",")
-    cat(paste("\nT.V. exo  : ",names.xv,"\n",sep=""))
-    cat(paste("T.V. endo : ",names.nv,"\n",sep=""))
-#    cat("Time-Invariant Variables: ")
-    cat(paste("T.I. exo  : ",names.xc,"\n",sep=""))
-    cat(paste("T.I. endo : ",names.nc,"\n",sep=""))
-
-  }
   cat("\n")
   pdim <- pdim(x)
   print(pdim)
-  if (model %in% c("random", "ht")){
+  if (model == "random"){
     cat("\nEffects:\n")
     print(x$ercomp)
   }
@@ -74,7 +62,8 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
   cat("\n")
   cat(paste("Total Sum of Squares:    ",signif(tss(x),digits),"\n",sep=""))
   cat(paste("Residual Sum of Squares: ",signif(deviance(x),digits),"\n",sep=""))
-#  cat(paste("Multiple R-Squared:      ",signif(x$rsq,digits),"\n",sep=""))
+  cat(paste("R-Squared      : ", signif(x$r.squared[1], digits),"\n"))
+  cat("      Adj. R-Squared : ", signif(x$r.squared[2], digits),"\n")
   fstat <- x$fstatistic
   if (names(fstat$statistic) == "F"){
     cat(paste("F-statistic: ",signif(fstat$statistic),
@@ -90,29 +79,49 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
   invisible(x)
 }
 
-fitted.plm <- function(object, ...){
-  model <- describe(object, "model")
+fitted.plm <- function(object, model = NULL, ...){
+  # there are two 'models' used ; the fitted model and the
+  # transformation used for the fitted values
+  fittedmodel <- describe(object, "model")
+  if (is.null(model)) model <- fittedmodel
   effect <- describe(object, "effect")
-  X <- model.matrix(object, model = "pooling")
+  X <- model.matrix(object, model = model)
+  y <- pmodel.response(object, model = model)
   beta <- coef(object)
-  if (model == "within"){
-    if (has.intercept(object)) X <- X[,-1]
-    if (effect != "time") id <- model.frame(object)[,"(id)"]
-    if (effect != "individual") time <- model.frame(object)[,"(time)"]
-    fe <- switch(effect,
-                 individual = fixef(object, effect = "individual")[as.character(id)],
-                 time = fixef(object, effect="time")[as.character(time)],
-                 twoways = fixef(object, effect = "individual")[as.character(id)]+
-                           fixef(object, effect="time")[as.character(time)])
-    fv <- as.numeric(crossprod(t(X),beta))+fe
+  if (model == "within" & fittedmodel != "within"){
+    Xw <- model.matrix(object, model = "within", effect = effect)
+    varwith <- colnames(Xw)
+    beta <- beta[varwith]
+  }
+  if (fittedmodel == "within"){
+    if (model == "pooling"){
+      if (has.intercept(object)) X <- X[,-1]
+      index <- attr(model.frame(object), "index")
+      if (effect != "time") id <- index[[1]]
+      if (effect != "individual") time <- index[[2]]
+      fe <- switch(effect,
+                   individual = fixef(object, effect = "individual")[as.character(id)],
+                   time = fixef(object, effect="time")[as.character(time)],
+                   twoways = fixef(object, effect = "individual")[as.character(id)] +
+                   fixef(object, effect = "time")[as.character(time)])
+      fv <- as.numeric(crossprod(t(X), beta)) + fe
+    }
+    if (model == "between"){
+      alpha <- mean(y) - crossprod(apply(X[, -1], 2, mean), beta)
+      beta <- c(alpha, beta)
+      fv <- as.numeric(crossprod(t(X), beta))
+    }
+    if (model == "within"){
+      fv <- as.numeric(crossprod(t(X), beta))
+    }
   }
   else{
-    fv <- as.numeric(crossprod(t(X),beta))
+    fv <- as.numeric(crossprod(t(X), beta))
   }
   fv
-#  model.response(model.frame(object))
 }
 
+  
 predict.plm <- function(object, newdata = NULL, ...){
   tt <- terms(object)
   if (is.null(newdata)){
@@ -128,8 +137,9 @@ predict.plm <- function(object, newdata = NULL, ...){
   result
 }
 
-deviance.panelmodel <- function(object, ...){
-  sum(residuals(object)^2)
+deviance.panelmodel <- function(object, model = NULL, ...){
+  if (is.null(model)) sum(resid(object)^2)
+  else sum(residuals(object, model = model)^2)
 } 
 
 tss <- function(x, ...){
@@ -141,17 +151,53 @@ tss.default <- function(x){
 }
 
 tss.plm <- function(x, model = NULL){
-  if (is.null(model))
-    model <- describe(x, "model")
+  if (is.null(model)) model <- describe(x, "model")
   effect <- describe(x, "effect")
   if (model == "ht") model = "pooling"
   if (model == "random") theta <- x$ercomp$theta else theta <- NULL
   tss(pmodel.response(x, model = model, effect = effect, theta = theta))
 }
 
+r.squared <- function(object, model = NULL,
+                      type = c('cor', 'rss', 'ess'), dfcor = FALSE){
+  if (is.null(model)) model <- describe(object, "model")
+  effect <- describe(object, "effect")
+  type <- match.arg(type)
+  if (type == 'cor'){
+    y <- pmodel.response(object, model = model, effect = effect)
+    haty <- fitted(object, model = model, effect = effect)
+    R2 <- cor(y, haty)^2
+  }
+  if (type == 'rss'){
+    R2 <- 1 - deviance(object, model = model) / tss(object, model = model)
+  }
+  if (type == 'ess'){
+    haty <- fitted(object, model = model)
+    mhaty <- mean(haty)
+    ess <- sum( (haty - mhaty)^2)
+    R2 <- ess / tss(object, model = model)
+  }
+  if (dfcor) R2 <- R2 * df.residual(object) / length(resid(object) - 1)
+  R2
+}
+  
 
-r.squared <- function(object, ...){
-  UseMethod("r.squared")
+residuals.plm <- function(object, model = NULL, ...){
+  fittedmodel <- describe(object, "model")
+  if (is.null(model)) res <- object$residuals
+  else{
+    beta <- coef(object)
+    effect <- describe(object, "effect")
+    X <- model.matrix(object, model = model, effect = effect)
+    y <- pmodel.response(object, model = model, effect = effect)
+    if (model == "within" & fittedmodel != "within") beta <- beta[-1]
+    if (model != "within" & fittedmodel == "within"){
+      alpha <- mean(y) - crossprod(apply(X[, -1], 2, mean), beta)
+      beta <- c(alpha, beta)
+    }
+    res <- y - as.numeric(crossprod(t(X), beta))
+  }
+  res
 }
 
 formula.plm <- function(x, ...){
