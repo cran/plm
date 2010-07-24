@@ -52,7 +52,7 @@ plm <-  function(formula, data, subset, na.action,
   mf$formula <- formula
   mf$data <- data
   # eval in parent.frame() doesn't work
-#  data <- eval(mf, sys.frame(which = nframe))
+#  data <- eval(mf, sys.frame(which = nframe)) 
   data <- eval(mf, parent.frame())
   # return the model.frame or estimate the model
   if (is.na(model)){
@@ -130,6 +130,7 @@ plm.fit <- function(formula, data, model, effect, random.method, inst.method){
                  formula      = formula,
                  model        = data)
   if (model == "random") result$ercomp <- estec
+  result$args <- list(model = model, effect = effect)
   class(result) <- c("plm", "panelmodel")
   result
 }    
