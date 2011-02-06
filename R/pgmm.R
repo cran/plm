@@ -79,12 +79,16 @@ pgmm <- function(formula, data, subset, na.action,
   # of any covariates + 1 because of first - differencing or the
   # largest minimum lag for any gmm or normal instruments
   gmm.minlag <- max(sapply(gmm.lags, min))
+  # min or max to select the number of lost time series ?
+  gmm.minlag <- min(sapply(gmm.lags, min))
   if (!is.null(inst.lags)) inst.maxlag <- max(sapply(inst.lags, max))
   else inst.maxlag <- 0
   main.maxlag <- max(sapply(main.lags, max))
   time.lost <- max(main.maxlag + 1, inst.maxlag + 1, gmm.minlag)
   time.lost.level <- max(main.maxlag, inst.maxlag)
-  
+  # if time.lost.level = 0 (no lags), one observation is lost anyway
+  # because of the differentiation of the lag instruments
+  time.lost.level <- max(1, time.lost.level)
   # Compute the model frame using the covariates, the 'normal'
   # instruments if any and the gmm instruments without the lags
   gmm.form <- as.formula(paste("~", paste(names(gmm.lags), collapse = "+")))
@@ -110,8 +114,10 @@ pgmm <- function(formula, data, subset, na.action,
   # Get the covariates matrix, split it by individual 
   attr(data, "formula") <- formula(main.form)
   yX <- extract.data(data)
-  namesX <- colnames(yX[[1]])[-1]
-  # Get a list of missing time series for each individual
+  names.coef <- colnames(yX[[1]])[-1]
+  # Get a list of missing time series for each individual : nats is a
+  # list of two dimentional vectors containing the number of time
+  # series lost at the begining and at the end of the series
   rn <- lapply(yX, rownames)
   allrn <- levels(attr(data, "index")[[2]])
   nats <- lapply(rn,
@@ -135,7 +141,6 @@ pgmm <- function(formula, data, subset, na.action,
   if (!is.null(inst))
     inst <- mapply(function(x, y){ attr(x, "nats") <- y;x}, inst, nats, SIMPLIFY=FALSE)
   yX <- mapply(function(x, y){ attr(x, "nats") <- y;x}, yX, nats, SIMPLIFY=FALSE)
-
   # Create the matrix of time dummies.
   namest <- levels(attr(data, "index")[,2])
   if (effect == "twoways"){
@@ -154,7 +159,10 @@ pgmm <- function(formula, data, subset, na.action,
       td.gmm.diff <- td.model.diff <- diff(diag(1, T - time.lost + 1))[, -1]
       namest <- namest[-c(0:(time.lost))]
     }
-  }  
+  }
+  # A QAD fix for the bug in mtest for ld model without time.dummies
+  if (effect == "individual" && transformation == "ld")
+    namest <- c("(intercept)", namest[-c(0:time.lost.level+1)])
 
   # create the matrix of gmm instruments for every individual
   W <- lapply(W,
@@ -298,7 +306,8 @@ pgmm <- function(formula, data, subset, na.action,
   B1 <- solve(crossprod(WX, t(crossprod(WX, A1))))
   Y1 <- crossprod(t(crossprod(WX, A1)), Wy)
   coefficients <- as.numeric(crossprod(B1, Y1))
-  names(coefficients) <- c(namesX, namest)
+  if (effect == "twoways") names.coef <- c(names.coef, namest)
+  names(coefficients) <- names.coef
   residuals <- lapply(yX,
                       function(x)
                       as.vector(x[,1] -  crossprod(t(x[,-1]), coefficients)))
@@ -311,11 +320,11 @@ pgmm <- function(formula, data, subset, na.action,
     coef1s <- coefficients
     Y2 <- crossprod(t(crossprod(WX, A2)), Wy)
     coefficients <- as.numeric(crossprod(B2, Y2))
-    names(coefficients) <- c(namesX, namest)
+    names(coefficients) <- c(names.coef)
     vcov <- B2
   }
   else vcov <- B1
-  rownames(vcov) <- colnames(vcov) <- c(namesX, namest)
+  rownames(vcov) <- colnames(vcov) <- c(names.coef)
   residuals <- lapply(yX,
                       function(x){
                         nz <- rownames(x)

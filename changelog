@@ -15,7 +15,7 @@ Changes since version 0-1.2
 	* pgmm is a new function for general method of moments estimator.
 
 	* for all estimation functions, the first four arguments are now
-	formula,data,effect,model
+	formula, data, effect, model
 
 	* robust inference is now provided by the pvcovHC function.
 
@@ -309,3 +309,31 @@ Changes since version 1.2-4
 	* pmodel.response.plm is modified : no explicit effect and model
 	arguments anymore (like in model.matrix.plm)
 	
+Changes since version 1.2-5
+
+	* fixed error in pggls, model="within" (FEGLS). Added model="fd" (FDGLS).  
+
+	* changed dependency from kinship to bdsmatrix (as suggested by Terry Therneau after his reorganization of the packages). 
+
+	* fixed DESCRIPTION and NAMESPACE accordingly. 
+
+	* fixed the example in pggls.Rd
+
+
+	
+Changes since version 1.2-6
+
+	* a bug in mtest for pgmm models with effect=individual and
+	transformation=ld *and* for the wald test for time.dummies for
+	model with effect = twoways and transformation=ld is fixed by
+	modifying namest in gmm
+	
+	* there was a bug in pgmm for models with different lags for gmm
+	instruments. The number of time-series lost is now the min (and
+	not the max) of the first lags for gmm instruments
+
+	* some parts of summmary.pgmm only worked correctly for model with
+	time-dummies. It now deals correctly for model with 'individual'
+	effects
+
+	* the rda files are now compressed
