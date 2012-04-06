@@ -2,10 +2,12 @@ pht <-  function(formula, data, subset, na.action, index = NULL, ...){
   data.name <- paste(deparse(substitute(data)))
   cl <- match.call(expand.dots = TRUE)
   mf <- match.call()
+  # compute the model.frame using plm with model = NA
   mf[[1]] <- as.name("plm")
   mf$model <- NA
   data <- eval(mf,parent.frame())
-  # estimate the within model without instrument
+  # estimate the within model without instrument and extract the fixed
+  # effects
   old.formula <- formula
   formula <- pFormula(formula)
   formula <- formula(formula, rhs = 1, lhs = 1)
@@ -14,58 +16,57 @@ pht <-  function(formula, data, subset, na.action, index = NULL, ...){
   within <- eval(mf, parent.frame())
   fixef <- fixef(within)
   formula <- old.formula
-  index <- attr(data, "index")
-  id <- index[[1]]
-  time <- index[[2]]
+  id <- index(data, "id")
+  time <- index(data, "time")
   pdim <- pdim(data)
   balanced <- pdim$balanced
   T <- pdim$nT$T
   n <- pdim$nT$n
   N <- pdim$nT$N
   Ti <- pdim$Tint$Ti
+  
   # get the typology of the variables
   formula <- pFormula(old.formula)
   X <- model.matrix(formula, data, rhs = 1, model = "within")
   W <- model.matrix(formula, data, rhs = 2, model = "within")
+
   exo.all <- colnames(W)
-  tot.all <- colnames(X)
-  tot.cst <- attr(X,"constant")
-  tot.var <- tot.all[!(tot.cst %in% tot.all)]
-  exo.cst <- attr(W,"constant")
+  all.all <- colnames(X)
+  edo.all <- all.all[!(all.all %in% exo.all)]
+  all.cst <- attr(X, "constant")
+  exo.cst <- attr(W, "constant")
   exo.var <- exo.all[!(exo.all %in% exo.cst)]
-  end.cst <- tot.cst[!(tot.cst %in% exo.cst)]
-  end.var <- tot.var[!(tot.var %in% exo.var)]
+  edo.cst <- all.cst[!(all.cst %in% exo.cst)]
+  edo.var <- edo.all[!(edo.all %in% edo.cst)]
   
-  if (length(end.cst) > length(exo.var)){
+  if (length(edo.cst) > length(exo.var)){
     stop(" The number of endogenous time-invariant variables is greater
            than the number of exogenous time varying variables\n")
     }
   
   X <- model.matrix(formula, data, model = "pooling", rhs = 1, lhs = 1)
   if (length(exo.var) > 0) XV <- X[ , exo.var, drop = FALSE] else XV <- NULL
-  if (length(end.var) > 0) NV <- X[ , end.var, drop = FALSE] else NV <- NULL
+  if (length(edo.var) > 0) NV <- X[ , edo.var, drop = FALSE] else NV <- NULL
   if (length(exo.cst) > 0) XC <- X[ , exo.cst, drop = FALSE] else XC <- NULL
-  if (length(end.cst) > 0) NC <- X[ , end.cst, drop = FALSE] else NC <- NULL
+  if (length(edo.cst) > 0) NC <- X[ , edo.cst, drop = FALSE] else NC <- NULL
+
+  if (length(all.cst) !=0 )
+    zo <- twosls(fixef[as.character(id)], cbind(XC,NC), cbind(XC,XV), TRUE)
+  else zo <- lm(fixef~1)
 
   sigma2 <- list()
   sigma2$one <- 0
   sigma2$idios <- deviance(within)/(N-n)
-  if (length(tot.cst) !=0 ){
-    zo <- twosls(fixef[as.character(id)],cbind(XC,NC),cbind(XC,XV),TRUE)
-  }
-  else{
-    zo <- lm(fixef~1)
-  }
-  sigma2$one <- deviance(zo)/n
+  sigma2$one <- deviance(zo) / n
   
   if(balanced){
-    sigma2$id <- (sigma2$one-sigma2$idios)/T
-    theta <- 1-sqrt(sigma2$idios/sigma2$one)
+    sigma2$id <- (sigma2$one - sigma2$idios)/ T
+    theta <- 1 - sqrt(sigma2$idios / sigma2$one)
   }
   else{
-    barT <- n/sum(1/Ti)
-    sigma2$id <- (sigma2$one-sigma2$idios)/barT
-    theta <- 1-sqrt(sigma2$idios/(sigma2$idios+Ti*sigma2$id))
+    barT <- n / sum(1 / Ti)
+    sigma2$id <- (sigma2$one - sigma2$idios) / barT
+    theta <- 1 - sqrt(sigma2$idios / (sigma2$idios + Ti * sigma2$id))
     theta <- theta[as.character(id)]
   }
 
@@ -83,9 +84,9 @@ pht <-  function(formula, data, subset, na.action, index = NULL, ...){
   K <- length(data)
   ve <- lev2var(data)
   varlist <- list(xv = ve[exo.var],
-                  nv = ve[end.var],
+                  nv = ve[edo.var],
                   xc = ve[exo.cst[exo.cst != "(Intercept)"]],
-                  nc = ve[end.cst]
+                  nc = ve[edo.cst]
                   )
   varlist <- lapply(varlist, function(x){ names(x) <- NULL; x})
 

@@ -130,6 +130,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
   if (row.names){
     attr(x, "row.names") <- paste(index[[1]],index[[2]],sep="-") 
   }
+  class(index) <- c("pindex", "data.frame")
   attr(x, "index") <- index
   class(x) <- c("pdata.frame", "data.frame")
   x
@@ -163,8 +164,19 @@ print.pdata.frame <- function(x, ...){
   print(x, ...)
 }
 
+"$<-.pdata.frame" <- function(x, name, value){
+  if (class(value)[1] == "pseries"){
+    if (length(class(value)) == 1) value <- unclass(value)
+    else class(value) <- class(value)[-1]
+    attr(value, "index") <- NULL
+  }
+  "$<-.data.frame"(x, name, value)
+}
 
 
+"$.pdata.frame" <- function(x,y){
+  "[["(x, paste(as.name(y)))
+}
 
 
 ###################################################
@@ -280,7 +292,10 @@ Tapply.pseries <- function(x, effect = c("individual", "time"), func, ...){
                  "individual"= index[[1]],
                  "time"= index[[2]]
                  )
-  Tapply.default(x, effect, func, ...)
+  z <- Tapply.default(x, effect, func, ...)
+  attr(z, "index") <- index
+  class(z) <- c("pseries", class(z))
+  z
 }
 
 Tapply.matrix <- function(x, effect, func, ...){
@@ -468,5 +483,47 @@ lag.pseries <- function(x, k = 1, ...){
     rval <- alag(x, k)
   }
   return(rval)
+}
+  
 
+### Index methods
+
+
+index.pindex <- function(x, which = NULL, ...){
+  if (is.null(which)) which <- names(x)
+  if (! (length(which) %in% c(1, 2))) stop("which should be of length 1 or 2")
+  if (is.numeric(which)){
+    if (! all(which %in% c(1, 2))) stop("if integers, which should contain 1 and/or 2")
+    which <- names(x)[which]
+  }
+  if (length(which) == 2){
+    if (which[1] == "id") which[1] = names(x)[1]
+    if (which[2] == "time") which[2] = names(x)[2]
+    for (i in 1:2){
+      if (! (which[i] %in% names(x))) stop(paste("variable", which[i], "does not exist"))
+    }
+    result <- x[, which]
+  }
+  else{
+    if (which == "id") which = names(x)[1]
+    if (which == "time") which = names(x)[2]
+    if (! (which %in% names(x))) stop(paste("variable", which, "does not exist"))
+    result <- x[, which]
+  }
+  result
+}
+      
+index.pdata.frame <- function(x, which = NULL, ...){
+  anindex <- attr(x, "index")
+  index(x = anindex, which = which)
+}
+
+index.pseries <- function(x, which = NULL, ...){
+  anindex <- attr(x, "index")
+  index(x = anindex, which = which)
+}
+  
+index.panelmodel <- function(x, which = NULL, ...){
+  anindex <- attr(x$model, "index")
+  index(x = anindex, which = which)
 }
