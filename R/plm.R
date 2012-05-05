@@ -42,17 +42,18 @@ plm <-  function(formula, data, subset, na.action,
 
   # length(formula)[2] because the length is now a vector of length 2
   if (length(formula)[2] == 2) formula <- expand.formula(formula)
+
   # eval the model.frame
   cl <- match.call()
-  mf <- match.call(expand.dots=FALSE)
-  m <- match(c("formula", "data", "subset", "na.action"),names(mf),0)
-  mf <- mf[c(1,m)]
+  mf <- match.call(expand.dots = FALSE)
+  m <- match(c("formula", "data", "subset", "na.action"), names(mf), 0)
+  mf <- mf[c(1, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1]] <- as.name("model.frame")
   mf$formula <- formula
   mf$data <- data
   # eval in parent.frame() doesn't work
-#  data <- eval(mf, sys.frame(which = nframe)) 
+  #  data <- eval(mf, sys.frame(which = nframe)) 
   data <- eval(mf, parent.frame())
   # return the model.frame or estimate the model
   if (is.na(model)){
@@ -91,18 +92,18 @@ plm.fit <- function(formula, data, model, effect, random.method, inst.method){
   if (length(formula)[2] == 2){
     W <- model.matrix(formula, data, rhs = 2, model = model, effect = effect, theta = theta)
     if (model == "random"){
-      X <- X/sqrt(sigma2$idios)
-      y <- y/sqrt(sigma2$idios)
+      X <- X / sqrt(sigma2$idios)
+      y <- y / sqrt(sigma2$idios)
       Wb <- model.matrix(formula, data, rhs = 2, model = "Between", effect = effect)
       Ww <- model.matrix(formula, data, rhs = 2, model = "within", effect = effect)
       if (ncol(Wb) < ncol(X)) stop("Insufficient number of instruments\n")
-      if(inst.method == "baltagi") W <- cbind(Ww,Wb)
+      if(inst.method == "baltagi") W <- cbind(Ww, Wb)
       if (! is.balanced) sig2one <- sigma2$one[as.character(cond)] else sig2one <- sigma2$one
       if(inst.method == "bvk"){
         # to construct the W matrix, we must take into account the fact that 
         # ncol(Wb) >= ncol(Ws)
-        W <- Wb/sqrt(sig2one)
-        W[,colnames(Ww)] <- W[,colnames(Ww)]+Ww/sqrt(sigma2$idios)
+        W <- Wb / sqrt(sig2one)
+        W[, colnames(Ww)] <- W[, colnames(Ww)]+ Ww / sqrt(sigma2$idios)
       }
     }
     if (ncol(W) < ncol(X)) stop("insufficient number of instruments")

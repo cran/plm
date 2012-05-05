@@ -1,15 +1,18 @@
 Package: plm
-Version: 1.2-8
-Date: 2011-12-23
+Version: 1.2-10
+Date: 2012-04-06
 Title: Linear Models for Panel Data
-Author: Yves Croissant <yves.croissant@univ-reunion.fr>, Giovanni Millo <Giovanni_Millo@Generali.com>
+Author: Yves Croissant <yves.croissant@univ-reunion.fr>, Giovanni Millo
+        <Giovanni_Millo@Generali.com>
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Depends: R (>= 2.10), stats, bdsmatrix, nlme, Formula (>= 0.2-0), MASS,
-        sandwich
-Suggests: lmtest, car, AER
+        sandwich, zoo
+Suggests: lattice, lmtest, car, AER
 Description: A set of estimators and tests for panel data.
 License: GPL (>= 2)
 URL: http://www.R-project.org
-Packaged: 2011-12-23 17:58:40 UTC; yves
 Repository: CRAN
-Date/Publication: 2011-12-24 12:21:32
+Repository/R-Forge/Project: plm
+Repository/R-Forge/Revision: 82
+Packaged: 2012-04-12 16:23:37 UTC; rforge
+Date/Publication: 2012-05-05 06:18:27
