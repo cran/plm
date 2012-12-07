@@ -1,6 +1,6 @@
 Package: plm
-Version: 1.2-10
-Date: 2012-04-06
+Version: 1.3-1
+Date: 2012-12-07
 Title: Linear Models for Panel Data
 Author: Yves Croissant <yves.croissant@univ-reunion.fr>, Giovanni Millo
         <Giovanni_Millo@Generali.com>
@@ -13,6 +13,7 @@ License: GPL (>= 2)
 URL: http://www.R-project.org
 Repository: CRAN
 Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 82
-Packaged: 2012-04-12 16:23:37 UTC; rforge
-Date/Publication: 2012-05-05 06:18:27
+Repository/R-Forge/Revision: 90
+Repository/R-Forge/DateTimeStamp: 2012-12-12 08:32:32
+Date/Publication: 2012-12-13 07:44:56
+Packaged: 2012-12-12 11:15:56 UTC; rforge
