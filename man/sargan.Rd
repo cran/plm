@@ -8,15 +8,21 @@ A test of overidentifying restrictions for models estimated by GMM.
 }
 
 \usage{
-sargan(object)
+sargan(object, weights = c("twosteps", "onestep"))
 }
 
 \arguments{
-\item{object}{an object of class \code{"pgmm"}.}
+  \item{object}{an object of class \code{"pgmm"},}
+  \item{weights}{the weighting matrix to be used for the computation of
+  the test.}
 }
 
-\details{
-The Hansen--Sargan test calculates the quadratic form of the moment restrictions that is minimized while computing the GMM estimator. It follows asymptotically a chi-square distribution with number of degrees of freedom equal to the difference between the number of moment conditions and the number of coefficients.
+\details{  
+The Hansen--Sargan test calculates the quadratic form of the moment
+restrictions that is minimized while computing the GMM estimator. It
+follows asymptotically a chi-square distribution with number of degrees
+of freedom equal to the difference between the number of moment
+conditions and the number of coefficients.
 }
 
 \value{
