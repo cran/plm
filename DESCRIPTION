@@ -1,19 +1,30 @@
 Package: plm
-Version: 1.3-1
-Date: 2012-12-07
+Version: 1.4-0
+Date: 2013-12-24
 Title: Linear Models for Panel Data
-Author: Yves Croissant <yves.croissant@univ-reunion.fr>, Giovanni Millo
-        <Giovanni_Millo@Generali.com>
-Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
-Depends: R (>= 2.10), stats, bdsmatrix, nlme, Formula (>= 0.2-0), MASS,
-        sandwich, zoo
-Suggests: lattice, lmtest, car, AER
+Authors@R: c(person(given = "Yves", family = "Croissant", role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
+             person(given = "Giovanni", family = "Millo", role = "aut", email = "Giovanni_Millo@Generali.com"),
+	     person(given = "Arne", family = "Henningsen", role = "ctb", email = "arne.henningsen@googlemail.com"),
+	     person(given = "Ott", family = "Toomet", role = "ctb", email = "otoomet@gmail.com"),
+	     person(given = "Christian", family = "Kleiber", role = "ctb", email = "Christian.Kleiber@unibas.ch"), 
+	     person(given = "Achim", family = "Zeileis", role = "ctb", email = "Achim.Zeileis@R-project.org"))
+Depends: R (>= 2.10), Formula (>= 0.2-0), stats
+Imports: MASS, bdsmatrix, zoo, nlme, sandwich
+Suggests: lattice, car, AER, lmtest
 Description: A set of estimators and tests for panel data.
 License: GPL (>= 2)
 URL: http://www.R-project.org
+Author: Yves Croissant [aut, cre],
+  Giovanni Millo [aut],
+  Arne Henningsen [ctb],
+  Ott Toomet [ctb],
+  Christian Kleiber [ctb],
+  Achim Zeileis [ctb]
+Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
 Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 90
-Repository/R-Forge/DateTimeStamp: 2012-12-12 08:32:32
-Date/Publication: 2012-12-13 07:44:56
-Packaged: 2012-12-12 11:15:56 UTC; rforge
+Repository/R-Forge/Revision: 102
+Repository/R-Forge/DateTimeStamp: 2013-12-28 08:20:15
+Date/Publication: 2013-12-28 16:01:54
+Packaged: 2013-12-28 11:15:51 UTC; rforge
+NeedsCompilation: no

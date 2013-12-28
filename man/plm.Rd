@@ -1,7 +1,9 @@
 \name{plm}
 \alias{plm}
+\alias{has.intercept}
 \alias{print.panelmodel}
 \alias{summary.plm}
+\alias{plot.plm}
 \alias{print.summary.plm}
 
 \title{Panel Data Estimators}
@@ -14,17 +16,21 @@ Linear models for panel data estimated using the \code{lm} function on transform
 plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
     model = c("within","random","ht","between","pooling","fd"),
     random.method = c("swar","walhus","amemiya","nerlove", "kinla"),
-    inst.method = c("bvk","baltagi"), index = NULL, ...)
-\method{summary}{plm}(object, ...)
+    inst.method = c("bvk","baltagi"), restrict.matrix = NULL,
+    restrict.rhs = NULL, index = NULL, ...)
+\method{summary}{plm}(object, .vcov = NULL, ...)
 \method{print}{summary.plm}(x, digits = max(3, getOption("digits") - 2),
-    width = getOption("width"), ...)
+    width = getOption("width"), subset = NULL, ...)
+\method{plot}{plm}(x, dx = 1, N = NULL, ...)
 }
 
 \arguments{
   \item{formula}{a symbolic description for the model to be estimated,}
   \item{object,x}{an object of class \code{"plm"},}
   \item{data}{a \code{data.frame},}
-  \item{subset}{see \code{\link{lm}},}
+  \item{subset}{see \code{\link{lm}} for \code{"plm"}, a character or
+    numeric vector indicaing asubset of the table of coefficient to be
+    printed for \code{"print.summary.plm"},}
   \item{na.action}{see \code{\link{lm}},}
   \item{effect}{the effects introduced in the model, one of
   \code{"individual"}, \code{"time"} or \code{"twoways"},}
@@ -35,8 +41,16 @@ plm(formula, data, subset, na.action, effect = c("individual","time","twoways"),
   \code{"amemiya"}, \code{"walhus"}, \code{"nerlove"} and \code{"kinla"},}
   \item{inst.method}{the instrumental variable transformation: one of \code{"bvk"} and \code{"baltagi"},}
   \item{index}{the indexes,}
+  \item{restrict.matrix}{a matrix wich defines linear restrictions on
+    the coefficients,}
+  \item{restrict.rhs}{the right hand side vector of the linear
+  restrictions on the coefficients,}
+  \item{.vcov}{a covariance matrix furnished by the user,}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the printed  output,}
+  \item{dx}{the half-length of the individual lines for the plot
+    method,}
+  \item{N}{the number of individual to plot,}
   \item{\dots}{further arguments.}
 }
 
@@ -128,7 +142,8 @@ in combining cross section with time series data, \emph{Econometrica},
 
 \examples{
 data("Produc", package = "plm")
-zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, index = c("state","year"))
+zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+          data = Produc, index = c("state","year"))
 summary(zz)
 }
 

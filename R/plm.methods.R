@@ -1,14 +1,19 @@
-summary.plm <- function(object,...){
+summary.plm <- function(object, .vcov = NULL, ...){
   object$fstatistic <- Ftest(object, test = "F")
   model <- describe(object, "model")
   effect <- describe(object, "effect")
   object$r.squared <- c(rsq  = r.squared(object),
                         adjrsq = r.squared(object, dfcor = TRUE))
   # construct the table of coefficients
-  std.err <- sqrt(diag(vcov(object)))
+  if (!is.null(.vcov)){
+    std.err <- sqrt(diag(.vcov))
+  }
+  else{
+    std.err <- sqrt(diag(vcov(object)))
+  }
   b <- coefficients(object)
-  z <- b/std.err
-  p <- 2*pt(abs(z), df = object$df.residual, lower.tail=FALSE)
+  z <- b / std.err
+  p <- 2 * pt(abs(z), df = object$df.residual, lower.tail = FALSE)
   object$coefficients <- cbind("Estimate"   = b,
                                "Std. Error" = std.err,
                                "t-value"    = z,
@@ -18,7 +23,7 @@ summary.plm <- function(object,...){
 }
 
 print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
-                              width=getOption("width"),...){
+                              width=getOption("width"), subset = NULL, ...){
   formula <- formula(x)
   has.instruments <- (length(formula)[2] == 2)
   effect <- describe(x, "effect")
@@ -58,7 +63,8 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
   print(sumres(x))
   
   cat("\nCoefficients :\n")
-  printCoefmat(coef(x), digits = digits)
+  if (is.null(subset)) printCoefmat(coef(x), digits = digits)
+  else printCoefmat(coef(x)[subset, , drop = FALSE], digits = digits)
   cat("\n")
   cat(paste("Total Sum of Squares:    ",signif(tss(x),digits),"\n",sep=""))
   cat(paste("Residual Sum of Squares: ",signif(deviance(x),digits),"\n",sep=""))
@@ -226,5 +232,41 @@ describe <- function(x,
          )
 }
          
-  
+plot.plm <- function(x, dx = 1, N = NULL, ...){  
+  subs <- ! is.null(N)
+  mco <- update(x, model = "pooling")
+  re <- update(x, model = "random")
+  be <- update(x, model = "between")
+  n <- pdim(x)$nT$n
+  if (! subs) N <- n
+  ids <- unique(index(x, "id"))
+  if (subs) ids <- ids[sample(1:length(ids), N, replace = FALSE)]
+  sel <- index(x, "id") %in% ids
+  T <- pdim(x)$nT$T
+  cols <- rainbow(N)
+  pts <- sample(1:25, N, replace = TRUE)
+  thex <- as.numeric(model.matrix(x, model = "pooling")[sel, 2])
+  they <- as.numeric(pmodel.response(x, model = "pooling")[sel])
+  plot(thex, they, col = rep(cols, each = T), pch = rep(pts, each = T), ann = FALSE, axes = FALSE)
+  axis(side = 1)
+  axis(side = 2, las = 1)
+  idsel <- as.numeric(index(x, "id")[sel])
+  meanx <- tapply(thex, idsel, mean)
+  meany <- tapply(they, idsel, mean)
+  points(meanx, meany, pch = 19, col = cols, cex = 1.5)
+  beta <- coef(x)
+  alphas <- meany - meanx * beta
+  for (i in 1:N){
+    xmin <- meanx[i] - dx
+    xmax <- meanx[i] + dx
+    ymin <- alphas[i] + beta * xmin
+    ymax <- alphas[i] + beta * xmax
+    lines(c(xmin, xmax), c(ymin, ymax), col = cols[i])
+  }
+  abline(coef(re)[1], coef(re)[2], lty = "dotted")
+  abline(coef(mco), lty = "dashed")
+  abline(coef(be), lty = "dotdash")
+}
+
+
   
