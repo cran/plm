@@ -451,3 +451,75 @@ Changes sinve version 1.3-1
 
 	* a small bug is fixed on the var2lev function to deal the case when there are no factors
 	
+
+Changes since version 1.4-0 
+
+	* substituted vcovHC, vcovSCC with the new framework based on vcovG and wrapper functions
+
+
+Changes since version 1.5-0 
+
+	* added generic building block and high-level wrappers vcovNW and vcovDC to the namespace
+
+	* dataset Parity added to /data
+
+	
+Changes since version 1.5-1
+
+	* fixed "already a pdata.frame" bug in pcdtest.formula 
+
+        * implemented fixef() method for objects estimated by pggls()
+ 
+
+Changes since version 1.5-3
+
+	* reintroduced plm.data eliminated by mistake 
+
+
+Changes since version 1.5-4
+
+	* fixed testErrors.R with plm.data instead of pdata.frame 
+
+
+Changes since version 1.5-5
+
+	* fixed bug affecting vcovG on unbalanced datasets (thx Liviu Andronic) from propagation of NAs in final by-group matrix multiplication  
+
+Changes since version 1.5-6
+
+	* pruned 'require' calls to 'lmtest', 'car', 'lattice and substituted them with proper entries in NAMESPACE
+
+	* temporarily commented problematic examples in pbgtest and pdwtest
+
+Changes since version 1.5-8
+
+	* fixed bugs in pdwtest
+
+Changes since version 1.5-9
+
+	* fixed bug in vcovG for lagged White terms (make pseudo-diagonal in E(u,v)); affected vcovNW
+	
+	* documentation updates (mostly text books of Baltagi and Wooldridge to latest edition,
+	  references are also more specific now)
+	  
+	* pbgtest: fixed/enabled type="F" (F test of lmtest::bgtest) in wrapper pbgtest() and
+	  fixed/enabled passing of argument order.by= [additional argument in
+	  lmtest::bgtest] [tests/testpbgtest.R added, docs updated and extended]
+	
+	* phtest( , method="aux") [Hausman regression-based test]: fixed bug when data= contains more cases than
+	  there are used in model estimation (due to NA values); avoid calc. of RE model a second time;
+	  phtest now also works with between model correctly (fixed degrees of freedom)
+	  tests/test_phtest_Hausman_regression.R added
+	  
+	* plm(): original row names of inputted data are preserved in plm_object$model,
+	  so functions like pmodel.response(), model.frame(), model.matrix(), residuals()
+	  return the original row.names (and thus fancy rownames if those were to be computed by pdata.frame);
+	  as.data.frame.pdata.frame(): respects row.names argument
+
+Changes since version 1.5-11
+
+	* added RiceFarms to datasets to eliminate non-CRAN dependencies, (temporarily) removed 'pder' from suggested, uncommented (fixed) example in pdwtest.Rd
+
+Changes since version 1.5-12
+
+	* added importFrom as per CRAN check for submission.

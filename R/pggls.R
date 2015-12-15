@@ -72,7 +72,7 @@ pggls <- function(formula, data, subset, na.action,
         groupsdim <- Ti
     }
     myord <- order(cond, other)
-    X <- model.matrix(plm.model)[myord, ]
+    X <- model.matrix(plm.model)[myord, , drop=FALSE]
     y <- pmodel.response(plm.model)[myord]
 
     resid <- resid(lm.fit(X,y))
@@ -148,7 +148,8 @@ pggls <- function(formula, data, subset, na.action,
     pmodel$model.name <- model
     fullGLS <- list(coefficients = coef, residuals = residuals,
         fitted.values = fitted.values, vcov = vcov, df.residual = df.residual,
-        model = model.frame(plm.model), sigma = subOmega, call = cl)
+        model = model.frame(plm.model), sigma = subOmega, call = cl,
+        formula = plm.model$formula )
     fullGLS <- structure(fullGLS, pdim = pdim, pmodel = pmodel)
     class(fullGLS) <- c("pggls", "panelmodel")
     fullGLS
@@ -197,3 +198,6 @@ print.summary.pggls <- function(x,digits=max(3, getOption("digits") - 2), width 
   invisible(x)
 }
 
+residuals.pggls <- function(object, ...) {
+    return(pres(object))
+}

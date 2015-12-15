@@ -9,15 +9,23 @@
   correlation.
   }
 \usage{
-\method{vcovSCC}{plm}(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
-                              maxlag=NULL, ...)
+\method{vcovSCC}{plm}(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
+                      cluster="time",
+                      maxlag=NULL,
+                      inner=c("cluster","white"),
+                      wj=function(j, maxlag) 1-j/(maxlag+1),
+                      ...)
 }
 
 \arguments{
   \item{x}{an object of class \code{"plm"}}
-  \item{type}{one of \code{"HC0","HC1","HC2","HC3","HC4"},}
+  \item{type}{one of \code{"HC0"}, \code{"sss"}, \code{"HC1"}, \code{"HC2"}, \code{"HC3"}, \code{"HC4"},}
+  \item{cluster}{switch for vcovG; set at \code{"time"} here,}
   \item{maxlag}{either \code{NULL} or a positive integer specifying the
   maximum lag order before truncation}
+  \item{inner}{the function to be applied to the residuals inside the 
+  sandwich: \code{"cluster"} for SCC, \code{"white"} for Newey-West,}
+  \item{wj}{weighting function to be applied to lagged terms,}
   \item{...}{further arguments}.
 }
 
@@ -32,7 +40,7 @@ method, which is consistent with cross-sectional and serial correlation
 in a T-asymptotic setting and irrespective of the N dimension. The use
 with random effects models is undocumented.
 
-Weighting schemes are analogous to those in \code{vcovHC} in package \code{sandwich} and are justified theoretically (although in the context of the standard linear model) by MacKinnon and White (1985) and Cribari-Neto (2004) (see Zeileis, 2004).
+Weighting schemes are analogous to those in \code{vcovHC} in package \code{sandwich} and are justified theoretically (although in the context of the standard linear model) by MacKinnon and White (1985) and Cribari-Neto (2004) (see Zeileis (2004)).
 
 The main use of \code{vcovSCC} is to be an argument to other functions,
 e.g. for Wald-type testing: as \code{vcov} to \code{coeftest()},
@@ -41,16 +49,16 @@ e.g. for Wald-type testing: as \code{vcov} to \code{coeftest()},
 
 }
 
-\author{Giovanni Millo, partially ported from Daniel Hoechle's Stata code}
+\author{Giovanni Millo, partially ported from Daniel Hoechle's (2007) Stata code}
 
 \references{
  Driscoll, J.C. and Kraay, A.C. (1998) Consistent Covariance Matrix
  Estimation with Spatially Dependent Panel Data. \emph{Review of
-   Economics and Statistics} \bold{80}, 549--560.
+   Economics and Statistics} \bold{80}, pp. 549--560.
 
  Hoechle, D. (2007) Robust standard errors for panel regressions with
   cross-sectional dependence. \emph{Stata Journal}, \bold{7(3)},
-  281--312.
+  pp. 281--312.
   }
 
 \examples{

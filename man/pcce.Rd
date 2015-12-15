@@ -29,7 +29,7 @@ pcce(formula, data, subset, na.action,
  \item{model}{one of \code{c("mg","p")}, selects Mean Groups vs. Pooled CCE model,}
  \item{residuals}{one of \code{c("defactored", "standard")}, allows for
  returning different kinds of residuals,}
- \item{index}{the indexes, see \code{\link{plm.data}},}
+ \item{index}{the indexes, see \code{\link{pdata.frame}},}
  \item{trend}{logical specifying whether an individual-specific trend has to be included,}
  \item{digits}{digits,}
  \item{width}{the maximum length of the lines in the print output,}
@@ -68,7 +68,7 @@ intercepts and possibly trends.
 \references{
 G. Kapetanios, M. Hashem Pesaran, T. Yamagata (2011), Panels with
 non-stationary multifactor error structures, \emph{Journal of
-  Econometrics}, \bold{160(2)}, 326--348. 
+  Econometrics}, \bold{160(2)}, pp. 326--348. 
 }
 
 \examples{

@@ -26,14 +26,14 @@ pvcm(formula, data, subset, na.action, effect = c("individual","time"),
   \item{effect}{the effects introduced in the model: one of
     \code{"individual"}, \code{"time"},}
   \item{model}{one of \code{"within"}, \code{"random"},}
-  \item{index}{the indexes, see \code{\link{plm.data}},}
+  \item{index}{the indexes, see \code{\link{pdata.frame}},}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print output,}
   \item{...}{further arguments.}
 }
 
 \details{
-\code{pvcm} estimates variable coefficients models. Time or individual effects are introduced, respectively, if   \code{effect="time"} or \code{effect="individual"} (the default value). 
+\code{pvcm} estimates variable coefficients models. Time or individual effects are introduced, respectively, if \code{effect="time"} or \code{effect="individual"} (the default value). 
   
 Coefficients are assumed to be fixed if \code{model="within"} and
 random if \code{model="random"}. In the first case, a different

@@ -66,20 +66,20 @@ print.summary.plm <- function(x,digits= max(3, getOption("digits") - 2),
   if (is.null(subset)) printCoefmat(coef(x), digits = digits)
   else printCoefmat(coef(x)[subset, , drop = FALSE], digits = digits)
   cat("\n")
-  cat(paste("Total Sum of Squares:    ",signif(tss(x),digits),"\n",sep=""))
-  cat(paste("Residual Sum of Squares: ",signif(deviance(x),digits),"\n",sep=""))
-  cat(paste("R-Squared      : ", signif(x$r.squared[1], digits),"\n"))
-  cat("      Adj. R-Squared : ", signif(x$r.squared[2], digits),"\n")
+  cat(paste("Total Sum of Squares:    ", signif(tss(x),digits),     "\n", sep=""))
+  cat(paste("Residual Sum of Squares: ", signif(deviance(x),digits),"\n", sep=""))
+  cat(paste("R-Squared:      ", signif(x$r.squared[1], digits),     "\n", sep=""))
+  cat(paste("Adj. R-Squared: ", signif(x$r.squared[2], digits),     "\n", sep=""))
   fstat <- x$fstatistic
   if (names(fstat$statistic) == "F"){
     cat(paste("F-statistic: ",signif(fstat$statistic),
               " on ",fstat$parameter["df1"]," and ",fstat$parameter["df2"],
-              " DF, p-value: ",format.pval(fstat$p.value,digits=digits),"\n",sep=""))
+              " DF, p-value: ",format.pval(fstat$p.value,digits=digits), "\n", sep=""))
   }
   else{
     cat(paste("Chisq: ",signif(fstat$statistic),
               " on ",fstat$parameter,
-              " DF, p-value: ",format.pval(fstat$p.value,digits=digits),"\n",sep=""))
+              " DF, p-value: ",format.pval(fstat$p.value,digits=digits), "\n", sep=""))
     
   }
   invisible(x)
@@ -188,13 +188,16 @@ r.squared <- function(object, model = NULL,
 }
   
 
-residuals.plm <- function(object, model = NULL, ...){
+residuals.plm <- function(object, model = NULL, effect = NULL, ...){
   fittedmodel <- describe(object, "model")
+  if (is.null(effect)) effect <- describe(object, "effect")
   if (is.null(model)) res <- object$residuals
   else{
     beta <- coef(object)
-    effect <- describe(object, "effect")
+    
     X <- model.matrix(object, model = model, effect = effect)
+    cstX <- attr(model.matrix(object, model = "within", effect = effect), "constant")
+    X <- X[, ! (colnames(X) %in% cstX)]
     y <- pmodel.response(object, model = model, effect = effect)
     if (model == "within" & fittedmodel != "within") beta <- beta[-1]
     if (model != "within" & fittedmodel == "within"){
@@ -232,41 +235,56 @@ describe <- function(x,
          )
 }
          
-plot.plm <- function(x, dx = 1, N = NULL, ...){  
-  subs <- ! is.null(N)
-  mco <- update(x, model = "pooling")
-  re <- update(x, model = "random")
-  be <- update(x, model = "between")
-  n <- pdim(x)$nT$n
-  if (! subs) N <- n
-  ids <- unique(index(x, "id"))
-  if (subs) ids <- ids[sample(1:length(ids), N, replace = FALSE)]
-  sel <- index(x, "id") %in% ids
-  T <- pdim(x)$nT$T
-  cols <- rainbow(N)
-  pts <- sample(1:25, N, replace = TRUE)
-  thex <- as.numeric(model.matrix(x, model = "pooling")[sel, 2])
-  they <- as.numeric(pmodel.response(x, model = "pooling")[sel])
-  plot(thex, they, col = rep(cols, each = T), pch = rep(pts, each = T), ann = FALSE, axes = FALSE)
-  axis(side = 1)
-  axis(side = 2, las = 1)
-  idsel <- as.numeric(index(x, "id")[sel])
-  meanx <- tapply(thex, idsel, mean)
-  meany <- tapply(they, idsel, mean)
-  points(meanx, meany, pch = 19, col = cols, cex = 1.5)
-  beta <- coef(x)
-  alphas <- meany - meanx * beta
-  for (i in 1:N){
-    xmin <- meanx[i] - dx
-    xmax <- meanx[i] + dx
-    ymin <- alphas[i] + beta * xmin
-    ymax <- alphas[i] + beta * xmax
-    lines(c(xmin, xmax), c(ymin, ymax), col = cols[i])
-  }
-  abline(coef(re)[1], coef(re)[2], lty = "dotted")
-  abline(coef(mco), lty = "dashed")
-  abline(coef(be), lty = "dotdash")
+plot.plm <- function(x, dx = 0.2, N = NULL, seed = 1,
+                     within = TRUE, pooling = TRUE,
+                     between = FALSE, random = FALSE, ...){
+    set.seed(seed)# 8 est bien pour beertax
+    subs <- ! is.null(N)
+    x <- update(x, model = "within")
+    mco <- update(x, model = "pooling")
+    if (random) re <- update(x, model = "random")
+    if (between) be <- update(x, model = "between")
+    n <- pdim(x)$nT$n
+    if (! subs) N <- n
+    ids <- unique(index(x, "id"))
+    if (subs) ids <- ids[sample(1:length(ids), N, replace = FALSE)]
+    sel <- index(x, "id") %in% ids
+    T <- pdim(x)$nT$T
+    cols <- rainbow(N)
+    pts <- sample(1:25, N, replace = TRUE)
+    thex <- as.numeric(model.matrix(x, model = "pooling")[sel, 2])
+    they <- as.numeric(pmodel.response(x, model = "pooling")[sel])
+#    plot(thex, they, col = rep(cols, each = T), pch = rep(pts, each = T), ann = FALSE, axes = FALSE)
+#    axis(side = 1)
+#    axis(side = 2, las = 1)
+    plot(thex, they, col = rep(cols, each = T), pch = rep(pts, each = T), ann = FALSE, las = 1)
+    idsel <- as.numeric(index(x, "id")[sel])
+    meanx <- tapply(thex, idsel, mean)
+    meany <- tapply(they, idsel, mean)
+    points(meanx, meany, pch = 19, col = cols, cex = 1.5)
+    if (within){
+        beta <- coef(x)
+        alphas <- meany - meanx * beta
+        dx <- dx * (max(thex) - min(thex))
+        for (i in 1:N){
+            xmin <- meanx[i] - dx
+            xmax <- meanx[i] + dx
+            ymin <- alphas[i] + beta * xmin
+            ymax <- alphas[i] + beta * xmax
+            lines(c(xmin, xmax), c(ymin, ymax), col = cols[i])
+        }
+    }
+    if(random) abline(coef(re)[1], coef(re)[2], lty = "dotted")
+    if(pooling) abline(coef(mco), lty = "dashed")
+    if(between) abline(coef(be), lty = "dotdash")
+    # where to put the legends, depends on the sign of the ols slope
+    modploted <- c(random, pooling, between, within)
+    if (sum(modploted)){
+        poslegend <- ifelse(beta > 0, "topleft", "topright")
+        ltylegend <- c("dotted", "dashed", "dotdash", "solid")[modploted]
+        leglegend <- c("random", "pooling", "between", "within")[modploted]
+        legend(poslegend, lty = ltylegend, legend = leglegend)
+    }
 }
-
 
   

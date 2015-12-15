@@ -19,11 +19,11 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
     if (length(na.serie) == 1)
       cat(paste("series ", na.serie, " is NA and has been removed\n", sep = ""))
     else
-      cat(paste("series ", paste(na.serie, collapse = ","), " are NA and have been removed\n", sep = ""))
+      cat(paste("series ", paste(na.serie, collapse = ", "), " are NA and have been removed\n", sep = ""))
   }
-  x <- x[, ! na.check]
+  x <- x[, !na.check]
   
-  # check and remove cst series
+  # check and remove constant series
   cst.check <- sapply(x, function(x) var(as.numeric(x), na.rm = TRUE)==0)
   # following line : bug fixed thank's to Marciej Szelfer 
   cst.check <- cst.check | is.na(cst.check)
@@ -33,10 +33,10 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
       cat(paste("series ", cst.serie, " is constant and has been removed\n", sep = ""))
     }
     else{
-      cat(paste("series ", paste(cst.serie, collapse=", x")," are constants and have been removed\n", sep = ""))
+      cat(paste("series ", paste(cst.serie, collapse = ", "), " are constants and have been removed\n", sep = ""))
     }
   }
-  x <- x[,!cst.check]
+  x <- x[, !cst.check]
   
   # if index is NULL, both id and time are NULL
   if (is.null(index)){
@@ -422,13 +422,24 @@ print.summary.pseries <- function(x, ...){
 as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, ...){
   index <- attr(x, "index")
   x <- lapply(x,
-              function(z){
-                attr(z, "index") <- index
-                class(z) <- c("pseries", class(z))
-                z
-              }
+                function(z){
+                  attr(z, "index") <- index
+                  class(z) <- c("pseries", class(z))
+                  return(z)
+                }
               )
-  data.frame(x)
+  
+  if (is.null(row.names) || row.names == FALSE) {
+    x <- data.frame(x)
+  } else {
+      if (row.names == TRUE) { # set fancy row names
+        x <- data.frame(x)
+        attr(x, "row.names") <- paste(index[[1]], index[[2]], sep="-") 
+      }
+    ## if row.names is a character vector, row.names could also be passed here to base::data.frame , see ?base::data.frame
+  } 
+  
+  return(x)
 }
 
 
@@ -532,3 +543,103 @@ index.panelmodel <- function(x, which = NULL, ...){
   anindex <- attr(x$model, "index")
   index(x = anindex, which = which)
 }
+
+
+
+pseries2pdata <- function(x) {
+  ## transforms a pseries in a dataframe with the indices as regular columns
+  indices <- attr(x, "index")
+  vx <- as.numeric(x)
+  px <- cbind(indices, vx)
+  dimnames(px)[[2]] <- c("ind","tind",deparse(substitute(x)))
+  return(pdata.frame(px, index=c("ind","tind")))
+}
+
+pmerge <- function(x, y, ...) {
+  ## transf. if pseries
+  if("pseries" %in% class(x)) x <- pseries2pdata(x)
+  if("pseries" %in% class(y)) y <- pseries2pdata(y)
+
+  z <- merge(data.frame(x), data.frame(y), by.x=dimnames(x)[[2]][1:2],
+             by.y=dimnames(y)[[2]][1:2], ...)
+
+  return(z)
+}
+
+
+## plots a panel series by time index
+##
+## can supply any panel function, e.g. a loess smoother
+## > mypanel<-function(x,...) {
+## + panel.xyplot(x,...)
+## + panel.loess(x, col="red", ...)}
+## >
+## > plot(pres(mod), panel=mypanel)
+
+plot.pseries <- function(x, plot=c("lattice", "superposed"),
+                         scale=FALSE, transparency=TRUE,
+                         col="blue", lwd=1, ...) {
+
+    if(scale) {scalefun <- function(x) scale(x)
+               } else {
+                   scalefun <- function(x) return(x)}
+
+    nx <- as.numeric(x)
+    ind <- attr(x, "index")[[1]]
+    tind <- attr(x, "index")[[2]] # possibly as.numeric():
+                                  # activates autom. tick
+                                  # but loses time labels
+
+    xdata <- data.frame(nx=nx, ind=ind, tind=tind)
+
+    switch(match.arg(plot),
+           lattice={
+
+               ##require(lattice) # make a ggplot2 version
+               xyplot(nx~tind|ind, data=xdata, type="l", col=col, ...)
+
+           }, superposed={
+
+                   ylim <- c(min(tapply(scalefun(nx), ind, min, na.rm=TRUE)),
+                             max(tapply(scalefun(nx), ind, max, na.rm=TRUE)))
+                   unind <- unique(ind)
+                   nx1 <- nx[ind==unind[1]]
+                   tind1 <- as.numeric(tind[ind==unind[1]])
+
+                   ## plot empty plot to provide frame
+                   plot(NA, xlim=c(min(as.numeric(tind)),
+                            max(as.numeric(tind))),
+                        ylim=ylim, xlab="", ylab="", xaxt="n", ...)
+                        #x=tind1, y=scalefun(nx1), ylim=ylim, ...)
+
+                   axis(1, at=as.numeric(unique(tind)),
+                        labels=unique(tind))
+
+                   ## determine lwd and transparency level as a function
+                   ## of n
+                   if(transparency) {
+                       alpha <- 5/length(unind)
+                       col <- heat.colors(1, alpha=alpha)
+                       lwd <- length(unind)/10
+                   }
+
+                   ## plot lines (notice: tind. are factors, so they
+                   ## retain the correct labels which would be lost if
+                   ## using as.numeric
+                   for(i in 1:length(unind)) {
+                       nxi <- nx[ind==unind[i]]
+                       tindi <- tind[ind==unind[i]]
+                       lines(x=tindi, y=scalefun(nxi),
+                             col=col, lwd=lwd, ...)
+                       }
+
+               })
+
+}
+
+# nobs() function to extract total number of observations used for estimating the panelmodel
+nobs.panelmodel <- function(object, ...) {
+  if (inherits(object, "plm") | inherits(object, "panelmodel")) return(pdim(object)$nT$N)
+    else stop("Input x needs to be of class 'plm' (or 'panelmodel'), i. e. a panel model estimated by plm()")
+}
+

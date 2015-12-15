@@ -1,17 +1,33 @@
-export(plm, pvcm, pgmm, pggls, pht, pcce, pmg, plm.data, plmtest, phtest, pFtest, 
+export(plm, pvcm, pgmm, pggls, pht, pcce, pmg, plmtest, phtest, pFtest, 
        pvar, pdim, pooltest, dynformula, sargan, mtest, ercomp, pvcovHC,
        pbsytest, pdwtest, pbgtest, pbltest, pwartest, pwtest, pwfdtest, pcdtest,
-       pdata.frame, between, Between, Within, pFormula, pmodel.response,
-       purtest, cipstest, vcovBK, vcovSCC, r.squared, has.intercept,
-       index, fixef, vcovHC)
+       plm.data, pdata.frame, between, Between, Within, pFormula, pmodel.response,
+       purtest, cipstest, vcovBK, vcovSCC, r.squared, has.intercept, 
+       index, fixef, vcovHC, vcovDC, vcovNW, vcovG, piest, aneweytest)
+
 import("Formula")
 importFrom("stats", "lag")
+importFrom("stats", "nobs")
 importFrom("bdsmatrix", "bdsmatrix")
 importFrom("sandwich", "vcovHC")
 importFrom("MASS", "ginv")
 importFrom("zoo", "index")
 importFrom("nlme", "fixef")
 importFrom("nlme", "lme")
+importFrom("lmtest", "bgtest")
+importFrom("lmtest", "dwtest")
+importFrom("car", "linearHypothesis")
+importFrom("lattice", "xyplot")
+#
+importFrom("grDevices", "heat.colors", "rainbow")
+importFrom("graphics", "abline", "axis", "barplot", "legend", "lines",
+           "plot", "points")
+importFrom("stats", "approx", "as.formula", "coef", "coefficients",
+           "cor", "delete.response", "deviance", "df.residual",
+           "fitted", "formula", "lm", "lm.fit", "model.frame",
+           "model.matrix", "model.response", "na.omit", "pchisq", "pf",
+           "pnorm", "printCoefmat", "pt", "resid", "residuals",
+           "terms", "update", "var", "vcov")
 
 #pFormula
 S3method("model.frame", "pFormula")
@@ -39,6 +55,8 @@ S3method("pdim", "pdata.frame")
 S3method("pdim", "panelmodel")
 S3method("pdim", "default")
 S3method("print", "pdim")
+# nobs
+S3method("nobs", "panelmodel")
 # pvar
 S3method("pvar", "data.frame")
 S3method("pvar", "pdata.frame")
@@ -73,17 +91,24 @@ S3method("print", "summary.pvcm")
 #pggls
 S3method("summary", "pggls")
 S3method("print", "summary.pggls")
+S3method("residuals", "pggls")
 #pcce
 S3method("summary", "pcce")
 S3method("print", "summary.pcce")
+S3method("residuals", "pcce")
 #pmg
 S3method("summary", "pmg")
 S3method("print", "summary.pmg")
+S3method("residuals", "pmg")
 #pht
 S3method("summary", "pht")
 S3method("print", "summary.pht")
+#piest
+S3method("summary", "piest")
+S3method("print", "summary.piest")
 #fixef
 S3method("fixef", "plm")
+S3method("fixef", "pggls")
 S3method("print", "fixef")
 S3method("summary", "fixef")
 S3method("print", "summary.fixef")
@@ -97,6 +122,12 @@ S3method("vcovHC", "pgmm")
 S3method("vcovBK", "plm")
 # vcovSCC 
 S3method("vcovSCC", "plm")
+# vcovNW 
+S3method("vcovNW", "plm")
+# vcovDC 
+S3method("vcovDC", "plm")
+# vcovG
+S3method("vcovG", "plm")
 # pseries
 S3method("lag", "pseries")
 S3method("diff", "pseries")

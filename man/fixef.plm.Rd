@@ -25,18 +25,19 @@ width = getOption("width"),...)
     of class \code{"fixef"} for the \code{print} and the \code{summary} method,}
   \item{effect}{one of \code{"individual"} or \code{"time"}, only
     relevant in case of two--ways effects models,}
-  \item{type}{one of \code{level}, \code{dmean} or \code{dfirst}.}
+  \item{type}{one of \code{"level"}, \code{"dfirst"}, or \code{"dmean"},}
   \item{digits}{digits,}
   \item{width}{the maximum length of the lines in the print output,}
   \item{\dots}{further arguments.}
 }
 
 \value{
-  An object of class \code{"fixef"}. It is a numeric vector containing the fixed effects with two attributes: \code{se} which contains the standard errors and \code{intercept} which is the overall intercept. With the \code{type} argument, the fixed effects may be returned in levels, as deviations from the overall mean or as deviations from the first value of the index.
+  An object of class \code{"fixef"}. It is a numeric vector containing the fixed effects with two attributes: \code{se} which contains the standard errors and \code{intercept} which is the overall intercept.
+  With the \code{type} argument, the fixed effects may be returned in levels (\code{"level"}), as deviations from the first value of the index (\code{"dfirst"}), or as deviations from the overall mean (\code{"dmean"}).
 }
 
 \details{
-  The summary method prints the effects in deviation from the overallintercept, the standard error and the t--values.
+  The summary method prints the fixed effects in deviation from the overall intercept, the standard errors and the t--values.
 }
 
 \seealso{
@@ -50,10 +51,20 @@ data("Grunfeld", package = "plm")
 gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 fixef(gi)
 summary(fixef(gi))
+
 # extract time effects in a twoways effects model
-gi <- plm(inv ~ value + capital, data = Grunfeld,
+gi_tw <- plm(inv ~ value + capital, data = Grunfeld,
           model = "within", effect = "twoways")
-fixef(gi,effect = "time")
+fixef(gi_tw, effect = "time")
+
+# calc. fitted values of
+# oneway within model using fixef:
+fixefs <- merge(Grunfeld, data.frame(firm = names(fixef(gi)),
+                                   fixef = as.numeric(fixef(gi))),
+                                   all.x = TRUE, by = c("firm"))[ , 6]
+fitted_by_hand <- fixefs + gi$coefficients["value"] * Grunfeld$value +
+                           gi$coefficients["capital"] * Grunfeld$capital
+
 }
 
 \keyword{regression}
