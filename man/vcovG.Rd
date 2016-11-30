@@ -1,6 +1,7 @@
 \name{vcovG}
 \alias{vcovG}
 \alias{vcovG.plm}
+\alias{vcovG.pcce}
 
 \title{Generic Lego building block for Robust Covariance Matrix Estimators}
 \description{
@@ -11,18 +12,18 @@
 \method{vcovG}{plm}(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
                       cluster=c("group", "time"),
                       l=0,
-                      inner=c("cluster", "white"),
-                      ...)
+                      inner=c("cluster", "white","diagavg"),
+                      \dots)
 }
 
 \arguments{
-  \item{x}{an object of class \code{"plm"}}
+  \item{x}{an object of class \code{"plm"} or \code{"pcce"}}
   \item{type}{one of \code{"HC0"}, \code{"sss"}, \code{"HC1"}, \code{"HC2"}, \code{"HC3"}, \code{"HC4"},}
   \item{cluster}{one of \code{"group"}, \code{"time"},}
   \item{l}{lagging order, defaulting to zero}
   \item{inner}{the function to be applied to the residuals inside the 
-  sandwich: one of \code{"cluster"} or \code{"white"},}
-  \item{...}{further arguments}.
+  sandwich: one of \code{"cluster"} or \code{"white"} or \code{"diagavg"},}
+  \item{\dots}{further arguments}.
 }
 
 \value{
@@ -30,18 +31,25 @@
 }
 
 \details{
-  \code{vcovG} is the generic building block for use by higher-level
-  wrappers vcovHC, vcovSCC, vcovDC and vcovNW.
+  \code{vcovG} is the generic building block for use by higher--level
+  wrappers \code{\link[plm]{vcovHC}}, \code{\link[plm]{vcovSCC}}, \code{\link[plm]{vcovDC}}, and
+  \code{\link[plm]{vcovNW}}.
 The main use of \code{vcovG} is to be used internally by the former, but
-  it is made available in the user space for use in non-standard combinations.
+  it is made available in the user space for use in non--standard combinations. For more documentation, see
+  see wrapper functions mentioned.
 }
 
 \author{Giovanni Millo}
 
+\seealso{
+\code{\link[plm]{vcovHC}}, \code{\link[plm]{vcovSCC}}, \code{\link[plm]{vcovDC}}, \code{\link[plm]{vcovNW}},
+and \code{\link[plm]{vcovBK}} albeit the latter does not make use of vcovG.
+}
+
 \references{
  Millo, G. (2014) Robust standard error estimators for panel models: a
  unifying approach \emph{Unpublished manuscript}.
-  }
+}
 
 \examples{
 data("Produc", package="plm")
@@ -55,7 +63,7 @@ library(lmtest)
 ## (in this example, same as vcovHC)
 myvcov <- function(x) vcovG(x, cluster="group", inner="cluster", l=0)
 ## robust significance test
-coeftest(zz, vcov=myvcov)
+coeftest(zz, vcov.=myvcov)
 }
 \keyword{regression}
 

@@ -12,18 +12,18 @@ General FGLS estimators for panel data (balanced or unbalanced)
 \usage{
 pggls(formula, data, subset, na.action, effect = c("individual", "time"),
       model = c("within","random","pooling","fd"),
-      index = NULL, ...)
-\method{summary}{pggls}(object, ...)
+      index = NULL, \dots)
+\method{summary}{pggls}(object, \dots)
 \method{print}{summary.pggls}(x,digits = max(3, getOption("digits") - 2),
-                              width = getOption("width"),...)
+                              width = getOption("width"), \dots)
 }
 
 \arguments{
  \item{formula}{a symbolic description of the model to be estimated,}
  \item{object, x}{an object of class \code{pggls},}
  \item{data}{a \code{data.frame},}
- \item{subset}{see \code{lm},}
- \item{na.action}{see \code{lm},}
+ \item{subset}{see \code{\link{lm}},}
+ \item{na.action}{see \code{\link{lm}},}
  \item{effect}{the effects introduced in the model, one of \code{"individual"} or \code{"time"},}
  \item{model}{one of \code{"within"}, \code{"pooling"}, \code{"random"}
  or \code{"fd"},}
@@ -48,7 +48,7 @@ An object of class \code{c("pggls","panelmodel")} containing:
   
 \details{
 
-  \code{pggls} is a function for the estimation of linear panel models
+\code{pggls} is a function for the estimation of linear panel models
 by general feasible generalized least squares, either with or without
 fixed effects. General FGLS is based on a two-step estimation process:
 first a model is estimated by OLS (\code{pooling}), fixed effects
@@ -63,10 +63,10 @@ assumed identical across groups and thus general FGLS estimation is
 inefficient under groupwise heteroskedasticity. Note also that this
 method requires estimation of \eqn{T(T+1)/2} variance parameters, thus
 efficiency requires N > > T (if \code{effect="individual"}, else the
-opposite).  The \code{model="random"} and \code{model="pooling"}
+opposite). The \code{model="random"} and \code{model="pooling"}
 arguments both produce an unrestricted FGLS model as in Wooldridge,
 Ch. 10, although the former is deprecated and included only for
-retrocompatibility reasons.
+retro--compatibility reasons.
 If \code{model="within"} (the default) then a FEGLS (fixed
 effects GLS, see ibid.) is estimated; if \code{model="fd"} a FDGLS
 (first-difference GLS).  }
@@ -76,13 +76,12 @@ effects GLS, see ibid.) is estimated; if \code{model="fd"} a FDGLS
 \references{
 Kiefer, N. M. (1980) Estimation of Fixed Effects Models for Time Series
 of Cross-Sections with Arbitrary Intertemporal Covariance, \emph{Journal
-  of Econometrics}, \bold{14}, pp. 195--202. 
+  of Econometrics}, \bold{14}(2), pp. 195--202. 
 
 
 Im, K. S. and Ahn, S. C. and Schmidt, P. and Wooldridge, J. M. (1999)
 Efficient Estimation of Panel Data Models with Strictly Exogenous
-Explanatory Variables, \emph{Journal of Econometrics}, \bold{93},
-177-201.
+Explanatory Variables, \emph{Journal of Econometrics}, \bold{93}(1), pp. 177--201.
 
 Wooldridge, J. M. (2002) \emph{Econometric Analysis of Cross Section and Panel Data}, MIT Press.
 
@@ -91,8 +90,19 @@ Wooldridge, J. M. (2010) \emph{Econometric analysis of cross-section and Panel D
 
 \examples{
 data("Produc", package = "plm")
-zz <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model = "pooling")
-summary(zz)
+zz_wi <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model = "within")
+summary(zz_wi)
+
+zz_pool <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
+                 data = Produc, model = "pooling")
+summary(zz_pool)
+
+zz_fd <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+               data = Produc, model = "fd")
+summary(zz_fd)
+
+
+
 }
 
 \keyword{regression}

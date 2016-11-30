@@ -5,13 +5,13 @@
 \title{Chamberlain estimator and test for fixed effects}
 
 \description{
-  General estimator usefull for testing the within specification
+  General estimator useful for testing the within specification
 }
 
 \usage{
-piest(formula, data, subset, na.action, index = NULL, robust = TRUE, ...)
-\method{summary}{piest}(object, ...)
-\method{print}{summary.piest}(x, ...)
+piest(formula, data, subset, na.action, index = NULL, robust = TRUE, \dots)
+\method{summary}{piest}(object, \dots)
+\method{print}{summary.piest}(x, \dots)
 
 }
 
@@ -33,12 +33,12 @@ piest(formula, data, subset, na.action, index = NULL, robust = TRUE, ...)
 }
 
 \details{ The Chamberlain method consists on using the covariates of all
-  the periods as regressors. It unables to test the within
+  the periods as regressors. It allows to test the within
   specification.  }
 
 \references{
 Chamberlain, G. (1982) Multivariate regression for panel data,
-\emph{Journal of Econometrics}, \bold{18}, pp. 5--46.
+\emph{Journal of Econometrics}, \bold{18}(1), pp. 5--46.
 }
 
 \author{Yves Croissant}

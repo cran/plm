@@ -1,25 +1,24 @@
 #### pbgtest
 
-pbgtest <- function (x, ...) 
-{
+pbgtest <- function (x, ...) {
     UseMethod("pbgtest")
 }
 
-pbgtest.formula<-function(x, order = NULL, type = c("Chisq", "F"), data, model=c("pooling", "random", "within"), ...) {
+pbgtest.formula <- function(x, order = NULL, type = c("Chisq", "F"), data, model=c("pooling", "random", "within"), ...) {
   ## formula method for pbgtest;
   ## defaults to a pooling model
   cl <- match.call(expand.dots = TRUE)
   if (names(cl)[3] == "") names(cl)[3] <- "data"
   if (is.null(cl$model)) cl$model <- "pooling"
   names(cl)[2] <- "formula"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
   plm.model <- eval(cl,parent.frame())
   pbgtest(plm.model, order = order, type = type, data = data, ...)
 }
 
-pbgtest.panelmodel<-function(x, order = NULL, type = c("Chisq", "F"), ...) {
+pbgtest.panelmodel <- function(x, order = NULL, type = c("Chisq", "F"), ...) {
   ## residual serial correlation test based on the residuals of the demeaned
   ## model (see Wooldridge (2002), p. 288) and the regular bgtest() in {lmtest}
 
@@ -31,7 +30,7 @@ pbgtest.panelmodel<-function(x, order = NULL, type = c("Chisq", "F"), ...) {
   model <- describe(x, "model")
   effect <- describe(x, "effect")
   theta <- x$ercomp$theta
-                                                    
+
   ## retrieve demeaned data
   demX <- model.matrix(x, model = model, effect = effect, theta = theta)
   demy <- pmodel.response(model.frame(x), model = model, effect = effect, theta = theta)
@@ -65,33 +64,40 @@ pwtest <- function(x, ...){
   UseMethod("pwtest")
 }
 
-pwtest.formula <- function(x, data, ...) {
+pwtest.formula <- function(x, data, effect = c("individual", "time"), ...) {
+  
+  effect <- match.arg(effect, choices = c("individual", "time")) # match effect to pass it on to pwtest.panelmodel
+
   cl <- match.call(expand.dots = TRUE)
   if (names(cl)[3] == "") names(cl)[3] <- "data"
   if (is.null(cl$model)) cl$model <- "pooling"
   if (cl$model != "pooling") stop("pwtest only relevant for pooling models")
   names(cl)[2] <- "formula"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
   plm.model <- eval(cl,parent.frame())
-  pwtest(plm.model)
-
-  ## "RE" test a la Wooldridge (2002), see 10.4.4
+  # pwtest(plm.model)
+  pwtest.panelmodel(plm.model, effect = effect) # pass on desired 'effect' argument to pwtest.panelmodel
+  
+  ## "RE" test a la Wooldridge (2002/2010), see 10.4.4
   ## (basically the scaled and standardized estimator for sigma from REmod)
   ## does not rely on normality or homoskedasticity; 
   ## H0: composite errors uncorrelated
 
-  ## ref. Wooldridge (2002), p. 264
+  ## ref. Wooldridge (2002), pp. 264-265; Wooldridge (2010), pp. 299-300
 
   ######### from here generic testing interface from
   ######### plm to my code
 }
 
-pwtest.panelmodel <- function(x, ...){
+pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
   ## tind is actually not needed here
   if (describe(x, "model") != "pooling") stop("pwtest only relevant for pooling models")
-  effect <- describe(x, "effect")
+  effect <- match.arg(effect, choices = c("individual", "time")) # was: effect <- describe(x, "effect")
+                                                                 # here we want the effect as in the call of pwtest(),
+                                                                 # not of the already estimated model, because that is
+                                                                 # always a pooling model
   data <- model.frame(x)
   ## extract indices
 
@@ -115,7 +121,7 @@ pwtest.panelmodel <- function(x, ...){
   ## det. max. group numerosity
   t <- max(tapply(X[,1],index,length))
 
-  ## ref. Wooldridge, p.264
+  ## ref. Wooldridge (2002), p.264 / Wooldridge (2010), p.299
     
   ## extract resids
   u <- resid(x)
@@ -128,7 +134,7 @@ pwtest.panelmodel <- function(x, ...){
   ## with averages of xproducts of t(i) residuals
   ## for each group 1..n 
   ## (possibly different sizes if unbal., thus a list
-  ## and thus, unlike Wooldridge (eq.10.37), ve divide 
+  ## and thus, unlike Wooldridge (eq.10.37), we divide 
   ## every block by *his* t(t-1)/2)
 #  unind <- unique(ind)
   unind <- unique(index) # ????
@@ -164,15 +170,14 @@ pwtest.panelmodel <- function(x, ...){
   ##(insert usual htest features)
   dname <- paste(deparse(substitute(formula)))
   RVAL <- list(statistic = Wstat, parameter = NULL,
-               method = paste("Wooldridge's test for unobserved ",
-                 effect,"effects "),
+               method = paste("Wooldridge's test for unobserved",
+                              effect, "effects"),
                alternative = "unobserved effect",
                p.value = pW,
                data.name =   dname)
   class(RVAL) <- "htest"
   return(RVAL)
-  
-  }
+}
 
 
 ### pwartest
@@ -183,7 +188,7 @@ pwartest <- function(x, ...){
 
 pwartest.formula <- function(x,  data, ...) {
   ## small-sample serial correlation test for FE models
-  ## ref.: Wooldridge (2003) 10.5.4 
+  ## ref.: Wooldridge (2002/2010) 10.5.4 
   ##if(!require(car)) stop("Library 'car' is needed")
 
   cl <- match.call(expand.dots = TRUE)
@@ -191,10 +196,10 @@ pwartest.formula <- function(x,  data, ...) {
   if (cl$model != "within") stop("pwartest only relevant for within models")
   if (names(cl)[3] == "") names(cl)[3] <- "data"
   names(cl)[2] <- "formula"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
-  plm.model <- eval(cl,parent.frame())
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
+  plm.model <- eval(cl, parent.frame())
   pwartest(plm.model)
 }
 
@@ -252,6 +257,10 @@ pwartest.panelmodel <- function(x, ...){
 
 ### pbsytest
 
+# NB: There is also a version of pbsytest which supports unbalanced panels.
+#     It resides in SVN on r-forge: branches/kt_unbalanced/pbsytest/
+#     and awaits approval
+
 pbsytest <- function (x, ...){
   UseMethod("pbsytest")
 }
@@ -275,14 +284,19 @@ pbsytest.formula <- function(x, data, ..., test=c("ar","re","j")) {
   if (cl$model != "pooling") stop("pbsytest only relevant for pooling models")
   names(cl)[2] <- "formula"
   if (names(cl)[3] == "") names(cl)[3] <- "data"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
-  plm.model <- eval(cl,parent.frame())
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
+  plm.model <- eval(cl, parent.frame())
   pbsytest(plm.model, test = test)
 }
 
 pbsytest.panelmodel <- function(x, test=c("ar","re","j"), ...){
+  ### as this is the version without support for unbalanced data, issue a warning
+  ##  unbalanced capable version resides in SVN on r-forge: branches/kt_unbalanced/pbsytest/
+  ##  and awaits approval
+  if (!is.pbalanced(x)) warning("unbalanced tests not yet implemented for pbsytest(), applying balanced tests to unbalanced model...")
+  
   poolres <- resid(x)
   data <- model.frame(x)
   ## extract indices
@@ -311,7 +325,7 @@ pbsytest.panelmodel <- function(x, test=c("ar","re","j"), ...){
   ## det. total number of obs. (robust vs. unbalanced panels)
   nT <- length(ind)
 
-            ## calc. A and B:
+  ## calc. A and B:
   S1 <- sum( tapply(poolres,ind,sum)^2 )
   S2 <- sum( poolres^2 )
             
@@ -360,7 +374,7 @@ pbsytest.panelmodel <- function(x, test=c("ar","re","j"), ...){
                method = tname,
                alternative = myH0,
                p.value = pLM,
-               data.name =   dname)
+               data.name = dname)
   class(RVAL) <- "htest"
   return(RVAL)
 
@@ -368,8 +382,7 @@ pbsytest.panelmodel <- function(x, test=c("ar","re","j"), ...){
 
 ### pdwtest
 
-pdwtest <- function (x, ...) 
-{
+pdwtest <- function (x, ...) {
     UseMethod("pdwtest")
 }
 
@@ -381,10 +394,10 @@ pdwtest.formula <- function(x, data, ...) {
   if (is.null(cl$model)) cl$model <- "pooling"
   names(cl)[2] <- "formula"
   if (names(cl)[3] == "") names(cl)[3] <- "data"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
-  plm.model <- eval(cl,parent.frame())
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
+  plm.model <- eval(cl, parent.frame())
   pdwtest(plm.model, ...)
 }
 
@@ -425,9 +438,8 @@ pdwtest.panelmodel <- function(x,...) {
 
   auxformula <- demy~demX-1 #if(model == "within") demy~demX-1 else demy~demX
   lm.mod <- lm(auxformula)
-
   
-  ARtest <- dwtest(lm(auxformula), order.by = order.by,
+  ARtest <- dwtest(lm.mod, order.by = order.by,
                    alternative = alternative,
                    iterations = iterations, exact = exact, tol = tol)
 #  ARtest <- dwtest(lm(demy~demX-1))
@@ -451,7 +463,7 @@ pdwtest.panelmodel <- function(x,...) {
 ## on N=3000, T=10 and even 20000x10 (55'') is no problem;
 ## lme() hits the memory limit at ca. 20000x20)
 
-pbltest <- function(x, data, alternative = c("twosided", "onesided"), index=NULL, ...) {
+pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), index=NULL, ...) {
  ## this version (pbltest0) based on a "formula, pdataframe" interface
 
 
@@ -460,12 +472,11 @@ pbltest <- function(x, data, alternative = c("twosided", "onesided"), index=NULL
   ## reduce data accordingly
   data <- data[which(row.names(data)%in%row.names(X)),]
 
-                                                                                        
   data <- pdata.frame(data,index=index)
 
   ## need name of individual index
   gindex <- dimnames(attr(data, "index"))[[2]][1]
-                                                                                        
+
  ## make random effects formula
   rformula <- NULL
   eval(parse(text=paste("rformula <- ~1|",gindex,sep="")))
@@ -555,7 +566,7 @@ pbltest <- function(x, data, alternative = c("twosided", "onesided"), index=NULL
          )
   dname <- paste(deparse(substitute(x)))
   method <- paste("Baltagi and Li", method1,"LM test")
-  alternative <- "AR(1)/MA(1) errors in RE panel models"
+  alternative <- "AR(1)/MA(1) errors in RE panel model"
 
   res <- list(statistic = LMr.m,
               p.value = pval,
@@ -568,6 +579,20 @@ pbltest <- function(x, data, alternative = c("twosided", "onesided"), index=NULL
   res
 }
 
+pbltest.plm <- function(x, alternative = c("twosided", "onesided"), ...) {
+  # only continue if random effects model
+  if (describe(x, "model") != "random") stop("Test is only for random effects models.")
+  
+  # call pbltest.formula in the right way
+  pbltest.formula(formula(x$formula), data=cbind(index(x), x$model), index=names(index(x)), alternative = alternative, ...)
+}
+
+pbltest <- function (x, ...) 
+{
+  UseMethod("pbltest")
+}
+
+
 pwfdtest <- function(x, ...){
   UseMethod("pwfdtest")
 }
@@ -577,16 +602,20 @@ pwfdtest.formula <- function(x, data, ..., h0 = c("fd", "fe")){
   if (is.null(cl$model)) cl$model <- "fd"
   names(cl)[2] <- "formula"
   if (names(cl)[3] == "") names(cl)[3] <- "data"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
-  plm.model <- eval(cl,parent.frame())
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
+  plm.model <- eval(cl, parent.frame())
   pwfdtest(plm.model, ..., h0 = h0)
 }
 
-pwfdtest.panelmodel <- function(x, ..., h0=c("fd","fe")) {
+pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
   ## first-difference-based serial correlation test for panel models
-  ## ref.: Wooldridge (2003), par. 10.6 
+  ## ref.: Wooldridge (2002/2010), par. 10.6.3 
+  
+  # interface check
+  model <- describe(x, "model")
+  if (model != "fd") stop(paste0("input 'x' needs to be a \"fd\" model (first-differenced model), but is \"", model, "\""))
 
   ##if(!require(car)) stop("Library 'car' is needed")
 
@@ -599,14 +628,14 @@ pwfdtest.panelmodel <- function(x, ..., h0=c("fd","fe")) {
   time <- as.numeric(index[[2]])
   id <- as.numeric(index[[1]])
 
-   ## fetch dimensions and adapt to those of indices
+  ## fetch dimensions and adapt to those of indices
   pdim <- pdim(x)
   n <- pdim$nT$n
 
  
-   ## (re)create groupwise-separated index from 1 to nT 
-   ## - dropping first time period
-   ## - correcting Ti=Ti+1
+  ## (re)create groupwise-separated index from 1 to nT 
+  ## - dropping first time period
+  ## - correcting Ti=Ti+1
   Ti <- pdim$Tint$Ti-1
   
   redind <- vector("list",n)
@@ -624,7 +653,7 @@ pwfdtest.panelmodel <- function(x, ..., h0=c("fd","fe")) {
 
   FDres.1 <- c(NA,FDres[1:(N-1)])
 
-  lagid  <-  id-c(NA,id[1:(N-1)])
+  lagid <- id - c(NA,id[1:(N-1)])
 
   FDres.1[lagid!=0] <- NA
 
@@ -638,11 +667,11 @@ pwfdtest.panelmodel <- function(x, ..., h0=c("fd","fe")) {
   auxmod <- plm(FDres ~ FDres.1, na.omit(auxdata), model = "pooling")
 
   switch(match.arg(h0), 
-             fd = {h0des<-"differenced"
+             fd = {h0des <- "differenced"
                    ## theoretical rho under H0: no serial 
                    ## corr. in differenced errors is 0
                    rho.H0 <- 0},
-             fe = {h0des<-"original"
+             fe = {h0des <- "original"
                    ## theoretical rho under H0: no serial 
                    ## corr. in original errors is -0.5
                    rho.H0 <- -0.5})
@@ -653,20 +682,21 @@ pwfdtest.panelmodel <- function(x, ..., h0=c("fd","fe")) {
   myH0 <- paste("FDres.1 = ", as.character(rho.H0), sep="")
   lhtest <- linearHypothesis(model=auxmod, myH0, vcov.=myvcov, ...)
   
-  ##(insert usual htest features)  
+  ## (insert usual htest features)  
   FDARstat <- lhtest[2,3]
   names(FDARstat) <- dimnames(lhtest)[[2]][3] 
   if (names(FDARstat)=="Chisq") names(FDARstat) <- "chisq"
   ## this is either 'F' or 'Chisq' and is the name of 3rd
   ## column because we are supplying a vcov matrix
-  pFDAR<-lhtest[2,4]
+  pFDAR <- lhtest[2,4]
 
   dname <- paste(deparse(substitute(x)))
-  RVAL <- list(statistic = FDARstat, parameter = NULL,
-               method = "Wooldridge's first-difference test for serial correlation in panels",
+  RVAL <- list(statistic   = FDARstat, 
+               parameter   = NULL,
+               method      = "Wooldridge's first-difference test for serial correlation in panels",
                alternative = paste("serial correlation in", h0des, "errors"),
-               p.value = pFDAR,
-               data.name =   dname)
+               p.value     = pFDAR,
+               data.name   = dname)
   class(RVAL) <- "htest"
   return(RVAL)
 

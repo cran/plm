@@ -1,6 +1,6 @@
 ## taken from pmg to estimate CIPS test statistic as "average of t's"
 ## since version 4: added type warning, and output single CADF
-## regressions as well.
+## regressions as well, use func gettvalue for speed.
 ## estimation loop for single TS models is now lm(formula, data) with
 ## 'data' properly subsetted; this
 ## allows for decent output of individual mods.
@@ -12,12 +12,21 @@
 #model.matrix.plm<-plm:::model.matrix.plm
 #pmodel.response<-plm:::pmodel.response.plm
 
+## Reference is
+## Pesaran, M.H. (2007) A simple panel unit root test in the presence of
+## cross-section dependence, Journal of Applied Econometrics, 22(2), pp. 265-312
 
-cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
-                  model = c("cmg","mg","dmg"), truncated=FALSE, ...)
-{
-  ## type check
-  if(!("pseries" %in% class(x))) stop("Argument has to be a pseries")
+cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
+                  model = c("cmg", "mg", "dmg"), truncated = FALSE, ...) {
+
+  ## type=c("trend","drift","none") corresponds to Case III, II, I 
+  ## in Pesaran (2007), respectively.
+
+  ## input checks
+  if(!inherits(x, "pseries")) stop("Argument 'x' has to be a pseries")
+  if(!is.numeric(lags)) stop("Argument 'lags' has to be an integer") # but accept numeric as well
+  if(round(lags) != lags) stop("Argument 'lags' has to be an integer")
+  # TODO: does 'lags' always need to be >= 1? if so, check for this, too
 
   dati <- pmerge(diff(x), lag(x))
   dati <- pmerge(dati, diff(lag(x)))
@@ -74,10 +83,10 @@ cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
 
     ## model data
     X <- model.matrix(pmod)
-    y <- as.numeric(model.response(model.frame(pmod))) # rem pseries attribs
+    y <- as.numeric(model.response(model.frame(pmod))) # remove pseries attribs
 
   ## det. *minimum* group numerosity
-  t<-min(tapply(X[,1],ind,length))
+  t <- min(tapply(X[,1],ind,length)) # TODO: == min(Ti) simpler???
 
   ## check min. t numerosity
   ## NB it is also possible to allow estimation if there *is* one group
@@ -95,32 +104,35 @@ cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
   tmods <- vector("list", n)
 
   switch(match.arg(model),
+         
     mg={
       ## final data as dataframe, to be subsetted for single TS models
       ## (if 'trend' fix this variable's name)
-      switch(match.arg(type), trend={
+      switch(match.arg(type),
+        trend={
           ## make datafr. subtracting intercept and add trend
           adfdati <- data.frame(cbind(y, X[,-1]))
           dimnames(adfdati)[[2]] <- c(clnames, "trend")
-          adffm <- update(adffm, .~.-as.numeric(tind)+trend)
-      }, drift={
+          adffm <- update(adffm, .~.-as.numeric(tind)+trend)},
+        drift={
           ## make df subtracting intercept
           adfdati <- data.frame(cbind(y, X[,-1]))
-          dimnames(adfdati)[[2]] <- clnames
-      }, none={
+          dimnames(adfdati)[[2]] <- clnames},
+        none={
           ## just make df (intercept isn't there)
           adfdati <- data.frame(cbind(y, X))
-          dimnames(adfdati)[[2]] <- clnames
-      })
+          dimnames(adfdati)[[2]] <- clnames}
+        )
+      
       ## for each x-sect. i=1..n
       unind<-unique(ind)
       for(i in 1:n) {
         tdati <- adfdati[ind==unind[i],]
-        tmods[[i]]<-lm(adffm, tdati)
+        tmods[[i]] <- lm(adffm, tdati)
         }
       },
+    
     dmg={
-
       ## between-periods transformation (take means over group for each t)
       be<-function(x,index,na.rm=TRUE) tapply(x,index,mean,na.rm=na.rm)
       Xm<-apply(X,2,FUN=be,index=tind)[tind,]
@@ -133,29 +145,30 @@ cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
 
       ## final data as dataframe, to be subsetted for single TS models
       ## (if 'trend' fix this variable's name)
-      switch(match.arg(type), trend={
+      switch(match.arg(type),
+        trend={
           ## make datafr. subtracting intercept and add trend
           adfdati <- data.frame(cbind(demy, demX[,-1]))
           dimnames(adfdati)[[2]] <- c(clnames, "trend")
-          adffm <- update(adffm, .~.-as.numeric(tind)+trend)
-      }, drift={
+          adffm <- update(adffm, .~.-as.numeric(tind)+trend)},
+        drift={
           ## make df subtracting intercept
           adfdati <- data.frame(cbind(demy, demX[,-1]))
-          dimnames(adfdati)[[2]] <- clnames
-      }, none={
+          dimnames(adfdati)[[2]] <- clnames},
+        none={
           ## just make df (intercept isn't there)
           adfdati <- data.frame(cbind(demy, demX))
-          dimnames(adfdati)[[2]] <- clnames
-      })
+          dimnames(adfdati)[[2]] <- clnames})
 
       ## for each x-sect. i=1..n estimate (over t) a demeaned model
       ## (y_it-my_t) = alfa_i + beta_i*(X_it-mX_t) + err_it
       unind<-unique(ind)
       for(i in 1:n) {
         tdati <- adfdati[ind==unind[i],]
-        tmods[[i]]<-lm(adffm, tdati)
+        tmods[[i]] <- lm(adffm, tdati)
         }
     },
+    
     cmg={
       deterministic2 <- switch(match.arg(type),
                                trend={"+trend"},
@@ -175,27 +188,29 @@ cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
 
       ## final data as dataframe, to be subsetted for single TS models
       ## (purge intercepts etc., if 'trend' fix this variable's name)
-      switch(match.arg(type), trend={
-          augX<-cbind(X[,-1], ym, Xm[,-1])
+      switch(match.arg(type),
+        trend={
+          augX <- cbind(X[,-1], ym, Xm[,-1])
           adfdati <- data.frame(cbind(y, augX))
           ## purge intercept, averaged intercept and averaged trend
           ## (which is always last col.)
           adfdati <- adfdati[,-(dim(adfdati)[[2]])]
           dimnames(adfdati)[[2]] <- c(clnames, "trend",
                                       paste(clnames, "bar", sep="."))
-          adffm <- update(adffm, .~.-as.numeric(tind)+trend)
-      }, drift={
+          adffm <- update(adffm, .~.-as.numeric(tind)+trend)},
+        
+        drift={
           augX<-cbind(X[,-1], ym, Xm[,-1])
           adfdati <- data.frame(cbind(y, augX))
           dimnames(adfdati)[[2]] <- c(clnames,
-                                      paste(clnames, "bar", sep="."))
-      }, none={
+                                      paste(clnames, "bar", sep="."))},
+        none={
           ## no intercepts here
           augX<-cbind(X,ym,Xm)
           adfdati <- data.frame(cbind(y, augX))
           dimnames(adfdati)[[2]] <- c(clnames,
                                       paste(clnames, "bar", sep="."))
-      })
+          })
 
       ## for each x-sect. i=1..n estimate (over t) an augmented model
       ## y_it = alfa_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
@@ -206,17 +221,26 @@ cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
         }
   })
 
-  tstats <- rep(NA, n)
+  
   ## CIPS statistic as an average of the t-stats on the coefficient of 'le'
-  for(i in 1:n)  tstats[i] <- coef(summary(tmods[[i]]))["le",3]
-
+    # tstats <- rep(NA, n)
+    # for(i in 1:n)  tstats[i] <- coef(summary(tmods[[i]]))["le",3]
+  tstats <- vapply(tmods, function(mod) gettvalue(mod, "le"), FUN.VALUE = 0.0)
+  
   if(truncated) {
-      ## set bounds
+      ## set bounds, Pesaran (2007), p. 277
+        ## NB: there is a  typo in the paper:
+        ##   Case I: "with an intercept or trend" -> "with_out_ an intercept or trend"
+        ## "with_out_ an intercept or trend (Case I): K1 = 6.12, K2 = 4.16"
+        ## "with an intercept and no trend (Case II): K1 = 6.19, K2 = 2.61"
+        ## "with a linear trend (Case III):           K1 = 6.42, K2 = 1.70"
+        ## (use negative values for K1's to ease assignment if bound is reached)
       trbounds <- switch(match.arg(type),
-                          trend={c(-6.12, 4.16)},
-                          drift={c(-6.19, 2.61)},
-                          none={c(-6.42, 1.70)})
-      ## truncate at lower bound
+                          trend = {c(-6.12, 4.16)}, ## TODO?
+                          drift = {c(-6.19, 2.61)},
+                          none  = {c(-6.42, 1.70)}) ## TODO?
+      ## formulae (34) in Pesaran (2007):
+      ## truncate at lower bound 
       tstats <- ifelse(tstats>trbounds[1], tstats, trbounds[1])
       ## truncate at upper bound
       tstats <- ifelse(tstats<trbounds[2], tstats, trbounds[2])
@@ -250,45 +274,47 @@ cipstest <- function (x, lags = 2, type=c("trend", "drift", "none"),
                alternative = "Stationarity", p.value = pval)
   class(RVAL) <- "htest"
   return(RVAL)
-
 }
 
 
 ## separate function computing critical values:
 
-critvals <- function(stat, n, T., type=c("trend","drift","none"),
-                     truncated=FALSE) {
+critvals <- function(stat, n, T., type=c("trend", "drift", "none"),
+                     truncated = FALSE) {
     ## auxiliary function for cipstest()
     ## extracts --or calculates by interpolation-- p.values for the
-    ## (averaged) CIPS statistic depending on whether n and T.
+    ## (averaged) CIPS statistic depending on whether n and T,
+    ## given the critical values of average of individual cross-sectionally
+    ## augmented Dickey-Fuller distribution
+
 
 ## Non truncated version
 rnam <- c(10, 15, 20, 30, 50, 70, 100, 200)
 cnam <- rnam
-znam <- c(1,5,10)
+znam <- c(1, 5, 10)
 
 ## In all following tables N in rows, T in cols unlike Pesaran (2007)
 
-## No intercept, no trend; Table 3a Pesaran 2007
+## No intercept, no trend (Case I); Table II(a) Pesaran (2007), p. 279
 
 ## 1% critical values
 nvals1 <- cbind(
 c(-2.16, -2.02, -1.93, -1.85, -1.78, -1.74, -1.71, -1.70),
 c(-2.03, -1.91, -1.84, -1.77, -1.71, -1.68, -1.66, -1.63),
-c(-2, -1.89, -1.83, -1.76, -1.7, -1.67, -1.65, -1.62),
-c(-1.98, -1.87, -1.8, -1.74, -1.69, -1.67, -1.64, -1.61),
-c(-1.97, -1.86, -1.8, -1.74, -1.69, -1.66, -1.63, -1.61),
-c(-1.95, -1.86, -1.8, -1.74, -1.68, -1.66, -1.63, -1.61),
+c(-2.00, -1.89, -1.83, -1.76, -1.70, -1.67, -1.65, -1.62),
+c(-1.98, -1.87, -1.80, -1.74, -1.69, -1.67, -1.64, -1.61),
+c(-1.97, -1.86, -1.80, -1.74, -1.69, -1.66, -1.63, -1.61),
+c(-1.95, -1.86, -1.80, -1.74, -1.68, -1.66, -1.63, -1.61),
 c(-1.94, -1.85, -1.79, -1.74, -1.68, -1.65, -1.63, -1.61),
 c(-1.95, -1.85, -1.79, -1.73, -1.68, -1.65, -1.63, -1.61)
 )
 
 ## 5% critical values
 nvals5 <- cbind(
-c(-1.8, -1.71, -1.67, -1.61, -1.58, -1.56, -1.54, -1.53),
+c(-1.80, -1.71, -1.67, -1.61, -1.58, -1.56, -1.54, -1.53),
 c(-1.74, -1.67, -1.63, -1.58, -1.55, -1.53, -1.52, -1.51),
-c(-1.72, -1.65, -1.62, -1.58, -1.54, -1.53, -1.52, -1.5),
-c(-1.72, -1.65, -1.61, -1.57, -1.55, -1.54, -1.52, -1.5),
+c(-1.72, -1.65, -1.62, -1.58, -1.54, -1.53, -1.52, -1.50),
+c(-1.72, -1.65, -1.61, -1.57, -1.55, -1.54, -1.52, -1.50),
 c(-1.72, -1.64, -1.61, -1.57, -1.54, -1.53, -1.52, -1.51),
 c(-1.71, -1.65, -1.61, -1.57, -1.54, -1.53, -1.52, -1.51),
 c(-1.71, -1.64, -1.61, -1.57, -1.54, -1.53, -1.52, -1.51),
@@ -314,42 +340,42 @@ nvals[,,2] <- nvals5
 nvals[,,3] <- nvals10
 dimnames(nvals) <- list(rnam, cnam, znam)
 
-## Intercept only, Table 3b Pesaran 2007
+## Intercept only (Case II), Table II(b) in Pesaran (2007), p. 280
 
 ## 1% critical values
 dvals1 <- cbind(
-c(-2.97,-2.76,-2.64,-2.51,-2.41,-2.37,-2.33,-2.28),
-c(-2.66,-2.52,-2.45,-2.34,-2.26,-2.23,-2.19,-2.16),
-c(-2.60,-2.47,-2.4,-2.32,-2.25,-2.2,-2.18,-2.14),
-c(-2.57,-2.45,-2.38,-2.3,-2.23,-2.19,-2.17,-2.14),
-c(-2.55,-2.44,-2.36,-2.3,-2.23,-2.2,-2.17,-2.14),
-c(-2.54,-2.43,-2.36,-2.3,-2.23,-2.2,-2.17,-2.14),
-c(-2.53,-2.42,-2.36,-2.3,-2.23,-2.2,-2.18,-2.15),
-c(-2.53,-2.43,-2.36,-2.3,-2.23,-2.21,-2.18,-2.15)
+c(-2.97, -2.76, -2.64, -2.51, -2.41, -2.37, -2.33, -2.28),
+c(-2.66, -2.52, -2.45, -2.34, -2.26, -2.23, -2.19, -2.16),
+c(-2.60, -2.47, -2.40, -2.32, -2.25, -2.20, -2.18, -2.14),
+c(-2.57, -2.45, -2.38, -2.30, -2.23, -2.19, -2.17, -2.14),
+c(-2.55, -2.44, -2.36, -2.30, -2.23, -2.20, -2.17, -2.14),
+c(-2.54, -2.43, -2.36, -2.30, -2.23, -2.20, -2.17, -2.14),
+c(-2.53, -2.42, -2.36, -2.30, -2.23, -2.20, -2.18, -2.15),
+c(-2.53, -2.43, -2.36, -2.30, -2.23, -2.21, -2.18, -2.15)
 )
 
 ## 5% critical values
 dvals5 <- cbind(
-c(-2.52,-2.4,-2.33,-2.25,-2.19,-2.16,-2.14,-2.1),
-c(-2.37,-2.28,-2.22,-2.17,-2.11,-2.09,-2.07,-2.04),
-c(-2.34,-2.26,-2.21,-2.15,-2.11,-2.08,-2.07,-2.04),
-c(-2.33,-2.25,-2.2,-2.15,-2.11,-2.08,-2.07,-2.05),
-c(-2.33,-2.25,-2.2,-2.16,-2.11,-2.1,-2.08,-2.06),
-c(-2.33,-2.25,-2.2,-2.15,-2.12,-2.1,-2.08,-2.06),
-c(-2.32,-2.25,-2.2,-2.16,-2.12,-2.1,-2.08,-2.07),
-c(-2.32,-2.25,-2.2,-2.16,-2.12,-2.1,-2.08,-2.07)
+c(-2.52, -2.40, -2.33, -2.25, -2.19, -2.16, -2.14, -2.10),
+c(-2.37, -2.28, -2.22, -2.17, -2.11, -2.09, -2.07, -2.04),
+c(-2.34, -2.26, -2.21, -2.15, -2.11, -2.08, -2.07, -2.04),
+c(-2.33, -2.25, -2.20, -2.15, -2.11, -2.08, -2.07, -2.05),
+c(-2.33, -2.25, -2.20, -2.16, -2.11, -2.10, -2.08, -2.06),
+c(-2.33, -2.25, -2.20, -2.15, -2.12, -2.10, -2.08, -2.06),
+c(-2.32, -2.25, -2.20, -2.16, -2.12, -2.10, -2.08, -2.07),
+c(-2.32, -2.25, -2.20, -2.16, -2.12, -2.10, -2.08, -2.07)
 )
 
 ## 10% critical values
 dvals10 <- cbind(
-c(-2.31,-2.22,-2.18,-2.12,-2.07,-2.05,-2.03,-2.01),
-c(-2.22,-2.16,-2.11,-2.07,-2.03,-2.01,-2,-1.98),
-c(-2.21,-2.14,-2.1,-2.07,-2.03,-2.01,-2,-1.99),
-c(-2.21,-2.14,-2.11,-2.07,-2.04,-2.02,-2.01,-2),
-c(-2.21,-2.14,-2.11,-2.08,-2.05,-2.03,-2.02,-2.01),
-c(-2.21,-2.15,-2.11,-2.08,-2.05,-2.03,-2.02,-2.01),
-c(-2.21,-2.15,-2.11,-2.08,-2.05,-2.03,-2.03,-2.02),
-c(-2.21,-2.15,-2.11,-2.08,-2.05,-2.04,-2.03,-2.02)
+c(-2.31, -2.22, -2.18, -2.12, -2.07, -2.05, -2.03, -2.01),
+c(-2.22, -2.16, -2.11, -2.07, -2.03, -2.01, -2.00, -1.98),
+c(-2.21, -2.14, -2.10, -2.07, -2.03, -2.01, -2.00, -1.99),
+c(-2.21, -2.14, -2.11, -2.07, -2.04, -2.02, -2.01, -2.00),
+c(-2.21, -2.14, -2.11, -2.08, -2.05, -2.03, -2.02, -2.01),
+c(-2.21, -2.15, -2.11, -2.08, -2.05, -2.03, -2.02, -2.01),
+c(-2.21, -2.15, -2.11, -2.08, -2.05, -2.03, -2.03, -2.02),
+c(-2.21, -2.15, -2.11, -2.08, -2.05, -2.04, -2.03, -2.02)
 )
 
 ## make critical values' cube
@@ -359,42 +385,42 @@ dvals[,,2] <- dvals5
 dvals[,,3] <- dvals10
 dimnames(dvals) <- list(rnam, cnam, znam)
 
-## Intercept and trend, Table 3c Pesaran 2007
+## Intercept and trend (Case III), Table II(c) in Pesaran (2007), p. 281
 
 ## 1% critical values
 tvals1 <- cbind(
-c(-3.88,-3.61,-3.46,-3.3,-3.15,-3.1,-3.05,-2.98),
-c(-3.24,-3.09,-3,-2.89,-2.81,-2.77,-2.74,-2.71),
-c(-3.15,-3.01,-2.92,-2.83,-2.76,-2.72,-2.7,-2.65),
-c(-3.1,-2.96,-2.88,-2.81,-2.73,-2.69,-2.66,-2.63),
-c(-3.06,-2.93,-2.85,-2.78,-2.72,-2.68,-2.65,-2.62),
-c(-3.04,-2.93,-2.85,-2.78,-2.71,-2.68,-2.65,-2.62),
-c(-3.03,-2.92,-2.85,-2.77,-2.71,-2.68,-2.65,-2.62),
-c(-3.03,-2.91,-2.85,-2.77,-2.71,-2.67,-2.65,-2.62)
+c(-3.88, -3.61, -3.46, -3.30, -3.15, -3.10, -3.05, -2.98),
+c(-3.24, -3.09, -3.00, -2.89, -2.81, -2.77, -2.74, -2.71),
+c(-3.15, -3.01, -2.92, -2.83, -2.76, -2.72, -2.70, -2.65),
+c(-3.10, -2.96, -2.88, -2.81, -2.73, -2.69, -2.66, -2.63),
+c(-3.06, -2.93, -2.85, -2.78, -2.72, -2.68, -2.65, -2.62),
+c(-3.04, -2.93, -2.85, -2.78, -2.71, -2.68, -2.65, -2.62),
+c(-3.03, -2.92, -2.85, -2.77, -2.71, -2.68, -2.65, -2.62),
+c(-3.03, -2.91, -2.85, -2.77, -2.71, -2.67, -2.65, -2.62)
 )
 
 ## 5% critical values
 tvals5 <- cbind(
-c(-3.27,-3.11,-3.02,-2.94,-2.86,-2.82,-2.79,-2.75),
-c(-2.93,-2.83,-2.77,-2.7,-2.64,-2.62,-2.6,-2.57),
-c(-2.88,-2.78,-2.73,-2.67,-2.62,-2.59,-2.57,-2.55),
-c(-2.86,-2.76,-2.72,-2.66,-2.61,-2.58,-2.56,-2.54),
-c(-2.84,-2.76,-2.71,-2.65,-2.6,-2.58,-2.56,-2.54),
-c(-2.83,-2.76,-2.7,-2.65,-2.61,-2.58,-2.57,-2.54),
-c(-2.83,-2.75,-2.7,-2.65,-2.61,-2.59,-2.56,-2.55),
-c(-2.83,-2.75,-2.7,-2.65,-2.61,-2.59,-2.57,-2.55)
+c(-3.27, -3.11, -3.02, -2.94, -2.86, -2.82, -2.79, -2.75),
+c(-2.93, -2.83, -2.77, -2.70, -2.64, -2.62, -2.60, -2.57),
+c(-2.88, -2.78, -2.73, -2.67, -2.62, -2.59, -2.57, -2.55),
+c(-2.86, -2.76, -2.72, -2.66, -2.61, -2.58, -2.56, -2.54),
+c(-2.84, -2.76, -2.71, -2.65, -2.60, -2.58, -2.56, -2.54),
+c(-2.83, -2.76, -2.70, -2.65, -2.61, -2.58, -2.57, -2.54),
+c(-2.83, -2.75, -2.70, -2.65, -2.61, -2.59, -2.56, -2.55),
+c(-2.83, -2.75, -2.70, -2.65, -2.61, -2.59, -2.57, -2.55)
 )
 
 ## 10% critical values
 tvals10 <- cbind(
-c(-2.98,-2.89,-2.82,-2.76,-2.71,-2.68,-2.66,-2.63),
-c(-2.76,-2.69,-2.65,-2.6,-2.56,-2.54,-2.52,-2.5),
-c(-2.74,-2.67,-2.63,-2.58,-2.54,-2.53,-2.51,-2.49),
-c(-2.73,-2.66,-2.63,-2.58,-2.54,-2.52,-2.51,-2.49),
-c(-2.73,-2.66,-2.63,-2.58,-2.55,-2.53,-2.51,-2.5),
-c(-2.72,-2.66,-2.62,-2.58,-2.55,-2.53,-2.52,-2.5),
-c(-2.72,-2.66,-2.63,-2.59,-2.55,-2.53,-2.52,-2.5),
-c(-2.73,-2.66,-2.63,-2.59,-2.55,-2.54,-2.52,-2.5)
+c(-2.98, -2.89, -2.82, -2.76, -2.71, -2.68, -2.66, -2.63),
+c(-2.76, -2.69, -2.65, -2.60, -2.56, -2.54, -2.52, -2.50),
+c(-2.74, -2.67, -2.63, -2.58, -2.54, -2.53, -2.51, -2.49),
+c(-2.73, -2.66, -2.63, -2.58, -2.54, -2.52, -2.51, -2.49),
+c(-2.73, -2.66, -2.63, -2.58, -2.55, -2.53, -2.51, -2.50),
+c(-2.72, -2.66, -2.62, -2.58, -2.55, -2.53, -2.52, -2.50),
+c(-2.72, -2.66, -2.63, -2.59, -2.55, -2.53, -2.52, -2.50),
+c(-2.73, -2.66, -2.63, -2.59, -2.55, -2.54, -2.52, -2.51)
 )
 
 ## make critical values' cube
@@ -404,32 +430,34 @@ tvals[,,2] <- tvals5
 tvals[,,3] <- tvals10
 dimnames(tvals) <- list(rnam, cnam, znam)
 
-## if truncated substitute values according to Tables 3a, 3b, 3c
-## in Pesaran 2007
+## if truncated substitute values according to Tables II(a), II(b), II(c)
+## in Pesaran (2007)
 
 if(truncated) {
-    tvals[,1,1] <- -c(3.51, 3.31, 3.2, 3.1, 3, 2.96, 2.93, 2.88)
-    tvals[,2,1] <- -c(3.21, 3.07, 2.98, 2.88, 2.8, 2.76, 2.74, 2.7)
-    tvals[,1,2] <- -c(3.1,2.97,2.89,2.82,2.75,2.73,2.7,2.67)
-    tvals[,2,2] <- -c(2.92,2.82,2.76,2.69,2.64,2.62,2.59,2.57)
-    tvals[,1,3] <- -c(2.87,2.78,2.73,2.67,2.63,2.6,2.58,2.56)
-    tvals[,2,3] <- -c(2.76,2.68,2.64,2.59,2.55,2.53,2.51,2.5)
-    dvals[,1,1] <- -c(2.85,2.66,2.56,2.44,2.36,2.32,2.29,2.25)
-    dvals[,1,2] <- -c(2.47,2.35,2.29,2.22,2.16,2.13,2.11,2.08)
-    dvals[,1,3] <- -c(2.28,2.2,2.15,2.1,2.05,2.03,2.01,1.99)
-    nvals[,1,1] <- -c(2.14,2,1.91,1.84,1.77,1.73,1.71,1.69)
-    nvals[,1,2] <- -c(1.79,1.71,1.66,1.61,1.57,1.55,1.53,1.52)
-    nvals[,1,3][c(2,4,7)] <- -c(1.55,1.48,1.43)
+  # Case III (Intercept and trend)
+    tvals[,1,1] <- -c(3.51, 3.31, 3.20, 3.10, 3.00, 2.96, 2.93, 2.88) # II(c),  1%
+    tvals[,2,1] <- -c(3.21, 3.07, 2.98, 2.88, 2.80, 2.76, 2.74, 2.70) # II(c),  1%
+    tvals[,1,2] <- -c(3.10, 2.97, 2.89, 2.82, 2.75, 2.73, 2.70, 2.67) # II(c),  5%
+    tvals[,2,2] <- -c(2.92, 2.82, 2.76, 2.69, 2.64, 2.62, 2.59, 2.57) # II(c),  5%
+    tvals[,1,3] <- -c(2.87, 2.78, 2.73, 2.67, 2.63, 2.60, 2.58, 2.56) # II(c), 10%
+    tvals[,2,3] <- -c(2.76, 2.68, 2.64, 2.59, 2.55, 2.53, 2.51, 2.50) # II(c), 10%
+
+  # Case II (Intercept only)
+    dvals[,1,1] <- -c(2.85, 2.66, 2.56, 2.44, 2.36, 2.32, 2.29, 2.25) # II(b),  1%
+    dvals[,1,2] <- -c(2.47, 2.35, 2.29, 2.22, 2.16, 2.13, 2.11, 2.08) # II(b),  5%
+    dvals[,1,3] <- -c(2.28, 2.20, 2.15, 2.10, 2.05, 2.03, 2.01, 1.99) # II(b), 10%
+
+  # Case I (No intercept, no trend)
+    nvals[,1,1] <- -c(2.14, 2.00 ,1.91, 1.84, 1.77, 1.73, 1.71, 1.69) # II(a),  1%
+    nvals[,1,2] <- -c(1.79, 1.71, 1.66, 1.61, 1.57, 1.55, 1.53, 1.52) # II(a),  5%
+    nvals[,1,3][c(2,4,7)] <- -c(1.55, 1.48, 1.43)                     # II(a), 10%
 }
 
 ## set this according to model
-switch(match.arg(type), trend={
-    cvals <- tvals
-}, drift={
-    cvals <- dvals
-}, none={
-    cvals <- nvals
-})
+switch(match.arg(type), 
+         trend = {cvals <- tvals},
+         drift = {cvals <- dvals},
+         none  = {cvals <- nvals})
 
 
 ## find intervals for current n and T.
@@ -501,13 +529,3 @@ if(stat<min(cv)) {
 
 return(pval)
 }
-
-
-
-
-
-
-
-
-
-

@@ -1,43 +1,64 @@
 ###################################################
 ### chunk number 1: pdata.frame
 ###################################################
-pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
+pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
+                           stringsAsFactors = default.stringsAsFactors()) {
+  
   if (inherits(x, "pdata.frame")) stop("already a pdata.frame")
 
-  # coerce character vectors to factors
-  x.char <- names(x)[sapply(x, is.character)]
-  for (i in x.char){
-    x[[i]] <- factor(x[[i]])
+  if (stringsAsFactors) { # coerce character vectors to factors, if requested
+      x.char <- names(x)[sapply(x, is.character)]
+      for (i in x.char){
+        x[[i]] <- factor(x[[i]])
+      }
   }
   
-  # replace Inf by NA
-  for (i in names(x)) x[[i]][!is.finite(x[[i]])] <- NA
+  # replace Inf, -Inf, NaN (everything for which is.finite is FALSE) by NA
+  # (for all but any character columns [relevant if stringAsFactors == FALSE])
+  for (i in names(x)) {
+    if (!inherits(x[[i]], "character")) {
+      x[[i]][!is.finite(x[[i]])] <- NA
+    }
+  }
+  
   # check and remove complete NA series
   na.check <- sapply(x,function(x) sum(!is.na(x))==0)
   na.serie <- names(x)[na.check]
   if (length(na.serie) > 0){
     if (length(na.serie) == 1)
-      cat(paste("series ", na.serie, " is NA and has been removed\n", sep = ""))
+      cat(paste0("This series is NA and has been removed: ", na.serie, "\n"))
     else
-      cat(paste("series ", paste(na.serie, collapse = ", "), " are NA and have been removed\n", sep = ""))
+      cat(paste0("These series are NA and have been removed: ", paste(na.serie, collapse = ", "), "\n"))
   }
   x <- x[, !na.check]
   
   # check and remove constant series
-  cst.check <- sapply(x, function(x) var(as.numeric(x), na.rm = TRUE)==0)
-  # following line : bug fixed thank's to Marciej Szelfer 
+  # cst.check <- sapply(x, function(x) var(as.numeric(x), na.rm = TRUE)==0) # old
+  cst.check <- sapply(x, function(x) {
+    if (is.factor(x) || is.character(x)) {
+      all(duplicated(x[!is.na(x)])[-1L]) # var() and sd() on factors is deprecated as of R 3.2.3
+    } else {
+      var(as.numeric(x), na.rm = TRUE)==0
+      }
+  })
+
+  # following line: bug fixed thanks to Marciej Szelfer 
   cst.check <- cst.check | is.na(cst.check)
   cst.serie <- names(x)[cst.check]
   if (length(cst.serie) > 0){
     if (length(cst.serie) == 1){
-      cat(paste("series ", cst.serie, " is constant and has been removed\n", sep = ""))
+      cat(paste0("This series is constant and has been removed: ", cst.serie, "\n"))
     }
     else{
-      cat(paste("series ", paste(cst.serie, collapse = ", "), " are constants and have been removed\n", sep = ""))
+      cat(paste0("These series are constants and have been removed: ", paste(cst.serie, collapse = ", "), "\n"))
     }
   }
   x <- x[, !cst.check]
   
+  # sanity check for 'index' argument
+  if (length(index)>2){
+    stop("'index' can be of length 2 at the most (one individual and one time index)")
+  }
   # if index is NULL, both id and time are NULL
   if (is.null(index)){
     id <- NULL
@@ -63,12 +84,13 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
     id.name <- id
     time.name <- time
   }
-  # index is numeric
+  
+  # if index is numeric, this indicats a balanced panel with no. of individuals equal to id.name
   if(is.numeric(id.name)){
-    if(!is.null(time.name)){warning("The time argument will be ignored\n")}
+    if(!is.null(time.name)){warning("The time index (second element of 'index' argument) will be ignored\n")}
     N <- nrow(x)
     if( (N%%id.name)!=0){
-      stop("unbalanced panel, the id variable should be indicated\n")
+      stop("unbalanced panel, in this case the individual index should be indicated by the first element of 'index' argument\n")
     }
     else{
       T <- N%/%id.name
@@ -81,20 +103,24 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
       x[[time.name]] <- time <- as.factor(time)
     }
   }
-  else{
-    if (!id.name %in% names(x))
-      stop(paste("variable ",id.name," does not exist",sep="")
-           )
+  else{ # id.name is not numeric, i.e. individual index is supplied
+    if (!id.name %in% names(x)) stop(paste("variable ",id.name," does not exist (individual index)", sep=""))
+    
     if (is.factor(x[[id.name]])){
-      id <- x[[id.name]] <- x[[id.name]][drop=T]
-      # trier par individu dans le cas ou id est un facteur
-#      x <- x[order(id), ]
+      id <- x[[id.name]] <- x[[id.name]][drop=T] # drops unused levels of factor
     }
     else{
       id <- x[[id.name]] <- as.factor(x[[id.name]])
     }
+    
     if (is.null(time.name)){
-      Ti <- table(id)
+      # if no time index is supplied, add time variable automatically
+      
+      # order data by individual index, necessary for the automatic
+      # addition of time index to be succesfull if no time index was supplied
+      x <- x[order(x[[id.name]]), ]
+    
+      Ti <- table(x[[id.name]]) # was: Ti <- table(id)
       n <- length(Ti)
       time <- c()
       for (i in 1:n){
@@ -104,106 +130,258 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE){
       time <- x[[time.name]] <- time <- as.factor(time)
     }
     else{
-    if (!time.name %in% names(x))
-      stop(paste("variable ",time.name," does not exist",sep="")
-           )
+      # use supplied time index
+      if (!time.name %in% names(x)) stop(paste("variable ",time.name," does not exist (time index)",sep=""))
+      
       if (is.factor(x[[time.name]])){
-        time <- x[[time.name]] <- x[[time.name]][drop=T]
+        time <- x[[time.name]] <- x[[time.name]][drop=T] # drops unused levels of factor
       }
       else{
         time <- x[[time.name]] <- as.factor(x[[time.name]])
       }
     }
   }
-  x <- x[order(id,time),]
+  
+  # sort by id, then by time
+  x <- x[order(x[[id.name]], x[[time.name]]), ] # old: x <- x[order(id,time), ] 
+  
   var.names <- names(x)
-  for (i in names(x)){
+  
+  ## drop unused levels from all factor variables
+  for (i in var.names){
     if(is.factor(x[[i]])){
-      if (length(unique(x[[i]])) < length(levels(x[[i]]))){
-        x[[i]] <- x[[i]][,drop=TRUE]
-      }
+      # if (length(unique(x[[i]])) < length(levels(x[[i]]))){
+      #   x[[i]] <- x[[i]][,drop=TRUE]
+      # }
+      x[[i]] <- droplevels(x[[i]])
     }
   }
-  posindex <- match(c(id.name,time.name),names(x))
+  posindex <- match(c(id.name, time.name), var.names)
   index <- x[, posindex]
-  if (drop.index) x <- x[, - posindex]
+  if (drop.index) x <- x[ , -posindex]
+  
+  test_doub <- table(index[[1]], index[[2]], useNA = "ifany")
+  if (any(is.na(colnames(test_doub))) || any(is.na(rownames(test_doub))))
+    cat(paste0("at least one couple (id-time) has NA in at least one index dimension in resulting pdata.frame\n to find out which, use e.g. table(index(your_pdataframe), useNA = \"ifany\")\n"))
+  if (any(as.vector(test_doub[!is.na(rownames(test_doub)), !is.na(colnames(test_doub))]) > 1))
+    warning("duplicate couples (id-time) in resulting pdata.frame\n to find out which, use e.g. table(index(your_pdataframe), useNA = \"ifany\")")
+  
   if (row.names){
-    attr(x, "row.names") <- paste(index[[1]],index[[2]],sep="-") 
+    attr(x, "row.names") <- fancy.row.names(index)
+    # NB: attr(x, "row.names") allows for duplicate rownames (as opposed to row.names(x) <- something)
+    # no fancy row.names for index attribute (!?): maybe because so it is possible to restore original row.names?
   }
+  
   class(index) <- c("pindex", "data.frame")
   attr(x, "index") <- index
   class(x) <- c("pdata.frame", "data.frame")
-  x
+  
+  return(x)
 }
 
-"[.pdata.frame" <- function(x, i, j, drop = TRUE){
-  old.pdata.frame <- !inherits(x, "data.frame")
-  if (!old.pdata.frame){
-    # this part for backward compatibility (required by meboot)
-    index <- "[.data.frame"(attr(x, "index"), i, )
-    #remove empty levels if any
-    index <- data.frame(lapply(index, function(x) x[drop = TRUE]))
-  }
-  mydata <- `[.data.frame`(x, i, j, drop = drop)
-  if (is.null(dim(mydata))){
-    structure(mydata,
-              index = index,
-              class = c("pseries", class(mydata))
-              )
-  }
-  else{
-    structure(mydata,
-              index = index,
-              class = c("pdata.frame", "data.frame"))
-  }
-}
 
-print.pdata.frame <- function(x, ...){
-  attr(x, "index") <- NULL
-  class(x) <- "data.frame"
-  print(x, ...)
-}
+
+###################################################
+### chunk number 2: assigning
+###################################################
 
 "$<-.pdata.frame" <- function(x, name, value){
-  if (class(value)[1] == "pseries"){
+  if (inherits(value, "pseries")){
+    # remove pseries features before adding value as a column to pdata.frame
     if (length(class(value)) == 1) value <- unclass(value)
-    else class(value) <- class(value)[-1]
+    else class(value) <- setdiff(class(value), "pseries")
     attr(value, "index") <- NULL
   }
   "$<-.data.frame"(x, name, value)
 }
 
 
-"$.pdata.frame" <- function(x,y){
-  "[["(x, paste(as.name(y)))
-}
-
-
 ###################################################
 ### chunk number 3: extracting
 ###################################################
+# NB: currently no extracting/subsetting function for class pseries, thus
+#     vector subsetting is used which removes the pseries features
+#    There is a working sketch below, but check if it does not interfere with anything else
+
+# "[.pseries" <- function(x, ...) {
+# 
+#   ## use '...' instead of only one specific argument, because subsetting for
+#   ## factors can have argument 'drop', e.g., x[i, drop=T] see ?Extract.factor
+# 
+#   index <- attr(x, "index")
+# 
+#   # to identify the entries which we need to keep in the index:
+#   #  use names of the vector, but set names to integer sequence first (safer)
+#   #  -> use this information (names_subsetted) to subset the index
+#   #  this way, we can use the regular vector subsetting of R x[i] without
+#   #  worrying about the form of i (logical, numeric, character, some expression, ...)
+#   names_orig <- names(x)
+#   names(x) <- seq_along(x)
+#   # remove class 'pseries' and index attrib to use R's vector subsetting x[i]
+#   class(x) <- setdiff(class(x), "pseries")
+#   attr(x, "index") <- NULL
+#   result <- x[...]
+#   names_subsetted <- as.numeric(names(result))
+# 
+#   # make result a 'pseries' again:
+#   # add back to result:
+#   #    * subsetted orignal names                # TODO: not needed?
+#   #    * subsetted index as attribute
+#   #    * class 'pseries'
+# #  names(result) <- names_orig[names_subsetted]           # TODO: not needed?
+#   
+#   ### TODO: test for is.null before adding back? see [[.pdata.frame
+#   
+#   attr(result, "index") <- index[names_subsetted, ]
+#   class(result) <- union("pseries", class(x))
+#   return(result)
+# }
+
+
+
+"[.pdata.frame" <- function(x, i, j, drop) {
+                  # signature of [.data.frame here
+  
+    missing.i    <- missing(i)    # missing is only guaranteed to yield correct results,
+    missing.j    <- missing(j)    # if its argument was not modified before accessing it
+    missing.drop <- missing(drop) # -> save information about missingness
+    sc <- sys.call()
+    # Nargs_mod to distinguish if called by [] (Nargs_mod == 2L); [,] (Nargs_mod == 3L); [,,] (Nargs_mod == 4L)
+    Nargs_mod <- nargs() - (!missing.drop)
+  
+    # # Kevin Tappe 2015-10-29 [code from old implementation]
+    # if (missing(drop)){
+    #     if (! missing(j) && length(j) == 1) { drop = TRUE
+    #       } else { drop = FALSE }
+    # }
+  
+    old.pdata.frame <- !inherits(x, "data.frame")
+    if (! old.pdata.frame){
+      # this part for backward compatibility (required by meboot)
+      
+      ### subset index appropriately:
+      # subsetting data.frame by only j (x[ , j]) or missing j (x[i] yields full-row
+      # columns of data.frame, thus do not subset index because it needs full full rows]
+      #
+      # subset index if:
+      #      * [i,j] (supplied i AND supplied j) (in this case: Nargs_mod == 3L (or 4L depending on present/missing drop))
+      #      * [i, ] (supplied i AND missing j)  (in this case: Nargs_mod == 3L (or 4L depending on present/missing drop))
+      #
+      # do not subset index in all other cases (here are the values of Nargs_mod)
+      #      * [ ,j] (missing  i AND j supplied)                   (Nargs_mod == 3L (or 4L depending on present/missing drop))
+      #      * [i]   (supplied i AND missing j)                    (Nargs_mod == 2L) [Nargs_mod distinguishes this case from the one where subsetting is needed!]
+      #      * [i, drop = TRUE/FALSE] (supplied i AND missing j)   (Nargs_mod == 2L)
+      #
+      # => subset index if: supplied i && Nargs_mod => 3L
+      
+        # Kevin Tappe 2016-01-04 : in case of indexing by a character
+        # vector a pdata.frame, the subseting vector should be converted 
+        # to numeric by matching to the rownames so that the index could 
+        # be correctly indexed (by this numeric value)
+        # (rownames of the pdata.frame and rownames of the pdata.frame's index are not guaranteed to be the same!)
+        ## iindex <- i
+        index <- attr(x, "index")
+        if (!missing.i && Nargs_mod >= 3L) { 
+            iindex <- i
+            if (is.character(iindex)) iindex <- match(iindex, rownames(x))
+            index <- "[.data.frame"(index, iindex, )
+            
+            # remove empty levels in index (if any)
+            # NB: really do dropping of unused levels? Standard R behaviour is to leave the levels and not drop unused levels
+            #     Maybe the dropping is needed for functions like lag.pseries to work correctly?
+            index <- droplevels(index)
+            # NB: use droplevels() rather than x[drop = TRUE] as x[drop = TRUE] can also coerce mode!
+            # old (up to rev. 251): index <- data.frame(lapply(index, function(x) x[drop = TRUE]))
+        }
+    }
+    
+    # delete attribute for old index first:
+    # this preseves the order of the attributes because 
+    # order of non-standard attributes is scrambled by R's data.frame subsetting with `[.`
+    # (need to add new index later anyway)
+    attr(x, "index") <- NULL
+    
+    # Set class to "data.frame" first to avoid coering which enlarges the (p)data.frame 
+    # (probably by as.data.frame.pdata.frame).
+    # Coercing is the built-in behaviour for extraction from data.frames by "[." (see ?`[.data.frame`) 
+    # and it seems this cannot be avoided; thus we need to make sure, not to have any coercing going on
+    # which add extra data (such as as.matrix.pseries, as.data.frame.pdata.frame) by setting the class 
+    # to "data.frame" first
+    class(x) <- "data.frame"
+
+    # call [.data.frame exactly as [.pdata.frame was called but arg is now 'x'
+    # this is necessary because there could be several missing arguments
+    # use sys.call (and not match.call) because arguments other than drop may not be named
+    # need to evaluate i, j, drop, if supplied, before passing them on (do not pass on as originally catched sys.call)
+    sc_mod <- sc
+    sc_mod[[1]] <- quote(`[.data.frame`)
+    sc_mod[[2]] <- quote(x)
+    
+    if (!missing.i) sc_mod[[3]] <- i # if present, i is always in pos 3
+    if (!missing.j) sc_mod[[4]] <- j # if present, j is always in pos 4
+    if (!missing.drop) sc_mod[[length(sc)]] <- drop # if present, drop is always in last position (4 or 5,
+                                                    # depending on the call structure an whether missing j or not)
+    
+    mydata <- eval(sc_mod)
+
+    if (is.null(dim(mydata))){
+        # subsetting returned a vector (nothing more is left) -> make it a pseries
+        res <- structure(mydata,
+                         index = index,
+                         class = base::union("pseries", class(mydata))) # use union to avoid doubling pseries if already present
+                         
+    }
+    else{
+        # subsetting returned a data.frame -> add missing info to make it a pdata.frame again
+        res <- structure(mydata,
+                         index = index,
+                         class = c("pdata.frame", "data.frame"))
+    }
+    return(res)
+}
+
 "[[.pdata.frame" <- function(x, y){
   index <- attr(x, "index")
   attr(x, "index") <- NULL
   class(x) <- "data.frame"
-  result <- x[[y]]
+  result <- "[[.data.frame"(x, y) # x[[y]]
   if (!is.null(result)){
+    # make extracted column a pseries
+    # use this order for attributes to preserve original order of attributes for a pseries
     result <- structure(result,
-                        class = c("pseries", class(x[[y]])),
-                        index = index,
-                        names = row.names(x)
+                        names = row.names(x),
+                        class = base::union("pseries", class(result)), # class(x[[y]]) # use union to avoid doubling pseries if already present
+                        index = index 
                         )
   }
   result
-}  
+}
 
-"$.pdata.frame" <- function(x,y){
-  "[["(x, paste(as.name(y)))
+"$.pdata.frame" <- function(x, y){
+  "[[.pdata.frame"(x, paste(as.name(y)))
+}
+
+
+###################################################
+### chunk number 4: printing
+###################################################
+print.pdata.frame <- function(x, ...){
+  attr(x, "index") <- NULL
+  class(x) <- "data.frame"
+  
+  # This is a workaround: print.data.frame cannot handle
+  # duplicated row names which are currently possible for pdata frames
+  if (any(duplicated(rownames(x)))) {
+   print("Note: pdata.frame contains duplicated row names, thus original row names are not printed")
+   rownames(x) <- NULL 
+  }
+  
+  print(x, ...)
 }
 
 print.pseries <- function(x, ...){
   attr(x, "index") <- NULL
-  attr(x, "class") <- attr(x, "class")[-1]
+  attr(x, "class") <- base::setdiff(attr(x, "class"), "pseries") # attr(x, "class")[-1]
   if (length(attr(x, "class")) == 1
       && class(x) %in% c("character", "logical", "numeric"))
     attr(x, "class") <- NULL
@@ -237,33 +415,80 @@ as.matrix.pseries <- function(x, idbyrow = TRUE, ...){
   x
 }
 
+###################################################
+### chunk number 6: as.list.pdata.frame
+###################################################
+# The default is to behave identical to as.list.data.frame.
+# This default is necessary, because some code relies on this 
+# behaviour! Do not change this!
+#
+#  as.list.data.frame does:
+#    * unclass
+#    * strips all classes but "list"
+#    * strips row.names
+#
+#  By setting argument keep.attributes = TRUE, the attributes of the pdata.frame
+#  are preserved by as.list.pdata.frame: a list of pseries is returned
+#  and lapply can be used as usual, now working on a list of pseries, e.g.
+#    lapply(as.list(pdata.frame[ , your_cols], keep.attributes), lag)
+#  works as expected.
+as.list.pdata.frame <- function(x, keep.attributes = FALSE, ...) {
+  if (!keep.attributes) {
+    x <- as.list.data.frame(x)
+  } else {
+    # make list of pseries objects
+    x_names <- names(x)
+    x <- lapply(x_names, FUN = function(element, pdataframe) {
+                                    "[[.pdata.frame"(x = pdataframe, y = element)
+                                    }, pdataframe = x)
+    names(x) <- x_names
+     
+    # note: this function is slower than the corresponding
+    # as.list.data.frame function,
+    # because we cannot simply use unclass() on the pdata.frame:
+    # need to add index etc to all columns to get proper pseries
+    # back => thus the extraction function "[[.pdata.frame" is used
+    }
+  return(x)
+}
 
 
 ###################################################
 ### chunk number 7: lag and diff
 ###################################################
-lag.pseries <- function(x, k = 1, ...){
-  nx <- names(x)
-  index <- attr(x, "index")
-  id <- index[[1]]
-  time <- index[[2]]
-  isNAtime <- c(rep(1,k), diff(as.numeric(time), lag = k)) != k
-  isNAid <- c(rep(1,k), diff(as.numeric(id), lag = k)) != 0
-  isNA <- as.logical(isNAtime + isNAid)
-  if (is.factor(x)) levs <- levels(x)
-  result <- c(rep(NA, k), x[1:(length(x)-k)])
-  result[isNA] <- NA
-  if (is.factor(x)) result <- factor(result, labels = levs)
-  structure(result,
-            names = nx,
-            class = class(x),
-            index = index)
-}
+
+# NB: There is another lag.pseries function with same name in this file which is more general.
+#     Can we delete this one here? It got overwritten anyway as the other version if further
+#     down in this file.
+
+# lag.pseries <- function(x, k = 1, ...){
+#   nx <- names(x)
+#   index <- attr(x, "index")
+#   id <- index[[1]]
+#   time <- index[[2]]
+#   isNAtime <- c(rep(1,k), diff(as.numeric(time), lag = k)) != k
+#   isNAid <- c(rep(1,k), diff(as.numeric(id), lag = k)) != 0
+#   isNA <- as.logical(isNAtime + isNAid)
+#   if (is.factor(x)) levs <- levels(x)
+#   result <- c(rep(NA, k), x[1:(length(x)-k)])
+#   result[isNA] <- NA
+#   if (is.factor(x)) result <- factor(result, labels = levs)
+#   structure(result,
+#             names = nx,
+#             class = class(x),
+#             index = index)
+# }
 
 diff.pseries <- function(x, lag = 1, ...){
   if (!is.numeric(x)) stop("diff is only relevant for numeric series")
+  if (round(lag) != lag) stop("Lagging value 'lag' must be whole-numbered (and non-negative)")
+
+  # prevent input of negative values, because it will most likely confuse users
+  # what diff would do in this case
+  if (lag < 0) stop("diff.pseries is only relevant for non-negative lags")
+  
   lagx <- lag(x, k = lag)
-  x-lagx
+  return(x-lagx)
 }
 
 
@@ -301,8 +526,8 @@ Tapply.pseries <- function(x, effect = c("individual", "time"), func, ...){
 Tapply.matrix <- function(x, effect, func, ...){
    ## Note: this function is not robust wrt NA in effect
   na.x <- is.na(x)
-  uniqval <- apply(x, 2, function(z) tapply(z, effect, "mean"))
-  uniqval <- apply(x, 2, function(z) tapply(z, effect, func))
+  #uniqval <- apply(x, 2, function(z) tapply(z, effect, "mean")) # Note: uniqval was calculated several times here - why?
+  #uniqval <- apply(x, 2, function(z) tapply(z, effect, func))   # Note: uniqval was calculated several times here - why?
   uniqval <- apply(x, 2, tapply, effect, func)
   result <- uniqval[as.character(effect), , drop = F]
   result[na.x] <- NA
@@ -311,9 +536,9 @@ Tapply.matrix <- function(x, effect, func, ...){
 
 
 ###################################################
-### chunk number 10: within and between
+### chunk number 10: Between, between, Within
 ###################################################
-Between <- function(x,...){
+Between <- function(x, ...){
   UseMethod("Between")
 }
 
@@ -327,7 +552,7 @@ Between.pseries <- function(x, effect = c("individual", "time"), ...){
   Tapply(x, effect = effect, mean, ...)
 }
 
-between <- function(x,...){
+between <- function(x, ...){
   UseMethod("between")
 }
 
@@ -351,7 +576,8 @@ between.matrix <- function(x, effect, ...){
   apply(x, 2, tapply, effect, mean, ...)
 }
 
-Within <- function(x,...){
+
+Within <- function(x, ...){
   UseMethod("Within")
 }
 
@@ -394,14 +620,14 @@ summary.pseries <- function(object, ...){
   xm <- mean(object, na.rm = TRUE)
   Bid <-  Between(object, na.rm = TRUE)
   Btime <-  Between(object, effect = "time", na.rm = TRUE)
-  structure( c(total = sumsq(object), between_id= sumsq(Bid), between_time = sumsq(Btime)), 
+  structure( c(total = sumsq(object), between_id = sumsq(Bid), between_time = sumsq(Btime)), 
             class = c("summary.pseries", "numeric")
             )
 }
 
 plot.summary.pseries <- function(x, ...){
   x <- as.numeric(x)
-  share <- x[-1]/x[1]
+  share <- x[-1]/x[1] # vec with length == 2
   names(share) <- c("id", "time")
   barplot(share, ...)
 }
@@ -409,7 +635,7 @@ plot.summary.pseries <- function(x, ...){
 print.summary.pseries <- function(x, ...){
   digits <- getOption("digits")
   x <- as.numeric(x)
-  share <- x[-1]/x[1]
+  share <- x[-1]/x[1] # vec with length == 2
   names(share) <- c("id", "time")
   cat(paste("total sum of squares :", signif(x[1], digits = digits),"\n"))
   print.default(share, ...)
@@ -424,7 +650,7 @@ as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, ...
   x <- lapply(x,
                 function(z){
                   attr(z, "index") <- index
-                  class(z) <- c("pseries", class(z))
+                  class(z) <- base::union("pseries", class(z)) # use union to avoid doubling pseries if already present
                   return(z)
                 }
               )
@@ -434,120 +660,149 @@ as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, ...
   } else {
       if (row.names == TRUE) { # set fancy row names
         x <- data.frame(x)
-        attr(x, "row.names") <- paste(index[[1]], index[[2]], sep="-") 
+        row.names(x) <- fancy.row.names(index) # using row.names(x)<-"something" is safer (does not allow duplicate row.names) 
+                                               # than attr(x,"row.names")<-"something"
       }
-    ## if row.names is a character vector, row.names could also be passed here to base::data.frame , see ?base::data.frame
+    ## not implemented: if row.names is a character vector, row.names could also be passed here to base::data.frame,
+    ## see ?base::data.frame
   } 
   
   return(x)
 }
 
-
-pdiff <- function(x, cond, has.intercept = FALSE){
+## pdiff is (only) used in model.matrix.pFormula to calculate the model.matrix for FD models
+## works for effect = "individual" and "time", see model.matrix on how to call pdiff
+## result is in order (id, time) for both effects
+pdiff <- function(x, cond, effect = c("individual", "time"), has.intercept = FALSE){
+  effect <- match.arg(effect)
   cond <- as.numeric(cond)
   n <- ifelse(is.matrix(x),nrow(x),length(x))
-  cond <- c(NA,cond[2:n]-cond[1:(n-1)])
+  
+  # code below is written for effect="individual". If effect="time" is
+  # requested, order x so that the code works and later restore original order of x
+  if (effect == "time") { order_cond <- order(cond)
+                          if (!is.matrix(x)) { x <- x[order_cond]} 
+                            else {x <- x[order_cond, ] }
+                          cond <- cond[order_cond]
+                        }
+
+  cond <- c(NA,cond[2:n]-cond[1:(n-1)]) # this assumes a certain ordering
   cond[cond != 0] <- NA
+  
   if (!is.matrix(x)){
     result <- c(NA,x[2:n]-x[1:(n-1)])
     result[is.na(cond)] <- NA
+    # for effect = "time": restore original order of x:
+    if (effect == "time") result <- result[match(seq_len(n), order_cond)]
     result <- na.omit(result)
   }
   else{
     result <- rbind(NA,x[2:n,,drop=FALSE]-x[1:(n-1),,drop=FALSE])
-    result[is.na(cond),] <- NA
+    result[is.na(cond), ] <- NA
+    # for effect = "time": restore original order of x:
+    if (effect == "time") result <- result[match(seq_len(n), order_cond), ]
     result <- na.omit(result)
     result <- result[,apply(result,2, var) > 1E-12,drop = FALSE]
     if (has.intercept){
       result <- cbind(1,result)
       colnames(result)[1] <- "(intercept)"
     }
-
   }
-  attr(result,"na.action") <- NULL
+  attr(result, "na.action") <- NULL
   result
 }
 
 
-lag.pseries <- function(x, k = 1, ...){
-  nx <- names(x)
+# lag: compute lagged values (handles positive lags and negative lags (=leading values) [and 0 -> do nothing])
+#
+# NB: This method seems to be intended for rowwise (positionwise) shifting as lagging
+#     There is also an (somwehat experimental) function called lagt.pseries in a seperate
+#     file which respectes the time periods by looking at their content
+lag.pseries <- function(x, k = 1, ...) {
   index <- attr(x, "index")
   id <- index[[1]]
   time <- index[[2]]
   
+  # catch the case when an index of pdata.frame shall be lagged (index variables are always factors)
+    # NB: this catches - unintentionally - also the case when a factor variable is the same "on the character level"
+    # as one of the corresponding index variables but not the index variable itself
+    #
+    # -> shall we prevent lagging of index variables at all? -> turned off for now, 2016-03-03
+    # if (is.factor(x)) if (all(as.character(x) == as.character(id)) | all(as.character(x)==as.character(time))) stop("Lagged vector cannot be index.")
+  
   alag <- function(x, ak){
-    if (ak != 0){
-      isNAtime <- c(rep(1,ak), diff(as.numeric(time), lag = ak)) != ak
-      isNAid <- c(rep(1,ak), diff(as.numeric(id), lag = ak)) != 0
-      isNA <- as.logical(isNAtime + isNAid)
-      if (is.factor(x)) levs <- levels(x)
-      result <- c(rep(NA, ak), x[1:(length(x)-ak)])
-      result[isNA] <- NA
-      if (is.factor(x)) result <- factor(result, labels = levs)
-      structure(result,
-                names = nx,
-                class = class(x),
-                index = index)
+    if (round(ak) != ak) stop("Lagging value 'k' must be whole-numbered (positive, negative or zero)")
+    if (ak > 0) {
+      
+      # NB: this code assumes consecutive time periods and produces wrong results
+      #     for lag > 1 and non-consecutive time periods
+      
+      # delete first ak observations for each unit
+      #  NB: as.character(time) before as.numeric() might be needed to catch the case of missing time period in whole data set
+      #      see testfile test_lag_lead_factor_levels
+      isNAtime <- c(rep(T, ak), (diff(as.numeric(time), lag = ak) != ak))
+      isNAid   <- c(rep(T, ak), (diff(as.numeric(id),   lag = ak) != 0))
+      isNA <- (isNAtime | isNAid)
+      
+      result <- x                                             # copy x first ...
+      result[1:ak] <- NA                                      # ... then make first ak obs NA ... 
+      result[(ak+1):length(result)] <- x[1:(length(x)-ak)]    # ... shift and ...
+      result[isNA] <- NA                                      # ... make more NAs in between: this way, we keep: all factor levels, names, classes
+      
+    } else if (ak < 0) { # => compute leading values
+      
+      # NB: this code assumes consecutive time periods and produces wrong results
+      #     for lag > 1 and non-consecutive time periods
+      
+      # delete last |ak| observations for each unit
+      num_time <- as.numeric(time)
+      num_id   <- as.numeric(id)
+      isNAtime <- c(c((num_time[1:(length(num_time)+ak)] - num_time[(-ak+1):length(num_time)]) != ak), rep(T, -ak))
+      isNAid   <- c(c((num_id[1:(length(num_id)+ak)]     - num_id[(-ak+1):length(num_id)])     != 0),  rep(T, -ak))
+      isNA <- (isNAtime | isNAid)
+      
+      result <- x                                            # copy x first ...
+      result[(length(result)+ak+1):length(result)] <- NA     # ... then make last |ak| obs NA ... 
+      result[1:(length(result)+ak)] <- x[(1-ak):(length(x))] # ... shift and ...
+      result[isNA] <- NA                                     # ... make more NAs in between: this way, we keep: all factor levels, names, classes
+      
+    } else { # ak == 0 => nothing to do, return original pseries (no lagging/no leading)
+      result <- x
     }
-    else x
-  }
-  if(length(k) > 1){
+    
+    return(result)
+  } # END function alag
+  
+  if (length(k) > 1) {
     rval <- sapply(k, function(i) alag(x, i))
     colnames(rval) <- k
   }
-  else{
+  else {
     rval <- alag(x, k)
   }
   return(rval)
 }
-  
-
-### Index methods
 
 
-index.pindex <- function(x, which = NULL, ...){
-  if (is.null(which)) which <- names(x)
-  if (! (length(which) %in% c(1, 2))) stop("which should be of length 1 or 2")
-  if (is.numeric(which)){
-    if (! all(which %in% c(1, 2))) stop("if integers, which should contain 1 and/or 2")
-    which <- names(x)[which]
-  }
-  if (length(which) == 2){
-    if (which[1] == "id") which[1] = names(x)[1]
-    if (which[2] == "time") which[2] = names(x)[2]
-    for (i in 1:2){
-      if (! (which[i] %in% names(x))) stop(paste("variable", which[i], "does not exist"))
-    }
-    result <- x[, which]
-  }
-  else{
-    if (which == "id") which = names(x)[1]
-    if (which == "time") which = names(x)[2]
-    if (! (which %in% names(x))) stop(paste("variable", which, "does not exist"))
-    result <- x[, which]
-  }
-  result
-}
-      
-index.pdata.frame <- function(x, which = NULL, ...){
-  anindex <- attr(x, "index")
-  index(x = anindex, which = which)
+# lead.pseries(x, k) is a wrapper for lag.pseries(x, -k)
+lead.pseries <- function(x, k = 1, ...) {
+  ret <- lag.pseries(x, k = -k)
+  if (length(k) > 1) colnames(ret) <- k
+  return(ret)
 }
 
-index.pseries <- function(x, which = NULL, ...){
-  anindex <- attr(x, "index")
-  index(x = anindex, which = which)
+lead <- function(x, k = 1, ...) {
+  UseMethod("lead")
 }
-  
-index.panelmodel <- function(x, which = NULL, ...){
-  anindex <- attr(x$model, "index")
-  index(x = anindex, which = which)
-}
+
+
+
 
 
 
 pseries2pdata <- function(x) {
-  ## transforms a pseries in a dataframe with the indices as regular columns
+  ## transforms a pseries in a pdataframe with the indices as regular columns
+  ## in positions 1 and 2 (individual index, time index)
   indices <- attr(x, "index")
   vx <- as.numeric(x)
   px <- cbind(indices, vx)
@@ -635,11 +890,5 @@ plot.pseries <- function(x, plot=c("lattice", "superposed"),
 
                })
 
-}
-
-# nobs() function to extract total number of observations used for estimating the panelmodel
-nobs.panelmodel <- function(object, ...) {
-  if (inherits(object, "plm") | inherits(object, "panelmodel")) return(pdim(object)$nT$N)
-    else stop("Input x needs to be of class 'plm' (or 'panelmodel'), i. e. a panel model estimated by plm()")
 }
 

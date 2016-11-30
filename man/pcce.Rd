@@ -13,11 +13,10 @@ common factors (balanced or unbalanced)
 \usage{
 pcce(formula, data, subset, na.action,
      model=c("mg", "p"),
-     residuals = c("defactored", "standard"),
-     index = NULL, trend = FALSE, ...)
-\method{summary}{pcce}(object, ...)
+     index = NULL, trend = FALSE, \dots)
+\method{summary}{pcce}(object, \dots)
 \method{print}{summary.pcce}(x,digits = max(3, getOption("digits") -
-2), width = getOption("width"),...)
+2), width = getOption("width"), \dots)
 }
 
 \arguments{
@@ -27,8 +26,6 @@ pcce(formula, data, subset, na.action,
  \item{subset}{see \code{lm},}
  \item{na.action}{see \code{lm},}
  \item{model}{one of \code{c("mg","p")}, selects Mean Groups vs. Pooled CCE model,}
- \item{residuals}{one of \code{c("defactored", "standard")}, allows for
- returning different kinds of residuals,}
  \item{index}{the indexes, see \code{\link{pdata.frame}},}
  \item{trend}{logical specifying whether an individual-specific trend has to be included,}
  \item{digits}{digits,}
@@ -39,7 +36,9 @@ pcce(formula, data, subset, na.action,
 \value{
 An object of class \code{c("pcce","panelmodel")} containing:
  \item{coefficients}{the vector of coefficients,}
- \item{residuals}{the vector of residuals,}
+ \item{residuals}{the vector of (defactored) residuals,}
+ \item{stdres}{the vector of (raw) residuals,}
+ \item{tr.model}{the transformed data after projection on H,}
  \item{fitted.values}{the vector of fitted.values,}
  \item{vcov}{the covariance matrix of the coefficients,}
  \item{df.residual}{degrees of freedom of the residuals,}
@@ -47,7 +46,7 @@ An object of class \code{c("pcce","panelmodel")} containing:
     estimation,}
  \item{call}{the call,}
  \item{sigma}{always \code{NULL}, \code{sigma} is here only for
-   conmpatibility reasons (to allow using the same \code{summary} and
+   compatibility reasons (to allow using the same \code{summary} and
    \code{print} methods as \code{pggls}),}
  \item{indcoef}{the matrix of individual coefficients from separate time
    series regressions.}

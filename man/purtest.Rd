@@ -15,10 +15,10 @@ purtest(object, data = NULL, index = NULL,
         test= c("levinlin", "ips", "madwu", "hadri"),
         exo = c("none", "intercept", "trend"),
         lags = c("SIC", "AIC", "Hall"), pmax = 10, Hcons = TRUE,
-        q = NULL, dfcor = FALSE, fixedT = TRUE, ...)
-\method{print}{purtest}(x, ...)
-\method{summary}{purtest}(object, ...)
-\method{print}{summary.purtest}(x, ...)
+        q = NULL, dfcor = FALSE, fixedT = TRUE, \dots)
+\method{print}{purtest}(x, \dots)
+\method{summary}{purtest}(object, \dots)
+\method{print}{summary.purtest}(x, \dots)
 }
 
 \arguments{
@@ -26,7 +26,7 @@ purtest(object, data = NULL, index = NULL,
   \item{data}{a \code{'data.frame'} or a \code{'pdata.frame'} object,}
   \item{index}{the indexes,}
   \item{test}{the test to be computed: one of \code{"levinlin"} for Levin, Lin and Chu (2002), \code{"ips"} for Im, Pesaran and Shin (2003), \code{"madwu"} for Maddala and Wu (1999), or \code{"hadri"} for Hadri (2000),}
-  \item{exo}{the exogenous variables to introduce in the augmented Dickey-Fuller regressions, one of: no exogenous variables (\code{"none"}), individual intercepts (\code{"intercept"}), or individual intercepts and trends (\code{"trend"}),}
+  \item{exo}{the exogenous variables to introduce in the augmented Dickey--Fuller regressions, one of: no exogenous variables (\code{"none"}), individual intercepts (\code{"intercept"}), or individual intercepts and trends (\code{"trend"}),}
   \item{lags}{the number of lags to be used for the augmented Dickey-Fuller regressions: either an integer (the number of lags for all time series), a vector of integers (one for each time series), or a character string for an automatic computation of the number of lags, based on either the AIC (\code{"AIC"}), the SIC (\code{"SIC"}), or on Hall's method (\code{"Hall"}),}
   \item{pmax}{maximum number of lags,}
   \item{Hcons}{logical, indicating whether the heteroscedasticity-consistent test of Hadri should be computed,}
@@ -55,13 +55,13 @@ The Hadri statistic is the cross-sectional average of the individual KPSS statis
 }
 
 \references{
-Hadri K. (2000). ``Testing for Unit Roots in Heterogeneous Panel Data'', \emph{The Econometrics Journal}, 3, pp. 148--161.
+Hadri K. (2000). ``Testing for Stationarity in Heterogeneous Panel Data'', \emph{The Econometrics Journal}, \bold{3}(2), pp. 148--161.
 
-Im K.S., Pesaran M.H. and Shin Y. (2003). ``Testing for Unit Roots in Heterogeneous Panels'', \emph{Journal of Econometrics}, 115(1), pp. 53--74.
+Im K.S., Pesaran M.H. and Shin Y. (2003). ``Testing for Unit Roots in Heterogeneous Panels'', \emph{Journal of Econometrics}, \bold{115}(1), pp. 53--74.
 
-Levin A., Lin C.F. and Chu C.S.J. (2002). ``Unit Root Test in Panel Data: Asymptotic and Finite Sample Properties'', \emph{Journal of Econometrics}, 108, pp. 1--24.
+Levin A., Lin C.F. and Chu C.S.J. (2002). ``Unit Root Tests in Panel Data: Asymptotic and Finite Sample Properties'', \emph{Journal of Econometrics}, \bold{108}(1), pp. 1--24.
 
-Maddala G.S. and Wu S. (1999). ``A Comparative Study of Unit Root Tests with Panel Data and a New Simple Test'', \emph{Oxford Bulletin of Economics and Statistics}, 61, Supplement 1, pp. 631--652.
+Maddala G.S. and Wu S. (1999). ``A Comparative Study of Unit Root Tests with Panel Data and a New Simple Test'', \emph{Oxford Bulletin of Economics and Statistics}, \bold{61}, Supplement 1, pp. 631--652.
 }
 
 \examples{

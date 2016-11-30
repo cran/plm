@@ -6,19 +6,19 @@
 \title{Wooldridge Test for AR(1) Errors in FE Panel Models}
 
 \description{
-Test of serial correlation for (the idiosyncratic component of) the errors in fixed-effects panel models.
+Test of serial correlation for (the idiosyncratic component of) the errors in fixed--effects panel models.
 }
 
 \usage{
-pwartest(x,...)
-\method{pwartest}{panelmodel}(x, ...)
-\method{pwartest}{formula}(x, data, ...)
+pwartest(x, \dots)
+\method{pwartest}{panelmodel}(x, \dots)
+\method{pwartest}{formula}(x, data, \dots)
 }
 
 \arguments{
  \item{x}{an object of class \code{formula} or of class \code{panelmodel},}
  \item{data}{a \code{data.frame},}
- \item{...}{further arguments to be passed on to \code{linearHypothesis} or to \code{vcovHC}.}
+ \item{\dots}{further arguments to be passed on to \code{linearHypothesis} or to \code{vcovHC}.}
 }
 
 \details{
@@ -27,7 +27,7 @@ As Wooldridge (2003/2010, Sec. 10.5.4) observes, under the null of no serial cor
 \code{pwartest} estimates the \code{within} model and retrieves
 residuals, then estimates an AR(1) \code{pooling} model on them. The test statistic is obtained by applying \code{linearHypothesis()} to the latter model to test the above restriction on \eqn{\delta}, setting the covariance matrix to \code{vcovHC} with the option \code{method="arellano"} to control for serial correlation.
 
-Unlike the \code{\link{pbgtest}} and \code{\link{pdwtest}}, this test does not rely on large-T asymptotics and has therefore good properties in ``short'' panels. Furthermore, it is robust to general heteroskedasticity.
+Unlike the \code{\link{pbgtest}} and \code{\link{pdwtest}}, this test does not rely on large--T asymptotics and has therefore good properties in ``short'' panels. Furthermore, it is robust to general heteroskedasticity.
 }
 
 \value{

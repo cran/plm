@@ -1,25 +1,24 @@
 ### R code from vignette source 'plm.rnw'
 
 ###################################################
-### code chunk number 1: plm.rnw:564-565
+### code chunk number 1: plm.rnw:566-567
 ###################################################
 options(prompt= "R> ", useFancyQuotes = FALSE)
 
 
 ###################################################
-### code chunk number 2: plm.rnw:568-569
+### code chunk number 2: plm.rnw:570-571
 ###################################################
 library("plm")
 
 
 ###################################################
-### code chunk number 3: plm.rnw:579-584
+### code chunk number 3: plm.rnw:581-585
 ###################################################
 data("EmplUK", package="plm")
 data("Produc", package="plm")
 data("Grunfeld", package="plm")
 data("Wages",package="plm")
-
 
 
 ###################################################
@@ -32,27 +31,26 @@ head(attr(E, "index"))
 
 
 ###################################################
-### code chunk number 5: plm.rnw:616-618
+### code chunk number 5: plm.rnw:617-619
 ###################################################
 summary(E$emp)
 head(as.matrix(E$emp))
 
 
 ###################################################
-### code chunk number 6: plm.rnw:664-665
+### code chunk number 6: plm.rnw:665-666
 ###################################################
 head(lag(E$emp, 0:2))
 
 
 ###################################################
-### code chunk number 7: plm.rnw:674-680
+### code chunk number 7: plm.rnw:675-680
 ###################################################
 head(diff(E$emp), 10)
 head(lag(E$emp, 2), 10)
 head(Within(E$emp))
 head(between(E$emp), 4)
 head(Between(E$emp), 10)
-
 
 
 ###################################################
@@ -268,7 +266,7 @@ pbltest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,data=Produc,alternative="onesi
 ###################################################
 ## this can be taken away as soon as attached to plm.rnw
 grun.fe <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
-pbgtest(grun.fe, order=2)
+pbgtest(grun.fe, order = 2)
 
 
 ###################################################
@@ -338,8 +336,7 @@ reML<-lme(inv~value+capital,data=Grunfeld,random=~1|firm)
 
 coef(reGLS)
 
-summary(reML)$coef$fixed
-
+summary(reML)$coefficients$fixed
 
 
 ###################################################
@@ -351,8 +348,7 @@ vcmML<-lme(inv~value+capital,data=Grunfeld,random=~value+capital|year)
 
 coef(vcm)
 
-summary(vcmML)$coef$fixed
-
+summary(vcmML)$coefficients$fixed
 
 
 ###################################################
@@ -361,7 +357,6 @@ summary(vcmML)$coef$fixed
 vcmf<-pvcm(inv~value+capital,data=Grunfeld,model="within",effect="time")
 
 vcmfML<-lmList(inv~value+capital|year,data=Grunfeld)
-
 
 
 ###################################################
@@ -376,7 +371,7 @@ gglsML<-gls(inv~value+capital,data=sGrunfeld,
 
 coef(ggls)
 
-summary(gglsML)$coef
+summary(gglsML)$coefficients
 
 
 ###################################################
@@ -397,7 +392,7 @@ reAR1ML<-lme(inv~value+capital,data=Grunfeld,random=~1|firm,
 ###################################################
 ### code chunk number 53: fetchcoefs
 ###################################################
-summary(reAR1ML)$coef$fixed
+summary(reAR1ML)$coefficients$fixed
 coef(reAR1ML$modelStruct$corStruct,unconstrained=FALSE)
 
 

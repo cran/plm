@@ -163,7 +163,7 @@ lev2var <- function(x, ...){
   }
 }
 
-
+##### has.intercept methods #####
 has.intercept <- function(object, ...) {
   UseMethod("has.intercept")
 }
@@ -183,29 +183,155 @@ has.intercept.Formula <- function(object, rhs = NULL, ...) {
   sapply(rhs, function(x) has.intercept(formula(object, lhs = 0, rhs = x)))
 }
 
+has.intercept.panelmodel <- function(object, ...){
+  object <- attr(model.frame(object),"formula")
+  has.intercept(object)
+}
+
+has.intercept.plm <- function(object, part = "first", ...){
+  has.intercept(formula(object), part = part)
+}
+
+
+
 pres <- function(x) {  # pres.panelmodel
   ## extracts model residuals as pseries
 
-    ## extract indices
-    groupind<-attr(x$model, "index")[,1]  #attr(model.frame(x), "index")[[1]]
-    timeind<-attr(x$model, "index")[,2]   #attr(model.frame(x), "index")[[2]]
-    if(!is.null(x$args$model)) {  # fix to allow operation with pggls, pmg
-    ## Achim's fix
-     if(x$args$model == "fd") {
-       groupi <- as.numeric(groupind)
-       ## make vector =1 on first obs in each group, 0 elsewhere
-       selector <-groupi-c(0,groupi[-length(groupi)])
-       selector[1] <- 1 # the first must always be 1
-       ## eliminate first obs in time for each group
-       groupind <- groupind[!selector]
-       timeind <- timeind[!selector]
-     }
- }
+  ## extract indices
+  groupind <-attr(x$model, "index")[,1]   #attr(model.frame(x), "index")[[1]]
+  timeind  <-attr(x$model, "index")[,2]   #attr(model.frame(x), "index")[[2]]
+  
+  # fix to allow operation with pggls, pmg (NB: pmg? meant: plm?)
+  # [NB: one day, make this cleaner; with the describe framework?]
+  if (!is.null(x$args$model))                 maybe_fd <- x$args$model
+  if (!is.null(attr(x, "pmodel")$model.name)) maybe_fd <- attr(x, "pmodel")$model.name # this line is currently needed to detect pggls models
+  
+  ## Achim's fix: reduce id and time index to accomodate first-differences model's number of observations
+  if(exists("maybe_fd") && maybe_fd == "fd") {
+    groupi <- as.numeric(groupind)
+    ## make vector =1 on first obs in each group, 0 elsewhere
+    selector <-groupi-c(0,groupi[-length(groupi)])
+    selector[1] <- 1 # the first must always be 1
+    ## eliminate first obs in time for each group
+    groupind <- groupind[!selector]
+    timeind <- timeind[!selector]
+  }
 
   resdata <- data.frame(ee=x$residuals, ind=groupind, tind=timeind)
-  pee<-pdata.frame(resdata, index=c("ind","tind"))
+  pee <- pdata.frame(resdata, index=c("ind","tind"))
 
   pres <- pee$ee
   return(pres)
 }
 
+
+# nobs() function to extract total number of observations used for estimating the panelmodel
+# like stats::nobs for lm objects
+# NB: here, use object$residuals rather than residuals(object)
+#     [b/c the latter could do NA padding once NA padding works for plm objects.
+#      NA padded residuals would yield wrong result for nobs!]
+nobs.panelmodel <- function(object, ...) {
+  if (inherits(object, "plm") | inherits(object, "panelmodel")) return(length(object$residuals))
+    else stop("Input 'object' needs to be of class 'plm' or 'panelmodel'")
+}
+
+# No of obs calculated as in print.summary.pgmm [code copied from there]
+nobs.pgmm <- function(object, ...) {
+  if (inherits(object, "pgmm")) return(sum(unlist(object$residuals) != 0))
+    else stop("Input 'object' needs to be of class 'pgmm', i. e. a GMM estimation with panel data estimated by pgmm()")
+}
+
+
+
+# punbalancedness: measures for unbalancedness of a pandel data set
+# as defined in Ahrens/Pincus (1981), p. 228 (gamma and nu)
+punbalancedness.default <- function(x, ...) {
+  pdim <- pdim(x, ...)
+  
+  N <- pdim$nT$n # no. of individuals
+  Totalobs <- pdim$nT$N # no. of total observations
+  Ti <- pdim$Tint$Ti
+  Tavg <- sum(Ti)/N
+  
+  r1 <- N / (Tavg * sum(1/Ti))
+  r2 <- 1 / (N * (sum( (Ti/Totalobs)^2)))
+  
+  return(c(gamma = r1, nu = r2))
+}
+
+punbalancedness.pdata.frame <- function(x, ...) {
+  punbalancedness.default(x, ...)
+}
+
+punbalancedness.data.frame <- function(x, index = NULL, ...) {
+  x <- pdata.frame(x, index = index, ...)
+  punbalancedness.default(x, ...)
+}
+
+punbalancedness.panelmodel <- function(x, ...) {
+  punbalancedness.default(x, ...)
+}
+
+punbalancedness <- function(x, ...) {
+  UseMethod("punbalancedness")
+}
+
+
+# helper function
+fancy.row.names <- function(index, sep = "-") {
+  return(paste(index[[1]], index[[2]], sep = sep))
+}
+
+# helper function for pwaldtest: trans_clubSandwich_vcov
+# translate clubSandwich's vcov object so it is suitable for summary.plm, plm's pwaldtest
+# attribute "cluster" in clubSandwich's vcov objects contains the cluster variable it
+# plm's vcov objects also have attribute "cluster" but it contains a character as
+# information about the cluster dimension (either "group" or "time")
+#
+# inputs:
+#   * CSvcov: a vcov as returned by clubSandwich's vcovCR function [class("vcovCR", "clubSandwich")]
+#   * index: the index belonging to a plm object/model
+# return value:
+#   * modified CSvcov (substituted attribute "cluster" with suitable character or NULL)
+trans_clubSandwich_vcov <- function(CSvcov, index) {
+  clustervar <- attr(CSvcov, "cluster")
+  if (!is.null(clustervar)) {
+      if (isTRUE(all.equal(index[[1]], clustervar))) {
+        attr(CSvcov, "cluster") <- "group"
+        return(CSvcov)
+      }
+      if (isTRUE(all.equal(index[[2]], clustervar))) {
+        attr(CSvcov, "cluster") <- "time"
+        return(CSvcov)
+      } else {
+        attr(CSvcov, "cluster") <- NULL
+        return(CSvcov)
+      }
+  }
+  warning("no attribute \"cluster\" found in supplied vcov object")
+  return(CSvcov)
+}
+
+## helper function to extract one or more t value(s) (coef/s.e.) for a coefficient from model object
+## useful if one wants to avoid the computation of a whole lot of values with summary()
+gettvalue <- function(x, coefname) {
+  # x: model object (usually class plm or lm)
+  # coefname: character indicating name(s) of coefficient(s) for which the t value(s) is (are) requested
+  # return: named numeric vector of length == length(coefname) with requested t value(s)
+  beta <- coef(x)[coefname]
+  se <- sqrt(diag(vcov(x))[coefname])
+  tvalue <- beta / se
+  return(tvalue)
+}
+
+# helper function: "p-function" for mixed chisq (also called chi-bar-squared)
+# used in plmtest(., type = "ghm"), see Baltagi (2013), pp. 71-72, 74, 88, 202-203, 209
+#
+# a reference seems to be
+# Dykstra, R./El Barmi, H., Chi-Bar-Square Distributions, in: Encyclopedia of Statistical Sciences, 
+# DOI: 10.1002/0471667196.ess0265.pub2
+pchibarsq <- function(q, df, weights, lower.tail = TRUE, ... ) {
+  # NB: other parameters in dots (...): not checked if valid! (ncp, log, ...)
+  res <- sum(weights * pchisq(q, df = df, lower.tail = lower.tail, ...))
+  return(res)
+}

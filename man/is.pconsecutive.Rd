@@ -1,0 +1,140 @@
+\name{is.pconsecutive}
+\alias{is.pconsecutive}
+\alias{is.pconsecutive.data.frame}
+\alias{is.pconsecutive.pdata.frame}
+\alias{is.pconsecutive.panelmodel}
+\alias{is.pconsecutive.pseries}
+\alias{is.pconsecutive.default}
+
+\title{Check if time periods are consecutive}
+
+\description{This function checks for each individual if its associated time periods 
+are consecutive (no "gaps" in time dimension per individual)}
+
+\usage{
+\method{is.pconsecutive}{pdata.frame}(x, na.rm.tindex = FALSE, \dots)
+\method{is.pconsecutive}{panelmodel}(x, na.rm.tindex = FALSE, \dots)
+\method{is.pconsecutive}{pseries}(x, na.rm.tindex = FALSE, \dots)
+\method{is.pconsecutive}{data.frame}(x, index = NULL, na.rm.tindex = FALSE, \dots)
+\method{is.pconsecutive}{default}(x, id, time, na.rm.tindex = FALSE, \dots)
+}
+
+\arguments{
+ \item{x}{usually, an object of class \code{pdata.frame}, \code{data.frame}, \code{pseries}, or an estimated \code{panelmodel};
+          for the default method \code{x} can also be an arbitrary vector or \code{NULL}, see \bold{Details},}
+ \item{na.rm.tindex}{logical indicating whether any \code{NA} values in the time index are removed
+ before consecutiveness is evaluated (defaults to \code{FALSE}),}
+ \item{index}{only relevant for \code{data.frame} interface; if \code{NULL}, the first two columns of the data.frame are assumed to be the index variables; if not \code{NULL}, both dimensions ('individual', 'time')
+              need to be specified by \code{index} for \code{is.pconsecutive} on data frames,
+              for further details see \code{\link{pdata.frame}},}
+              
+ \item{id, time}{only relevant for default method: vectors specifying the id and time dimensions, i. e. a sequence of
+ individual and time identifiers, each as stacked time series,}
+ \item{\dots}{further arguments.}
+}
+
+\value{ 
+A named \code{logical} vector (names are those of the individuals).
+The i-th element of the returned vector corresponds to the i-th individual. The values of the i-th element can be:
+\item{\code{TRUE}}{if the i-th individual has consecutive time periods,}
+\item{\code{FALSE}}{if the i-th individual has non-consecutive time periods,}
+\item{\code{NA}}{if there are any NA values in time index of the i-th the individual; 
+see also argument \code{na.rm.tindex} to remove those.}
+}
+
+\details{
+ (p)data.frame, pseries and estimated panelmodel objects can be tested if their time periods are consecutive per individual.
+ For evaluation of consecutiveness, the time dimension is interpreted to be numeric, and the data are tested for being a 
+ regularly spaced sequence with distance 1 between the time periods for each individual (for each individual the time dimension
+ can be interpreted as sequence t, t+1, t+2, \ldots where t is an integer). As such, the "numerical content" of the time index
+ variable is considered for consecutiveness, not the "physical position" of the various observations for an individuals in
+ the (p)data.frame/pseries (it is not about "neighbouring" rows).
+ 
+ The default method also works for argument \code{x} being an arbitrary vector (see \bold{Examples}), provided one can 
+ supply arguments \code{id} and \code{time}, which need to ordered as stacked time series. As only \code{id} and \code{time} 
+ are really necessary for the default method to evaluate the consecutiveness, \code{x = NULL} is also possible. However, 
+ if the vector \code{x} is also supplied, additional input checking for equality of the lengths of \code{x}, \code{id} and 
+ \code{time} is performed, which is safer.
+ 
+ For the data.frame interface, the data is ordered in the appropriate way (stacked time series) before the consecutiveness 
+ is evaluated. For the pdata.frame and pseries interface, ordering is not performed because both data types are already 
+ ordered in the appropriate way when created.
+ 
+ Note: Only the presence of the time period itself in the object is tested, not if there are any other variables.
+ \code{NA} values in individual index are not examined but silently dropped - In this case, it is not clear which 
+ individual is meant by id value \code{NA}, thus no statement about consecutiveness of time periods for those 
+ "\code{NA}-individuals" is possible.
+}
+
+\seealso{
+ \code{\link{make.pconsecutive}} to make data consecutive (and, as an option, balanced at the same time) and \code{\link{make.pbalanced}}
+ to make data balanced.\cr
+ \code{\link{pdim}} to check the dimensions of a 'pdata.frame' (and other objects), 
+ \code{\link{pvar}} to check for individual and time variation of a 'pdata.frame' (and other objects),
+ \code{\link[plm]{lag}} for lagged (and leading) values of a 'pseries' object.\cr
+ 
+ \code{\link{pseries}}, \code{\link{data.frame}}, \code{\link{pdata.frame}}, for class 'panelmodel' see \code{\link{plm}} and \code{\link{pgmm}}.
+}
+
+\author{Kevin Tappe}
+
+\examples{
+data("Grunfeld", package = "plm")
+is.pconsecutive(Grunfeld)
+is.pconsecutive(Grunfeld, index=c("firm", "year"))
+
+# delete 2nd row (2nd time period for first individual)
+# -> non consecutive 
+Grunfeld_missing_period <- Grunfeld[-2, ]
+is.pconsecutive(Grunfeld_missing_period)
+all(is.pconsecutive(Grunfeld_missing_period)) # FALSE
+
+# delete rows 1 and 2 (1st and 2nd time period for first individual)
+# -> consecutive
+Grunfeld_missing_period_other <- Grunfeld[-c(1,2), ]
+is.pconsecutive(Grunfeld_missing_period_other) # all TRUE
+
+# delete year 1937 (3rd period) for _all_ individuals
+Grunfeld_wo_1937 <- Grunfeld[Grunfeld$year != 1937, ]
+is.pconsecutive(Grunfeld_wo_1937) # all FALSE
+
+# pdata.frame interface
+pGrunfeld <- pdata.frame(Grunfeld)
+pGrunfeld_missing_period <- pdata.frame(Grunfeld_missing_period)
+is.pconsecutive(pGrunfeld) # all TRUE
+is.pconsecutive(pGrunfeld_missing_period) # first FALSE, others TRUE
+
+
+# panelmodel interface (first, estimate some models)
+mod_pGrunfeld <- plm(inv ~ value + capital, data = Grunfeld)
+mod_pGrunfeld_missing_period <- plm(inv ~ value + capital, data = Grunfeld_missing_period)
+
+is.pconsecutive(mod_pGrunfeld)
+is.pconsecutive(mod_pGrunfeld_missing_period)
+
+nobs(mod_pGrunfeld) # 200
+nobs(mod_pGrunfeld_missing_period) # 199
+
+
+# pseries interface
+pinv <- pGrunfeld$inv
+pinv_missing_period <- pGrunfeld_missing_period$inv
+
+is.pconsecutive(pinv)
+is.pconsecutive(pinv_missing_period)
+
+# default method for arbitrary vectors or NULL
+inv <- Grunfeld$inv
+inv_missing_period <- Grunfeld_missing_period$inv
+is.pconsecutive(inv, id = Grunfeld$firm, time = Grunfeld$year)
+is.pconsecutive(inv_missing_period, id = Grunfeld_missing_period$firm, 
+                                    time = Grunfeld_missing_period$year)
+
+# (not run) demonstrate mismatch lengths of x, id, time 
+# is.pconsecutive(x = inv_missing_period, id = Grunfeld$firm, time = Grunfeld$year)
+
+# only id and time are needed for evaluation
+is.pconsecutive(NULL, id = Grunfeld$firm, time = Grunfeld$year)
+}
+
+\keyword{attribute}

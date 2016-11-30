@@ -4,13 +4,14 @@
 
 \title{Beck and Katz Robust Covariance Matrix Estimators}
 \description{
-  Unconditional Robust covariance matrix estimators \emph{a la Beck and Katz} for panel models.
+  Unconditional Robust covariance matrix estimators \emph{a la Beck and Katz} for panel models 
+  (a.k.a. Panel Corrected Standard Errors (PCSE)).
 }
 \usage{
 \method{vcovBK}{plm}(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
                               cluster = c("group", "time"),
                               diagonal = FALSE,
-                              ...)
+                              \dots)
 }
 
 \arguments{
@@ -41,28 +42,44 @@ asymptotics and will not be appropriate elsewhere.
 
 The \code{diagonal} logical argument can be used, if set to \code{TRUE},
 to force to zero all nondiagonal elements in the estimated error
-covariances; this is appropriate if both serial and cross-sectional correlation
-are assumed out, and yields a timewise- (groupwise-) heteroskedasticity-consistent
+covariances; this is appropriate if both serial and cross--sectional correlation
+are assumed out, and yields a timewise- (groupwise-) heteroskedasticity--consistent
 estimator.
 
-Weighting schemes are analogous to those in \code{vcovHC} in package \code{sandwich} and are justified theoretically (although in the context of the standard linear model) by MacKinnon and White (1985) and Cribari-Neto (2004) (see Zeileis (2004)).
+Weighting schemes are analogous to those in \code{\link[sandwich]{vcovHC}} in package \code{sandwich} and are justified theoretically (although in the context of the standard linear model) by MacKinnon and White (1985) and Cribari-Neto (2004) (see Zeileis (2004)).
 
 The main use of \code{vcovBK} is to be an argument to other functions,
-e.g. for Wald-type testing: as \code{vcov} to \code{coeftest()},
-\code{waldtest()} and other methods in the \code{lmtest} package; and as
-\code{vcov} to \code{linearHypothesis()} in the \code{car} package (see the examples). Notice that the \code{vcov} argument may be supplied a function (which is the safest) or a matrix (see Zeileis (2004), 4.1-2 and examples below).
+e.g. for Wald--type testing: argument \code{vcov.} to \code{coeftest()}, argument \code{vcov} to
+\code{waldtest()} and other methods in the \code{lmtest} package; and argument
+\code{vcov.} to \code{linearHypothesis()} in the \code{car} package (see the examples). Notice that the \code{vcov} and \code{vcov.} arguments allow to supply a function (which is the safest) or a matrix (see Zeileis (2004), 4.1-2 and examples below).
 
+}
+
+\seealso{
+  \code{\link[sandwich]{vcovHC}} from the sandwich package for weighting schemes (\code{type} argument).
 }
 
 \author{Giovanni Millo}
 
 \references{
   Beck, N. and Katz, J. (1995) What to do (and not to do) with
-  time-series-cross-section data in comparative politics. \emph{American
+  time-series cross-section data in comparative politics. \emph{American
     Political Science Review}, \bold{89(3)}, pp. 634--647.
+    
+  Cribari-Neto, F. (2004) Asymptotic inference under heteroskedasticity
+  of unknown form. \emph{Computational Statistics & Data Analysis}
+  \bold{45(2)}, pp. 215--233.
 
   Greene, W. H. (2003) \emph{Econometric Analysis}, 5th ed., Prentice Hall/Pearson,
   Upper Saddle River, New Jersey, Sec. 13.9.3, 13.9.7.
+  
+  MacKinnon, J. G. and  White, H. (1985) Some heteroskedasticity-consistent
+  covariance matrix estimators with improved finite sample properties.
+  \emph{Journal of Econometrics} \bold{29(3)}, pp. 305--325.
+  
+  Zeileis, A. (2004) Econometric Computing with HC and HAC Covariance Matrix
+  Estimators. \emph{Journal of Statistical Software}, \bold{11}(10), pp. 1--17.
+  URL \url{http://www.jstatsoft.org/v11/i10/}.
 }
 
 \examples{
@@ -74,19 +91,19 @@ zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="random"
 coeftest(zz)
 ## robust significance test, cluster by group
 ## (robust vs. serial correlation), default arguments
-coeftest(zz, vcov=vcovBK)
+coeftest(zz, vcov.=vcovBK)
 ## idem with parameters, pass vcov as a function argument
-coeftest(zz, vcov=function(x) vcovBK(x, type="HC1"))
+coeftest(zz, vcov.=function(x) vcovBK(x, type="HC1"))
 ## idem, cluster by time period
 ## (robust vs. cross-sectional correlation)
-coeftest(zz, vcov=function(x) vcovBK(x,
+coeftest(zz, vcov.=function(x) vcovBK(x,
  type="HC1", cluster="time"))
 ## idem with parameters, pass vcov as a matrix argument
-coeftest(zz, vcov=vcovBK(zz, type="HC1"))
+coeftest(zz, vcov.=vcovBK(zz, type="HC1"))
 ## joint restriction test
 waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovBK)
 ## test of hyp.: 2*log(pc)=log(emp)
-linearHypothesis(zz, "2*log(pc)=log(emp)", vcov=vcovBK)
+linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovBK)
 }
 \keyword{regression}
 

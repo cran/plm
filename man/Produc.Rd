@@ -26,8 +26,8 @@ A panel of 48 observations from 1970 to 1986
     \item{water}{water and sewer facilities}
     \item{util}{other public buildings and structures}
     \item{pc}{private capital stock}
-    \item{gsp}{gross state products}
-    \item{emp}{labor input measured by the employement in non--agricultural payrolls}
+    \item{gsp}{gross state product}
+    \item{emp}{labor input measured by the employment in non--agricultural payrolls}
     \item{unemp}{state unemployment rate}
   }
 }
@@ -47,9 +47,9 @@ Baltagi, Badi H. (2001) \emph{Econometric Analysis of Panel Data}, 2nd ed., John
   
 Baltagi, Badi H. (2013) \emph{Econometric Analysis of Panel Data}, 5th ed., John Wiley and Sons.
 
-Baltagi, B. H.  and  N.  Pinnoi (1995) \dQuote{Public capital stock and state productivity growth: further evidence}, \emph{Empirical Economics}, \bold{20}, 351--359.
+Baltagi, B. H.  and  N.  Pinnoi (1995) \dQuote{Public capital stock and state productivity growth: further evidence}, \emph{Empirical Economics}, \bold{20}(2), pp. 351--359.
 
-Munnell, A.H. (1990) \dQuote{Why has productivity growth declined? Productivity and public investment}, \emph{New England Economic Review}, 3--22.
+Munnell, A.H. (1990) \dQuote{Why has productivity growth declined? Productivity and public investment}, \emph{New England Economic Review}, pp. 3--22.
 }
 
 \keyword{datasets}

@@ -16,7 +16,7 @@
 
 \Plaintitle{Panel Data Econometrics in R: The plm Package}
 
-\author{Yves Croissant\\Universit\'e Lumi\`ere Lyon 2 \And Giovanni
+\author{Yves Croissant\\Universit\'e de La R\'eunion \And Giovanni
   Millo\\University of Trieste and Generali SpA}
 
 \Plainauthor{Yves Croissant, Giovanni Millo}
@@ -24,12 +24,14 @@
 
 \Address{
 Yves Croissant\\
-LET-ISH\\
-Avenue Berthelot\\
-F-69363 Lyon cedex 07\\
-Telephone: +33/4/78727249 \\
-Fax: +33/4/78727248 \\
-E-mail: \email{yves.croissant@let.ish-lyon.cnrs.fr}
+CEMOI\\
+Facult\'e de Droit et d'Economie\\
+Universit\'e de La R\'eunion\\
+15 avenue Ren\'e Cassin\\
+CS 92003\\
+F-97744 Saint-Denis Cedex 9\\
+Telephone: +262262938446\\
+E-mail: \email{yves.croissant@univ-reunion.fr}\\
 \\
 \\
 Giovanni Millo\\
@@ -354,8 +356,7 @@ and then to use the \texttt{pdata.frame} in the estimation functions.
 The interface of these functions is consistent with the \code{lm()}
 function. Namely, their first two arguments are \code{formula} and
 \code{data} (which should be a \code{data.frame} and is
-mandatory). Three additional arguments are common to these functions
-:
+mandatory). Three additional arguments are common to these functions:
 
 \begin{itemize}
 \item \code{index}: this argument enables the estimation functions
@@ -366,8 +367,9 @@ mandatory). Three additional arguments are common to these functions
     in most models the individual and time effects cases are symmetric,
     there are exceptions: estimating the \code{fd} model on time effects
     is meaningless because cross-sections do not generally have a 
-    natural ordering, so here the \code{effect} will always be set to
-    \code{"individual"}.},
+    natural ordering, so trying \code{effect="time"} stops with an error
+    message as does \code{effect="twoways"} which is not defined for 
+    \code{fd} models.},
 \item \code{model}: the kind of model to be estimated, most of the
 time a model with fixed effects or a model with random effects.
 \end{itemize}
@@ -489,10 +491,10 @@ on object orientation: particular types of matrices (symmetric,
 sparse, dense etc.) are assigned the relevant class and the additional
 information on structure is used in the computations, sometimes with
 dramatic effects on performance \citep[see][]{BATE:04} and packages
-\pkg{Matrix} \citep[see][]{BATE:MAEC:07} and \pkg{SparseM}
-\citep[see][]{KOEN:NG:07}. Some optimized linear algebra routines are
+\pkg{Matrix} \citep[see][]{BATE:MAEC:2016} and \pkg{SparseM}
+\citep[see][]{KOEN:NG:2016}. Some optimized linear algebra routines are
 available in the \proglang{R} package \pkg{bdsmatrix}
-\citep[see][]{ATKI:THER:07} which exploit the particular
+\citep[see][]{THER:2014} which exploit the particular
 block-diagonal and symmetric structure of $\hat{V}$ making it
 possible to implement a fast and reliable full-matrix solution to
 problems of any practically relevant size.
@@ -513,7 +515,7 @@ demeaning solution.
 
 General frameworks for restrictions and linear hypotheses testing are
 available in the \proglang{R} environment\footnote{See packages \pkg{lmtest}
-\citep{ZEIL:HOTH:02} and \pkg{car} \citep{FOX:06}.}. These
+\citep{HOTH:ZEIL:FARE:CUMM:MILL:MITC:2015} and \pkg{car} \citep{FOX:2016}.}. These
 are based on the Wald test, constructed as $\hat{\beta}^\top \hat{V}^{-1}
 \hat{\beta}$, where $\hat{\beta}$ and $\hat{V}$ are consistent
 estimates of $\beta$ and $V(\beta)$, The Wald test may be used for
@@ -549,7 +551,7 @@ of the relevant model's parameters' covariance matrix, thus the method
 is readily applicable to models estimated by random or fixed effects,
 first difference or pooled \textsc{ols} methods. Different
 pre-weighting schemes taken from package \pkg{sandwich}
-\citep{ZEIL:04} are also implemented to improve small-sample
+\citep[see][]{ZEIL:04, LUML:ZEIL:2015} are also implemented to improve small-sample
 performance. Robust estimators with any combination of covariance
 structures and weighting schemes can be passed on to the testing
 functions.
@@ -581,7 +583,6 @@ data("EmplUK", package="plm")
 data("Produc", package="plm")
 data("Grunfeld", package="plm")
 data("Wages",package="plm")
-
 @
 
 
@@ -604,13 +605,13 @@ head(attr(E, "index"))
 Two further arguments are logical : \texttt{drop.index} drop the
 indexes from the \texttt{data.frame} and \texttt{row.names} computes
 ``fancy'' row names by pasting the individual and the time
-indexes. While extracting a serie from a \texttt{pdata.frame}, a
-\texttt{pseries} is created, which is the original serie with the
+indexes. While extracting a series from a \texttt{pdata.frame}, a
+\texttt{pseries} is created, which is the original series with the
 index attribute. This object has specific methods, like
 \texttt{summary} and \texttt{as.matrix} are provided. The former
 indicates the total variation of the variable and the share of this
 variation that is due to the individual and the time dimensions. The
-latter gives the matrix representation of the serie, with, by default,
+latter gives the matrix representation of the series, with, by default,
 individual as rows and time as columns.
 
 <<>>=
@@ -659,7 +660,7 @@ the data. Specific methods for \texttt{pseries} objects are therefore
 have been rewritten in order to handle correctly panel data. Note that
 compares to the \texttt{lag} method for \texttt{ts} objects, the order
 of lags are indicated by positive integer. Moreover, 0 is a relevant
-value and a vector argument may be provided :
+value and a vector argument may be provided:
 
 <<>>=
 head(lag(E$emp, 0:2))
@@ -668,7 +669,7 @@ head(lag(E$emp, 0:2))
 Further functions called \code{Between}, \code{between} and
 \code{Within} are also provided to compute the between and the within
 transformation. The \texttt{between} returns unique values, whereas
-\texttt{Between} duplicate the values and returns a vector which
+\texttt{Between} duplicates the values and returns a vector which
 length is the number of observations.
 
 <<>>=
@@ -677,7 +678,6 @@ head(lag(E$emp, 2), 10)
 head(Within(E$emp))
 head(between(E$emp), 4)
 head(Between(E$emp), 10)
-
 @ 
 
 \end{itemize}
@@ -685,16 +685,16 @@ head(Between(E$emp), 10)
 \subsection{Formulas}
 
 There are circumstances where standard \code{formula} are not very
-usefull to describe a model, notably while using instrumental variable
+useful to describe a model, notably while using instrumental variable
 like estimators: to deal with these situations, we use the
 \code{Formula} package.
 
-The \code{Formula} package provides a class which unables to construct
+The \code{Formula} package provides a class which enables to construct
 multi-part formula, each part being separated by a pipe
 sign. \code{plm} provides a \code{pFormula} object which is a
 \code{Formula} with specific methods.
 
-The two formulas below are identical :
+The two formulas below are identical:
 <<>>=
 emp~wage+capital|lag(wage,1)+capital
 emp~wage+capital|.-wage+lag(wage,1)
@@ -702,7 +702,7 @@ emp~wage+capital|.-wage+lag(wage,1)
 
 In the second case, the \code{.} means the previous parts which
 describes the covariates and this part is ``updated''. This is
-particulary interesting when there are a few external instruments.
+particularly interesting when there are a few external instruments.
 
 \section{Model estimation}
 \label{modelestimation}
@@ -738,7 +738,7 @@ summary(grun.re)
 For a \code{random} model, the \code{summary} method gives information
 about the variance of the components of the errors.  Fixed effects may
 be extracted easily using \code{fixef}. An argument \code{type}
-indicates howfixed effects should be computed : in level \code{type =
+indicates how fixed effects should be computed : in level \code{type =
   'level'} (the default), in deviation from the overall mean
 \code{type = 'dmean'} or in deviation from the first individual
 \code{type = 'dfirst'}.
@@ -773,7 +773,7 @@ estimation on quasi-demeaned data. The parameter of this
 transformation is obtained using preliminary estimations. 
 
 Four estimators of this parameter are available, depending on the
-value of the argument \code{random.method} :
+value of the argument \code{random.method}:
 
 \begin{itemize}
 \item \code{swar}: from \citet{SWAM:AROR:72}, the default value,
@@ -791,7 +791,7 @@ grun.amem <- plm(inv~value+capital,data=Grunfeld,model="random",random.method="a
 
 The estimation of the variance of the error components are performed
 using the \code{ercomp} function, which has a \code{method} and an
-\code{effect} argument, and can be used by itself :
+\code{effect} argument, and can be used by itself:
 
 <<>>=
 ercomp(inv~value+capital, data=Grunfeld, method = "amemiya", effect = "twoways")
@@ -823,7 +823,7 @@ moment only available for balanced panels.
 \subsubsection{Unbalanced panels}
 
 Most of the features of \code{plm} are implemented for panel models
-with some limitations :
+with some limitations:
 
 \begin{itemize}
 \item the random two-ways effect model is not implemented,
@@ -831,9 +831,9 @@ with some limitations :
   the one proposed by \citet{SWAM:AROR:72}
 \end{itemize}
 
-The following example is using data used by \citep{HARR:RUBI} to
+The following example is using data used by \citep{HARR:RUBI:78} to
 estimate an hedonic housing prices function. It is reproduced in
-\citep{BALT:01}, p. 174.
+\citep{BALT:01}, p.174.
 
 <<>>=
 data("Hedonic", package = "plm")
@@ -937,7 +937,7 @@ The model is first differenced to get rid of the individual effect:
 \end{equation}
 
 Least squares are inconsistent because $\Delta \epsilon_{it}$ is
-correlated with $ \Delta y_{it-1}g$.  $y_{it-2}$ is a valid, but weak
+correlated with $ \Delta y_{it-1}$.  $y_{it-2}$ is a valid, but weak
 instrument \citep[see][]{ANDE:HSIA:81}. The \textsc{gmm} estimator uses the fact that
 the number of valid instruments is growing with $t$:
 
@@ -997,8 +997,8 @@ e^{(1)\top }_i $ where $e_i^{(1)}$ are the residuals of the one step estimate.
 
 
 \citet{BLUN:BOND:98} show that with weak hypothesis on the data
-generating process, suplementary moment conditions exist for the
-equation in level :
+generating process, supplementary moment conditions exist for the
+equation in level:
 
 $$
 y_{it} = \gamma y_{it-1}+\mu_i+\eta_{it}
@@ -1006,13 +1006,13 @@ $$
 
 More precisely, they show that $\Delta y_{it-2}=y_{it-2}-y_{it-3}$ is
 a valid instrument. The estimator is obtained using the residual
-vector in difference and in level :
+vector in difference and in level:
 
 $$
 e^+_i=(\Delta e_i, e_i)
 $$
 
-and the matrix of augmented moments :
+and the matrix of augmented moments:
 
 $$
 Z_i^+=\left(
@@ -1042,7 +1042,7 @@ In a \textsc{gmm} estimation, there are ``normal'' instruments and
 ``\textsc{gmm}'' instruments. \textsc{gmm} instruments are indicated
 in the second part of the formula. By default, all the variables of
 the model that are not used as \textsc{gmm} instruments are used as
-normal instruments, with the same lag structure ; ``normal''
+normal instruments, with the same lag structure; ``normal''
 instruments may also be indicated in the third part of the formula. 
 
 The effect argument is either \code{NULL}, \code{"individual"}
@@ -1111,7 +1111,7 @@ downwards.
 In a pooled time series context (\code{effect="time"}),
 symmetrically, this estimator is able to account for arbitrary
 cross-sectional correlation, provided that the latter is
-time-invariant  \citep[see][13.9.1--2, p.321--2]{GREE:03}. In this case
+time-invariant  \citep[see][13.9.1--2, pp.321--2]{GREE:03}. In this case
 serial correlation has to be assumed away and the estimator is
 consistent with respect to the time dimension, keeping $n$ fixed.
 
@@ -1128,7 +1128,7 @@ zz <- pggls(log(emp)~log(wage)+log(capital),data=EmplUK,model="pooling")
 summary(zz)
 @ 
 
-The fixed effects \code{pggls} \citep[see][p. 276]{WOOL:02} is based
+The fixed effects \code{pggls} \citep[see][p.276]{WOOL:02} is based
 on the estimation of a within model in the first step; the rest follows as
 above. It is estimated by:
 
@@ -1470,7 +1470,7 @@ Breusch-Godfrey and Durbin-Watson tests from package \code{lmtest}:
 <<generalAR>>=
 ## this can be taken away as soon as attached to plm.rnw
 grun.fe <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
-pbgtest(grun.fe, order=2)
+pbgtest(grun.fe, order = 2)
 @
 
 The tests share the features of their \textsc{ols} counterparts, in
@@ -1534,7 +1534,7 @@ test for models with individual effects of any kind can be based on
 estimating the model $$\hat{u}_{i,t}= \delta \hat{u}_{i,t-1} +
 \eta_{i,t}$$ and testing the restriction $\delta = -0.5$,
 corresponding to the null of no serial correlation.  \citet{DRUK:03}
-provides Monte-carlo evidence of the good empirical properties of the
+provides Monte Carlo evidence of the good empirical properties of the
 test.
 
 On the other extreme \citep[see][10.6.1]{WOOL:02}, if the differenced
@@ -1720,15 +1720,15 @@ it is enough that neighbouring pairs correspond to nonzero elements in
 
 \subsubsection{Preliminary results}
 
-We consider the following model :
+We consider the following model:
 
 $$
 y_{it} = \delta y_{it-1} + \sum_{L=1}^{p_i} \theta_i \Delta
 y_{it-L}+\alpha_{mi} d_{mt}+\epsilon_{it}
 $$
 
-The unit root hypothesis is $\rho = 1$. The model can be rewriten in
-difference :
+The unit root hypothesis is $\rho = 1$. The model can be rewritten in
+difference:
 
 $$
 \Delta y_{it} = \rho y_{it-1} + \sum_{L=1}^{p_i} \theta_i \Delta
@@ -1738,13 +1738,13 @@ $$
 So that the unit-root hypothesis is now $\rho = 0$.
 
 Some of the unit-root tests for panel data are based on preliminary
-results obtained by runing the above Augmented Dickey Fuller
+results obtained by running the above Augmented Dickey-Fuller
 regression. 
 
-First, we hava to determine the optimal number of lags $p_i$ for each
+First, we have to determine the optimal number of lags $p_i$ for each
 time-series. Several possibilities are available. They all have in
 common that the maximum number of lags have to be chosen first. Then,
-$p_i$ can be chosen using :
+$p_i$ can be chosen using:
 
 \begin{itemize}
 \item the Swartz information criteria (SIC),
@@ -1760,7 +1760,7 @@ each individual, so that the total number of observations is $n\times
 $\bar{p}$ is the average number of lags. Call $e_{i}$ the
 vector of residuals.
 
-Estimate the variance of the $\epsilon_i$ as :
+Estimate the variance of the $\epsilon_i$ as:
 
 $$
 \hat{\sigma}_{\epsilon_i}^2 = \frac{\sum_{t=p_i+1}^{T} e_{it}^2}{df_i}
@@ -1817,13 +1817,13 @@ unit root, but the alternative is that some may have a unit root and
 others have different values of $\rho_i <0$.
 
 The test is based on the average of the student statistic of the
-$\rho$ obtained for each individual :
+$\rho$ obtained for each individual:
 
 $$
 \bar{t}=\frac{1}{n}\sum_{i=1}^n t_{\rho i}
 $$
 
-The statistic is then :
+The statistic is then:
 
 $$
 z = \frac{\sqrt{n}\left(\bar{t}- E(\bar{t})\right)}{\sqrt{V(\bar{t})}}
@@ -2068,7 +2068,7 @@ mixed models framework, unless reducing it to \textsc{ols} on a
 specification with one dummy for each group (often termed {\em least
   squares dummy variables}, or \textsc{lsdv} model) which can
 trivially be estimated by \textsc{ols}.  The \textsc{re} model is
-instead a special case of mixed model where only the intercept is
+instead a special case of a mixed model where only the intercept is
 specified as a random effect, while the ``random'' type variable
 coefficients model can be seen as one that has the same regressors in
 the fixed and random sets. The unrestricted generalized least squares
@@ -2144,8 +2144,7 @@ reML<-lme(inv~value+capital,data=Grunfeld,random=~1|firm)
 
 coef(reGLS)
 
-summary(reML)$coef$fixed
-
+summary(reML)$coefficients$fixed
 @
 
 
@@ -2170,8 +2169,7 @@ vcmML<-lme(inv~value+capital,data=Grunfeld,random=~value+capital|year)
 
 coef(vcm)
 
-summary(vcmML)$coef$fixed
-
+summary(vcmML)$coefficients$fixed
 @
 
 \subsubsection{Variable coefficients, ``within''}
@@ -2186,7 +2184,6 @@ below are equivalent (output suppressed):
 vcmf<-pvcm(inv~value+capital,data=Grunfeld,model="within",effect="time")
 
 vcmfML<-lmList(inv~value+capital|year,data=Grunfeld)
-
 @
 
 \subsubsection{Unrestricted fgls}
@@ -2211,7 +2208,7 @@ gglsML<-gls(inv~value+capital,data=sGrunfeld,
 
 coef(ggls)
 
-summary(gglsML)$coef
+summary(gglsML)$coefficients
 @
 
 The {\em within} case is analogous, with the regressors' set augmented
@@ -2252,7 +2249,7 @@ The regressors' coefficients and the error's serial correlation
 coefficient may be retrieved this way:
 
 <<fetchcoefs>>=
-summary(reAR1ML)$coef$fixed
+summary(reAR1ML)$coefficients$fixed
 coef(reAR1ML$modelStruct$corStruct,unconstrained=FALSE)
 @
 

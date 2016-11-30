@@ -27,13 +27,13 @@
 \source{
 Online complements to Ziliak (1997).
   
-Journal of Business Economics and Statistics web site: \url{http://www.amstat.org/publications/jbes/}.
+Journal of Business Economics and Statistics web site: \url{http://amstat.tandfonline.com/loi/ubes20/}.
 }
 
 \references{
 Cameron, A.C. and P.K. Trivedi (2005) \emph{Microeconometrics : methods and applications}, Cambridge, pp. 708--15, 754--6.
 
-Ziliak, J.P. (1997) \dQuote{Efficient Estimation With Panel Data when Instruments are Predetermined: An Empirical Comparison of Moment-Condition Estimators}, \emph{Journal of Business and Economic Statistics}, \bold{419--431}.
+Ziliak, J.P. (1997) \dQuote{Efficient Estimation With Panel Data when Instruments are Predetermined: An Empirical Comparison of Moment-Condition Estimators}, \emph{Journal of Business and Economic Statistics}, \bold{15}(4), pp. 419--431.
 }
 
 \keyword{datasets}

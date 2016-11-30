@@ -10,13 +10,16 @@ Semi-parametric test for the presence of (individual or time) unobserved effects
 }
 
 \usage{
-pwtest(x,...)
-\method{pwtest}{panelmodel}(x, ...)
-\method{pwtest}{formula}(x, data, ...)
+pwtest(x, \dots)
+\method{pwtest}{formula}(x, data, effect = c("individual", "time"), \dots)
+\method{pwtest}{panelmodel}(x, effect = c("individual", "time"), \dots)
 }
 
 \arguments{
-\item{x}{an object of class \code{"formula"},}
+\item{x}{an object of class \code{"formula"}, or an estimated model of class
+        \code{panelmodel},}
+\item{effect}{the effect to be tested for, one of \code{"individual"} (default)
+        or \code{"time"},}
 \item{data}{a \code{data.frame},}
 \item{\dots}{further arguments passed to \code{plm}.}
 }
@@ -34,6 +37,9 @@ The above is valid if \code{effect="individual"}, which is the
 most likely usage. If \code{effect="time"}, symmetrically, the
 test relies on large-T asymptotics and has power against time
 effects and, more generally, against cross-sectional correlation.
+
+If the panelmodel interface is used, the inputted model must be
+a pooling model.
 }
 
 \value{
@@ -45,7 +51,7 @@ An object of class \code{"htest"}.
 \references{
 Wooldridge, J.M. (2002) \emph{Econometric Analysis of Cross-Section and Panel Data}, MIT Press, Sec. 10.4.4., pp. 264--265.
 
-Wooldridge, J.M. (2010) \emph{Econometric analysis of cross-section and panel data}, 2nd ed., MIT Press, Sec. 10.4.4, pp. 299--230.
+Wooldridge, J.M. (2010) \emph{Econometric Analysis of Cross-Section and Panel Data}, 2nd ed., MIT Press, Sec. 10.4.4, pp. 299--230.
 
 }
 
@@ -58,8 +64,16 @@ Wooldridge, J.M. (2010) \emph{Econometric analysis of cross-section and panel da
 
 \examples{
 data("Produc", package = "plm")
+## formula interface
 pwtest(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc)
-pwtest(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, effect="time")
+pwtest(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, effect = "time")
+
+## panelmodel interface
+# first, estimate a pooling model, than compute test statistics
+form <- formula(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp)
+pool_prodc <- plm(form, data = Produc, model = "pooling")
+pwtest(pool_prodc) # == effect="individual"
+pwtest(pool_prodc, effect="time")
 }
 
 \keyword{htest}
