@@ -168,6 +168,25 @@ ercomp.formula <- function(object, data,
         else theta <- (1 - sqrt(s2idios / (s2idios + T * s2id)))[as.character(ids)]
         sigma2 <- list(idios = s2idios, id = s2id, iota = s2iota)
         result <- list(sigma2 = sigma2, theta = theta)
+        if (method == "nerlove"){
+            if(! balanced) stop("nerlove variance decomposition not implemented for unbalanced panels")
+            model.within <- plm.fit(object, data, model = 'within', effect = effect)
+            df1 <- switch(as.character(dfcor[1]),
+                          "0" = O,
+                          "1" = O - N,
+                          "2" = O - N - K)
+            df2 <- switch(as.character(dfcor[2]),
+                         "0" = N,
+                         "1" = N - 1,
+                         "2" = N - K - 1)
+            s2idios <- deviance(model.within) / df1
+            s2id <- sum(fixef(model.within, type = "dmean") ^ 2) / df2
+            s2iota <- s2id * T[1] + s2idios
+        }
+        if (balanced) theta <- as.numeric(1 - sqrt(s2idios / s2iota))
+        else theta <- (1 - sqrt(s2idios / (s2idios + T * s2id)))[as.character(ids)]
+        sigma2 <- list(idios = s2idios, id = s2id, iota = s2iota)
+        result <- list(sigma2 = sigma2, theta = theta)
     }
     else{
         if (!balanced) stop("twoways effect variance computation is not implemented for unbalanced data")
