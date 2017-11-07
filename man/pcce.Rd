@@ -15,17 +15,17 @@ pcce(formula, data, subset, na.action,
      model=c("mg", "p"),
      index = NULL, trend = FALSE, \dots)
 \method{summary}{pcce}(object, \dots)
-\method{print}{summary.pcce}(x,digits = max(3, getOption("digits") -
-2), width = getOption("width"), \dots)
+\method{print}{summary.pcce}(x, digits = max(3, getOption("digits") - 2),
+      width = getOption("width"), \dots)
 }
 
 \arguments{
  \item{formula}{a symbolic description of the model to be estimated,}
- \item{object, x}{an object of class \code{pcce},}
+ \item{object, x}{an object of class \code{"pcce"},}
  \item{data}{a \code{data.frame},}
  \item{subset}{see \code{lm},}
  \item{na.action}{see \code{lm},}
- \item{model}{one of \code{c("mg","p")}, selects Mean Groups vs. Pooled CCE model,}
+ \item{model}{one of \code{"mg"}, \code{"p"}, selects Mean Groups vs. Pooled CCE model,}
  \item{index}{the indexes, see \code{\link{pdata.frame}},}
  \item{trend}{logical specifying whether an individual-specific trend has to be included,}
  \item{digits}{digits,}
@@ -34,12 +34,12 @@ pcce(formula, data, subset, na.action,
 }
 
 \value{
-An object of class \code{c("pcce","panelmodel")} containing:
+An object of class \code{c("pcce", "panelmodel")} containing:
  \item{coefficients}{the vector of coefficients,}
  \item{residuals}{the vector of (defactored) residuals,}
  \item{stdres}{the vector of (raw) residuals,}
  \item{tr.model}{the transformed data after projection on H,}
- \item{fitted.values}{the vector of fitted.values,}
+ \item{fitted.values}{the vector of fitted values,}
  \item{vcov}{the covariance matrix of the coefficients,}
  \item{df.residual}{degrees of freedom of the residuals,}
  \item{model}{a data.frame containing the variables used for the
@@ -56,7 +56,7 @@ An object of class \code{c("pcce","panelmodel")} containing:
 \code{pcce} is a function for the estimation of linear panel models by the
 Common Correlated Effects Mean Groups or Pooled estimator, consistent under the
 hypothesis of unobserved common factors and idiosyncratic factor
-loadings; CCE estimators works by augmenting the model by
+loadings. The CCE estimator works by augmenting the model by
 cross-sectional averages of the dependent variable and regressors in
 order to account for the common factors, and adding individual
 intercepts and possibly trends.
@@ -67,7 +67,7 @@ intercepts and possibly trends.
 \references{
 G. Kapetanios, M. Hashem Pesaran, T. Yamagata (2011), Panels with
 non-stationary multifactor error structures, \emph{Journal of
-  Econometrics}, \bold{160(2)}, pp. 326--348. 
+ Econometrics}, \bold{160}(2), pp. 326--348. 
 }
 
 \examples{

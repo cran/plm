@@ -5,7 +5,8 @@ random.method.list <- c(swar    = "Swamy-Arora",
 
 effect.plm.list <- c(individual = "Oneway (individual) effect",
                      time       = "Oneway (time) effect",
-                     twoways    = "Twoways effects")
+                     twoways    = "Twoways effects",
+                     nested     = "Nested effects")
 
 effect.pvcm.list <- c(individual  = "Oneway (individual) effect",
                       time        = "Oneway (time) effect")
@@ -35,7 +36,6 @@ model.pgmm.list <- c(onestep  = "One step model",
 inst.method.list <- c(bvk     = "Balestra-Varadharajan-Krishnakumar",
                       baltagi = "Baltagi",
                       am      = "Amemiya-MaCurdy",
-                      bmc     = "Breusch-Mizon-Schmidt", # bmc was likly a typo in an old version, keep it here for some time...
                       bms     = "Breusch-Mizon-Schmidt")
 
 robust.list <- c(white1   = "White 1",
@@ -57,5 +57,5 @@ oneof <- function(x){
   x
 }
 
-plm.arg <- c("formula", "data", "subset", "na.action", "effect", "model",
+plm.arg <- c("formula", "data", "subset", "weights", "na.action", "effect", "model",
              "instruments", "random.method", "inst.method", "index")

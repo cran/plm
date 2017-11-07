@@ -1,10 +1,10 @@
-# functions to aid in detecting linear dependend columns in the (transformed) 
+# functions to aid in detecting linear dependent columns in the (transformed) 
 # model matrix or estimated plm models:
 #  * detect_lin_dep
-#  * alias (the latter as a wrapper around alias.lm)
+#  * alias (the latter is a wrapper around alias.lm)
 #
 # doc file provides an extensive example how linear dependence can arise after
-# the data transformation, e. g. for within transformation
+# the data transformation, e. g., for within transformation
 
 ### detect_lin_dep.matrix, .data.frame, .plm
 detect_lin_dep.matrix <- function(object, suppressPrint = FALSE, ...) {
@@ -56,23 +56,23 @@ detect_lin_dep <- function(object, ...) {
 ### alias.plm, alias.pFormula
 # This is just a wrapper function to allow to apply the generic stats::alias on
 # plm objects and pFormulas with the _transformed data_ (the transformed model.matrix).
-# NB: arguments model and effect are not treated here.
+# NB: arguments 'model' and 'effect' are not treated here.
 alias.plm <- function(object, ...) {
   dots <- list(...)
   if (!is.null(dots$inst.method)) stop("alias.plm/alias.pFormula: IV not supported")
   if (length(formula(object))[2] == 2) stop("alias.plm/alias.pFormula: IV not supported")
   
   # catch unsupported alias.lm args and convert
-  if (!is.null(dots$partial)) {
-    if (dots$partial) {
-      dots$partial <- FALSE
-      warning("alias.plm/alias.pFormula: arg partial=\"TRUE\" not supported, changed to FALSE")
+  if (!is.null(dots[["partial"]])) {
+    if (dots[["partial"]]) {
+      dots[["partial"]] <- FALSE
+      warning("alias.plm/alias.pFormula: arg partial = \"TRUE\" not supported, changed to FALSE")
     }
   } 
-  if (!is.null(dots$partial.pattern)) {
-    if (dots$partial.pattern) {
-      dots$partial.pattern <- FALSE
-      warning("alias.plm/alias.pFormula: arg partial.pattern=\"TRUE\" not supported, changed to FALSE")
+  if (!is.null(dots[["partial.pattern"]])) {
+    if (dots[["partial.pattern"]]) {
+      dots[["partial.pattern"]] <- FALSE
+      warning("alias.plm/alias.pFormula: arg partial.pattern = \"TRUE\" not supported, changed to FALSE")
     }
   }
   

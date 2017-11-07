@@ -12,8 +12,9 @@
 
 \usage{
 ercomp(object, \dots)
-\method{ercomp}{formula}(object, data, effect = c("individual", "time", "twoways"), 
-                         method = c("swar", "walhus", "amemiya","nerlove"),
+\method{ercomp}{formula}(object, data,
+                         effect = c("individual", "time","twoways", "nested"), 
+                         method = NULL, models = NULL,
                          dfcor = NULL, index = NULL, \dots)
 \method{ercomp}{plm}(object, \dots)
 \method{print}{ercomp}(x, digits= max(3, getOption("digits") - 3), \dots)
@@ -23,22 +24,29 @@ ercomp(object, \dots)
   \item{object}{a \code{formula} or a \code{plm} object,}
   \item{data}{a \code{data.frame},}
   \item{effect}{the effects introduced in the model, see
-    \code{\link{lm}} for details,}
+    \code{\link{plm}} for details,}
   \item{method}{method of estimation for the variance components,
-    see \code{\link{lm}} for details,}
+    see \code{\link{plm}} for details,}
+  \item{models}{the models used to estimate the variance components (an
+  alternative to the previous argument),}
   \item{dfcor}{a numeric vector of length 2 indicating which degree of
   freedom should be used,}
   \item{index}{the indexes,}
-  \item{x}{a \code{ercomp} object,}
+  \item{x}{an \code{ercomp} object,}
   \item{digits}{digits,}
   \item{\dots}{further arguments.}
 }
 
 \value{  
-  An object of class \code{"ercomp"}: a list containing a list called
-  \code{sigma2} which contains the estimates of the variance components,
-  and \code{theta} which is the parameters used for the transformation
-  of the variables.
+  An object of class \code{"ercomp"}: a list containing
+\itemize{
+  \item \code{sigma2} a named numeric with estimates of the variance components,
+  \item \code{theta} contains the parameter(s) used for the transformation
+  of the variables: For a one-way model, a numeric corresponding to the selected
+  effect (individual or time); for a two-ways model a list of length 3 with the 
+  parameters. In case of a balanced model, the numeric has length 1 while for an
+  unbalanced model, the numerics' length equal the number of observations.
+}
 }
 
 %\details{
@@ -50,7 +58,7 @@ ercomp(object, \dots)
   variance--components model, \emph{International Economic Review}, \bold{12}(1), pp. 1--13.
 
   Nerlove, M. (1971) Further evidence on the estimation of dynamic
-  economic relations from a time--series of cross--sections,
+  economic relations from a time series of cross sections,
   \emph{Econometrica}, \bold{39}(2), pp. 359--382.
 
   Swamy, P.A.V.B. and Arora, S.S. (1972) The exact finite sample
@@ -78,7 +86,7 @@ z <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
 ercomp(z)
 # a two-ways model
 ercomp(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc,
-       method = "amemiya",effect = "twoways")
+       method = "amemiya", effect = "twoways")
 }
 \author{Yves Croissant}
 \keyword{regression}

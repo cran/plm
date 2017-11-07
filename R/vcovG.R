@@ -47,47 +47,47 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
   ## extract demeaned data
     demy <- pmodel.response(x, model = model)
-    demX <- model.matrix(x, model = model, rhs = 1)
+    demX <- model.matrix(x, model = model, rhs = 1, cstcovar.rm = "all")
     ## drop any linear dependent columns (corresponding to aliased coefficients)
     ## from model matrix X
-    if (!is.null(x$aliased) && any(x$aliased)) demX <- demX[, !x$aliased, drop = FALSE]
+    ## na.rm = TRUE because currently, RE tw unbalanced models set aliased simply to NA
+    if (!is.null(x$aliased) && any(x$aliased, na.rm = TRUE)) demX <- demX[, !x$aliased, drop = FALSE]
 
     ## control: IV or not (two- or one-part formula)
     if(length(formula(x))[2] > 1) {
-        demZ <- model.matrix(x, model = model, rhs = 2)
+        demZ <- model.matrix(x, model = model, rhs = 2, cstcovar.rm = "all")
         ## substitute (transformed) X with projection of X on Z
         ## any linear dependence in Z (demZ) is appropriately taken care of by lm.fit()
-        demX <- fitted(lm.fit(demZ, demX)) # demX <- fitted(lm(demX ~ demZ))
+        demX <- fitted(lm.fit(demZ, demX))
     }
 
     pdim <- pdim(x)
     nT <- pdim$nT$N
     Ti <- pdim$Tint$Ti
     k <- dim(demX)[[2]]
-
     n0 <- pdim$nT$n
     t0 <- pdim$nT$T
-
 
   ## extract residuals
     uhat <- x$residuals
 
   ## define residuals weighting function omega(res)
   ## (code taken from meatHC and modified)
-  ##
+  ## (the weighting is defined "in sqrt" relative to the literature)
+  ## 
   ## (see the theoretical comments in pvcovHC)
 
     ## diaghat function for matrices
-    dhat <- function(x) {tx<-t(x)
-                         diag(crossprod(tx,solve(crossprod(x),tx)))}
+    dhat <- function(x) {tx <- t(x)
+                         diag(crossprod(tx, solve(crossprod(x), tx)))}
 
     ## this is computationally heavy, do only if needed
-    switch(match.arg(type), HC0 = {diaghat<-NULL},
-                            sss = {diaghat<-NULL},
-                            HC1 = {diaghat<-NULL},
-                            HC2 = {diaghat<-try(dhat(demX), silent = TRUE)},
-                            HC3 = {diaghat<-try(dhat(demX), silent = TRUE)},
-                            HC4 = {diaghat<-try(dhat(demX), silent = TRUE)})
+    switch(match.arg(type), HC0 = {diaghat <- NULL},
+                            sss = {diaghat <- NULL},
+                            HC1 = {diaghat <- NULL},
+                            HC2 = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            HC3 = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            HC4 = {diaghat <- try(dhat(demX), silent = TRUE)})
     df <- nT - k
     switch(match.arg(type), 
            HC0 = {
@@ -120,9 +120,9 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
       ## outer for clustering/arellano, diag(diag(inner)) for white
       switch(match.arg(inner), 
          cluster={
-          E <- function(u,v) outer(u,v)
+          E <- function(u, v) outer(u, v)
       }, white={
-          E <- function(u,v) { # was simply: diag(diag(outer(u,v)))
+          E <- function(u, v) { # was simply: diag(diag(outer(u,v)))
               # but unfortunately we have to manage unbalanced panels
               # in the case l!=0 (the residual vectors are different)
               # by producing a "pseudo-diagonal" with all those obs.
@@ -134,14 +134,14 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
                   euv <- diag(u*v, n)
               } else {
                   ## calculate outer product
-                  efull <- outer(u,v)
+                  efull <- outer(u, v)
                   ## make matrix of zeros with same dims and names
-                  eres <- array(0, dim=dim(efull))
+                  eres <- array(0, dim = dim(efull))
                   dimnames(eres) <- dimnames(efull)
                   ## populate "pseudo-diagonal" with values from efull
                   for(i in 1:length(names(u))) {
                       for(j in 1:length(names(v))) {
-                          if(names(u)[i]==names(v)[j]) {
+                          if(names(u)[i] == names(v)[j]) {
                               eres[i,j] <- efull[i,j]
                           }
                       }
@@ -156,30 +156,30 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
               if(isTRUE(all.equal(names(u), names(v)))) {
                   ## ..then keep it simple
                   n <- length(u)
-                  euv <- diag(x=sum(u*v)/n, n)
+                  euv <- diag(x = sum(u*v)/n, n)
               } else {
                   ## do just as for 'white' and then average nonzeros:
                   ## calculate outer product
                   efull <- outer(u,v)
                   ## make matrix of zeros with same dims and names
-                  eres <- array(0, dim=dim(efull))
+                  eres <- array(0, dim = dim(efull))
                   dimnames(eres) <- dimnames(efull)
                   ## populate "pseudo-diagonal" with values from efull
                   for(i in 1:length(names(u))) {
                       for(j in 1:length(names(v))) {
-                          if(names(u)[i]==names(v)[j]) {
+                          if(names(u)[i] == names(v)[j]) {
                               eres[i,j] <- efull[i,j]
                           }
                       }
                   }
                   euv <- eres
                   ## substitute nonzeros with average thereof
-                  euv[euv!=0] <- mean(euv[euv!=0])
+                  euv[euv != 0] <- mean(euv[euv != 0])
               }
               return(euv)
           }
       })
-  }
+  } ## END: Definition module for E(u,v)
  
 
     ## try passing: function (a or b) or matrix (unconditional) to vcovG
@@ -193,19 +193,19 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     groupind <- as.numeric(attr(x$model, "index")[,1])
     timeind  <- as.numeric(attr(x$model, "index")[,2])
 
-  ## fix for 'fd' model (losing first time period)
-     if(model == "fd") {
-       groupi <- as.numeric(groupind)
-       ## make vector =1 on first obs in each group, 0 elsewhere
-       selector <-groupi-c(0,groupi[-length(groupi)])
-       selector[1] <- 1 # the first must always be 1
-       ## eliminate first obs in time for each group
-       groupind <- groupind[!selector]
-       timeind <- timeind[!selector]
-       nT <- nT-n0
-       Ti <- Ti-1
-       t0 <- t0-1
-     }
+  ## adjust for 'fd' model (losing first time period)
+    if(model == "fd") {
+      groupi <- as.numeric(groupind)
+      ## make vector =1 on first obs in each group, 0 elsewhere
+      selector <- groupi - c(0, groupi[-length(groupi)])
+      selector[1] <- 1 # the first must always be 1
+      ## eliminate first obs in time for each group
+      groupind <- groupind[!selector]
+      timeind <- timeind[!selector]
+      nT <- nT-n0
+      Ti <- Ti-1
+      t0 <- t0-1
+    }
 
   ## set grouping indexes
     switch(match.arg(cluster),
@@ -219,13 +219,15 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
               t <- n0
               relevant.ind <- timeind
               lab <- groupind})
+    
     tind <- vector("list", n)
     tlab <- vector("list", n)
+    
     for (i in 1:length(unique(relevant.ind))) {
-        tind[[i]] <- which(relevant.ind==i)
-        tlab[[i]] <- lab[which(relevant.ind==i)]
+        tind[[i]] <- which(relevant.ind == i)
+        tlab[[i]] <- lab[which(relevant.ind == i)]
     }
-
+  
   ## lab were the 'labels' (a numeric, actually) for the relevant index;
   ## in use again from the need to make pseudo-diagonals for
   ## calc. the lagged White terms on unbalanced panels
@@ -238,7 +240,7 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## the grouping index; if inner="white" it is simply the sample size)
     ## find some more elegant solution for this!
     ## (perhaps if white then sss->HC1 but check...)
-  G <- if(match.arg(inner)=="cluster") n else nT
+  G <- if(match.arg(inner) == "cluster") n else nT
   uhat <- omega(uhat, diaghat, df, G)
 
   ## compute basic block: X'_t u_t u'_(t-l) X_(t-l) foreach t,
@@ -249,22 +251,21 @@ vcovG.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     ## preallocate k x k x (T-l) array for 'pile' of kxk matrices
     ## holding the X' E(u,ul) X elements
-    Sl <- array(dim=c(k, k, n-l))
-
+    Sl <- array(dim = c(k, k, n-l))
+    
     ## (l=0 gives the special contemporaneous case where Xi=Xil, ui=uil
     ## for computing W, CX, CT)
-
     for(i in (1+l):n) {
-        X <- demX[tind[[i]], , drop=FALSE]
-        Xl <- demX[tind[[i-l]], , drop=FALSE]
-        u <- uhat[tind[[i]]]
-        names(u) <- tlab[[i]]
-        ul <- uhat[tind[[(i-l)]]]
-        names(ul) <- tlab[[(i-l)]]
-        ## calculate V_yy
-        Sl[, , i-l] <- crossprod(X, E(u, ul)) %*% Xl
+      X <- demX[tind[[i]], , drop = FALSE]
+      Xl <- demX[tind[[i-l]], , drop = FALSE]
+      u <- uhat[tind[[i]]]
+      names(u) <- tlab[[i]]
+      ul <- uhat[tind[[(i-l)]]]
+      names(ul) <- tlab[[(i-l)]]
+      ## calculate V_yy
+      Sl[, , i-l] <- crossprod(X, E(u, ul)) %*% Xl
     }
-        
+    
     ## in order to sum on available observations two things can be done:
     ## a) apply sum(..., na.rm=TRUE) over the third dim
     ## b) apply mean(..., na.rm=TRUE) idem and multiply by n-l
@@ -354,18 +355,16 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     if(is.null(maxlag)) maxlag <- floor((max(pdim(x)$Tint$Ti))^(1/4))
 
     ## def. Bartlett kernel
-    ## wj<-function(j, maxlag) 1-j/(maxlag+1)
+    ## wj <- function(j, maxlag) 1-j/(maxlag+1)
     ## has been passed as argument
 
     S0 <- vcovG(x, type=type, cluster=cluster, l=0, inner=inner)
 
-    if(maxlag>0) {
-
+    if(maxlag > 0) {
         for(i in 1:maxlag) {
-
             Vctl <- vcovG(x, type=type, cluster=cluster,
                              l=i, inner=inner)
-            S0 <- S0 + wj(i, maxlag) * (Vctl+t(Vctl))
+            S0 <- S0 + wj(i, maxlag) * (Vctl + t(Vctl))
         }
     }
 
@@ -395,7 +394,7 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## This function takes the demeaned data from the
   ## plm object, then estimates an *unconditional* error covariance by
   ## averaging the empirical covariance blocks by group (time period);
-  ## this average block (say, OmegaM in Eviews notation) is then put into
+  ## this average block (say, OmegaM in EViews notation) is then put into
   ## White's formula instead of each Omega_i.
   ##
   ## The clustering defaults to "group" for consistency with pvcovHC;
@@ -403,7 +402,7 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## cross-sectional dependence, as in the original Beck and Katz paper (where
   ## it is applied to "pooling" models).
   ##
-  ## This version: compliant with plm.1.2-0; lmtest.
+  ## This version: compliant with plm 1.2-0; lmtest.
   ## Code is identical to pvcovHC until mark.
   ##
   ## Usage:
@@ -420,8 +419,8 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## in vcovHC/meatHC. Sure this makes sense for white1, but it
   ## is open to question for white2 and arellano. We'll see.
   ##
-  ## Results OK vs. Eviews, vcov=PCSE. Unbal. case not exactly the
-  ## same (but then, who knows what Eviews does!)
+  ## Results OK vs. EViews, vcov=PCSE. Unbal. case not exactly the
+  ## same (but then, who knows what EViews does!)
     
     type <- match.arg(type)
     model <- describe(x, "model")
@@ -431,24 +430,24 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
     
   ## extract demeaned data
     demy <- pmodel.response(x, model = model)
-    demX <- model.matrix(x, model = model, rhs = 1)
+    demX <- model.matrix(x, model = model, rhs = 1, cstcovar.rm = "all")
     ## drop any linear dependent columns (corresponding to aliased coefficients)
     ## from model matrix X
-    if (!is.null(x$aliased) && any(x$aliased)) demX <- demX[, !x$aliased, drop = FALSE]
+    ##  na.rm = TRUE because currently, RE tw unbalanced models set aliased simply to NA
+    if (!is.null(x$aliased) && any(x$aliased, na.rm = TRUE)) demX <- demX[, !x$aliased, drop = FALSE]
     
     ## control: IV or not (two- or one-part formula)
     if(length(formula(x))[2] > 1) {
-        demZ <- model.matrix(x, model = model, rhs = 2)
+        demZ <- model.matrix(x, model = model, rhs = 2, cstcovar.rm = "all")
         ## substitute (transformed) X with projection of X on Z
         ## any linear dependence in Z (demZ) is appropriately taken care of by lm.fit()
-        demX <- fitted(lm.fit(demZ, demX)) # demX <- fitted(lm(demX ~ demZ))
+        demX <- fitted(lm.fit(demZ, demX))
     }
 
     pdim <- pdim(x)
     nT <- pdim$nT$N
     Ti <- pdim$Tint$Ti
     k <- dim(demX)[[2]]
-
     n0 <- pdim$nT$n 
     t0 <- pdim$nT$T
     
@@ -465,13 +464,13 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
     timeind  <- as.numeric(attr(x$model, "index")[,2])
 
   ## Achim's fix for 'fd' model (losing first time period)
-     if(model == "fd") {
-       groupind <- groupind[timeind > 1]
-       timeind <- timeind[timeind > 1]
-       nT <- nT-n0
-       Ti <- Ti-1
-       t0 <- t0-1
-     }
+    if(model == "fd") {
+      groupind <- groupind[timeind > 1]
+      timeind <- timeind[timeind > 1]
+      nT <- nT-n0
+      Ti <- Ti-1
+      t0 <- t0-1
+    }
 
   ## set grouping indexes
     switch(match.arg(cluster),
@@ -486,28 +485,31 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
               relevant.ind <- timeind
               lab <- groupind
             })
+    
     tind <- vector("list", n)
     tlab <- vector("list", n)
+    
     for (i in 1:length(unique(relevant.ind))) {
-        tind[[i]] <- which(relevant.ind==i)
-        tlab[[i]] <- lab[which(relevant.ind==i)]
+        tind[[i]] <- which(relevant.ind == i)
+        tlab[[i]] <- lab[which(relevant.ind == i)]
     }
 
   ## define residuals weighting function omega(res)
   ## (code taken from meatHC and modified)
+  ## (the weighting is defined "in sqrt" relative to the literature)
   ##
   ## (see the theoretical comments in pvcovHC)
 
     ## diaghat function for matrices
-    dhat <- function(x) {tx<-t(x)
-                         diag(crossprod(tx,solve(crossprod(x),tx)))}
+    dhat <- function(x) {tx <- t(x)
+                         diag(crossprod(tx, solve(crossprod(x), tx)))}
 
     ## this is computationally heavy, do only if needed
-    switch(match.arg(type), HC0 = {diaghat<-NULL},
-                            HC1 = {diaghat<-NULL},
-                            HC2 = {diaghat<-try(dhat(demX), silent = TRUE)},
-                            HC3 = {diaghat<-try(dhat(demX), silent = TRUE)},
-                            HC4 = {diaghat<-try(dhat(demX), silent = TRUE)})
+    switch(match.arg(type), HC0 = {diaghat <- NULL},
+                            HC1 = {diaghat <- NULL},
+                            HC2 = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            HC3 = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            HC4 = {diaghat <- try(dhat(demX), silent = TRUE)})
     df <- nT - k
     switch(match.arg(type), 
            HC0 = {
@@ -528,13 +530,13 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
         })
 
   ## transform residuals by weights
-  uhat<-omega(uhat,diaghat,df)
+  uhat <- omega(uhat, diaghat, df)
 
   ## CODE TAKEN FROM pvcovHC() UNTIL HERE except for ind/time labeling ##
 
   ## the PCSE covariance estimator is based on the unconditional estimate
   ## of the intragroup (intraperiod) covariance of errors, OmegaT or OmegaM
-  ## in the Eviews help.
+  ## in the EViews help.
   ## we calculate this based on code from pggls().
   ## the Omegai function is then:
   ## - constant if the panel is balanced
@@ -545,46 +547,47 @@ vcovBK.plm <- function(x, type=c("HC0", "HC1", "HC2", "HC3", "HC4"),
 
     ## est. omega submatrix
     ## "pre-allocate" an empty array
-    tres<-array(dim=c(t,t,n))
+    tres <- array(dim = c(t, t, n))
 
     ## array of n "empirical omega-blocks"
     ## with outer product of t(i) residuals
     ## for each group 1..n
-    ## (use subscripting from condition 'label in labels' set', the rest stays NA if any)
+    ## (use subscripting from condition 'label in labels' set',
+    ## the rest stays NA if any)
     for(i in 1:n) {
-      ut<-uhat[tind[[i]]]
-      tpos<-(1:t)[unique(lab) %in% tlab[[i]]]
-      ## put nondiag elements to 0 if diag=TRUE
+      ut <- uhat[tind[[i]]]
+      tpos <- (1:t)[unique(lab) %in% tlab[[i]]]
+      ## put nondiag elements to 0 if diagonal=TRUE
       if(diagonal) {
-          tres[tpos,tpos,i]<-diag(diag(ut%o%ut))
-        } else {
-          tres[tpos,tpos,i]<-ut%o%ut
-        }
+        tres[tpos, tpos, i] <- diag(diag(ut %o% ut))
+      } else {
+        tres[tpos, tpos, i] <- ut %o% ut
       }
+    }
 
     ## average over all omega blocks, removing NAs (apply preserving
     ## *two* dimensions, i.e. over the third) to get the unconditional
     ## covariance matrix of errors for a group (viz. time period):
-    OmegaT<-apply(tres,1:2,mean,na.rm=TRUE)
+    OmegaT <- apply(tres, 1:2, mean, na.rm = TRUE)
 
-  ## end of PCSE covariance calculation. Now
+  ## end of PCSE covariance calculation.
 
   ## fetch (all, unique) values of the relevant labels
   unlabs <- unique(lab)
 
-  salame<-array(dim=c(k,k,n))
+  salame <- array(dim = c(k, k, n))
   for(i in 1:n) {
-      groupinds<-tind[[i]]
-      grouplabs<-tlab[[i]]
-      xi<-demX[groupinds, , drop=FALSE]
-      ## for every group, take relevant positions
-      tpos <- unlabs %in% grouplabs
-      OmegaTi <- OmegaT[tpos, tpos, drop=FALSE]
-      salame[,,i]<-crossprod(xi,OmegaTi)%*%xi
-      }
+    groupinds <- tind[[i]]
+    grouplabs <- tlab[[i]]
+    xi <- demX[groupinds, , drop = FALSE]
+    ## for every group, take relevant positions
+    tpos <- unlabs %in% grouplabs
+    OmegaTi <- OmegaT[tpos, tpos, drop = FALSE]
+    salame[,,i] <- crossprod(xi, OmegaTi) %*% xi
+  }
 
   ## meat
-  salame <- apply(salame,1:2,sum)
+  salame <- apply(salame, 1:2, sum)
 
   ## bread
   pane <- solve(crossprod(demX))

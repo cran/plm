@@ -110,7 +110,7 @@ Grunfeld_missing_periods_one_id <- Grunfeld[-c(2,6,7), ]
 pGrunfeld_missing_periods_one_id <- pdata.frame(Grunfeld_missing_periods_one_id)
 pinv_missing_periods <- pGrunfeld_missing_periods_one_id$inv
 
-multi_periods <- c(2,6,7,22,23,56) # my not be at the first or last pos for an id, otherwise this line cannot be restored
+multi_periods <- c(2,6,7,22,23,56) # may not be at the first or last pos for an id, otherwise this line cannot be restored
 Grunfeld_missing_periods_multi_id <- Grunfeld[-multi_periods, ]
 pGrunfeld_missing_periods_multi_id <- pdata.frame(Grunfeld_missing_periods_multi_id)
 pinv_missing_periods_multi_id <- pGrunfeld_missing_periods_multi_id$inv
@@ -223,29 +223,29 @@ if (!length(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1$inv)) == 190)
 if (!nrow(attr(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1$inv), "index")) == 190) stop("failure make.pbalanced pseries' index")
 
 
-## make.pbalanced with balance.type = "shared":
+## make.pbalanced with balance.type = "shared.times":
 # 2 periods deleted -> 180 rows/entries left in (p)data.frame/pseries
 
   # data.frame
-  if (!nrow(make.pbalanced(Grunfeld_wo_2nd_period_and_3rd_for_id1, balance.type = "shared") == 180)) stop("failure make.pbalanced, balance.type = \"shared\") data.frame")
+  if (!nrow(make.pbalanced(Grunfeld_wo_2nd_period_and_3rd_for_id1, balance.type = "shared.times") == 180)) stop("failure make.pbalanced, balance.type = \"shared.times\") data.frame")
   # pdata.frame
-  if (!nrow(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1, balance.type = "shared") == 180)) stop("failure make.pbalanced, balance.type = \"shared\") pdata.frame")
-  if (!nrow(attr(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1, balance.type = "shared"), "index")) == 180) stop("failure make.pbalanced, balance.type = \"shared\") pdata.frame's index")
+  if (!nrow(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1, balance.type = "shared.times") == 180)) stop("failure make.pbalanced, balance.type = \"shared.times\") pdata.frame")
+  if (!nrow(attr(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1, balance.type = "shared.times"), "index")) == 180) stop("failure make.pbalanced, balance.type = \"shared.times\") pdata.frame's index")
   # pseries
-  if (!length(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1$inv, balance.type = "shared")) == 180) stop("failure make.pbalanced(, balance.type = \"shared\") pseries")
-  if (!nrow(attr(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1$inv, balance.type = "shared"), "index")) == 180) stop("failure make.pbalanced pseries' index")
+  if (!length(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1$inv, balance.type = "shared.times")) == 180) stop("failure make.pbalanced(, balance.type = \"shared.times\") pseries")
+  if (!nrow(attr(make.pbalanced(pGrunfeld_wo_2nd_period_and_3rd_for_id1$inv, balance.type = "shared.times"), "index")) == 180) stop("failure make.pbalanced pseries' index")
 
 # delete one (but different) period per id -> upper half of years (1945 to 1953) should be left
 delete_1_per_id_half <- c(1, 22, 43, 64, 85, 106, 127, 148, 169, 190)
 #split(Grunfeld[-delete_1_per_id_half, ]$year, Grunfeld[-delete_1_per_id_half, ]$firm) # inspect structure
 
-if (!nrow(make.pbalanced(Grunfeld[-delete_1_per_id_half, ], balance.type = "shared") == 100)) stop("failure make.pbalanced, balance.type = \"shared\") data.frame")
-if (!all(unique(make.pbalanced(Grunfeld[-delete_1_per_id_half, ], balance.type = "shared")$year) == c(1945:1954))) stop("wrong years")
+if (!nrow(make.pbalanced(Grunfeld[-delete_1_per_id_half, ], balance.type = "shared.times") == 100)) stop("failure make.pbalanced, balance.type = \"shared.times\") data.frame")
+if (!all(unique(make.pbalanced(Grunfeld[-delete_1_per_id_half, ], balance.type = "shared.times")$year) == c(1945:1954))) stop("wrong years")
 
 # delete two (but different) periods per id -> none should be left -> data frame with 0 rows
 delete_2_per_id_all <- c(1, 20, 22, 39, 43, 58, 64, 77, 85, 96, 106, 115, 127, 134, 148, 153, 169, 172, 190, 191)
 #split(Grunfeld[-delete_2_per_id_all, ]$year, Grunfeld[-delete_2_per_id_all, ]$firm) # inspect structure
-if (!nrow(make.pbalanced(Grunfeld[-delete_2_per_id_all, ], balance.type = "shared")) == 0) stop("failure make.pbalanced, balance.type = \"shared\") data.frame")
+if (!nrow(make.pbalanced(Grunfeld[-delete_2_per_id_all, ], balance.type = "shared.times")) == 0) stop("failure make.pbalanced, balance.type = \"shared.times\") data.frame")
 
 
 
@@ -329,10 +329,10 @@ if (!all(sort(unique(make.pbalanced(Grunfeld_wo_2nd_period_and_3rd_for_id1)$year
 # rows_there_before <- df_nlswork_r8_consec$here_before & !is.na(df_nlswork_r8_consec$here_before)
 # all.equal(df_nlswork_r8_consec[rows_there_before, ], nlswork_r8)
 # 
-# nlswork_r8_comparision  <- nlswork_r8
-# attr(nlswork_r8_comparision, "row.names") <- attr(df_nlswork_r8_consec[rows_there_before, ], "row.names")
+# nlswork_r8_comparison <- nlswork_r8
+# attr(nlswork_r8_comparison, "row.names") <- attr(df_nlswork_r8_consec[rows_there_before, ], "row.names")
 # 
-# if (!identical(df_nlswork_r8_consec[rows_there_before, ],nlswork_r8_comparision)) stop("data.frame: not identical")
+# if (!identical(df_nlswork_r8_consec[rows_there_before, ],nlswork_r8_comparison)) stop("data.frame: not identical")
 # 
 # if (!identical(typeof(attr(nlswork_r8, "row.names")), typeof(attr(df_nlswork_r8_consec, "row.names"))))
 #   stop("wrong typeof of attribute 'row.names'")
@@ -344,17 +344,17 @@ if (!all(sort(unique(make.pbalanced(Grunfeld_wo_2nd_period_and_3rd_for_id1)$year
 # if (!nrow(pdf_pnlswork_r8_consec) == 52365) stop("failure")
 # 
 # # same row.names adoption necessary as for data.frame
-# pnlswork_r8_comparision  <- pnlswork_r8
+# pnlswork_r8_comparison  <- pnlswork_r8
 # pdf_pnlswork_r8_consec_rows_there_before <- pdf_pnlswork_r8_consec[rows_there_before, ]
-# attr(attr(pnlswork_r8_comparision, "index"), "row.names") <- attr(attr(pdf_pnlswork_r8_consec_rows_there_before, "index"), "row.names")
+# attr(attr(pnlswork_r8_comparison, "index"), "row.names") <- attr(attr(pdf_pnlswork_r8_consec_rows_there_before, "index"), "row.names")
 # # as the index vars are in the pdata.frame: added levels are not to be dropped; thus: adapt here to enable comparison
 # pdf_pnlswork_r8_consec_rows_there_before$idcode <- droplevels(pdf_pnlswork_r8_consec_rows_there_before$idcode)
 # pdf_pnlswork_r8_consec_rows_there_before$year <- droplevels(pdf_pnlswork_r8_consec_rows_there_before$year)
 # 
 # length(levels(pdf_pnlswork_r8_consec_rows_there_before$year))
 # 
-# all.equal(pdf_pnlswork_r8_consec_rows_there_before, pnlswork_r8_comparision)
-# if (!identical(pdf_pnlswork_r8_consec_rows_there_before, pnlswork_r8_comparision)) stop("pdata.frame: not identical")
+# all.equal(pdf_pnlswork_r8_consec_rows_there_before, pnlswork_r8_comparison)
+# if (!identical(pdf_pnlswork_r8_consec_rows_there_before, pnlswork_r8_comparison)) stop("pdata.frame: not identical")
 # 
 # 
 # 
@@ -415,5 +415,5 @@ if (!all(sort(unique(make.pbalanced(Grunfeld_wo_2nd_period_and_3rd_for_id1)$year
 # max(dims$Tint$Ti)
 # 
 # pdim(pnlswork_r8_no_NA)
-# any(is.na(pnlswork_r8_no_NA$year))
+# anyNA(pnlswork_r8_no_NA$year)
 

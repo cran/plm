@@ -1,6 +1,6 @@
-### Test of within_intercept in connection with fixef() and comparision to Stata and Gretl
+### Test of within_intercept in connection with fixef() and comparison to Stata and Gretl
 #
-# TODO: modify to accomodate unbalanced two-way models?
+# results for within_intercept matches EViews, also in the two-way unbalanced case
 #  
 # (1) balanced
 # (2) unbalanced
@@ -122,8 +122,8 @@ individual_intercepts_gt_u <- int_gt_u + f_dmean_gt_u
 
 ## twoways unbalanced
 gtw_u <- plm(inv ~ value + capital, data = Grunfeld_unbalanced, model = "within", effect = "twoways")
-f_level_tw_i_u <- fixef(gtw_u, type = "level", effect = "individual") # these effects are correct since rev. 278
-f_level_tw_t_u <- fixef(gtw_u, type = "level", effect = "time")       # 
+f_level_tw_i_u <- fixef(gtw_u, type = "level", effect = "individual")
+f_level_tw_t_u <- fixef(gtw_u, type = "level", effect = "time")
 f_dmean_tw_i_u <- fixef(gtw_u, type = "dmean", effect = "individual")
 f_dmean_tw_t_u <- fixef(gtw_u, type = "dmean", effect = "time")
 
@@ -138,11 +138,10 @@ int_manual_tw_i_u <- mean(f_level_tw_i_u)
 int_manual_tw_t_u <- mean(f_level_tw_t_u)
 all.equal(int_manual_tw_i_u, int_manual_tw_t_u) # not equal
 # ... but weighted means are
-int_manual_tw_i_u2 <- crossprod(f_level_tw_i_u, weights_gtw_i_u) / sum(weights_gtw_i_u)
-int_manual_tw_t_u2 <- crossprod(f_level_tw_t_u, weights_gtw_t_u) / sum(weights_gtw_t_u)
+int_manual_tw_i_u2 <- as.vector(crossprod(f_level_tw_i_u, weights_gtw_i_u) / sum(weights_gtw_i_u))
+int_manual_tw_t_u2 <- as.vector(crossprod(f_level_tw_t_u, weights_gtw_t_u) / sum(weights_gtw_t_u))
 
 
-# TODO: within_intercept needs to be modified to handle the two-way unbalanced case?
 individual_intercepts_tw_i_u <- int_tw_u + f_dmean_tw_i_u
 individual_intercepts_tw_t_u <- int_tw_u + f_dmean_tw_t_u
 
@@ -160,6 +159,16 @@ mod_lm <- lm(inv ~ value + capital + factor(firm) + factor(year), data = Grunfel
 #if (!isTRUE(all.equal(individual_intercepts_tw_t_u, f_level_tw_t_u, check.attributes = FALSE))) stop("within_intercept twoways, time:       something is wrong")
 #if (!isTRUE(all.equal(int_tw_u, int_manual_tw_u, check.attributes = FALSE))) stop("within_intercept: something is wrong")
 
+
+
+
+### print all within intercepts (to have them compared to the reference output test_within_intercept.Rout.save)
+print(within_intercept(gi))
+print(within_intercept(gi_u))
+print(within_intercept(gt))
+print(within_intercept(gt_u))
+print(within_intercept(gtw))
+print(within_intercept(gtw_u))
 
 
 ######### Test with reference case: balanced panel

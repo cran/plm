@@ -23,7 +23,7 @@ library(plm)
 # fd_nls <- plm(form_nls, data = pnlswork_r8, model = "fd")
 # 
 # # results of regression differ, likely because the model matrices used differ (cf. number of obs)
-# # in STATA example : Number of obs: 10528 used in regression
+# # in Stata example : Number of obs: 10528 used in regression
 # summary(fd_nls)
 # 
 # # both result in error in plm v1.4-0 (CRAN) and dev version as of 2015-11-05
@@ -33,7 +33,7 @@ library(plm)
 
 
 
-data(Grunfeld, package = "plm")
+data("Grunfeld", package = "plm")
 Grunfeldpdata <- pdata.frame(Grunfeld, index = c("firm", "year"), drop.index = FALSE, row.names = TRUE)
 form_grun <- formula(inv ~ value + capital)
 fd_grun  <- plm(form_grun, data=Grunfeldpdata, model="fd")

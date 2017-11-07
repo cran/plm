@@ -22,9 +22,9 @@ detect_lin_dep(object, \dots)
 \method{detect_lin_dep}{plm}(object, suppressPrint = FALSE, \dots)
 
 \method{alias}{plm}(object, \dots)
-\method{alias}{pFormula}(object, data, model = c("pooling", "within", "Between", "between",
-                               "mean", "random", "fd"),
-                    effect = c("individual", "time", "twoways"), \dots)
+\method{alias}{pFormula}(object, data, 
+      model = c("pooling", "within", "Between", "between", "mean", "random", "fd"),
+      effect = c("individual", "time", "twoways"), \dots)
 }
 
 
@@ -65,7 +65,7 @@ The plm object contains an element \code{aliased} which indicates any such alias
 Both functions, \code{detect_lin_dep} and \code{alias}, help to detect linear dependence and accomplish almost the same:
 \code{detect_lin_dep} is a stand alone implementation while \code{alias}
 is a wrapper around \code{\link[stats]{alias.lm}}, extending the \code{alias} generic to classes \code{"plm"} and \code{"pFormula"}.
-\code{alias} hinges on the availability of the package \pkg{MASS} on the system. Not all arguments of \code{alias.lm} are
+\code{alias} hinges on the availability of the package \CRANpkg{MASS} on the system. Not all arguments of \code{alias.lm} are
 supported.
 Output of \code{alias} is more informative
 as it gives the linear combination of dependent columns (after data transformations, i. e. after (quasi)-demeaning)
@@ -87,15 +87,15 @@ Boston, sec. 7-2, pp. 206--211.
 }
 
 \seealso{
-  \code{\link[stats]{alias}}. 
+  \code{\link[stats]{alias}}, 
   \code{\link[stats]{model.matrix}} and especially \code{plm}'s \code{\link[plm]{model.matrix}} for
-  (transformed) model matrices. \code{\link[plm]{model.frame}}.
+  (transformed) model matrices, \code{\link[plm]{model.frame}}.
 }
 
 \examples{
 ### Example 1 ###
 # prepare the data
-data(Cigar)
+data("Cigar" , package = "plm")
 Cigar[ , "fact1"] <- c(0,1)
 Cigar[ , "fact2"] <- c(1,0)
 Cigar.p <- pdata.frame(Cigar)
@@ -152,7 +152,6 @@ detect_lin_dep(modmat_FE)
 mod_FE <- plm(pform, data = Grunfeld, model = "within")
 detect_lin_dep(mod_FE)
 alias(mod_FE)
-
 
 # look at the transformed data: after FE transformation CEOtenure == 1*CEOage
 head(modmat_FE, 50)

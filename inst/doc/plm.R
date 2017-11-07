@@ -1,19 +1,19 @@
 ### R code from vignette source 'plm.rnw'
 
 ###################################################
-### code chunk number 1: plm.rnw:566-567
+### code chunk number 1: plm.rnw:567-568
 ###################################################
 options(prompt= "R> ", useFancyQuotes = FALSE)
 
 
 ###################################################
-### code chunk number 2: plm.rnw:570-571
+### code chunk number 2: plm.rnw:571-572
 ###################################################
 library("plm")
 
 
 ###################################################
-### code chunk number 3: plm.rnw:581-585
+### code chunk number 3: plm.rnw:582-586
 ###################################################
 data("EmplUK", package="plm")
 data("Produc", package="plm")
@@ -31,20 +31,20 @@ head(attr(E, "index"))
 
 
 ###################################################
-### code chunk number 5: plm.rnw:617-619
+### code chunk number 5: plm.rnw:618-620
 ###################################################
 summary(E$emp)
 head(as.matrix(E$emp))
 
 
 ###################################################
-### code chunk number 6: plm.rnw:665-666
+### code chunk number 6: plm.rnw:666-667
 ###################################################
 head(lag(E$emp, 0:2))
 
 
 ###################################################
-### code chunk number 7: plm.rnw:675-680
+### code chunk number 7: plm.rnw:676-681
 ###################################################
 head(diff(E$emp), 10)
 head(lag(E$emp, 2), 10)
@@ -54,59 +54,59 @@ head(Between(E$emp), 10)
 
 
 ###################################################
-### code chunk number 8: plm.rnw:698-700
+### code chunk number 8: plm.rnw:699-701
 ###################################################
 emp~wage+capital|lag(wage,1)+capital
 emp~wage+capital|.-wage+lag(wage,1)
 
 
 ###################################################
-### code chunk number 9: plm.rnw:729-731
+### code chunk number 9: plm.rnw:730-732
 ###################################################
 grun.fe <- plm(inv~value+capital, data = Grunfeld, model = "within")
 grun.re <- plm(inv~value+capital, data = Grunfeld, model = "random")
 
 
 ###################################################
-### code chunk number 10: plm.rnw:734-735
+### code chunk number 10: plm.rnw:735-736
 ###################################################
 summary(grun.re)
 
 
 ###################################################
-### code chunk number 11: plm.rnw:746-747
+### code chunk number 11: plm.rnw:747-748
 ###################################################
-fixef(grun.fe, type = 'dmean')
+fixef(grun.fe, type = "dmean")
 
 
 ###################################################
-### code chunk number 12: plm.rnw:755-756
+### code chunk number 12: plm.rnw:756-757
 ###################################################
-summary(fixef(grun.fe, type = 'dmean'))
+summary(fixef(grun.fe, type = "dmean"))
 
 
 ###################################################
-### code chunk number 13: plm.rnw:762-764
+### code chunk number 13: plm.rnw:763-765
 ###################################################
 grun.twfe <- plm(inv~value+capital,data=Grunfeld,model="within",effect="twoways")
 fixef(grun.twfe,effect="time")
 
 
 ###################################################
-### code chunk number 14: plm.rnw:788-790
+### code chunk number 14: plm.rnw:789-791
 ###################################################
 grun.amem <- plm(inv~value+capital, data=Grunfeld,
                  model="random", random.method="amemiya")
 
 
 ###################################################
-### code chunk number 15: plm.rnw:797-798
+### code chunk number 15: plm.rnw:798-799
 ###################################################
 ercomp(inv~value+capital, data=Grunfeld, method = "amemiya", effect = "twoways")
 
 
 ###################################################
-### code chunk number 16: plm.rnw:814-817
+### code chunk number 16: plm.rnw:815-818
 ###################################################
 grun.tways <- plm(inv~value+capital, data = Grunfeld, effect = "twoways",
                   model = "random", random.method = "amemiya")
@@ -123,21 +123,21 @@ summary(Hed)
 
 
 ###################################################
-### code chunk number 18: plm.rnw:863-872
+### code chunk number 18: plm.rnw:867-876
 ###################################################
 data("Crime", package = "plm")
 cr <- plm(log(crmrte) ~ log(prbarr) + log(polpc) + log(prbconv) +
          log(prbpris) + log(avgsen) + log(density) + log(wcon) + 
          log(wtuc) + log(wtrd) + log(wfir) + log(wser) + log(wmfg) + 
          log(wfed) + log(wsta) + log(wloc) + log(pctymle) + log(pctmin) + 
-         region + smsa + factor(year) | . - log(prbarr) -log(polpc) + 
+         region + smsa + factor(year) | . - log(prbarr) - log(polpc) + 
          log(taxpc) + log(mix), data = Crime,
          model = "random")
 summary(cr)
 
 
 ###################################################
-### code chunk number 19: plm.rnw:879-884
+### code chunk number 19: plm.rnw:883-888
 ###################################################
 ht <- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+
           bluecol+ind+union+sex+black+ed | 
@@ -182,13 +182,13 @@ summary(zz)
 
 
 ###################################################
-### code chunk number 24: plm.rnw:1140-1141
+### code chunk number 24: plm.rnw:1144-1145
 ###################################################
 zz <- pggls(log(emp)~log(wage)+log(capital), data=EmplUK, model="within")
 
 
 ###################################################
-### code chunk number 25: plm.rnw:1180-1183
+### code chunk number 25: plm.rnw:1184-1187
 ###################################################
 znp <- pvcm(inv~value+capital, data=Grunfeld, model="within")
 zplm <- plm(inv~value+capital, data=Grunfeld, model="within")
@@ -196,26 +196,26 @@ pooltest(zplm,znp)
 
 
 ###################################################
-### code chunk number 26: plm.rnw:1189-1190
+### code chunk number 26: plm.rnw:1193-1194
 ###################################################
 pooltest(inv~value+capital, data=Grunfeld, model="within")
 
 
 ###################################################
-### code chunk number 27: plm.rnw:1218-1220
+### code chunk number 27: plm.rnw:1232-1234
 ###################################################
 g <- plm(inv ~ value + capital, data=Grunfeld, model="pooling")
 plmtest(g, effect="twoways", type="ghm")
 
 
 ###################################################
-### code chunk number 28: plm.rnw:1225-1226
+### code chunk number 28: plm.rnw:1239-1240
 ###################################################
 plmtest(inv~value+capital, data=Grunfeld, effect="twoways", type="ghm")
 
 
 ###################################################
-### code chunk number 29: plm.rnw:1236-1239
+### code chunk number 29: plm.rnw:1250-1253
 ###################################################
 gw <- plm(inv ~ value + capital,data=Grunfeld,effect="twoways",model="within")
 gp <- plm(inv ~ value + capital,data=Grunfeld,model="pooling")
@@ -223,13 +223,13 @@ pFtest(gw,gp)
 
 
 ###################################################
-### code chunk number 30: plm.rnw:1242-1243
+### code chunk number 30: plm.rnw:1256-1257
 ###################################################
 pFtest(inv~value+capital, data=Grunfeld,effect="twoways")
 
 
 ###################################################
-### code chunk number 31: plm.rnw:1254-1257
+### code chunk number 31: plm.rnw:1268-1271
 ###################################################
 gw <- plm(inv~value+capital, data=Grunfeld, model="within")
 gr <- plm(inv~value+capital, data=Grunfeld, model="random")
@@ -270,8 +270,6 @@ pbltest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp,
 ###################################################
 ### code chunk number 37: generalAR
 ###################################################
-## this can be taken away as soon as attached to plm.rnw
-grun.fe <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 pbgtest(grun.fe, order = 2)
 
 
@@ -306,7 +304,7 @@ pcdtest(inv~value+capital, data=Grunfeld, model="within")
 
 
 ###################################################
-### code chunk number 43: plm.rnw:1917-1920
+### code chunk number 43: plm.rnw:1936-1939
 ###################################################
 library("lmtest")
 re <- plm(inv~value+capital, data=Grunfeld, model="random")
@@ -314,7 +312,7 @@ coeftest(re,vcovHC)
 
 
 ###################################################
-### code chunk number 44: plm.rnw:1927-1928
+### code chunk number 44: plm.rnw:1946-1947
 ###################################################
 coeftest(re, vcovHC(re, method="white2", type="HC3"))
 
@@ -327,7 +325,7 @@ waldtest(re, update(re,.~.-capital),
 
 
 ###################################################
-### code chunk number 46: plm.rnw:1945-1947
+### code chunk number 46: plm.rnw:1965-1967
 ###################################################
 library("car")
 linearHypothesis(re, "2*value=capital", vcov.=vcovHC)

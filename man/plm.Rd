@@ -11,16 +11,20 @@ Linear models for panel data estimated using the \code{lm} function on transform
 }
 
 \usage{
-plm(formula, data, subset, na.action, effect = c("individual", "time", "twoways"),
+plm(formula, data, subset, weights, na.action,
+    effect = c("individual", "time", "twoways", "nested"),
     model = c("within", "random", "ht", "between", "pooling", "fd"),
-    random.method = c("swar", "walhus", "amemiya", "nerlove", "kinla"),
+    random.method = NULL,
+    random.models = NULL,
     random.dfcor = NULL,
-    inst.method = c("bvk", "baltagi", "am", "bmc"), restrict.matrix = NULL,
-    restrict.rhs = NULL, index = NULL, \dots)
-\method{print}{panelmodel}(x,digits=max(3, getOption("digits") - 2), 
-  width = getOption("width"), \dots)
+    inst.method = c("bvk", "baltagi", "am", "bms"),
+    restrict.matrix = NULL,
+    restrict.rhs = NULL,
+    index = NULL, \dots)
+\method{print}{panelmodel}(x, digits = max(3, getOption("digits") - 2), 
+      width = getOption("width"), \dots)
 \method{plot}{plm}(x, dx = 0.2, N = NULL, seed = 1,
-    within = TRUE, pooling = TRUE, between = FALSE, random = FALSE, \dots)
+     within = TRUE, pooling = TRUE, between = FALSE, random = FALSE, \dots)
 }
 
 \arguments{
@@ -28,18 +32,22 @@ plm(formula, data, subset, na.action, effect = c("individual", "time", "twoways"
   \item{x}{an object of class \code{"plm"},}
   \item{data}{a \code{data.frame},}
   \item{subset}{see \code{\link{lm}},}
+  \item{weights}{see \code{\link{lm}},}
   \item{na.action}{see \code{\link{lm}}; currently, not fully supported,}
   \item{effect}{the effects introduced in the model, one of
-  \code{"individual"}, \code{"time"}, or \code{"twoways"},}
+  \code{"individual"}, \code{"time"}, \code{"twoways"}, or \code{"nested"},}
   \item{model}{one of \code{"pooling"}, \code{"within"},
     \code{"between"}, \code{"random",} \code{"fd"}, or \code{"ht"},}
   \item{random.method}{method of estimation for the variance components
     in the random effects model, one of \code{"swar"} (default),
-  \code{"amemiya"}, \code{"walhus"}, or \code{"nerlove"},}
+    \code{"amemiya"}, \code{"walhus"}, or \code{"nerlove"},}
+  \item{random.models}{an alternative to the previous argument, the
+  models used to compute the variance components estimations are indicated,}
   \item{random.dfcor}{a numeric vector of length 2 indicating which degree of
     freedom should be used,}
   \item{inst.method}{the instrumental variable transformation: one of
-    \code{"bvk"}, \code{"baltagi"}, \code{"am"}, or \code{"bmc"},}
+    \code{"bvk"}, \code{"baltagi"}, \code{"am"}, or \code{"bms"} (see also 
+    Details),}
   \item{index}{the indexes,}
   \item{restrict.matrix}{a matrix which defines linear restrictions on
     the coefficients,}
@@ -67,10 +75,15 @@ effects (\code{"random"}), first--differences (\code{"fd"}), and between
 (although not with all methods).
 
 For random effects models, four estimators of the transformation
-parameter are available by setting \code{random.method} to one of \code{"swar"} (Swamy and Arora (1972)) (default),
-\code{"amemiya"} (Amemiya (1971)), \code{"walhus"} (Wallace and Hussain (1969)), or \code{"nerlove"} (Nerlove (1971)).
+parameter are available by setting \code{random.method} to one of
+\code{"swar"} (Swamy and Arora (1972)) (default), \code{"amemiya"}
+(Amemiya (1971)), \code{"walhus"} (Wallace and Hussain (1969)), or
+\code{"nerlove"} (Nerlove (1971)).
 
-For first--difference models, the intercept is maintained (which from a specification viewpoint amounts to allowing for a trend in the levels model). The user can exclude it from the estimated specification the usual way by adding \code{"-1"} to the model formula.
+For first--difference models, the intercept is maintained (which from a
+specification viewpoint amounts to allowing for a trend in the levels
+model). The user can exclude it from the estimated specification the
+usual way by adding \code{"-1"} to the model formula.
 
 Instrumental variables estimation is obtained using two--part formulas,
 the second part indicating the instrumental variables used. This can be
@@ -80,32 +93,38 @@ part. If, for example, the model is \code{y ~ x1 + x2 + x3}, with
 instruments, the model can be estimated with:
 
 \itemize{
-  \item \code{formula=y~x1+x2+x3 | x3+z1+z2},
-  \item \code{formula=y~x1+x2+x3 | .-x1-x2+z1+z2}.
+  \item \code{formula = y~x1+x2+x3 | x3+z1+z2},
+  \item \code{formula = y~x1+x2+x3 | . -x1-x2+z1+z2}.
 }
 
-Balestra and Varadharajan-Krishnakumar's or Baltagi's method is used if
-\code{inst.method="bvk"} or if \code{inst.method="baltagi"}, respectively.
-  
-The Hausman--Taylor estimator is computed if \code{model = "ht"}.
+If an instrument variable estimation is requested, argument \code{inst.method}
+selects the instrument variable transformation method:
+\itemize{
+  \item \code{"bvk"} (default) for Balestra and Varadharajan-Krishnakumar (1987),
+  \item \code{"baltagi"} for Baltagi (1981),
+  \item \code{"am"} for Amemiya and MaCurdy (1986),
+  \item \code{"bms"} for Breusch, Mizon, and Schmidt (1989).
+}
+
+The Hausman--Taylor estimator (Hausman and Taylor (1981)) is computed if \code{model = "ht"}.
 }
 
 \value{
-An object of class \code{c("plm","panelmodel")}.
+An object of class \code{c("plm", "panelmodel")}.
 
 A \code{"plm"} object has the following elements :
   
 \item{coefficients}{the vector of coefficients,}
 \item{vcov}{the variance--covariance matrix of the coefficients,}
-\item{residuals}{the vector of residuals,}
+\item{residuals}{the vector of residuals (these are the residuals of the (quasi-)demeaned model),}
 \item{df.residual}{degrees of freedom of the residuals,}
-\item{formula}{an object of class \code{'pFormula'} describing the
+\item{formula}{an object of class \code{"pFormula"} describing the
   model,}
-\item{model}{the model frame as a \code{'pdata.frame'} containing the
+\item{model}{the model frame as a \code{"pdata.frame"} containing the
   variables used for estimation: the response is in first column followed
   by the other variables, the individual and time indexes are in the 'index'
   attribute of \code{model},}
-\item{ercomp}{an object of class \code{'ercomp'} providing the
+\item{ercomp}{an object of class \code{"ercomp"} providing the
  estimation of the components of the errors (for random effects models only),}
 \item{aliased}{named logical vector indicating any aliased coefficients which 
 are silently dropped by \code{plm} due to linearly dependent terms (see also 
@@ -127,9 +146,10 @@ for further details.
 }
 
 \seealso{
-\code{\link[plm]{summary.plm}} for further details about the associated summary method and the
-"summary.plm" object both of which provide some model tests and tests of coefficients. 
-\code{\link[plm]{fixef}} to compute the fixed effects for "within" models (=fixed effects models).
+\code{\link[plm]{summary.plm}} for further details about the associated
+summary method and the "summary.plm" object both of which provide some
+model tests and tests of coefficients.  \code{\link[plm]{fixef}} to
+compute the fixed effects for "within" models (=fixed effects models).
 }
 
 \author{Yves Croissant}
@@ -140,24 +160,30 @@ Amemiya, T. (1971) The estimation of the variances in a
 variance--components model, \emph{International Economic Review},
 \bold{12}(1), pp. 1--13.
 
+Amemiya, T. and MaCurdy, T.E. (1986) Instrumental--variable estimation
+of an error components model, \emph{Econometrica}, \bold{54}(4), pp. 869--880.
+
 Balestra, P. and Varadharajan-Krishnakumar, J. (1987) Full information
 estimations of a system of simultaneous equations with error components
 structure, \emph{Econometric Theory}, \bold{3}(2), pp. 223--246.
   
 Baltagi, B.H. (1981) Simultaneous equations with error components,
 \emph{Journal of Econometrics}, \bold{17}(2), pp. 189--200.
-  
-Baltagi, B.H. (2001) \emph{Econometric Analysis of Panel Data}, 2nd
-ed., John Wiley and Sons.
+
+Baltagi, B.H.; Song, S.H.; Jung, B.C. (2001), \dQuote{The unbalanced nested error
+component regression model}, \emph{Journal of Econometrics}, \bold{101}(2), pp. 357--381.
 
 Baltagi, B.H. (2013) \emph{Econometric Analysis of Panel Data}, 5th
 ed., John Wiley and Sons.
 
-Hausman, J.A. and Taylor W.E. (1981) Panel data and unobservable
+Breusch, T.S., Mizon, G.E. and Schmidt, P. (1989) Efficient estimation
+using panel data, \emph{Econometrica}, \bold{57}(3), pp. 695--700.
+
+Hausman, J.A. and Taylor, W.E. (1981) Panel data and unobservable
 individual effects, \emph{Econometrica}, \bold{49}(6), pp. 1377--1398.
  
 Nerlove, M. (1971) Further evidence on the estimation of dynamic
-economic relations from a time--series of cross--sections,
+economic relations from a time series of cross sections,
 \emph{Econometrica}, \bold{39}(2), pp. 359--382.
 
 Swamy, P.A.V.B. and Arora, S.S. (1972) The exact finite sample
@@ -186,21 +212,32 @@ wi <- plm(inv ~ value + capital,
 
 swar <- plm(inv ~ value + capital,
             data = Grunfeld, model = "random", effect = "twoways")
-          
+
 amemiya <- plm(inv ~ value + capital,
                data = Grunfeld, model = "random", random.method = "amemiya",
                effect = "twoways")
-                
+
 walhus <- plm(inv ~ value + capital,
               data = Grunfeld, model = "random", random.method = "walhus",
               effect = "twoways")
 
-# summary, summary with a funished vcov, passed as matrix, 
-# as function, and as function with additional argument
+# summary and summary with a funished vcov (passed as matrix, 
+# as function, and as function with additional argument)
 summary(wi)
 summary(wi, vcov = vcovHC(wi))
 summary(wi, vcov = vcovHC)
 summary(wi, vcov = function(x) vcovHC(x, method = "white2"))
+
+
+# nested random effect model
+# replicate Baltagi/Song/Jung (2001), p. 378 (table 6), columns SA, WH
+# == Baltagi (2013), pp. 204-205
+data("Produc", package = "plm")
+pProduc <- pdata.frame(Produc, index = c("state", "year", "region"))
+form <- log(gsp) ~ log(pc) + log(emp) + log(hwy) + log(water) + log(util) + unemp
+summary(plm(form, data = pProduc, model = "random", effect = "nested"))
+summary(plm(form, data = pProduc, model = "random", effect = "nested",
+            random.method = "walhus"))
 
 }
 

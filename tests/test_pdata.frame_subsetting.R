@@ -3,7 +3,7 @@
 #  (pre rev. 251 subsetting a pdata.frame added extra information due to coercing rules of "[.data.frame")
 
 library(plm)
-data("Grunfeld")
+data("Grunfeld", package = "plm")
 
 pGrunfeld <- pdata.frame(Grunfeld)
 
@@ -11,23 +11,23 @@ pGrunfeld <- pdata.frame(Grunfeld)
 attr(pGrunfeld[c("1-1935"), ], which = "index")
 attr(pGrunfeld[c("1-1935", "1-1936"), ], which = "index")
 
-if (any(is.na(attr(pGrunfeld[c("1-1935"), ], which = "index")))) stop("FAIL: NA in index")
-if (any(is.na(attr(pGrunfeld[c("1-1935", "1-1936"), ], which = "index")))) stop("FAIL: NA in index")
+if (anyNA(attr(pGrunfeld[c("1-1935"), ], which = "index"))) stop("FAIL: NA in index")
+if (anyNA(attr(pGrunfeld[c("1-1935", "1-1936"), ], which = "index"))) stop("FAIL: NA in index")
 
 
 # subsetting with [] by line number works (indexes preserved)
 if (!all(attr(pGrunfeld[c(1), ], which = "index") == c(1, 1935))) stop("wrong index!")
 if (!all(attr(pGrunfeld[c(1,2), ], which = "index") == data.frame(firm = c(1,1), year = c(1935, 1936)))) stop("wrong index!")
 
-if (any(is.na(attr(pGrunfeld[c(1), ], which = "index")))) stop("FAIL: NA in index")
-if (any(is.na(attr(pGrunfeld[c(1,2), ], which = "index")))) stop("FAIL: NA in index")
+if (anyNA(attr(pGrunfeld[c(1), ], which = "index"))) stop("FAIL: NA in index")
+if (anyNA(attr(pGrunfeld[c(1,2), ], which = "index"))) stop("FAIL: NA in index")
 
 # subsetting with [[]] works (indexes preserved)
 attr(pGrunfeld[["inv"]], which = "index")
 attr(pGrunfeld[[3]], which = "index")
 
-if (any(is.na(attr(pGrunfeld[["inv"]], which = "index")))) stop("FAIL: NA in index")
-if (any(is.na(attr(pGrunfeld[[3]], which = "index")))) stop("FAIL: NA in index")
+if (anyNA(attr(pGrunfeld[["inv"]], which = "index"))) stop("FAIL: NA in index")
+if (anyNA(attr(pGrunfeld[[3]], which = "index"))) stop("FAIL: NA in index")
 
 
 
@@ -173,4 +173,35 @@ if (!all(c(dim(pX[2:4, drop = FALSE])[1], 2L) == dim(attr(pX[2:4, drop = FALSE],
 if (!all(c(dim(pX[1])[1], 2L)               == dim(attr(pX[1],               "index")))) stop("index has wrong dimension after subsetting")
 if (!all(c(dim(pX[1, drop = TRUE])[1],  2L) == dim(attr(pX[1, drop = TRUE],  "index")))) stop("index has wrong dimension after subsetting")
 if (!all(c(dim(pX[1, drop = FALSE])[1], 2L) == dim(attr(pX[1, drop = FALSE], "index")))) stop("index has wrong dimension after subsetting")
+
+
+####### test return values numeric(0) etc and especially NULL
+
+## compare pdata.frame() to data.frame() in case of subsetting with non-existent return values
+# firm 31 is non-existent
+# valueNonExistent is non-existent
+
+pGrunfeld[pGrunfeld$firm == "31"]
+
+Grunfeld[Grunfeld$firm == "31"]
+
+
+pGrunfeld[pGrunfeld$firm == "31", "value"]
+
+Grunfeld[Grunfeld$firm == "31", "value"]
+
+#### since R 3.4.0 the  following two cases gave a warning which is pacified in plm rev. 626
+# Warning in structure(mydata, index = index, class = base::union("pseries",  :
+#                                                                   Calling 'structure(NULL, *)' is deprecated, as NULL cannot have attributes.
+#                                                                 Consider 'structure(list(), *)' instead.
+
+pGrunfeld[pGrunfeld$firm == "31", "valueNonExistent"]
+
+Grunfeld[Grunfeld$firm == "31", "valueNonExistent"]
+
+
+
+pGrunfeld[pGrunfeld$firm == "19", "valueX"]
+
+Grunfeld[Grunfeld$firm == "19", "valueX"]
 

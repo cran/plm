@@ -52,7 +52,7 @@ of freedom parameter for the F test (usually not used),}
 \code{\link{summary.plm}} to produce the F statistic. % TODO: or Chi-square statistic, once "activated" in summary.plm and if Chi-sq is used for RE models.
 
 \code{pwaldtest} performs the test if the slope coefficients of a panel regression are jointly zero.
-It does not perform general purpose Wald-style tests (for those, see \code{\link[lmtest]{waldtest}} (from package \pkg{lmtest}) or \code{linearHypothesis} (from \pkg{car})).
+It does not perform general purpose Wald-style tests (for those, see \code{\link[lmtest]{waldtest}} (from package \CRANpkg{lmtest}) or \code{linearHypothesis} (from \CRANpkg{car})).
 
 If a user specified variance-covariance matrix/function is given in 
 argument \code{vcov}, the robust version of the tests are carried out. 
@@ -61,16 +61,19 @@ overwriting of the second degrees of freedom parameter is given (by
 supplying argument (\code{.df2})), the adjustment of the second degrees
 of freedom parameter is performed by default. The second degrees of 
 freedom parameter is adjusted to be the number of unique elements of the 
-clustered variable - 1, e. g. the number of individuals - 1.
+cluster variable - 1, e. g. the number of individuals - 1. For the degrees of 
+freedom adjustment of the F test in general, see e. g. Cameron/Miller (2015), 
+section VII;  Andress/Golsch/Schmidt (2013), pp. 126, footnote 4.
 
-The adjustment requires the vcov to carry an attribute called "cluster" 
-with a known clustering described as a character (for now this could be 
-either the character \code{"group"} or \code{"time"}). The vcovXX functions 
-of the package plm provide such an attribute for their returned 
-variance--covariance matrices. No adjustment is done for unknown descriptions
-in the character of the attribute "cluster" or when the attribute "cluster" 
-is not present. For the adjustment, see e. g. Cameron/Miller (2015), section VII; 
-Andress/Golsch/Schmidt (2013), pp. 126, footnote 4.
+The degrees of freedom adjustment requires the vcov object supplied or created by a supplied function
+to carry an attribute called "cluster" with a known clustering described as a 
+character (for now this could be either \code{"group"} or \code{"time"}).
+The vcovXX functions of the package \pkg{plm} provide such an attribute for their returned 
+variance--covariance matrices. No adjustment is done for unknown descriptions given
+in the attribute "cluster" or when the attribute "cluster" is not present.
+Robust vcov objects/functions from package \CRANpkg{clubSandwich} work as inputs to 
+\code{pwaldtest}'s F test because a they are translated internally to match the 
+needs described above.
 }
 
 \value{
@@ -84,14 +87,14 @@ estimation for the variance--covariance matrix;
 \code{\link[plm]{summary.plm}}
 }
 
-\author{Yves Croissant (initial implementation) and Kevin Tappe (extensions: vcov argument and df2 adjustment)}
+\author{Yves Croissant (initial implementation) and Kevin Tappe (extensions: vcov argument and F test's df2 adjustment)}
 
 \references{
-Wooldridge, J.M. (2010) \emph{Econometric Analysis of Cross-Section and Panel Data}, 2nd ed., MIT Press, Sec. 4.2.3, pp. 60--62.
+Wooldridge, J.M. (2010) \emph{Econometric Analysis of Cross Section and Panel Data}, 2nd ed., MIT Press, Sec. 4.2.3, pp. 60--62.
 
 Andress, H.-J./Golsch, K./Schmidt, A. (2013), Applied Panel Data Analysis for Economic and Social Surveys, Springer, Heidelberg et al.
 
-Cameron, A. C./Miller, D. L. (2015), "A Practitioner's Guide to Cluster-Robust Inference", \emph{Journal of Human Resources}, 2015, Vol. 50, No. 2, pp. 317--373; see also the supplements under \url{http://cameron.econ.ucdavis.edu/research/papers.html}.
+Cameron, A. C./Miller, D. L. (2015), "A Practitioner's Guide to Cluster-Robust Inference", \emph{Journal of Human Resources}, 2015, \bold{50}(2), pp. 317--373; see also the supplements under \url{http://cameron.econ.ucdavis.edu/research/papers.html}.
 }
 
 
@@ -102,7 +105,7 @@ mod_re <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
 pwaldtest(mod_fe, test = "F")
 pwaldtest(mod_re, test = "Chisq")
 
-# with robust vcov
+# with robust vcov (matrix, function)
 pwaldtest(mod_fe, vcov = vcovHC(mod_fe))
 pwaldtest(mod_fe, vcov = function(x) vcovHC(x, type = "HC3"))
 
@@ -110,8 +113,8 @@ pwaldtest(mod_fe, vcov = vcovHC(mod_fe), df2adj = FALSE) # w/o df2 adjustment
 
 # example without attribute "cluster" in the vcov
 vcov_mat <- vcovHC(mod_fe)
-attr(vcov_mat, "cluster") <- NULL # remove attribute
-pwaldtest(mod_fe, vcov = vcov_mat)   # no df2 adjustment performed
+attr(vcov_mat, "cluster") <- NULL  # remove attribute
+pwaldtest(mod_fe, vcov = vcov_mat) # no df2 adjustment performed
 
 }
 

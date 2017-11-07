@@ -3,11 +3,12 @@
 ### (1): general tests
 ### (2): consistency with summary.plm
 ###
-### see also test file test_within_intercept.R for consistency checks
-###  between functions fixef and within_intercept
+### see also:
+###    * test file test_within_intercept.R for consistency checks
+###      between functions fixef and within_intercept
+###    * test file test_fixef_comp_lm_plm.R for a comparison of the fixed effects to LSDV models via lm()
 
-
-############# (1): general tests #############
+############# (1): general run tests #############
 library(plm)
 data("Grunfeld", package = "plm")
 gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
@@ -43,7 +44,7 @@ print(attr(f_level_d_robust_func, "se"))
 print(summary(f_level_d),             digits = 8)
 print(summary(f_level_d_robust_func), digits = 8)
 
-# just run tests for type = "demean" and type = "dfirst"
+# just run tests for type = "dmean" and type = "dfirst"
 fixef(gi, type = "dmean")
 fixef(gt, type = "dmean")
 fixef(gd, effect = "individual", type = "dmean")

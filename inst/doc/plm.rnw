@@ -8,7 +8,7 @@
 
 
 %\VignetteIndexEntry{Panel Data Econometrics in R: the plm Package}
-%\VignetteDepends{plm,stats,bdsmatrix,nlme}
+%\VignetteDepends{plm,stats,bdsmatrix,nlme,car}
 %\VignetteKeywords{panel data, gmm estimator, covariance matrix estimator, econometric computing, R}
 %\VignettePackage{plm}
 
@@ -102,7 +102,7 @@ coefficients models, generalized method of moments estimation of
 dynamic models; and the basic toolbox of specification and
 misspecification diagnostics.
 
-Furthermore, we felt there was the need for automation of some basic
+Furthermore, we felt there was a need for automation of some basic
 data management tasks such as lagging, summing and, more in general,
 \code{apply}ing (in the \proglang{R} sense) functions to the data, which,
 although conceptually simple, become cumbersome and error-prone on
@@ -111,9 +111,9 @@ two-dimensional data, especially in the case of unbalanced panels.
 This paper is organized as follows: Section~\ref{sec:linearpanelmodel}
 presents a very short overview of the typical model
 taxonomy\footnote{Comprehensive treatments are to be found in many
-  econometrics textbooks, e.g. \citet{BALT:01} or \citet{WOOL:02}:
+  econometrics textbooks, e.g. \citet{BALT:2005, BALT:2013} or \citet{WOOL:02, WOOL:2010}:
   the reader is referred to these, especially to the first 9 chapters
-  of \citet{BALT:01}.}.  Section~\ref{sec:software} discusses the
+  of \citet{BALT:2005, BALT:2013}.}.  Section~\ref{sec:software} discusses the
 software approach used in the package. The next three sections present
 the functionalities of the package in more detail: data management
 (Section~\ref{sec:dataformula}), estimation
@@ -284,7 +284,7 @@ the most appropriate estimator) are usually tested by means of:
 % Dynamic models in a fixed or random effects setting, and in general
 % lack of strict exogeneity of the regressors, pose further problems to
 % estimation which are usually dealt with in the generalized method of
-% moments (\textsc{gmm}) framework.  
+% moments (\textsc{gmm}) framework.
 
 
 Dynamic models and in general lack of strict exogeneity of the
@@ -381,6 +381,7 @@ has the same name of the function. They all inherit from class
 \code{coefficients}, \code{residuals}, \code{fitted.values},
 \code{vcov}, \code{df.residual} and \code{call} and functions
 that extract these elements are provided.
+% TODO: currently, plm objects do not contain fitted.values
 
 \subsubsection{Testing interface}
 
@@ -602,17 +603,17 @@ head(E)
 head(attr(E, "index"))
 @
 
-Two further arguments are logical : \texttt{drop.index} drop the
-indexes from the \texttt{data.frame} and \texttt{row.names} computes
+Two further arguments are logical: \texttt{drop.index = TRUE} drops the
+indexes from the \texttt{data.frame} and \texttt{row.names = TRUE} computes
 ``fancy'' row names by pasting the individual and the time
 indexes. While extracting a series from a \texttt{pdata.frame}, a
 \texttt{pseries} is created, which is the original series with the
 index attribute. This object has specific methods, like
-\texttt{summary} and \texttt{as.matrix} are provided. The former
-indicates the total variation of the variable and the share of this
-variation that is due to the individual and the time dimensions. The
+\texttt{summary} and \texttt{as.matrix}. The former
+indicates the total variation of the variable and the shares of this
+variation due to the individual and the time dimensions. The
 latter gives the matrix representation of the series, with, by default,
-individual as rows and time as columns.
+individuals as rows and times as columns.
 
 <<>>=
 summary(E$emp)
@@ -631,7 +632,7 @@ $I_n$ the identity matrix of dimension $n$, we get:
 \begin{itemize}
 \item the between transformation: $P=\frac{1}{T}I_n\otimes jj'$
   returns a vector containing the individual means. The
-  \code{Between} and \code{between} functions performs this
+  \code{Between} and \code{between} functions perform this
   operation, the first one returning a vector of length $nT$, the
   second one a vector of length $n$,
 \item the within transformation: $Q=I_{nT}-P$ returns a vector
@@ -656,10 +657,10 @@ is of dimension $(T-1,T)$.
 Note that \proglang{R}'s \code{diff()} and \code{lag()} functions
 don't compute correctly these transformations for panel data because
 they are unable to identify when there is a change in individual in
-the data. Specific methods for \texttt{pseries} objects are therefore
-have been rewritten in order to handle correctly panel data. Note that
-compares to the \texttt{lag} method for \texttt{ts} objects, the order
-of lags are indicated by positive integer. Moreover, 0 is a relevant
+the data. Therefore, specific methods for \texttt{pseries} objects have 
+been written in order to handle correctly panel data. Note that
+compared to the \texttt{lag()} method for \texttt{ts} objects, the order
+of lags are indicated by a positive integer. Moreover, 0 is a relevant
 value and a vector argument may be provided:
 
 <<>>=
@@ -684,7 +685,7 @@ head(Between(E$emp), 10)
 
 \subsection{Formulas}
 
-There are circumstances where standard \code{formula} are not very
+In some circumstances, standard \code{formula}s are not very
 useful to describe a model, notably while using instrumental variable
 like estimators: to deal with these situations, we use the
 \code{Formula} package.
@@ -715,11 +716,11 @@ Several models can be estimated with \code{plm} by filling the
 \code{model} argument:
 
 \begin{itemize}
-\item the fixed effects model (\code{within}),
-\item the pooling model (\code{pooling}),
-\item the first-difference model (\code{fd}),
-\item the between model (\code{between}),
-\item the error components model (\code{random}).
+\item the fixed effects model (\code{"within"}),
+\item the pooling model (\code{"pooling"}),
+\item the first-difference model (\code{"fd"}),
+\item the between model (\code{"between"}),
+\item the error components model (\code{"random"}).
 \end{itemize}
 
 The basic use of \code{plm} is to indicate the model formula, the
@@ -738,13 +739,13 @@ summary(grun.re)
 For a \code{random} model, the \code{summary} method gives information
 about the variance of the components of the errors.  Fixed effects may
 be extracted easily using \code{fixef}. An argument \code{type}
-indicates how fixed effects should be computed : in level \code{type =
-  'level'} (the default), in deviation from the overall mean
-\code{type = 'dmean'} or in deviation from the first individual
-\code{type = 'dfirst'}.
+indicates how fixed effects should be computed: in levels \code{type =
+  "level"} (the default), in deviations from the overall mean
+\code{type = "dmean"} or in deviations from the first individual
+\code{type = "dfirst"}.
 
 <<>>=
-fixef(grun.fe, type = 'dmean')
+fixef(grun.fe, type = "dmean")
 @ 
 
 The \code{fixef} function returns an object of class \code{fixef}. A
@@ -753,7 +754,7 @@ from the overall intercept), their standard
 errors and the test of equality to the overall intercept.
 
 <<>>=
-summary(fixef(grun.fe, type = 'dmean'))
+summary(fixef(grun.fe, type = "dmean"))
 @ 
 
 In case of a two-ways effect model, an additional argument
@@ -776,10 +777,10 @@ Four estimators of this parameter are available, depending on the
 value of the argument \code{random.method}:
 
 \begin{itemize}
-\item \code{swar}: from \citet{SWAM:AROR:72}, the default value,
-\item \code{walhus}: from \citet{WALL:HUSS:69},
-\item \code{amemiya}: from \citet{AMEM:71},
-\item \code{nerlove}: from \citet{NERLO:71}.
+\item \code{"swar"}: from \citet{SWAM:AROR:72}, the default value,
+\item \code{"walhus"}: from \citet{WALL:HUSS:69},
+\item \code{"amemiya"}: from \citet{AMEM:71},
+\item \code{"nerlove"}: from \citet{NERLO:71}.
 \end{itemize}
 
 
@@ -835,7 +836,7 @@ with some limitations:
 
 The following example is using data used by \citep{HARR:RUBI:78} to
 estimate an hedonic housing prices function. It is reproduced in
-\citep{BALT:01}, p.174.
+\citep{BALT:2005}, p.174/\citet{BALT:2013}, p.197.
 
 <<hedonic>>=
 data("Hedonic", package = "plm")
@@ -854,11 +855,14 @@ after a | sign.
 The instrumental variables estimator used is indicated with the
 \code{inst.method} argument:
 \begin{itemize}
-\item \code{bvk}, from  \citet{BALE:VARA:87}, the default value,
-\item \code{baltagi}, from \citet{BALT:81}.
+\item \code{"bvk"}, from  \citet{BALE:VARA:87}, the default value,
+\item \code{"baltagi"}, from \citet{BALT:81}.
+\item \code{"am"}, from \citet{AMEM:MACUR:86}
+\item \code{"bms"}, from \citet{BREU:MIZO:SCHMI:89}
 \end{itemize}
- as
-illustrated on the following example from \cite{BALT:01}, p.120.
+
+as illustrated in the following example from 
+\cite{BALT:2005}, p.120/\citet{BALT:2013}, p.137 ("G2SLS").
   
 <<>>=
 data("Crime", package = "plm")
@@ -866,15 +870,15 @@ cr <- plm(log(crmrte) ~ log(prbarr) + log(polpc) + log(prbconv) +
          log(prbpris) + log(avgsen) + log(density) + log(wcon) + 
          log(wtuc) + log(wtrd) + log(wfir) + log(wser) + log(wmfg) + 
          log(wfed) + log(wsta) + log(wloc) + log(pctymle) + log(pctmin) + 
-         region + smsa + factor(year) | . - log(prbarr) -log(polpc) + 
+         region + smsa + factor(year) | . - log(prbarr) - log(polpc) + 
          log(taxpc) + log(mix), data = Crime,
          model = "random")
 summary(cr)
-@   
+@
 
 The Hausman-Taylor model \citep[see][]{HAUS:TAYL:81} may be estimated
 with the \code{pht} function. The following example is from
-\cite{BALT:01} p.130.
+\cite{BALT:2005}, p.130/\citet{BALT:2013}, p.146.
 
 <<>>=
 ht <- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+
@@ -1202,14 +1206,24 @@ Two additional arguments can be added to indicate the kind of test to
 be computed. The argument \code{type} is one of:
 
 \begin{itemize}
-\item \code{bp}: \citet{BREU:PAGA:80},
-\item \code{honda}: \citet{HOND:85}, the default value,
-\item \code{kw}: \citet{KING:WU:97},
-\item \code{ghm}: \citet{GOUR:HOLL:MONF:82}.
+\item \code{"honda"}: \citet{HOND:85}, the default value,
+\item \code{"bp"}: \citet{BREU:PAGA:80},
+\item \code{"kw"}: \citet{KING:WU:97}\footnote{NB: Oneway King-Wu (\code{"kw"}) 
+statistics (\code{"individual"} and \code{"time"}) coincide with the respective 
+Honda statistics (\code{"honda"}); however, the twoway statistics of \code{"kw"} 
+and \code{"honda"} differ.},
+\item \code{"ghm"}: \citet{GOUR:HOLL:MONF:82}.
 \end{itemize}
 
 The effects tested are indicated with the \code{effect} argument (one
-of \code{individual}, \code{time} or \code{twoways}).
+of \code{"individual"}, \code{"time"} or \code{"twoways"}). The test statistics 
+implemented are also suitable for unbalanced panels.\footnote{
+The \code{"bp"} test for unbalanced panels was derived in \citet{BALT:LI:90}, 
+the \code{"kw"} test for unbalanced panels in \citet{BALT:CHA:LI:98}. The 
+\code{"ghm"} test and the \code{"kw"} test were extended to two--way effects in 
+\citet{BALT:CHA:LI:92}. For a concise overview of all these statistics see 
+\citet[Sec. 4.2, pp. 68--76 (for balanced panels) and Sec. 9.5, pp. 200--203 
+(for unbalanced panels)]{BALT:2013}.}
 
 To test the presence of individual and time effects in the
 \code{Grunfeld} example, using the \citet{GOUR:HOLL:MONF:82} test,
@@ -1265,7 +1279,7 @@ A model with individual effects has composite errors that are serially
 correlated by definition. The presence of the time-invariant error
 component\footnote{Here we treat fixed and random effects alike, as
   components of the error term, according with the modern approach in
-  econometrics \citep[see][]{WOOL:02}.} gives rise to serial
+  econometrics \citep[see][]{WOOL:02, WOOL:2010}.} gives rise to serial
 correlation which does not die out over time, thus standard tests
 applied on pooled data always end up rejecting the null of spherical
 residuals\footnote{Neglecting time effects may also lead to serial
@@ -1474,8 +1488,6 @@ straightforward for them. The wrapper functions \code{pbgtest} and
 Breusch-Godfrey and Durbin-Watson tests from package \pkg{lmtest}:
 
 <<generalAR>>=
-## this can be taken away as soon as attached to plm.rnw
-grun.fe <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 pbgtest(grun.fe, order = 2)
 @
 
@@ -1485,7 +1497,7 @@ correlation, which might turn useful, e.g., on quarterly
 data. Analogously, from the point of view of software, as the
 functions are simple wrappers towards \code{bgtest} and \code{dwtest},
 all arguments from the latter two apply and may be passed on through
-the `\dots' operator.
+the `\dots' argument.
 
 
 \subsubsection{Wooldridge's test for serial correlation in ``short'' FE panels}
@@ -1500,13 +1512,19 @@ on themselves, lagged one period: $$\hat{\epsilon}_{i,t}=\alpha + \delta
 -1/(T-1)$ makes us conclude against the original null of no serial
 correlation.
 
-The building blocks available in \pkg{plm}, together with the function
-\code{linearHypothesis()} in package \pkg{car}, make it easy to
+The building blocks available in \pkg{plm}
+% car::linearHypothesis() not used anymore for this (cf. rev. 404):
+% ", together with the function
+% \code{linearHypothesis()} in package \pkg{car}," 
+make it easy to
 construct a function carrying out this procedure: first the
 \textsc{fe} model is estimated and the residuals retrieved, then they
 are lagged and a \code{pooling} AR(1) model is estimated. The test
-statistic is obtained by applying \code{linearHypothesis()} to the
-latter model to test the above restriction on $\delta$, supplying a
+statistic is obtained by applying
+% car::linearHypothesis() not used anymore for this  (cf. rev. 404):
+% \code{linearHypothesis()} to the
+% latter model to test 
+the above restriction on $\delta$ and supplying a
 heteroskedasticity- and autocorrelation-consistent covariance matrix
 (\code{vcovHC} with the appropriate options, in particular
 \code{method="arellano"})\footnote{see Subsection~\ref{subsec:robust}.}.
@@ -1557,7 +1575,8 @@ default behaviour \code{h0="fd"} is to test for serial correlation in
 pwfdtest(log(emp) ~ log(wage) + log(capital), data=EmplUK)
 @
 
-while specifying \code{h0="fe"} the null hypothesis becomes no serial correlation in {\em original} errors, which is similar to the \code{pwartest}. 
+while specifying \code{h0="fe"} the null hypothesis becomes no serial 
+correlation in {\em original} errors, which is similar to the \code{pwartest}. 
 
 <<pwfdtest2>>=
 pwfdtest(log(emp) ~ log(wage) + log(capital), data=EmplUK, h0="fe")
@@ -1744,7 +1763,7 @@ $$
 So that the unit-root hypothesis is now $\rho = 0$.
 
 Some of the unit-root tests for panel data are based on preliminary
-results obtained by running the above Augmented Dickey-Fuller
+results obtained by running the above Augmented Dickey-Fuller (ADF)
 regression. 
 
 First, we have to determine the optimal number of lags $p_i$ for each
@@ -1755,7 +1774,7 @@ $p_i$ can be chosen using:
 \begin{itemize}
 \item the Swartz information criteria (SIC),
 \item the Akaike information criteria (AIC),
-\item the Hall method, which consist on removing the higher lags while
+\item the Hall method, which consist in removing the higher lags while
   it is not significant.
 \end{itemize}
 
@@ -1940,7 +1959,8 @@ waldtest(re, update(re,.~.-capital),
          vcov=function(x) vcovHC(x, method="white2", type="HC3"))
 @ 
 
-Moreover, \code{linearHypothesis} from package \pkg{car} may be used to test for linear restrictions:
+Moreover, \code{linearHypothesis} from package \pkg{car} may be used to test 
+for linear restrictions:
 
 <<>>=
 library("car")
@@ -2042,7 +2062,7 @@ fundamental issue is whether the unobserved effects are correlated
 with the regressors or not. In this last case, they can safely be left
 in the error term, and the serial correlation they induce is cared for
 by means of appropriate \textsc{gls} transformations. On the contrary, in the case of
-correlation,  ``fixed effects'' methods such as least
+correlation, ``fixed effects'' methods such as least
 squares dummy variables or time-demeaning are needed, which
 explicitly, although inconsistently\footnote{For fixed effects
   estimation, as the sample grows (on the dimension on which the fixed
@@ -2243,7 +2263,7 @@ lmAR1ML <- gls(inv~value+capital,data=Grunfeld,
 @
 
 and analogously the random effects panel with, e.g., AR(1) errors
-\citep[see][chap~5]{BALT:01}, which is a very common specification in
+\citep[see][chap~5]{BALT:2005, BALT:2013}, which is a very common specification in
 econometrics, may be fit by \code{lme} specifying an additional
 random intercept:
 

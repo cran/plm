@@ -1,14 +1,14 @@
-### (1) Comparision of extraction of data.frame and pdata.frame and
+### (1) Comparison of extraction of data.frame and pdata.frame and
 ### (2) class 'pseries' of estimated_model$model
 
 
 
-### (1) Comparision of extraction of data.frame and pdata.frame ###
+### (1) Comparison of extraction of data.frame and pdata.frame ###
 # -> everything is ok in rev. 189+
 
 # from ?pdata.frame: "The "[" method behaves as for data.frame, except that the extraction is also applied to the index attribute."
 library(plm)
-data(Grunfeld, package="plm")
+data("Grunfeld", package="plm")
 class(Grunfeld)
 pGrunfeld <- pdata.frame(Grunfeld, index = c("firm", "year"), drop.index = F)
 class(pGrunfeld)
@@ -78,7 +78,7 @@ if (!isTRUE(all.equal(attrib_names_before_subsetting_pdataframe, attrib_names_af
 
 ### extract pseries from pdata.frame and add back
   # get fresh data
-  data(Grunfeld, package="plm")
+  data("Grunfeld", package="plm")
   pGrunfeld <- pdata.frame(Grunfeld, index = c("firm", "year"), drop.index = F)
   
   px <- pGrunfeld$inv

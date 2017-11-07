@@ -12,11 +12,11 @@ phtest <- function(x,...){
 
 phtest.formula <- function(x, data, model = c("within", "random"),
                             method = c("chisq", "aux"),
-                            index = NULL, vcov = NULL, ...){
+                            index = NULL, vcov = NULL, ...) {
   # NB: No argument 'effect' here, maybe introduce?
-  #     it gets evaluated tough due to the eval() call for method="chisq"
-  #     and since rev. 305 due to extraction from dots (...) in method="aux"
-  #    If, so change doc accordingly (currently, effect arg is mentioned in ...)
+  #     it gets evaluated due to the eval() call for method="chisq"
+  #     and since rev. 305 due to extraction from dots (...) in method="aux" as a quick fix
+  #    If introduced as argument, change doc accordingly (currently, effect arg is mentioned in ...)
   
     if (length(model)!=2) stop("two models should be indicated")
     for (i in 1:2){
@@ -45,11 +45,11 @@ phtest.formula <- function(x, data, model = c("within", "random"),
              
                if (!is.null(vcov) && !is.function(vcov)) stop("argument 'vcov' needs to be a function")
              
-               ## set pdata
-               if (!inherits(data, "pdata.frame")) data <- plm.data(data, indexes=index) #, ...)
-               
+               ## set pdata.frame
+               if (!inherits(data, "pdata.frame")) data <- pdata.frame(data, index = index) #, ...)
+
                row.names(data) <- NULL # reset rownames of original data set (->numbers rownames in clean sequence) to make rownames
-                                       # comparable for later comparision to obs used in estimation of models (get rid of NA values)
+                                       # comparable for later comparison to obs used in estimation of models (get rid of NA values)
                                        # [needed because pmodel.response() and model.matrix() do not retain fancy rownames, but rownames]
                
                # rev. 305: quick and dirty fix for missing effect argument in function 
@@ -57,10 +57,12 @@ phtest.formula <- function(x, data, model = c("within", "random"),
                   dots <- list(...)
                   # print(dots) # DEBUG printing
                   if (!is.null(dots$effect)) effect <- dots$effect else effect <- NULL
-               
                # calculatate FE and RE model
-               fe_mod <- plm(formula=x, data=data, model=model[1], effect = effect)
-               re_mod <- plm(formula=x, data=data, model=model[2], effect = effect)
+
+                  fe_mod <- plm(formula = x, data = data, model = model[1], effect = effect)
+
+               re_mod <- plm(formula = x, data = data, model = model[2], effect = effect)
+
                 ## DEBUG printing:
                  # print(effect)
                  # print(model)
@@ -68,13 +70,13 @@ phtest.formula <- function(x, data, model = c("within", "random"),
                  # print(paste0("mod2: ", describe(re_mod, "effect")))
                  # print(fe_mod)
                  # print(re_mod)
-
                reY <- pmodel.response(re_mod)
-               reX <- model.matrix(re_mod)[ , -1, drop = FALSE] # intercept not needed; drop=F needed to prevent matrix
-               feX <- model.matrix(fe_mod)                      # from degenerating to vector if only one regressor
-               dimnames(feX)[[2]] <- paste(dimnames(feX)[[2]],
-                                           "tilde", sep=".")
-               
+#               reX <- model.matrix(re_mod)[ , -1, drop = FALSE] # intercept not needed; drop=F needed to prevent matrix
+#               feX <- model.matrix(fe_mod, cstcovar.rm = TRUE)                      # from degenerating to vector if only one regressor
+               reX <- model.matrix(re_mod, cstcovar.rm = "intercept") # intercept not needed; drop=F needed to prevent matrix
+               feX <- model.matrix(fe_mod, cstcovar.rm = "all")                      # from degenerating to vector if only one regressor
+
+               dimnames(feX)[[2]] <- paste(dimnames(feX)[[2]], "tilde", sep=".")
                ## estimated models could have fewer obs (due dropping of NAs) compared to the original data
                ## => match original data and observations used in estimated models
                ## routine adapted from lmtest::bptest
@@ -87,7 +89,7 @@ phtest.formula <- function(x, data, model = c("within", "random"),
                }
                
                # Tests of correct matching of obs (just for safety ...)
-                if (!all.equal(length(reY), nrow(data), nrow(reX), nrow(feX)))
+               if (!all.equal(length(reY), nrow(data), nrow(reX), nrow(feX)))
                   stop("number of cases/observations do not match, most likely due to NAs in \"data\"")
                 if (any(c(is.na(names(reY)), is.na(row.names(data)), is.na(row.names(reX)), is.na(row.names(feX)))))
                     stop("one (or more) rowname(s) is (are) NA")
@@ -96,13 +98,13 @@ phtest.formula <- function(x, data, model = c("within", "random"),
 
                ## fetch indices here, check pdata
                ## construct data set and formula for auxiliary regression
-               data <- data.frame(cbind(data[, 1:2], reY, reX, feX))
+               data <- pdata.frame(cbind(index(data), reY, reX, feX))
                auxfm <- as.formula(paste("reY~",
                                          paste(dimnames(reX)[[2]],
                                                collapse="+"), "+",
                                          paste(dimnames(feX)[[2]],
                                                collapse="+"), sep=""))
-               auxmod <- plm(formula=auxfm, data=data, model="pooling")
+               auxmod <- plm(formula = auxfm, data = data, model = "pooling")
                nvars <- dim(feX)[[2]]
                R <- diag(1, nvars)
                r <- rep(0, nvars) # here just for clarity of illustration
@@ -233,14 +235,14 @@ plmtest.plm <- function(x,
   
   ### calc of parts of test statistic ##
   # calc. is done w/o using matrix calculation, see e.g. Baltagi/Li (1990), p. 106
-  A1 <- as.numeric(crossprod(tapply(res,id,sum))/sum(res^2) - 1)   # == A1 <- sum(tapply(res,id,sum)^2)/sum(res^2) - 1
-  A2 <- as.numeric(crossprod(tapply(res,time,sum))/sum(res^2) - 1) # == A2 <- sum(tapply(res,time,sum)^2)/sum(res^2) - 1
+  A1 <- as.numeric(crossprod(tapply(res, id, sum)) / sum(res ^ 2) - 1)   # == A1 <- sum(tapply(res,id,sum)^2)/sum(res^2) - 1
+  A2 <- as.numeric(crossprod(tapply(res, time, sum)) / sum(res ^ 2) - 1) # == A2 <- sum(tapply(res,time,sum)^2)/sum(res^2) - 1
   
-  M11 <- sum(T_i^2)
-  M22 <- sum(N_t^2)
+  M11 <- sum(T_i ^ 2)
+  M22 <- sum(N_t ^ 2)
   
-  LM1 <- N_obs * (1/sqrt(2*(M11 - N_obs))) * A1 # == sqrt( (((N_obs)^2) / 2) * ( A1^2 / (M11 - N_obs)) ) [except sign due to positive sqrt]
-  LM2 <- N_obs * (1/sqrt(2*(M22 - N_obs))) * A2 # == sqrt( (((N_obs)^2) / 2) * ( A2^2 / (M22 - N_obs)) ) [except sign due to positive sqrt]
+  LM1 <- N_obs * (1 / sqrt(2 * (M11 - N_obs))) * A1 # == sqrt( (((N_obs)^2) / 2) * ( A1^2 / (M11 - N_obs)) ) [except sign due to positive sqrt]
+  LM2 <- N_obs * (1 / sqrt(2 * (M22 - N_obs))) * A2 # == sqrt( (((N_obs)^2) / 2) * ( A2^2 / (M22 - N_obs)) ) [except sign due to positive sqrt]
   ### END calc of parts of test statistic ##
   
   
@@ -249,11 +251,11 @@ plmtest.plm <- function(x,
     if (!type %in% c("honda", "bp", "kw"))
       stop("type must be one of \"honda\", \"bp\" or \"kw\" for a one way model") # kw oneway coincides with honda
     
-    ifelse(effect == "individual", stat <- LM1, stat <- LM2)
+    stat <- ifelse(effect == "individual", LM1, LM2)
     stat <- switch(type,
-                   honda = c(normal = stat),
-                   bp    = c(chisq  = stat^2),
-                   kw    = c(normal = stat))
+                     honda = c(normal = stat),
+                     bp    = c(chisq  = stat ^ 2),
+                     kw    = c(normal = stat))
     
     parameter <- switch(type,
                           honda = NULL,
@@ -262,16 +264,17 @@ plmtest.plm <- function(x,
     
     pval <- switch(type,
                      honda = pnorm(stat, lower.tail = FALSE), # honda oneway ~ N(0,1), alternative is one-sided (Baltagi (2013), p. 71/202)
-                     bp    = pchisq(stat, df = parameter, lower.tail = FALSE), # is df=1 in the one-way case, alternative is two-sided (Baltagi (2013), p. 70/201)
+                     bp    = pchisq(stat, df = parameter, lower.tail = FALSE), # df = 1 in the one-way case, alternative is two-sided (Baltagi (2013), p. 70/201)
                      kw    = pnorm(stat, lower.tail = FALSE)) # kw oneway ~ N(0,1), alternative is one-sided (Baltagi (2013), p. 71/202)
     # END oneway
   }
   else { # twoways
     stat <- switch(type,
-                    honda = c(normal = (LM1+LM2)/sqrt(2)),
-                    bp    = c(chisq = LM1^2+LM2^2),
-                    kw    = c(normal = (sqrt(M11-N_obs)/sqrt(M11+M22-2*N_obs))*LM1+(sqrt(M22-N_obs)/sqrt(M11+M22-2*N_obs))*LM2),
-                    ghm   = c(chibarsq = max(0,LM1)^2+max(0,LM2)^2))
+                   honda = c(normal = (LM1 + LM2) / sqrt(2)),
+                   bp    = c(chisq = LM1 ^ 2 + LM2 ^ 2),
+                   kw    = c(normal = (sqrt(M11 - N_obs) / sqrt(M11 + M22 - 2 * N_obs)) * LM1 +
+                                 (sqrt(M22 - N_obs) / sqrt(M11 + M22 - 2 * N_obs)) * LM2),
+                   ghm   = c(chibarsq = max(0, LM1) ^ 2 + max(0, LM2) ^ 2))
     
     parameter <- switch(type,
                           honda = NULL,
@@ -316,7 +319,7 @@ plmtest.plm <- function(x,
                  data.name = data.name(x))
   }
   
-  RVAL$alternative <- "significant effects" # TODO: maybe distinguish be b/w one-sided and two-sided alternatives?
+  RVAL$alternative <- "significant effects" # TODO: maybe distinguish b/w one-sided and two-sided alternatives?
                                             #       (bp: two-sided alt.; all others: one-sided alt.?)
   
   class(RVAL) <- "htest"
@@ -373,13 +376,13 @@ pFtest.plm <- function(x, z, ...){
   ssrw <- sum(residuals(within)^2)
   stat <- (ssrp-ssrw)/ssrw/df1*df2
   names(stat) <- "F"
-  parameter <- c(df1,df2)
-  names(parameter) <- c("df1","df2")
-  pval <- pf(stat,df1,df2,lower.tail=FALSE)
+  parameter <- c(df1, df2)
+  names(parameter) <- c("df1", "df2")
+  pval <- pf(stat, df1, df2, lower.tail = FALSE)
   alternative <- "significant effects"
   res <- list(statistic   = stat,
               p.value     = pval,
-              method      = paste("F test for ",effect," effects",sep=""),
+              method      = paste("F test for ", effect, " effects",sep=""),
               parameter   = parameter,
               data.name   = data.name(x),
               alternative = alternative)
@@ -388,8 +391,8 @@ pFtest.plm <- function(x, z, ...){
 }
 
 ############## pwaldtest() ############################################
-# pwaldtest is used in summary.plm, summary.pht to compute the F statistic, but can be used stand-alone
-# test of joint significance of all slopes
+# pwaldtest is used in summary.plm, summary.pht to compute the F statistic, but can be used 
+# as a stand-alone test of joint significance of all slopes
 #
 # Short intro (but see associated help file)
 # arg 'vcov' non-NULL => the robust tests are carried out
@@ -426,7 +429,6 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
       rvcov <- rvcov_orig[!rownames(rvcov_orig) %in% int, !colnames(rvcov_orig) %in% int]
       attr(rvcov, which = "cluster") <- attr(rvcov_orig, which = "cluster") # restore dropped 'cluster' attribute
     }
-    
     # if robust F test: by default, do finite-sample adjustment for df2
     if (df2adj == TRUE & test == "F") {
       # determine the variable that the clustering is done on by
@@ -435,7 +437,8 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
       if (!is.null(attr(rvcov, which = "cluster"))) {
         
         # if supplied vcov is from package "clubSandwich": translate attr "cluster" to fit our code
-        if (inherits(rvcov, "vcovCR")) rvcov <- trans_clubSandwich_vcov(CSvcov = rvcov, index = attr(model.frame(x), "index"))
+        # (use rvcov_orig here for the test as the above dropping of the intercept drops the special classes of rvcov)
+        if (inherits(rvcov_orig, "vcovCR")) rvcov <- trans_clubSandwich_vcov(CSvcov = rvcov, index = attr(model.frame(x), "index"))
         
         cluster <- attr(rvcov, which = "cluster")
         pdim <- pdim(x)
@@ -564,7 +567,7 @@ pooltest.plm <- function(x, z, ...){
   df1 <- dlr-dlu
   df2 <- dlu
   stat <- (rss-uss)/uss*df2/df1
-  pval <- pf(stat,df1,df2,lower.tail=FALSE)
+  pval <- pf(stat, df1, df2, lower.tail = FALSE)
   parameter <- c(df1 = df1, df2 = df2)
   names(stat) <- "F"
   res <- list(statistic   = stat,

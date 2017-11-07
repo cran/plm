@@ -11,7 +11,7 @@ Cross-sectionally augmented Im, Pesaran and Shin (IPS) test for unit roots in pa
 
 \usage{
 cipstest(x, lags = 2, type = c("trend", "drift", "none"),
-      model = c("cmg", "mg", "dmg"), truncated = FALSE, \dots)
+         model = c("cmg", "mg", "dmg"), truncated = FALSE, \dots)
 }
 
 \arguments{
@@ -24,7 +24,7 @@ cipstest(x, lags = 2, type = c("trend", "drift", "none"),
   \item{\dots}{further arguments passed to \code{critvals}.} 
 % TODO NB: critvals (helper function) not mentioned before
 % TODO NB: doc-code mismatch: currently, critval is not called with '...' in the code,
-%          but mmean(tstats, ...) ist
+%          but mean(tstats, ...) is
 }
 
 \details{
@@ -50,7 +50,7 @@ An object of class \code{"htest"}.
 \references{
   Pesaran, M.H. (2007) A simple panel unit root test in the presence of
   cross-section dependence, \emph{Journal of Applied Econometrics},
-  \bold{22(2)}, pp. 265--312.
+  \bold{22}(2), pp. 265--312.
 }
 
 \seealso{

@@ -1,10 +1,11 @@
 \name{plm.data}
 \alias{plm.data}
 
-\title{Data Frame Special Format for Panel Data}
+\title{Data Frame Special Format for Panel Data (Deprecated)}
 
 \description{
-This function transforms a data frame in a format suitable for using with the estimation functions of \code{plm}.
+This function was once used to transform a data frame in a format suitable for using with the estimation functions of \code{plm}.
+New code should rather use the more versatile function \code{\link{pdata.frame}}.
 }
 
 \usage{
@@ -14,14 +15,17 @@ plm.data(x, indexes = NULL)
 \arguments{
  \item{x}{a \code{data.frame},}
  \item{indexes}{a vector (of length one or two) indicating the
-  (individual and time) indexes.}
+  (individual and time) indexes (see Details).}
 }
 
 \value{
-A \code{data.frame}.
+An object of class \code{c("plm.dim", "data.frame")}.
 }
 
 \details{
+  This function is kept due to backward compatibility of old code.
+  New code should use the function \code{pdata.frame} instead. 
+
  \code{indexes} can be:
 
  \itemize{

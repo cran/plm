@@ -13,16 +13,16 @@
 
 \usage{
 
-\S3method{model.frame}{pFormula}(formula, data, \dots,
-                                 lhs = NULL, rhs = NULL)
-
+\S3method{model.frame}{pFormula}(formula, data, \dots, lhs = NULL, rhs = NULL)
 
 \S3method{model.matrix}{pFormula}(object, data,
-                                  model = c("pooling","within","Between",
-                                            "between","mean","random","fd"), 
-                                  effect = c("individual","time","twoways"),
-                                  rhs = 1,
-                                  theta = NULL, \dots)
+             model = c("pooling", "within", "Between", "Sum",
+                       "between", "mean", "random", "fd"), 
+             effect = c("individual", "time", "twoways", "nested"),
+             rhs = 1,
+             theta = NULL,
+             cstcovar.rm = NULL,
+             \dots)
                                   
 \S3method{model.matrix}{plm}(object, \dots)
 }
@@ -32,10 +32,11 @@
  estimated model object of class \code{"plm"},}
  \item{data}{a \code{pdata.frame}, see \bold{Details},}
  \item{effect}{the effects introduced in the model, one of
-  \code{"individual"}, \code{"time"} or \code{"twoways"},}
- \item{model}{one of \code{"pooling"}, \code{"within"},
+  \code{"individual"}, \code{"time"}, \code{"twoways"} or \code{"nested"},}
+ \item{model}{one of \code{"pooling"}, \code{"within"}, \code{"Sum"}, \code{"Between"},
     \code{"between"}, \code{"random",} \code{"fd"} and \code{"ht"},}
  \item{theta}{the parameter for the transformation if \code{model = "random"},}
+ \item{cstcovar.rm}{remove the constant columns, one of \code{"none", "intercept", "covariates", "all")},}
  \item{lhs}{inherited from package \code{\link[Formula]{Formula}} (see there),}
  \item{rhs}{inherited from package \code{\link[Formula]{Formula}} (see there),}
  \item{\dots}{further arguments.}
@@ -70,7 +71,7 @@ Constructing the model frame first ensures proper NA handling, see \bold{Example
 
 \examples{
 # First, make a pdata.frame
-data(Grunfeld)
+data("Grunfeld", package = "plm")
 pGrunfeld <- pdata.frame(Grunfeld)
 
 # then make a model frame from a pFormula and a pdata.frame

@@ -1,13 +1,18 @@
-
-## functions: lagt/leadt.pseries (note the "t")
+##
+## not exported yet;
+##
+##
+## functions: lagt.pseries/leadt.pseries/difft.pseries (note the "t")
+##
 ## this lagging function does lagging based on the time periods, i. e. evaluates
 ## the time periods (as opposed to just shifting by row positions with 
-## lag.pseries/lead.pseries)
+## lag.pseries/lead.pseries/diff.pseries (without "t"))
 ## 
 ## see also test files tests/test_lagt_leadt.R and tests/test_lag_lead.R
 ##
-## not exported yet;
-## TODO: maybe better name or integrate with original lag.pseries (the latter doing lagging based on rows)?
+## TODO: * maybe better names?
+##       * integrate with original lag.pseries (the latter doing lagging based on rows)? lag(x, time = T) -> lagt()
+##         (similiar for leadt, difft), keep lagt/leadt/difft as shortcuts
 
 lagt.pseries <- function(x, k = 1, ...) {
   index <- attr(x, "index")
@@ -24,17 +29,59 @@ lagt.pseries <- function(x, k = 1, ...) {
   return(rval)
 }
 
-# helper function (actual work horse) for lagt
-alagt <- function(x, ak) {
+lagt <- function(x, k = 1, ...) {
+  UseMethod("lagt")
+}
 
+## leadt.pseries(x, k) is a wrapper for lagt.pseries(x, -k)
+leadt.pseries <- function(x, k = 1, ...) {
+  ret <- lagt.pseries(x, k = -k)
+  if (length(k) > 1) colnames(ret) <- k
+  return(ret)
+}
+
+leadt <- function(x, k = 1, ...) {
+  UseMethod("leadt")
+}
+
+## difft: diff-ing taking the time variable into account
+difft.pseries <- function(x, lag = 1, ...){
+## copied/adapted from diff.peries except lines which use lagt() ("t") instead of lag()
+  islogi <- is.logical(x)
+  if (! (is.numeric(x) || islogi)) stop("difft is only relevant for numeric or logical series")
+  
+  non.int <- vapply(lag, function(l) round(l) != l, FUN.VALUE = TRUE)
+  if (any(non.int)) stop("Lagging value(s) in 'lag' must be whole-numbered (and non-negative)")
+  
+  # prevent input of negative values, because it will most likely confuse users
+  # what difft would do in this case
+  neg <- vapply(lag, function(l) l < 0, FUN.VALUE = TRUE)
+  if (any(neg)) stop("difft.pseries is only relevant for non-negative values in 'lag'")
+  
+  
+  lagtx <- lagt(x, k = lag) # use "time-based" lagging for difft
+  res <- x-lagtx
+  
+  # if x is logical and lagged x is a vector (as opposed to a matrix),
+  # diff'ed x is an integer vector (mimics base::diff behaviour):
+  if (islogi && length(lag) == 1) class(res) <- c("pseries", "integer")
+  return(res)
+}
+
+difft <- function(x, k = 1, ...) {
+  UseMethod("difft")
+}
+
+### alagt: non-exported helper function for lagt (actual work horse)
+alagt <- function(x, ak) {
+  
   if (round(ak) != ak) stop("Lagging value 'k' must be whole-numbered (positive, negative or zero)")
   if (ak != 0) {
-      index <- attr(x, "index")
-      id   <- index[[1]]
-      time <- index[[2]]
+    index <- attr(x, "index")
+    id   <- index[[1]]
+    time <- index[[2]]
     
     # Idea: split times in blocks per individuals and do lagging there by computation of correct time shifting
-    
     
     # need to convert to numeric, do this by coering to character first (otherwise wrong results!)
     #  see R FAQ 7.10 for coercing factors to numeric: 
@@ -42,11 +89,11 @@ alagt <- function(x, ak) {
     #      as.numeric(as.character(factor_var))
     time <- as.numeric(levels(time))[as.integer(time)]
     
-    list_id_timevar <- split(time, id, drop = T)
+    list_id_timevar <- split(time, id, drop = TRUE)
     
     index_lag_ak_all_list <- sapply(X = list_id_timevar, 
                                     FUN = function(id_timevar) { 
-                                        index_lag_ak <- match(id_timevar - ak, id_timevar, incomparables = NA)
+                                      index_lag_ak <- match(id_timevar - ak, id_timevar, incomparables = NA)
                                     },
                                     simplify = FALSE)
     
@@ -57,7 +104,7 @@ alagt <- function(x, ak) {
     substitute_blockwise <- index_lag_ak_all
     
     block_lengths <- vapply(index_lag_ak_all_list, length, FUN.VALUE = 1L) # lengths (with an "s") would be more efficient, but requires R >= 3.2
-
+    
     # not needed but leave here for illustration:
     #    startpos_block <- cumsum(block_lengths) - block_lengths + 1               
     #    endpos_block <- startpos_block + block_lengths - 1
@@ -75,14 +122,3 @@ alagt <- function(x, ak) {
   }
   return(x)
 } # END alagt
-
-# leadt.pseries(x, k) is a wrapper for lagt.pseries(x, -k)
-leadt.pseries <- function(x, k = 1, ...) {
-  ret <- lagt.pseries(x, k = -k)
-  if (length(k) > 1) colnames(ret) <- k
-  return(ret)
-}
-
-leadt <- function(x, k = 1, ...) {
-  UseMethod("leadt")
-}

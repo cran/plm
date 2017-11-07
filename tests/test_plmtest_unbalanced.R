@@ -2,7 +2,7 @@
 #
 # compare to grunfeld data example in Baltagi (2013), Econometric Analysis of Panel Data, 5th ed., p. 74-75 (Table 4.1/4.2)
 #                                also Baltagi (2005), Econometric Analysis of Panel Data, 3rd ed., p. 65-66 (just Table 4.1,
-#                                                                      table 4.2 in Baltagi (2005) is only STATA's xttest0
+#                                                                      table 4.2 in Baltagi (2005) is only Stata's xttest0
 #                                                                      for Breusch-Pagan with chi2(1) = 798.16, Prob > chi2 = 0.0000)
 #
 # => statistics and p-values match => implementation of balanced tests is ok.
@@ -110,7 +110,7 @@
 options(digits = 10)
 Sys.setenv(LANG = "en")
 require(plm)
-data(Grunfeld, package = "plm")
+data("Grunfeld", package = "plm")
 Grunfeldpdata <- pdata.frame(Grunfeld, index = c("firm", "year"), drop.index = FALSE, row.names = TRUE)
 
 fe_grunfeld    <- plm(inv ~ value + capital, data=Grunfeldpdata, model="within")
@@ -128,7 +128,7 @@ pool_grunfeld_unbalanced <- plm(inv ~ value + capital, data=Grunfeldpdata_unbala
 
 
 # Produc
-# data(Produc, package = "plm")
+# data("Produc", package = "plm")
 # form_produc <- formula(gsp ~ log(pc) + log(pcap) + log(emp) + unemp)
 # produc_pool <- plm(form_produc, data = Produc, model="pooling")
 
@@ -138,7 +138,7 @@ pool_grunfeld_unbalanced <- plm(inv ~ value + capital, data=Grunfeldpdata_unbala
 #
 # balanced test of v1.4-0:   849.45815 (individual effects) and 600.20821 (time effects)
 # unbalanced test:            25.011274 (individual effects) and  1.5571417 (time effects)
-data(Hedonic, package = "plm")
+data("Hedonic", package = "plm")
 pHedonic <- pdata.frame(Hedonic, index = "townid", drop.index = F)
 form_hedonic <- formula(mv ~ crim)
 hedonic_pool <- plm(form_hedonic, data = pHedonic, model="pooling")
@@ -308,18 +308,18 @@ p.val_2 <- (1/2)*pchisq(crit_2, df=0, lower.tail = F) + (1/2) * pchisq(crit_2, d
 ## http://www.stata.com/manuals14/xtxtregpostestimation.pdf
 ## It is an unbalanced panel
 
-# require(haven) # required to read STATA data file
+# require(haven) # required to read Stata data file
 # nlswork <- read_dta("http://www.stata-press.com/data/r14/nlswork.dta")
 # nlswork$race <- factor(nlswork$race) # fix data
 # nlswork$race2 <- factor(ifelse(nlswork$race == 2, 1, 0)) # need this variable for example
 # pnlswork <- pdata.frame(nlswork, index=c("idcode", "year"), drop.index=F)
 # 
 # # note STAT 14 uses by default a different method compared to plm's Swamy–Arora variance component estimator
-# # This is why in comparison with web examples from STATA the random effects coefficients slightly differ
+# # This is why in comparison with web examples from Stata the random effects coefficients slightly differ
 # plm_re_nlswork <- plm(ln_wage ~ grade + age + I(age^2) + ttl_exp + I(ttl_exp^2) + tenure + I(tenure^2) + race2 + not_smsa + south
 #                         , data = pnlswork, model = "random")
 # 
-# # reassembles the FE estimation by STATA in Example 2 of http://www.stata.com/manuals13/xtxtreg.pdf
+# # reassembles the FE estimation by Stata in Example 2 of http://www.stata.com/manuals13/xtxtreg.pdf
 # plm_fe_nlswork <- plm(ln_wage ~ grade + age + I(age^2) + ttl_exp + I(ttl_exp^2) + tenure + I(tenure^2) + race2 + not_smsa + south
 #                       , data = pnlswork, model = "within")
 # 

@@ -1,5 +1,5 @@
-## Comparision of lm()'s adjusted R-squared and plm()'s R-squared
-## for pooling-Models
+## Comparison of lm()'s adjusted R-squared and plm()'s R-squared
+## for pooling models
 
 
 require(plm)
@@ -49,8 +49,10 @@ re <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
 
 # These all yield different values
 r.squared(mod_plm, type = "cor", model = "within")
+# ! YC 
 r.squared(mod_plm, type = "rss", model = "within")
 r.squared(mod_plm, type = "ess", model = "within")
+
 # formal test
 #if(!isTRUE(all.equal(r.squared(mod_plm, type = "cor", model = "within"), r.squared(mod_plm, type = "rss", model = "within")))) stop("r squareds differ")
 #if(!isTRUE(all.equal(r.squared(mod_plm, type = "cor", model = "within"), r.squared(mod_plm, type = "ess", model = "within")))) stop("r squareds differ")

@@ -10,7 +10,7 @@
   ## of a consistent estimator. This may be pooled OLS, RE, FE. Here the
   ## default is set to FE.
 
-  ## Note that the test can be performed on the results of plm's with
+  ## Note that the test can be performed on the results of plm objects with
   ## any kind of effects: having "time" effects means checking for
   ## xs-dependence *after* introducing time dummies.
 
@@ -38,9 +38,9 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
                             test = c("cd", "sclm", "lm", "rho", "absrho"),
                             w = NULL, ...) {
     #data <- pdata.frame(data, index = index)
-    mymod <- plm(x, data, index = index, model = "pooling", ...)
-    if (is.null(model) & min(pdim(mymod)$Tint$Ti) < length(mymod$coefficients) +
-        1) {
+    mymod <- plm(x, data = data, index = index, model = "pooling", ...)
+    if(is.null(model) & min(pdim(mymod)$Tint$Ti) < length(mymod$coefficients)+1) 
+      {
         warning("Insufficient number of observations in time to estimate heterogeneous model: using within residuals",
             call. = FALSE)
         model <- "within"
@@ -49,7 +49,6 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
     ind0 <- attr(model.frame(mymod), "index")
     tind <- as.numeric(ind0[[2]])
     ind <- as.numeric(ind0[[1]])
-    
     if (is.null(model)) {
         ## estimate individual regressions one by one
         X <- model.matrix(mymod)
@@ -62,7 +61,7 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
         for (i in 1:n) {
             tX <- X[ind == unind[i], , drop = FALSE]
             ty <- y[ind == unind[i]]
-            res.i <- lm.fit(tX, ty)$resid
+            res.i <- lm.fit(tX, ty)$residuals
             ti.res[[i]] <- res.i
             names(ti.res[[i]]) <- tind[ind == unind[i]]
             ind.res[[i]] <- rep(i, length(res.i))
@@ -91,7 +90,7 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
 }
 
 
-## panelmodel method: just fetch resid (as a pseries)
+## panelmodel method: just fetch resid (as a pseries) and hand over to pcdres
  
 pcdtest.panelmodel <- function(x, test = c("cd", "sclm", "lm", "rho", "absrho"),
                                w = NULL, ...) {
@@ -150,7 +149,6 @@ pcdtest.pseries <- function(x, test = c("cd", "sclm", "lm", "rho", "absrho"),
 }
 
 pcdres <- function(tres, n, w, form, test) {
-  
   # 'form' is a character describing the formula (not a formula object!)
   # and goes into htest_object$data.name
 
@@ -165,13 +163,13 @@ pcdres <- function(tres, n, w, form, test) {
     
     ## calc matrix of all possible pairwise corr.
     ## coeffs. (200x speedup from using cor())
-    wideres <- t(preshape(tres, na.rm=FALSE))
-    rho <- cor(wideres, use="pairwise.complete.obs")
+    wideres <- t(preshape(tres, na.rm = FALSE))
+    rho <- cor(wideres, use = "pairwise.complete.obs")
     
     ## find length of intersecting pairs
     ## fast method, times down 200x
-    data.res <- data.frame(time=attr(tres, "index")[[2]],
-                           indiv=attr(tres, "index")[[1]])
+    data.res <- data.frame(time = attr(tres, "index")[[2]],
+                           indiv = attr(tres, "index")[[1]])
     ## tabulate which obs in time for each ind are !na
     presence.tab <- table(data.res)
     ## calculate t.ij
@@ -248,7 +246,7 @@ pcdres <- function(tres, n, w, form, test) {
   switch(test,
    lm = {
     CDstat        <- sum((t.ij*rho^2)[selector.mat])
-    pCD           <- pchisq(CDstat, df=elem.num, lower.tail=F)
+    pCD           <- pchisq(CDstat, df = elem.num, lower.tail = FALSE)
     names(CDstat) <- "chisq"
     parm          <- elem.num
     names(parm)   <- "df"
@@ -256,14 +254,14 @@ pcdres <- function(tres, n, w, form, test) {
    },
    sclm = {
     CDstat        <- sqrt(1/(2*elem.num))*sum((t.ij*rho^2-1)[selector.mat])
-    pCD           <- 2*pnorm(abs(CDstat), lower.tail=F) # was until rev. 293: pnorm(CDstat, lower.tail=F)
+    pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE) # was until rev. 293: pnorm(CDstat, lower.tail=F)
     names(CDstat) <- "z"
     parm          <- NULL
     testname      <- "Scaled LM test"
    },
    cd = {
     CDstat        <- sqrt(1/elem.num)*sum((sqrt(t.ij)*rho)[selector.mat]) # (Pesaran (2004), formula (31))
-    pCD           <- 2*pnorm(abs(CDstat), lower.tail=F)
+    pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE)
     names(CDstat) <- "z"
     parm          <- NULL
     testname      <- "Pesaran CD test"
@@ -295,24 +293,111 @@ pcdres <- function(tres, n, w, form, test) {
   return(RVAL)
 }
 
-preshape <- function(x, na.rm=TRUE, ...) {
+preshape <- function(x, na.rm = TRUE, ...) {
     ## reshapes pseries,
     ## e.g. of residuals from a panelmodel,
     ## in wide form
     inames <- names(attr(x, "index"))
     mres <- reshape(cbind(as.vector(x), attr(x, "index")),
-                    direction="wide",
-                    timevar=inames[2], idvar=inames[1])
+                    direction = "wide",
+                    timevar = inames[2],
+                    idvar = inames[1])
     ## drop ind in first column
-    mres <- mres[,-1]
+    mres <- mres[ , -1]
     ## reorder columns (may be scrambled depending on first
     ## available obs in unbalanced panels)
-    mres <- mres[, order(dimnames(mres)[[2]])]
+    mres <- mres[ , order(dimnames(mres)[[2]])]
     ## if requested, drop columns (time periods) with NAs
     if(na.rm) {
-        rmc <- which(is.na(apply(mres, 2, sum)))
-        if(sum(rmc)>0) mres <- mres[,-rmc]
+        na.cols <- vapply(mres, FUN = anyNA, FUN.VALUE = TRUE)
+        if(sum(na.cols) > 0) mres <- mres[, !na.cols]
     }
     return(mres)
 }
+
+
+cortab <- function(x, grouping, groupnames = NULL,
+                   value = "statistic", ...) {
+    ## makes table of within and between correlation
+    ## needs a pseries and a groupings vector of **same length**
+
+    ## would use a better naming, and also passing a char or factor as
+    ## grouping index
+
+    ## x must be a pseries
+    if(!inherits(x, "pseries")) stop("First argument must be a pseries")
+    if(length(x) != length(grouping)) stop("Incompatible lengths")
+
+    fullind <- as.numeric(attr(x, "index")[,1])
+    ids <- unique(fullind)
+    n <- length(ids)
+    regs <- 1:length(unique(grouping))
+
+    if(!(is.numeric(grouping))) grouping <- as.numeric(as.factor(grouping))
+    
+    idnames <- as.character(ids)
+    if(is.null(groupnames)) {
+        groupnames <- as.character(unique(grouping))
+    }
+
+    ## make matrices of between-regions correlations
+    ## (includes within correlation on diagonal)
+    ## for each pair of regions (nb: no duplicates, e.g. 3.1 but not 1.3)
+
+    ## make w<1.n>:
+    for(h in 1:length(regs)) {
+      for(k in 1:h) {
+        statew <- matrix(0, ncol=n, nrow=n)
+        ## make statew for cor. between h and k
+        for(i in 1:n) {
+          ## get first region (all values equal, so take first one)
+          ireg <- grouping[fullind==ids[i]][1]
+          if(ireg==h) {
+            for(j in 1:n) {
+                jreg <- grouping[fullind==ids[j]][1]
+                if(jreg==k) statew[i,j] <- 1
+            }
+          }
+        }
+        if(h!=k) statew <- statew + t(statew)
+        ## just for debugging reasons:
+        dimnames(statew) <- list(idnames, idnames)
+        ## eliminate self.correlation of states if i=j
+        diag(statew) <- 0
+        ## not needed: pcdtest seems to do this by construction
+        eval(parse(text=paste("w", h, ".", k, " <- statew", sep="")))
+      }
+     }
+
+     ## notice: without the line
+     ## '' if(i!=j) statew <- statew + t(statew) ''
+     ## all wn.n matrices would have values only on one half (upper
+     ## or lower triangle)
+
+     ## make generic table of regions' within and between correlation
+     ## argument: a pseries
+    #YC regnames is undefined, so is myw
+    tab.g <- function(x, regs, regnames, test="rho", value) {
+        myw <- 0
+         tabg <- matrix(NA, ncol=length(regs), nrow=length(regs))
+         for(i in 1:length(regs)) {
+             for(j in 1:i) {
+                 ## take appropriate w matrix
+                 eval(parse(text=paste("myw<-w", i, ".", j, sep="")))
+                 tabg[i,j] <- pcdtest(x, test="rho", w=myw)[[value]]
+             }
+         }
+         dimnames(tabg) <- list(groupnames, groupnames)
+         return(tabg)
+    }
+    regnames <- ""
+    mytab <- tab.g(x, regs=regs, regnames=regnames, test="rho", value=value)
+    return(mytab)
+}
+
+
+## make toy example
+#dati <- data.frame(ind=rep(1:7, 4), time=rep(1:4, each=7), x=rnorm(28),
+#                   group=rep(c(1,1,2,2,2,3,3), 4))
+#pdati <- pdata.frame(dati)
 

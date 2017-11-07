@@ -1,14 +1,11 @@
-# Note: return value of within_intercept is related to return values of fixef.plm, see tests/test_within_intercept.R
-#
-# NB/TODO: check if this is correct for the two-way unbalanced case
+# Note: The name of the function (within_intercept) with an underscore does not
+#       follow the regular naming scheme where one would expect a dot (within.intercept).
+#       Due to the S3 class system, calling the function within.intercept would result in
+#       a name clash as we have a function called 'within' and in this casem the S3 
+#       system interprets '.intercept' as a class called 'intercept'.
 
-# Test with contr.sum? - regression constant is the _unweighted_ mean, see http://www.ats.ucla.edu/stat/mult_pkg/faq/general/effect.htm
-# lm twoways unbalanced with contr.sum coding: http://www.ats.ucla.edu/stat/r/library/contrast_coding.htm#DEVIATION
-# Grunfeld_unbalanced_fac <- Grunfeld_unbalanced
-# Grunfeld_unbalanced_fac$firm <- factor(Grunfeld_unbalanced_fac$firm)
-# Grunfeld_unbalanced_fac$year <- factor(Grunfeld_unbalanced_fac$year)
-# lm_fe_tw_u_eff_cod <- lm(inv ~ value + capital + firm + year, data = Grunfeld_unbalanced_fac, contrasts = list(firm="contr.sum", year="contr.sum"))
-
+# Note: return value of within_intercept is related to return values of fixef.plm,
+#       see tests/test_within_intercept.R
 
 within_intercept.plm <- function(object, vcov = NULL, ...) {
   
@@ -17,10 +14,10 @@ within_intercept.plm <- function(object, vcov = NULL, ...) {
   effect <- describe(object, what = "effect")
   if (model != "within") stop("input 'object' needs to be a \"within\" model estimated by plm(..., model = \"within\", ...)")
   
-  # vcov must be a function, because the model estimated to get the
+  # vcov must be a function, because the auxiliary model estimated to get the
   # overall intercept next to its standard errors is different from
   # the FE model for which the intercept is estimated, e.g. dimensions
-  # of vcov differ for FE and for auxiliary model
+  # of vcov differ for FE and for auxiliary model.
   if (!is.null(vcov)) {
     if (is.matrix(vcov)) stop("for within_intercept, 'vcov' may not be of class 'matrix', it must be supplied as a function, e.g. vcov = function(x) vcovHC(x)")
     if (!is.function(vcov)) stop("for within_intercept, argument 'vcov' must be a function, e.g. vcov = function(x) vcovHC(x)")
@@ -31,8 +28,8 @@ within_intercept.plm <- function(object, vcov = NULL, ...) {
   # Transformation to get the overall intercept is:
   # demean groupwise and add back grand mean of each variable, then run OLS
   mf      <- model.frame(object)
-  withinY <- pmodel.response(object) # returns the response specific to the 'effect' of the est. FE model object
-  meanY   <- mean(mf[ , 1])          # mean of original data's response
+  withinY <- pmodel.response(object, cstcovar.rm = "all") # returns the response specific to the 'effect' of the est. FE model object
+    meanY   <- mean(mf[ , 1])          # mean of original data's response
   transY  <- withinY + meanY
   
   withinM <- model.matrix(object) # returns the model.matrix specific to the 'effect' of the est. FE model object
