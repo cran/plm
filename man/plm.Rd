@@ -106,7 +106,9 @@ selects the instrument variable transformation method:
   \item \code{"bms"} for Breusch, Mizon, and Schmidt (1989).
 }
 
-The Hausman--Taylor estimator (Hausman and Taylor (1981)) is computed if \code{model = "ht"}.
+The Hausman--Taylor estimator (Hausman and Taylor (1981)) is computed with arguments
+\code{random.method = "ht", model = "random", inst.method = "baltagi"} (the other
+way with only \code{model = "ht"} is deprecated).
 }
 
 \value{
@@ -117,6 +119,7 @@ A \code{"plm"} object has the following elements :
 \item{coefficients}{the vector of coefficients,}
 \item{vcov}{the variance--covariance matrix of the coefficients,}
 \item{residuals}{the vector of residuals (these are the residuals of the (quasi-)demeaned model),}
+\item{weights}{(only for weighted estimations) weights as specified,}
 \item{df.residual}{degrees of freedom of the residuals,}
 \item{formula}{an object of class \code{"pFormula"} describing the
   model,}
@@ -128,7 +131,7 @@ A \code{"plm"} object has the following elements :
  estimation of the components of the errors (for random effects models only),}
 \item{aliased}{named logical vector indicating any aliased coefficients which 
 are silently dropped by \code{plm} due to linearly dependent terms (see also 
-\code{\link[plm]{detect_lin_dep}}),}
+\code{\link{detect.lindep}}),}
 \item{call}{the call.}
 
 % some elements not listed here...: "assign", "contrast", etc...
@@ -141,14 +144,14 @@ It has \code{print}, \code{summary} and \code{print.summary} methods.
 The \code{summary} method creates an object of class \code{"summary.plm"} that 
 extends the object it is run on with information about (inter alia) F statistic 
 and (adjusted) R-squared of model, standard errors, t--values, and p--values of 
-coefficients, (if supplied) the furnished vcov, see \code{\link[plm]{summary.plm}}
+coefficients, (if supplied) the furnished vcov, see \code{\link{summary.plm}}
 for further details.
 }
 
 \seealso{
-\code{\link[plm]{summary.plm}} for further details about the associated
+\code{\link{summary.plm}} for further details about the associated
 summary method and the "summary.plm" object both of which provide some
-model tests and tests of coefficients.  \code{\link[plm]{fixef}} to
+model tests and tests of coefficients.  \code{\link{fixef}} to
 compute the fixed effects for "within" models (=fixed effects models).
 }
 
@@ -239,6 +242,24 @@ summary(plm(form, data = pProduc, model = "random", effect = "nested"))
 summary(plm(form, data = pProduc, model = "random", effect = "nested",
             random.method = "walhus"))
 
+## Hausman-Taylor estimator and Amemiya-MaCurdy estimator
+## replicate Baltagi (2005, 2013), table 7.4
+data("Wages", package = "plm")
+ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp ^ 2) + 
+              bluecol + ind + union + sex + black + ed |
+              bluecol + south + smsa + ind + sex + black |
+              wks + married + union + exp + I(exp ^ 2), 
+          data = Wages, index = 595,
+          random.method = "ht", model = "random", inst.method = "baltagi")
+summary(ht)
+
+am <- plm(lwage ~ wks + south + smsa + married + exp + I(exp ^ 2) + 
+              bluecol + ind + union + sex + black + ed |
+              bluecol + south + smsa + ind + sex + black |
+              wks + married + union + exp + I(exp ^ 2), 
+          data = Wages, index = 595,
+          random.method = "ht", model = "random", inst.method = "am")
+summary(am)
 }
 
 \keyword{regression}

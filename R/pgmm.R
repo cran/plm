@@ -9,7 +9,7 @@ pgmm <- function(formula, data, subset, na.action,
   # yX : response / covariates, W : gmm instruments, Z : normal
   # instruments, V : time dummies
   
-  cl <- match.call(expand.dots = FALSE)
+#  cl <- match.call(expand.dots = FALSE)
   cl <- match.call(expand.dots = TRUE)
   effect <- match.arg(effect)
   model <- match.arg(model)
@@ -129,14 +129,14 @@ pgmm <- function(formula, data, subset, na.action,
     lost.ts <- as.numeric(lost.ts)
     if (!(length(lost.ts) %in% c(1, 2))) stop("lost.ts should be of length 1 or 2")
     TL1 <- lost.ts[1]
-    TL2 <- ifelse(length(lost.ts == 1), TL1 - 1, lost.ts[2])
+    TL2 <- ifelse(length(lost.ts) == 1, TL1 - 1, lost.ts[2])
   }
   else{
     # How many time series are lost ? May be the maximum number of lags
     # of any covariates + 1 because of first - differencing or the
     # largest minimum lag for any gmm or normal instruments
-    gmm.minlag <- max(sapply(gmm.lags, min))
-    # min or max to select the number of lost time series ?
+
+    # min or max to select the number of lost time series ? ## TODO: TL1, TL2 calc. twice?!
     gmm.minlag <- min(sapply(gmm.lags, min))
     if (!is.null(inst.lags)) inst.maxlag <- max(sapply(inst.lags, max))
     else inst.maxlag <- 0
@@ -248,7 +248,7 @@ pgmm <- function(formula, data, subset, na.action,
   if (transformation == "ld"){
     W2 <- lapply(W,
                  function(x){
-                   u <- mapply(makeW2,x, collapse, SIMPLIFY = FALSE)
+                   u <- mapply(makeW2, x, collapse, SIMPLIFY = FALSE)
                    # the matrix of instruments in difference has T - 2
                    # rows if one time series is lost (there are no gmm
                    # instruments for t = 2 but there is a moment
@@ -357,7 +357,8 @@ pgmm <- function(formula, data, subset, na.action,
   ##### 11. Compute the estimator
   #################################################################
 
-  W <- W1 ; yX <- yX1
+  W <- W1
+  yX <- yX1
   
   # Compute the first step matrices
   if (transformation == "d") A1 <- tcrossprod(diff(diag(1, T - TL1 + 1)))
@@ -371,8 +372,8 @@ pgmm <- function(formula, data, subset, na.action,
   ## for (i in 1:N) W[[i]] <- W[[i]][, - zerolines]
 
   WX <- mapply(function(x, y) crossprod(x, y), W, yX, SIMPLIFY = FALSE)
-  Wy <- lapply(WX, function(x) x[, 1])
-  WX <- lapply(WX, function(x) x[, -1])
+  Wy <- lapply(WX, function(x) x[ , 1])
+  WX <- lapply(WX, function(x) x[ , -1])
   A1 <- lapply(W, function(x) crossprod(t(crossprod(x, A1)), x))
   A1 <- Reduce("+", A1)
   minevA1 <- min(eigen(A1)$values)
@@ -391,7 +392,7 @@ pgmm <- function(formula, data, subset, na.action,
   names(coefficients) <- names.coef
   residuals <- lapply(yX,
                       function(x)
-                      as.vector(x[,1] -  crossprod(t(x[,-1, drop=FALSE]), coefficients)))
+                      as.vector(x[ , 1] - crossprod(t(x[ , -1, drop = FALSE]), coefficients)))
   outresid <- lapply(residuals,function(x) outer(x,x))
   A2 <- mapply(function(x, y) crossprod(t(crossprod(x, y)), x), W, outresid, SIMPLIFY = FALSE)
   A2 <- Reduce("+", A2)
@@ -417,21 +418,30 @@ pgmm <- function(formula, data, subset, na.action,
   residuals <- lapply(yX,
                       function(x){
                         nz <- rownames(x)
-                        z <- as.vector(x[, 1] - crossprod(t(x[, -1, drop=FALSE]), coefficients))
+                        z <- as.vector(x[ , 1] - crossprod(t(x[ , -1, drop = FALSE]), coefficients))
                         names(z) <- nz
                         z
                       }
                       )
-  fitted.values <- mapply(function(x,y) x[, 1] - y, yX, residuals)
+  fitted.values <- mapply(function(x,y) x[ , 1] - y, yX, residuals)
   if (model == "twosteps") coefficients <- list(coef1s, coefficients)
-  args <- list(model = model, effect = effect,
-               transformation = transformation, namest = namesV)
-  result <- list(coefficients = coefficients, residuals = residuals, vcov = vcov,
+  args <- list(model          = model,
+               effect         = effect,
+               transformation = transformation,
+               namest         = namesV)
+  result <- list(coefficients  = coefficients,
+                 residuals     = residuals,
+                 vcov          = vcov,
                  fitted.values = fitted.values,
-                 df.residual = df.residual, 
-                 model = yX, W = W, A1 = A1, A2 = A2,
-                 call = cl, args = args)
-  result <- structure(result, class = c("pgmm", "panelmodel"),
+          #       df.residual   = df.residual,     # TODO: df.residual is not defined here, hence the function 'df.residual' is attached by this
+                 model         = yX,
+                 W             = W,
+                 A1            = A1,
+                 A2            = A2,
+                 call          = cl,
+                 args          = args)
+  result <- structure(result,
+                      class = c("pgmm", "panelmodel"),
                       pdim = pdim)
   result
 }
@@ -481,7 +491,6 @@ getvar <- function(x){
   result <- lapply(result, function(x) x[[2]])
   names(result) <- nres
   result
-  
 }
 
 dynterms2formula <- function(x, response.name = NULL){
@@ -523,7 +532,7 @@ extract.data <- function(data, as.matrix = TRUE){
   has.intercept <- attr(trms, 'intercept') == 1
   if (has.intercept == 1){
     # Formula is unable to update formulas with no lhs
-    form <- Formula(update(formula(form), ~. -1))
+    form <- Formula(update(formula(form), ~ . -1))
 #    form <- update(form, ~. -1)
   }
   index <- attr(data, "index")
@@ -557,7 +566,7 @@ G <- function(t){
 }
 
 FD <- function(t){
-  FD <- Id(t)[-1,]
+  FD <- Id(t)[-1, ]
   for (i in 1:(t-1)){
     FD[i,i] <- -1
   }
@@ -565,14 +574,14 @@ FD <- function(t){
 }
 
 Id <- function(t){
-  diag(rep(1,t))
+  diag(rep(1, t))
 }
 
 FSM <- function(t, fsm){
   switch(fsm,
          "I" = Id(t),
          "G" = G(t),
-         "GI" = bdiag(G(t-1), diag(1,t)),
+         "GI" = bdiag(G(t-1), diag(1, t)),
          "full" = rbind(cbind(G(t-1), FD(t)), cbind(t(FD(t)), Id(t)))
          )
 }
@@ -585,8 +594,8 @@ makegmm <- function(x, g, TL1, collapse = FALSE){
   if (collapse) {      
     x <- lapply(x, rev)
     m <- matrix(0, T - TL1, min(T - rg[1], rg[2]+1-rg[1]))
-    for(y in 1:length(x)){ m[y,1:length(x[[y]])]<-x[[y]]}
-    result<-m
+    for (y in 1:length(x)){ m[y, 1:length(x[[y]])] <- x[[y]]}
+    result <- m
    }
    else {
      lx <- sapply(x, length)
@@ -614,30 +623,28 @@ makeW2<-function (x, collapse = FALSE){
 
 coef.pgmm <- function(object,...){
   model <- describe(object, "model")
-  if(model == "onestep") coefficients <- object$coefficients
+  if (model == "onestep") coefficients <- object$coefficients
   else coefficients <- object$coefficients[[2]]
   coefficients
 }
 
-summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...){
+summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...) {
   model <- describe(object, "model")
   effect <- describe(object, "effect")
   transformation <- describe(object, "transformation")
   if (robust){
     vv <- vcovHC(object)
-    A <- object$A2
   }
   else{
     vv <- vcov(object)
-    A <- object$A1
   }
-  if (model == "onestep")   K <- length(object$coefficients)
+  if (model == "onestep") K <- length(object$coefficients)
   else  K <- length(object$coefficients[[2]])
   object$sargan <- sargan(object, "twosteps")
   object$m1 <- mtest(object, 1, vv)
   object$m2 <- mtest(object, 2, vv)
   object$wald.coef <- wald(object, "coef", vv)
-  if (describe(object, "effect") == "twoways") object$wald.td <- wald(object,"time",vv)
+  if (effect == "twoways") object$wald.td <- wald(object, "time", vv)
   Kt <- length(object$args$namest)
   if (! time.dummies && effect == "twoways") rowsel <- -c((K - Kt + 1):K)
   else rowsel <- 1:K
@@ -652,7 +659,7 @@ summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...){
   object
 }
 
-mtest <- function(object, order = 1, vcov = NULL){
+mtest <- function(object, order = 1, vcov = NULL) {
   if (!inherits(object, "pgmm")) stop("argument 'object' needs to be class 'pgmm'")
   myvcov <- vcov
   if (is.null(vcov)) vv <- vcov(object)
@@ -661,43 +668,49 @@ mtest <- function(object, order = 1, vcov = NULL){
   model <- describe(object, "model")
   transformation <- describe(object, "transformation")
   Kt <- length(object$args$namest)
-  if (transformation == "d"){
-    resid <- object$residuals
-    residl <- lapply(resid,
-                     function(x) c(rep(0,order), x[1:(length(x)-order)])
-                     )
-  }
-  else{
-    resid <- lapply(object$residuals,
-                    function(x) c(x[-c(Kt:(2*Kt + 1))], rep(0, Kt)))
-    residl <- lapply(object$residuals,
-                     function(x) c(rep(0, order), x[1:(Kt-order-1)], rep(0, Kt)))
-  }
-  X <- lapply(object$model, function(x) x[,-1, drop=FALSE])
+  
+  switch(transformation,
+         "d" = {
+           resid <- object$residuals
+           residl <- lapply(resid,
+                            function(x)
+                              c(rep(0, order), x[1:(length(x) - order)]))
+               },
+         "ld" = {
+           resid <- lapply(object$residuals,
+                           function(x)
+                             c(x[-c(Kt:(2 * Kt + 1))], rep(0, Kt)))
+           residl <- lapply(object$residuals,
+                            function(x)
+                              c(rep(0, order), x[1:(Kt - order - 1)], rep(0, Kt)))
+         })
+  
+  X <- lapply(object$model, function(x) x[ , -1, drop = FALSE])
   W <- object$W
   if (model == "onestep") A <- object$A1
   else  A <- object$A2
   EVE <- Reduce("+",
-                mapply(function(x, y) t(y) %*% x %*% t(x) %*%y, resid, residl, SIMPLIFY = FALSE))
+                mapply(function(x, y) t(y) %*% x %*% t(x) %*% y, resid, residl, SIMPLIFY = FALSE))
   EX <- Reduce("+", mapply(crossprod, residl, X, SIMPLIFY = FALSE))
   XZ <- Reduce("+", mapply(crossprod, W, X, SIMPLIFY = FALSE))
   ZVE <- Reduce("+",
-                mapply(function(x,y,z) t(x)%*%y%*%t(y)%*%z, W, resid, residl, SIMPLIFY = FALSE))
+                mapply(function(x, y, z) t(x) %*% y %*% t(y) %*% z, W, resid, residl, SIMPLIFY = FALSE))
 
   denom <- EVE - 2 * EX %*% vcov(object) %*% t(XZ) %*% A %*% ZVE + EX %*% vv %*% t(EX)
   num <- Reduce("+", mapply(crossprod, resid, residl, SIMPLIFY = FALSE))
   stat <- num / sqrt(denom)
   names(stat) <- "normal"
-  pval <- pnorm(abs(stat), lower.tail = FALSE)*2
+  pval <- 2 * pnorm(abs(stat), lower.tail = FALSE)
   mtest <- list(statistic = stat,
-                p.value = pval,
-                method = paste("Autocorrelation test of degree", order),
+                p.value   = pval,
+                method    = paste("Autocorrelation test of degree", order),
                 data.name = data.name(object))
   class(mtest) <- "htest"
   mtest
 }
 
-wald <- function(object, param = c("coef", "time", "all"), vcov = NULL){
+wald <- function(object, param = c("coef", "time", "all"), vcov = NULL) {
+  if (!inherits(object, "pgmm")) stop("argument 'object' needs to be class 'pgmm'")
   param <- match.arg(param)
   myvcov <- vcov
   if (is.null(vcov)) vv <- vcov(object)
@@ -711,29 +724,31 @@ wald <- function(object, param = c("coef", "time", "all"), vcov = NULL){
   else coefficients <- object$coefficients[[2]]
   Ktot <- length(coefficients)
   Kt <- length(object$args$namest)
-  if (param == "time"){
-    start <- Ktot - Kt + ifelse(transformation == "ld", 2, 1)
-    end <- Ktot
-  }
-  if (param == "coef"){
-    start <- 1
-    if (effect == "twoways") end <- Ktot-Kt else end <- Ktot
-  }
-  if (param == "all"){
-    start <- 1
-    end <- Ktot
-  }
+  
+  switch(param,
+         "time" = {
+           start <- Ktot - Kt + ifelse(transformation == "ld", 2, 1)
+           end <- Ktot
+         },
+         "coef" = {
+           start <- 1
+           end <- if (effect == "twoways") Ktot - Kt else Ktot
+         },
+         "all" = {
+           start <- 1
+           end <- Ktot
+         })
   coef <- coefficients[start:end]
   vv <- vv[start:end, start:end]
-  stat <- t(coef) %*% solve(vv) %*% coef
+  stat <- as.numeric(crossprod(coef, crossprod(solve(vv), coef)))
   names(stat) <- "chisq"
   parameter <- length(coef)
   names(parameter) <- "df"
   pval <- pchisq(stat, df = parameter, lower.tail = FALSE)
   wald <- list(statistic = stat,
-               p.value = pval,
+               p.value   = pval,
                parameter = parameter,
-               method = "Wald test",
+               method    = "Wald test",
                data.name = data.name(object))
   class(wald) <- "htest"
   wald
@@ -741,12 +756,12 @@ wald <- function(object, param = c("coef", "time", "all"), vcov = NULL){
 
 print.summary.pgmm <- function(x, digits = max(3, getOption("digits") - 2),
                                width = getOption("width"),
-                               ...){
+                               ...) {
   model <- describe(x, "model")
   transformation <- describe(x, "transformation")
   effect <- describe(x, "effect")
 
-  pdim <- attr(x,"pdim")
+  pdim <- attr(x, "pdim")
   formula <- x$call$formula
 
   cat(paste(effect.pgmm.list[effect]," ",sep=""))
@@ -787,7 +802,7 @@ print.summary.pgmm <- function(x, digits = max(3, getOption("digits") - 2),
   invisible(x)
 }
 
-sargan <- function(object, weights = c("twosteps", "onestep")){
+sargan <- function(object, weights = c("twosteps", "onestep")) {
   if (!inherits(object, "pgmm")) stop("argument 'object' needs to be class 'pgmm'")
   weights <- match.arg(weights)
   model <- describe(object, "model")
@@ -800,16 +815,16 @@ sargan <- function(object, weights = c("twosteps", "onestep")){
                                 function(i) crossprod(object$W[[i]], residuals(object)[[i]]))))
   p <- ncol(object$W[[1]])
   if (weights == "onestep") A <- object$A1 else A <- object$A2
-  stat <- as.numeric(crossprod(z, t(crossprod(z, A))))
+  stat <- as.numeric(tcrossprod(z, crossprod(z, A)))
   parameter <- p - Ktot
   names(parameter) <- "df"
   names(stat) <- "chisq"
   method <- "Sargan test"
   pval <- pchisq(stat, df = parameter, lower.tail = FALSE)
   sargan <- list(statistic = stat,
-                 p.value = pval,
+                 p.value   = pval,
                  parameter = parameter,
-                 method = method,
+                 method    = method,
                  data.name = data.name(object))
   class(sargan) <- "htest"
   sargan

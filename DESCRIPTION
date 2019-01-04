@@ -1,6 +1,6 @@
 Package: plm
-Version: 1.6-6
-Date: 2017-10-31
+Version: 1.7-0
+Date: 2019-01-03
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
@@ -14,9 +14,11 @@ Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"
 Depends: R (>= 3.1.0), Formula (>= 0.2-0), stats
 Imports: MASS, bdsmatrix, zoo, nlme, sandwich, lattice, lmtest, maxLik
 Suggests: AER, car, pcse, clusterSEs, clubSandwich, pglm, spdep, splm,
-        statmod, Ecdat, pder, stargazer, texreg, foreign
+        statmod, Ecdat, pder, stargazer, texreg, foreign, knitr,
+        rmarkdown, bookdown
 Description: A set of estimators and tests for panel data econometrics.
 License: GPL (>= 2)
+VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm,
         https://r-forge.r-project.org/projects/plm/
 Author: Yves Croissant [aut, cre],
@@ -31,8 +33,8 @@ Author: Yves Croissant [aut, cre],
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
 Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 644
-Repository/R-Forge/DateTimeStamp: 2017-11-07 03:41:50
-Date/Publication: 2017-11-07 17:22:35 UTC
+Repository/R-Forge/Revision: 834
+Repository/R-Forge/DateTimeStamp: 2019-01-03 15:13:35
+Date/Publication: 2019-01-04 13:50:03 UTC
 NeedsCompilation: no
-Packaged: 2017-11-07 04:25:28 UTC; rforge
+Packaged: 2019-01-03 15:32:32 UTC; rforge

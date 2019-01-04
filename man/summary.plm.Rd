@@ -9,7 +9,7 @@ The summary method for plm objects generates some more information about estimat
 }
 
 \usage{
-\method{summary}{plm}(object, vcov = NULL, \dots, .vcov = NULL)
+\method{summary}{plm}(object, vcov = NULL, \dots)
 \method{print}{summary.plm}(x, digits = max(3, getOption("digits") - 2),
     width = getOption("width"), subset = NULL, \dots)
 }
@@ -20,7 +20,6 @@ The summary method for plm objects generates some more information about estimat
   \item{subset}{a character or numeric vector indicating a subset of the table of coefficients to be
     printed for \code{"print.summary.plm"},}
   \item{vcov}{a variance--covariance matrix furnished by the user or a function to calculate one (see \bold{Examples}),}
-  \item{.vcov}{deprecated, use argument \code{vcov},}
   \item{digits}{number of digits for printed output,}
   \item{width}{the maximum length of the lines in the printed output,}
   \item{\dots}{further arguments.}
@@ -34,11 +33,11 @@ extends the plm object it is run on with various information about the estimated
 
 \value{
 An object of class \code{c("summary.plm", "plm", "panelmodel")}. Some of its elements are
-carried over from the associated plm object and described there (\code{\link[plm]{plm}}).
+carried over from the associated plm object and described there (\code{\link{plm}}).
 The following elements are new or changed relative to the elements of a plm object:
 
-\item{fstatistic}{F statistic for joint test of significance of coefficients (class "htest") (robust F statistic in case of supplied argument \code{vcov}, see \code{\link{pwaldtest}} for details),}
-% TODO Chisq for RE models?
+\item{fstatistic}{'htest' object: joint test of significance of coefficients (F or Chi-square test) (robust statistic in case of supplied
+argument \code{vcov}, see \code{\link{pwaldtest}} for details),}
 \item{coefficients}{a matrix with the estimated coefficients, standard errors, t--values, and p--values, if argument \code{vcov} was set to non-\code{NULL} the standard errors (and t-- and p--values) in their respective robust variant,}
 \item{vcov}{the "regular" variance--covariance matrix of the coefficients (class "matrix"),}
 \item{rvcov}{only present if argument \code{vcov} was set to non-\code{NULL}: the furnished 
@@ -50,13 +49,13 @@ The following elements are new or changed relative to the elements of a plm obje
 }
 
 \seealso{
-\code{\link[plm]{plm}} for estimation of various models; 
-\code{\link[plm]{vcovHC}} for an example of a robust estimation of variance--covariance matrix; 
-\code{\link[plm]{r.squared}} for the function to calculate R-squared; 
-\code{\link[stats]{print.htest}} for some information about class "htest";
-\code{\link[plm]{fixef}} to compute the fixed effects for "within" (=fixed effects) models and
-\code{\link[plm]{within_intercept}} for an "overall intercept" for such models;
-\code{\link[plm]{pwaldtest}}
+\code{\link{plm}} for estimation of various models; 
+\code{\link{vcovHC}} for an example of a robust estimation of variance--covariance matrix; 
+\code{\link{r.squared}} for the function to calculate R-squared; 
+\code{\link[stats:print.power.htest]{print.htest}} for some information about class "htest";
+\code{\link{fixef}} to compute the fixed effects for "within" (=fixed effects) models and
+\code{\link{within_intercept}} for an "overall intercept" for such models;
+\code{\link{pwaldtest}}
 
 }
 

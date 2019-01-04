@@ -192,12 +192,12 @@ has.intercept.Formula <- function(object, rhs = NULL, ...) {
   sapply(rhs, function(x) has.intercept(formula(object, lhs = 0, rhs = x)))
 }
 
-has.intercept.panelmodel <- function(object, ...){
+has.intercept.panelmodel <- function(object, ...) {
   object <- attr(model.frame(object),"formula")
   has.intercept(object)
 }
 
-has.intercept.plm <- function(object, part = "first", ...){
+has.intercept.plm <- function(object, part = "first", ...) {
   has.intercept(formula(object), part = part)
 }
 
@@ -205,13 +205,15 @@ has.intercept.plm <- function(object, part = "first", ...){
 
 pres <- function(x) {  # pres.panelmodel
   ## extracts model residuals as pseries
-
+  ## not necessary for plm models as residuals.plm returns a pseries,
+  ## but used in residuals.pggls, residuals.pcce, residuals.pmg
+  
   ## extract indices
   groupind <-attr(x$model, "index")[,1]
   timeind  <-attr(x$model, "index")[,2]
   
-  # fix to allow operation with pggls, pmg (NB: pmg? meant: plm?)
-  # [NB: one day, make this cleaner; with the describe framework?]
+  # fix to allow operation with pggls, pmg
+  # [TODO: one day, make this cleaner; with the describe framework?]
   if (!is.null(x$args$model))                 maybe_fd <- x$args$model
   if (!is.null(attr(x, "pmodel")$model.name)) maybe_fd <- attr(x, "pmodel")$model.name # this line is currently needed to detect pggls models
   
@@ -258,7 +260,7 @@ punbalancedness.default <- function(x, ...) {
 
   ii <- index(x)
   
-  if (length(ii) == 2) {
+  if (ncol(ii) == 2) {
    ## original Ahrens/Pincus (1981)
     pdim <- pdim(x, ...)
     N <- pdim$nT$n # no. of individuals
@@ -270,7 +272,7 @@ punbalancedness.default <- function(x, ...) {
     r2 <- 1 / (N * (sum( (Ti/Totalobs)^2)))
     result <- c(gamma = r1, nu = r2)
   } else {
-    if (length(ii) == 3) {
+    if (ncol(ii) == 3) {
      ## extension to nested model with additional group variable
      ## Baltagi/Song/Jung (2001), pp. 368-369
       ids <- ii[[1]]
@@ -288,7 +290,7 @@ punbalancedness.default <- function(x, ...) {
       c2 <- M / (Tbar * sum(1/Tis))
       c3 <- M / (sum(Nis * Tis)/M * sum(1/(Nis*Tis)))
       result <- (c(c1 = c1, c2 = c2, c3 = c3))
-    } else stop(paste0("unsupported number of dimensions: ", length(ii)))
+    } else stop(paste0("unsupported number of dimensions: ", ncol(ii)))
   }
   return(result)
 }
@@ -389,15 +391,16 @@ print.form <- function(x, length.line){
 # Function checks if the class and storage mode (type) of an object match 
 # and corrects its class attribute if not
 #
-# A mismatch can occur if a pseries of lower class and type logical or interger
+# A mismatch can occur if a pseries of lower class and type logical or integer
 # are propagated to higher type by an arithmetic operation as R's arithmetic
 # operations do not change the first value of class attribute for
-# c("pseries", "logical/integer").
+# c("pseries", "logical/integer"). However, using groupGenerics as wrapper around
+# pseries objects, this does not happen anymore.
 # E.g.
 #  x <- c(1L, 2L, 3L)
 #  x + 1.5
 # results in class propagation from class "integer" to "numeric" 
-# but not if x is of class c("pseries", "interger")
+# but not if x is of class c("myclass", "integer")
 check_propagation_correct_class <- function(x) {
   # x: a pseries object (usually)
   if (any((pos <- inherits(x, c("logical" ,"integer", "numeric"), which = TRUE)) > 0)) {
@@ -409,4 +412,90 @@ check_propagation_correct_class <- function(x) {
     )
   }
   return(x)
+}
+
+pseries2pdataframe <- function(x, pdata.frame = TRUE, ...) {
+  ## non-exported
+  ## Transforms a pseries in a (p)data.frame with the indices as regular columns
+  ## in positions 1, 2 and (if present) 3 (individual index, time index, group index).
+  ## if pdataframe = TRUE -> return a pdata.frame, if FALSE -> return a data.frame
+  ## ellipsis (dots) passed on to pdata.frame()
+  if (!inherits(x, "pseries")) stop("input needs to be of class 'pseries'")
+  indices <- attr(x, "index")
+  class(indices) <- setdiff(class(indices), "pindex")
+  vx <- remove_pseries_features(x)
+  dfx <- cbind(indices, vx)
+  dimnames(dfx)[[2]] <- c(names(indices), deparse(substitute(x)))
+  if (pdata.frame == TRUE) {
+    res <- pdata.frame(dfx, index = names(indices), ...)
+   } else { res <- dfx }
+  return(res)
+}
+
+pmerge <- function(x, y, ...) {
+  ## non-exported
+  ## Returns a data.frame, not a pdata.frame.
+  ## pmerge is used to merge pseries or pdata.frames into a data.frame or
+  ## to merge a pseries to a data.frame
+  
+  ## transf. if pseries or pdata.frame
+  if(inherits(x, "pseries")) x <- pseries2pdataframe(x, pdata.frame = FALSE)
+  if(inherits(y, "pseries")) y <- pseries2pdataframe(y, pdata.frame = FALSE)
+  if(inherits(x, "pdata.frame")) x <- as.data.frame(x, keep.attributes = FALSE)
+  if(inherits(y, "pdata.frame")) y <- as.data.frame(y, keep.attributes = FALSE)
+  
+  # input to merge() needs to be data.frames; not yet suitable for 3rd index (group variable)
+  z <- merge(x, y,
+             by.x = dimnames(x)[[2]][1:2],
+             by.y = dimnames(y)[[2]][1:2], ...)
+  return(z)
+}
+
+is.pseries <- function(object) {
+ # checks if an object has the necessary features to qualify as a 'pseries'
+  res <- TRUE
+  if (!inherits(object, "pseries")) res <- FALSE
+  # class 'pseries' is always on top of basic class: min 2 classes needed, if 2 classes "pseries" needs to be first entry
+  if (!length(class(object)) >= 2L) res <- FALSE
+  if (length(class(object)) == 2L & class(object)[1] != "pseries") res <- FALSE
+  if (!has.index(object)) res <- FALSE
+  if (!any(c(is.numeric(object), is.factor(object), is.logical(object), 
+             is.character(object), is.complex(object)))) {
+    res <- FALSE
+  }
+  
+  return(res)
+}
+
+amemiya_check <- function(matA, matB, method) {
+  ## non-exported, used in ercomp()
+  ## little helper function to check matrix multiplication compatibility
+  ## in ercomp() for the amemiya estimator: if model contains variables without
+  ## within variation (individual or time), the model is not estimable
+  if (NROW(matA) < NCOL(matB) && method == "amemiya" ) {
+    offending_vars <- setdiff(colnames(matB), rownames(matA))
+    offending_vars <- if (length(offending_vars) > 3) {
+      paste0(paste(offending_vars[1:3], collapse = ", "), ", ...") 
+      } else { 
+        paste(offending_vars, collapse = ", ")
+      }
+    stop(paste0("'amemiya' model not estimable due to variable(s) lacking within variation: ", offending_vars))
+  } else NULL
+}
+
+swar_Between_check <- function(x, method) {
+  ## non-exported, used in ercomp()
+  ## little helper function to check feasibility of Between model in Swamy-Arora estimation
+  ## in ercomp(): if model contains too few groups (individual, time) the Between
+  ## model is not estimable (but does not error)
+  if (describe(x, "model") %in% c("between", "Between")) {
+    pdim <- pdim(x)
+    grp <- switch(describe(x, "effect"),
+                  "individual" = pdim$nT$n,
+                  "time"       = pdim$nT$T)
+    # cannot use df.residual(x) here because that gives the number for the "uncompressed" Between model
+    if (length(x$aliased) >= grp) stop(paste0("model not estimable as there are ", length(x$aliased),
+                                              " coefficient(s) (incl. intercept) to be estimated for the between model but only ",
+                                              grp, " ", describe(x, "effect"), "(s)"))
+  } else NULL
 }

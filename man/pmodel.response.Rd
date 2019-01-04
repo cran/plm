@@ -26,7 +26,10 @@ pmodel.response(object, \dots)
 }
 
 \value{
-A numeric vector.
+A pseries except if model responses' of a \code{"between"} or {"fd"} model as
+these models "compress" the data (the number of observations used in estimation is smaller
+than the original data due to the specific transformation). A numeric is returned for the 
+"between" and "fd" model.
 }
 
 \details{
@@ -42,8 +45,8 @@ placed in the first column, see also \bold{Examples} for usage.
 % }
 
 \seealso{
-  \code{plm}'s \code{\link[plm]{model.matrix}} for (transformed) model matrix and the
-  corresponding \code{\link[plm]{model.frame}} method to construct a model frame.
+  \code{plm}'s \code{\link{model.matrix}} for (transformed) model matrix and the
+  corresponding \code{\link{model.frame}} method to construct a model frame.
 }
 
 \examples{

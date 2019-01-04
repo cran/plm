@@ -1,10 +1,10 @@
 \name{pgrangertest}
 \alias{pgrangertest}
 
-\title{Panel Granger Causality Test (Dumitrescu/Hurlin (2012))}
+\title{Panel Granger (Non-)Causality Test (Dumitrescu/Hurlin (2012))}
 
 \description{
-Test for Granger causality in panel data.
+Test for Granger (non-)causality in panel data.
 }
 
 \usage{
@@ -36,7 +36,7 @@ pgrangertest(formula, data, test = c("Ztilde", "Zbar", "Wbar"),
 %       * cross-sectional independence
 %       * convergence
 
-The panel Granger causality test is a combination of Granger tests 
+The panel Granger (non-)causality test is a combination of Granger tests 
 (Granger (1969)) performed per individual. The test is developed by 
 Dumitrescu/Hurlin (2012), a shorter exposition is given in Lopez/Weber (2017).
 
@@ -58,9 +58,9 @@ The implementation uses \code{\link[lmtest]{grangertest}} from package
 
 \value{
 An object of class \code{c("pgrangertest", "htest")}. Besides the usual 
-elements of a \code{htest} object, it contains element \code{indgranger} which
-carries the Granger test statistics along their p-values, degrees of freedom and
-the specified lag order per individual as a data frame.
+elements of a \code{htest} object, it contains the data frame \code{indgranger} 
+which carries the Granger test statistics per individual along the associated 
+p-values, degrees of freedom and the specified lag order.
 }
 
 \author{Kevin Tappe}
@@ -68,19 +68,22 @@ the specified lag order per individual as a data frame.
 \references{
 
  Dumitrescu, E.-I./Hurlin, C. (2012), Testing for Granger non--causality in 
- heterogeneous panels, \emph{Economic Modelling}, \bold{29}(4), pp. 1450--460.
+ heterogeneous panels, \emph{Economic Modelling}, \bold{29}(4), pp. 1450--1460.
 % supplements (test data, MATLAB code): http://www.runmycode.org/companion/view/42
 
  Granger, C. W. J. (1969), Investigating Causal Relations by Econometric Models and 
  Cross--spectral Methods, \emph{Econometrica}, \bold{37}(3), pp. 424--438.
 
  Lopez, L./Weber, S. (2017), Testing for Granger causality in panel data,
- \emph{IRENE Working paper 17-03}, September 11, 2017.
-% supplements (xtgcause for Stata) https://ideas.repec.org/c/boc/bocode/s458308.html
+ \emph{The Stata Journal}, \bold{17}(4), pp. 972--984.
+% supplements (xtgcause for Stata): https://ideas.repec.org/c/boc/bocode/s458308.html
+% Working Paper: Lopez, L./Weber, S. (2017), Testing for Granger causality in panel data,
+% \emph{IRENE Working paper 17-03}, September 11, 2017.
 }
 
 \seealso{
-\code{\link[lmtest]{grangertest}} for the Granger causality test in \CRANpkg{lmtest},
+\code{\link[lmtest]{grangertest}} for the original (non-panel) Granger causality
+test in \CRANpkg{lmtest}.
 }
 
 \examples{

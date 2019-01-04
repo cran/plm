@@ -1,5 +1,5 @@
-pvcm <- function(formula, data, subset ,na.action, effect = c("individual","time"),
-                 model = c("within","random"), index = NULL, ...){
+pvcm <- function(formula, data, subset ,na.action, effect = c("individual", "time"),
+                 model = c("within", "random"), index = NULL, ...){
 
   effect <- match.arg(effect)
   model.name <- match.arg(model)
@@ -56,6 +56,7 @@ pvcm.within <- function(formula, data, effect){
   
   coef <- as.data.frame(t(sapply(ols, coefficients)))
   residuals <- unlist(lapply(ols, residuals))
+  residuals <- add_pseries_features(residuals, index)
   vcov <- lapply(ols, vcov)
   std <- as.data.frame(t(sapply(vcov, function(x) sqrt(diag(x)))))
   names(coef) <- names(std) <- colnames(coef)
@@ -63,9 +64,14 @@ pvcm.within <- function(formula, data, effect){
   y <- unlist(lapply(ml, function(x) x[,1]))
   fitted.values <- y - residuals
   tss <- tss(y)
-  df.residuals <- pdim$nT$N - card.cond * ncol(coef)
-  nopool <- list(coefficients = coef, residuals = residuals, fitted.values = fitted.values,
-                 vcov = vcov, df.residuals = df.residuals, model = data, std.error = std)
+  df.resid <- pdim$nT$N - card.cond * ncol(coef)
+  nopool <- list(coefficients  = coef,
+                 residuals     = residuals,
+                 fitted.values = fitted.values,
+                 vcov          = vcov,
+                 df.residual   = df.resid,
+                 model         = data,
+                 std.error     = std)
   nopool
 }
 
@@ -161,6 +167,9 @@ pvcm.random <- function(formula, data, effect){
   # Compute the coefficients
   XpXm1 <- solve(Reduce("+", lapply(XyOmXy, function(x) x$XnXn)))
   beta <- XpXm1 %*% Reduce("+", lapply(XyOmXy, function(x) x$Xnyn))
+  beta.names <- rownames(beta)
+  beta <- as.numeric(beta)
+  names(beta) <- beta.names
   
   if (TRUE){                                                    ### TODO: this statement is always TRUE...?!
     weightsn <- lapply(seq_len(card.cond),
@@ -176,24 +185,34 @@ pvcm.random <- function(formula, data, effect){
                        )
     V <- solve(Reduce("+", weightsn))
     weightsn <- lapply(weightsn, function(x) V %*% x)
+    ## TODO: should "Beta" be called "beta"?
     Beta <- Reduce("+", lapply(seq_len(card.cond), function(i) weightsn[[i]] %*% coefm[i, ]))
+    Beta.names <- rownames(Beta)
+    Beta <- as.numeric(Beta)
+    names(Beta) <- Beta.names
     XpXm1 <- V
   }
   
   y <- model.response(data)
   X <- model.matrix(formula, data)
-  fit <- X %*% beta
+  fit <- as.numeric(tcrossprod(beta, X))
   res <- y - fit
-  df.residuals <- N - ncol(coefm)
+  df.resid <- N - ncol(coefm)
 
-  list(coefficients = beta, residuals = res, fitted.values = fit,
-       vcov = XpXm1, df.residuals = df.residuals, model = data, Delta = Delta)
+  list(coefficients  = beta,
+       residuals     = res,
+       fitted.values = fit,
+       vcov          = XpXm1,
+       df.residual   = df.resid,
+       model         = data,
+       Delta         = Delta)
 }
 
 
 summary.pvcm <- function(object,...){
   model <- describe(object, "model")
   if (model == "random"){
+    object$waldstatistic <- pwaldtest(object)
     std.err <- sqrt(diag(vcov(object)))
     b <- object$coefficients
     z <- b/std.err
@@ -221,7 +240,7 @@ print.summary.pvcm <- function(x, digits = max(3, getOption("digits") - 2),
   cat("\n")
   print(pdim(model.frame(x)))
   cat("\nResiduals:\n")
-  print(summary(unlist(residuals(x))))
+  print(sumres(x))
   if (model == "random"){
     cat("\nEstimated mean of the coefficients:\n")
     printCoefmat(x$coefficients, digits = digits)
@@ -236,5 +255,12 @@ print.summary.pvcm <- function(x, digits = max(3, getOption("digits") - 2),
   cat(paste("Total Sum of Squares: ", signif(x$tss, digits), "\n", sep=""))
   cat(paste("Residual Sum of Squares: ", signif(x$ssr, digits), "\n", sep=""))
   cat(paste("Multiple R-Squared: ", signif(x$rsqr, digits), "\n", sep=""))
+  if (model == "random"){
+    waldstat <- x$waldstatistic
+    cat(paste("Chisq: ",signif(waldstat$statistic),
+              " on ",waldstat$parameter,
+              " DF, p-value: ",format.pval(waldstat$p.value,digits=digits), "\n", sep=""))
+  }
   invisible(x)
 }
+

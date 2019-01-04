@@ -33,8 +33,8 @@ plm <- function(formula, data, subset, weights, na.action,
                 restrict.rhs = NULL,
                 index = NULL,
                 ...){
-    # if the first argument is a list (of formulas), then call plmlist and exit
     if (is.list(formula)){
+        # if the first argument is a list (of formulas), then call plmlist and exit
         plmlist <- match.call(expand.dots = FALSE)
         plmlist[[1]] <- as.name("plm.list")
         # eval in nframe and not the usual parent.frame(), relevant?
@@ -42,37 +42,42 @@ plm <- function(formula, data, subset, weights, na.action,
         plmlist <- eval(plmlist, sys.frame(which = nframe))
         return(plmlist)
     }
-  
-    if ((!is.null(restrict.matrix) || !is.null(restrict.rhs)) && !is.list(formula)) {
-      stop(paste0("arguments 'restrict.matrix' and 'restrict.rhs' not yet implemented ",
-                  "for single equations"))
+
+    if ((! is.null(restrict.matrix) || ! is.null(restrict.rhs)) && ! is.list(formula)) {
+        stop(paste0("arguments 'restrict.matrix' and 'restrict.rhs' cannot yet be used ",
+                    "for single equations"))
     }
-    
     dots <- list(...)
-    # check and match the arguments
-    effect <- match.arg(effect)
-    # note that model can be NA, in this case the model.frame is
-    # returned
-    if (! anyNA(model)) model <- match.arg(model)
-    if (! anyNA(model) & effect == "nested") model <- "random"
     
-    if (length(inst.method) == 1 && inst.method == "bmc") {
-      # accept "bmc" (a long-standing typo) for Breusch-Mizon-Schmidt due to backward compatibility
-      inst.method <- "bms"
-      warning("Use of inst.method = \"bmc\" discouraged, set to \"bms\" for Breusch-Mizon-Schmidt instrumental variable transformation")
-    }
-    inst.method <- match.arg(inst.method)
-  
+    # check and match the effect and model arguments
+    effect <- match.arg(effect)
+    # note that model can be NA, in this case the model.frame is returned
+    if (! anyNA(model)) model <- ifelse(effect == "nested",
+                                        "random", match.arg(model))
+
+
     # input checks for FD model: give informative error messages as
     # described in footnote in vignette
     if (! is.na(model) && model == "fd") {
-        if (effect == "time") stop(paste("effect = \"time\" for first-difference model", 
-                                         "meaningless because cross-sections do not", 
+        if (effect == "time") stop(paste("effect = \"time\" for first-difference model",
+                                         "meaningless because cross-sections do not",
                                          "generally have a natural ordering"))
-        if (effect == "twoways") stop(paste("effect = \"twoways\" is not defined",  
+        if (effect == "twoways") stop(paste("effect = \"twoways\" is not defined",
                                             "for first-difference models"))
     }
-    # deprecated section:
+    
+    # Deprecated section
+    
+    # accept "bmc" (a long-standing typo) for Breusch-Mizon-Schmidt
+    # due to backward compatibility
+    if (length(inst.method) == 1 && inst.method == "bmc") {
+      inst.method <- "bms"
+        warning(paste("Use of inst.method = \"bmc\" discouraged, set to \"bms\"",
+                      "for Breusch-Mizon-Schmidt instrumental variable transformation"))
+    }
+    inst.method <- match.arg(inst.method)
+  
+    
     # pht is no longer maintained
     if (! is.na(model) && model == "ht"){
         ht <- match.call(expand.dots = FALSE)
@@ -85,18 +90,19 @@ plm <- function(formula, data, subset, weights, na.action,
     
     # the use of the instrument argument is deprecated, use 2-part Formulas instead
     if (!is.null(dots$instruments)){
+      # TODO: once plm 1.7-0 is released to CRAN, delete this section entirely
         formula <- as.Formula(formula, dots$instruments)
-        deprec.instruments <- paste("the use of the instruments argument is deprecated,",
-                                    "use two-part formulas instead")
-        warning(deprec.instruments)
+        deprec.instruments <- paste("the use of the 'instruments' argument is not possible anymore,",
+                                    "use two-part Formulas instead")
+        stop(deprec.instruments)
     }
     
     # check whether data and formula are pdata.frame and pFormula and if not
-    # coerce them and if not create it
+    # coerce them
     orig_rownames <- row.names(data)
     if (! inherits(data, "pdata.frame")) data <- pdata.frame(data, index)
     if (! inherits(formula, "pFormula")) formula <- pFormula(formula)
-    
+
     # in case of 2-part formula, check whether the second part should
     # be updated, e.g. y ~ x1 + x2 + x3 | . - x2 + z becomes 
     # y ~ x1 + x2 + x3 | x1 + x3 + z
@@ -113,7 +119,7 @@ plm <- function(formula, data, subset, weights, na.action,
     # use the pFormula and pdata.frame which were created if necessary (and not
     # the original formula / data)
     mf$formula <- formula
-    mf$data <- data # data is a pdata.frame
+    mf$data <- data
     data <- eval(mf, parent.frame())
     # preserve original row.names for data [also fancy rownames]; so functions
     # like pmodel.response(), model.frame(), model.matrix(), residuals() return
@@ -135,7 +141,7 @@ plm <- function(formula, data, subset, weights, na.action,
                  random.models = random.models,
                  random.dfcor = random.dfcor,
                  inst.method = inst.method)
-    result <- plm.fit(formula, data, model, effect, random.method, 
+    result <- plm.fit(formula, data, model, effect, random.method,
                       random.models, random.dfcor, inst.method)
     result$call <- cl
     result$args <- args
@@ -144,19 +150,19 @@ plm <- function(formula, data, subset, weights, na.action,
 
 plm.fit <- function(formula, data, model, effect, random.method, 
                     random.models, random.dfcor, inst.method){
+    
     # check for 0 cases like in stats::lm.fit (e.g. due to NA dropping) 
     if (nrow(data) == 0L) stop("0 (non-NA) cases")
 
     # if a random effect model is estimated, compute the error components
     if (model == "random"){
         is.balanced <- is.pbalanced(data)
-        estec <- ercomp(formula, data, effect, method = random.method, 
+        estec <- ercomp(formula, data, effect, method = random.method,
                         models = random.models, dfcor = random.dfcor)
         sigma2 <- estec$sigma2
         theta <- estec$theta
-        index <- attr(data, "index")
         if (length(formula)[2] == 2 && effect == "twoways")
-            stop(paste("Instrumental variable random effect estimation", 
+            stop(paste("Instrumental variable random effect estimation",
                        "not implemented for two-ways panels"))
     }
     else theta <- NULL
@@ -166,78 +172,68 @@ plm.fit <- function(formula, data, model, effect, random.method,
     if (! (model == "random" & effect == "twoways" && ! is.balanced)){
         # extract the model.matrix and the model.response actually, this can be
         # done by providing model.matrix and pmodel.response's methods
-                                        # to pdata.frames
+        # to pdata.frames
         X <- model.matrix(formula, data, rhs = 1, model = model, 
                           effect = effect, theta = theta, cstcovar.rm = "all")
         y <- pmodel.response(formula, data = data, model = model, 
                              effect = effect, theta = theta)
         if (ncol(X) == 0) stop("empty model")
-        # call w the weights (use 1 if no weights are specified)
-        w <- as.vector(model.weights(data))
-        if (is.null(w)) w <- 1
-        # weight accordingly the response and the covariates
-        X <- X * sqrt(w)
-        y <- y * sqrt(w)
+        
+        w <- model.weights(data)
+        if (! is.null(w)){
+            if (! is.numeric(w)) stop("'weights' must be a numeric vector")
+            X <- X * sqrt(w)
+            y <- y * sqrt(w)
+        }
+        else w <- 1
+        
         # extract the matrix of instruments if necessary (means here that we
         # have a multi-parts formula)
         if (length(formula)[2] > 1){
+            if(!is.null(model.weights(data)) || any(w != 1)) stop("argument 'weights' not yet implemented for instrumental variable models")
             if (length(formula)[2] == 2){
-                W <- model.matrix(formula, data, rhs = 2, 
-                                  model = model, effect = effect, 
-                                  theta = theta)
+                W <- model.matrix(formula, data, rhs = 2,
+                                  model = model, effect = effect,
+                                  theta = theta, cstcovar.rm = "all")
             }
             else{
-                W <- model.matrix(formula, data, rhs = c(2, 3), model = model, 
-                                      effect = effect, theta = theta)
+                W <- model.matrix(formula, data, rhs = c(2, 3), model = model,
+                                      effect = effect, theta = theta, cstcovar.rm = "all")
             }
-            if (model == "within"){
-                if (! is.null(W)){
-                    cst.W <- match(attr(W, "constant"), colnames(W))
-                    if (length(cst.W) > 0) W <- W[, - cst.W, drop = FALSE]
-                }
-                ## if (! is.null(X)){
-                ##     print(head(X))
-                ##     print(attr(X, "constant"))
-                ##     stop()
-                ##     cst.X <- match(attr(X, "constant"), colnames(X))
-                ##     if (length(cst.X) > 0) X <- X[, - cst.X, drop = FALSE]
-                ## }
-            }
+            ## if (model == "within"){
+            ##     if (! is.null(W)){
+            ##         cst.W <- match(attr(W, "constant"), colnames(W))
+            ##         if (length(cst.W) > 0) W <- W[, - cst.W, drop = FALSE]
+            ##     }
+            ## }
             if (model == "random" && inst.method != "bvk"){
-                # the bvk estimator seems to have disappeared
+                # the bvk estimator is already given by W in the part above
                 X <- X / sqrt(sigma2["idios"])
                 y <- y / sqrt(sigma2["idios"])
-                W1 <- model.matrix(formula, data, rhs = 2, model = "within", 
-                                   effect = effect, theta = theta)
-                B1 <- model.matrix(formula, data, rhs = 2, model = "Between", 
-                                   effect = effect, theta = theta)
+                W1 <- model.matrix(formula, data, rhs = 2, model = "within",
+                                   effect = effect, theta = theta, cstcovar.rm = "all")
+                B1 <- model.matrix(formula, data, rhs = 2, model = "Between",
+                                   effect = effect, theta = theta, cstcovar.rm = "all")
                 
                 if (inst.method %in% c("am", "bms")) 
-                    StarW1 <- starX(formula, data, rhs = 2, model = "within", 
+                    StarW1 <- starX(formula, data, rhs = 2, model = "within",
                                     effect = effect)
                 if (length(formula)[2] == 3){
-                    W2 <- model.matrix(formula, data, rhs = 3, model = "within", 
-                                           effect = effect, theta = theta)
+                    W2 <- model.matrix(formula, data, rhs = 3, model = "within",
+                                       effect = effect, theta = theta, cstcovar.rm = "all")
                     if (inst.method == "bms")
-                        StarW2 <- starX(formula, data, rhs = 3, model = "within", 
+                        StarW2 <- starX(formula, data, rhs = 3, model = "within",
                                         effect = effect)
                 }
                 else W2 <- StarW2 <- NULL
                 if (inst.method == "baltagi") W <- sqrt(w) * cbind(W1, W2, B1)
-                if (inst.method == "am")  W <- sqrt(w) * cbind(W1, W2, B1, StarW1)
-                if (inst.method == "bms") W <- sqrt(w) * cbind(W1, W2, B1, StarW1, StarW2)
-                zerovars <- apply(W, 2, function(x) max(abs(x), na.rm = TRUE)) < 1E-5
-                W <- W[, !zerovars, drop = FALSE]
+                if (inst.method == "am")      W <- sqrt(w) * cbind(W1, W2, B1, StarW1)
+                if (inst.method == "bms")     W <- sqrt(w) * cbind(W1, W2, B1, StarW1, StarW2)
             }
             if (ncol(W) < ncol(X)) stop("insufficient number of instruments")
         }
-        else W <- NULL # no instruments
+        else W <- NULL
         
-        # compute the estimation
-        ## print(c(model, effect))
-        ## print(head(X))
-        ## print(head(y))
-        ## print(coef(lm.fit(X, y)))
         result <- mylm(y, X, W)
         df <- df.residual(result)
         vcov <- result$vcov
@@ -257,23 +253,23 @@ plm.fit <- function(formula, data, model, effect, random.method,
         result <- list(coefficients = coef(result),
                        vcov         = vcov,
                        residuals    = resid(result),
+                       weights      = w,
                        df.residual  = df,
                        formula      = formula,
                        model        = data)
+        if (is.null(model.weights(data))) result$weights <- NULL
         if (model == "random") result$ercomp <- estec
     }
-    else{ # random twoways unbalanced:
+    else{
+        # random twoways unbalanced:
         pdim <- pdim(data)
         TS <- pdim$nT$T
         theta <- estec$theta$id
         phi2mu <- estec$sigma2["time"] / estec$sigma2["idios"]
-#        Dmu <- model.matrix( ~ factor(index(data)[[2]]) - 1)
-#        Dmu <- Dmu - theta * Between(Dmu, index(data)[[1]])
-
         Dmu <- model.matrix( ~ factor(index(data)[[2]]) - 1)
-        attr(Dmu, "index") <- index
+        attr(Dmu, "index") <- index(data)
         Dmu <- Dmu - theta * Between(Dmu, "individual")
-        X <- model.matrix(   formula, data, rhs = 1, model = "random", 
+        X <- model.matrix(formula, data, rhs = 1, model = "random", 
                           effect = "individual", theta = theta)
         y <- pmodel.response(formula, data = data, model = "random", 
                              effect = "individual", theta = theta)
@@ -282,6 +278,8 @@ plm.fit <- function(formula, data, model, effect, random.method,
         XPy <- crossprod(X, y) - phi2mu * crossprod(X, Dmu) %*% P %*% crossprod(Dmu, y)
         gamma <- solve(XPX, XPy)[, , drop = TRUE]
 
+        # residuals 'e' are not the residuals of a quasi-demeaned
+        # model but of the 'outer' model
         e <- pmodel.response(formula, data = data, model = "pooling", effect = effect) -
             as.numeric(model.matrix(formula, data, rhs = 1, model = "pooling") %*% gamma)
         result <- list(coefficients = gamma,
@@ -291,10 +289,10 @@ plm.fit <- function(formula, data, model, effect, random.method,
                        ercomp       = estec,
                        df.residual  = nrow(X) - ncol(X),
                        residuals    = e)
-        # TODO: find a way to determine aliased coefs for tw RE unbalanced: compare 'gamma' to names of model matrix? 
         
-        # make 'aliased' the right length, so that summary.plm(model)$df[3] contains correct value (length(aliased))
-        aliased <- rep(NA, length(gamma))
+        # derive 'aliased' information (this is based on the assumption that
+        # estimation fails anyway if singularities are present).
+        aliased <- is.na(gamma)
     }
     result$assign <- attr(X, "assign")
     result$contrasts <- attr(X, "contrasts")
@@ -335,7 +333,7 @@ mylm <- function(y, X, W = NULL){
 plm.list <- function(formula, data, subset, na.action,
                      effect = c("individual", "time", "twoways"),
                      model = c("within", "random", "ht", "between", "pooling", "fd"),
-                     random.method = c("swar", "walhus", "amemiya", "nerlove", "ht"),
+                     random.method = NULL,#c("swar", "walhus", "amemiya", "nerlove", "ht"),
                      inst.method = c("bvk", "baltagi"),
                      restrict.matrix = NULL,
                      restrict.rhs = NULL,
@@ -349,7 +347,7 @@ plm.list <- function(formula, data, subset, na.action,
   }
 
   names.eq <- names(formula)
-  # run plm for each equations of the list, store the results in a
+  # run plm for each equation of the list, store the results in a
   # list
   plm.models <- function(sysplm, amodel, ...){
     formulas <- sysplm$formula
@@ -617,35 +615,26 @@ print.plm.list <- function(x, digits = max(3, getOption("digits") - 2), width = 
 # summary.plm creates a specific summary.plm object that is derived
 # from the associated plm object
 
-summary.plm <- function(object, vcov = NULL, ..., .vcov = NULL){
+summary.plm <- function(object, vcov = NULL, ...){
     
-# deprecation notice on arg ".vcov" introduced Nov 2016: remove arg ".vcov" some time in the future
-  
-  vcov_arg <- vcov
-    
-### set correct vcov in case deprecated arg .vcov is not null to support the deprecated .vcov arg for a while
-
-    depri_.vcov <- paste0("Use of argument \".vcov\" (notice leading dot) is deprecated.", 
-                          " Please change your code to use argument \"vcov\", because \".vcov\" will be removed in the future.")
-    depri_vcov.vcov <- paste0("Arguments \"vcov\" and \".vcov\" specified (not null), continuing with \"vcov\". ", depri_.vcov)
-    if (!is.null(vcov) && !is.null(.vcov)) {
-        warning(depri_vcov.vcov)
-        vcov_arg <- vcov
-    } else {
-        if (!is.null(.vcov)) {
-            warning(depri_.vcov)
-            vcov_arg <- .vcov
-        }
-    }
-    ## NB: there is another instance of a switch for arg ".vcov" below concerning rvcov.name
-### END set correct vcov in case deprecated arg ".vcov" is not null
-    
-    object$fstatistic <- pwaldtest(object, test = "F", vcov = vcov_arg)
+    vcov_arg <- vcov
     model <- describe(object, "model")
     effect <- describe(object, "effect")
-    object$r.squared <- c(rsq  = r.squared(object),
+    random.method <- describe(object, "random.method")
+    object$r.squared <- c(rsq    = r.squared(object),
                           adjrsq = r.squared(object, dfcor = TRUE))
-                                        # construct the table of coefficients
+    
+    ## determine if standard normal and Chisq test or t distribution and F test to be used
+    use.norm.chisq <- FALSE
+    if(model == "random") use.norm.chisq <- TRUE               # all random models
+    if(length(formula(object))[2] >= 2) use.norm.chisq <- TRUE # all IV models
+    if(model == "ht") use.norm.chisq <- TRUE                   # HT via plm(., model="ht")
+
+    object$fstatistic <- pwaldtest(object,
+                                   test = ifelse(use.norm.chisq, "Chisq", "F"),
+                                   vcov = vcov_arg)
+    
+    # construct the table of coefficients
     if (!is.null(vcov_arg)) {
         if (is.matrix(vcov_arg))   rvcov <- vcov_arg
         if (is.function(vcov_arg)) rvcov <- vcov_arg(object)
@@ -655,41 +644,39 @@ summary.plm <- function(object, vcov = NULL, ..., .vcov = NULL){
     }
     b <- coefficients(object)
     z <- b / std.err
-    p <- 2 * pt(abs(z), df = object$df.residual, lower.tail = FALSE)
+    p <- if(use.norm.chisq) {
+              2 * pnorm(abs(z), lower.tail = FALSE)
+            } else {
+              2 * pt(abs(z), df = object$df.residual, lower.tail = FALSE)
+            }
     
-                                        # construct the object of class summary.plm
-    object$coefficients <- cbind("Estimate"   = b,
-                                 "Std. Error" = std.err,
-                                 "t-value"    = z,
-                                 "Pr(>|t|)"   = p)
+    # construct the object of class summary.plm
+    object$coefficients <- cbind(b, std.err, z, p)
+    colnames(object$coefficients) <- if(use.norm.chisq) {
+               c("Estimate", "Std. Error", "z-value", "Pr(>|z|)")
+      } else { c("Estimate", "Std. Error", "t-value", "Pr(>|t|)") }
     
     ## add some info to summary.plm object 
-                                        # robust vcov (next to "normal" vcov)
+    # robust vcov (next to "normal" vcov)
     if (!is.null(vcov_arg)) {
         object$rvcov <- rvcov
-        
-        ## set correct rvcov.name depending on arg used for vcov (as long as we support the deprecated arg ".vcov")
-        if (is.null(vcov)) {
-            rvcov.name <- paste0(deparse(substitute(.vcov)))
-        } else {
-            rvcov.name <- paste0(deparse(substitute(vcov)))
-        }
-        
+        rvcov.name <- paste0(deparse(substitute(vcov)))
         attr(object$rvcov, which = "rvcov.name") <- rvcov.name 
     }
     
-                                        # mimics summary.lm's 'df' component
-                                        # 1st entry: no. coefs (w/o aliased coefs); 2nd: residual df; 3rd no. coefs /w aliased coefs
-    object$df <- c(length(b), object$df.residual, length(object$aliased)) # NB: do not use length(object$coefficients) for 3rd entry!
+    # mimics summary.lm's 'df' component
+    # 1st entry: no. coefs (w/o aliased coefs); 2nd: residual df; 3rd no. coefs /w aliased coefs
+    # NB: do not use length(object$coefficients) for 3rd entry!
+    object$df <- c(length(b), object$df.residual, length(object$aliased))
     
     class(object) <- c("summary.plm", "plm", "panelmodel")
     object
 }
 
 print.summary.plm <- function(x, digits = max(3, getOption("digits") - 2),
-                              width=getOption("width"), subset = NULL, ...){
+                              width = getOption("width"), subset = NULL, ...){
   formula <- formula(x)
-  has.instruments <- (length(formula)[2] == 2)
+  has.instruments <- (length(formula)[2] >= 2)
   effect <- describe(x, "effect")
   model  <- describe(x, "model")
   if (model != "pooling") { cat(paste(effect.plm.list[effect]," ",sep="")) }
@@ -707,11 +694,13 @@ print.summary.plm <- function(x, digits = max(3, getOption("digits") - 2),
   }
   
   if (has.instruments){
-    ivar <- describe(x, "inst.method")
-    cat(paste("Instrumental variable estimation\n   (",
-              inst.method.list[ivar],
-              "'s transformation)\n",
-              sep=""))
+    cat("Instrumental variable estimation\n")
+    if(model != "within") {
+      # don't print transformation method for FE models as there is only one
+      # such method for FE models but plenty for other model types
+      ivar <- describe(x, "inst.method")
+      cat(paste0("   (", inst.method.list[ivar], "'s transformation)\n"))
+    }
   }
   
   if (!is.null(x$rvcov)) {
@@ -733,12 +722,20 @@ print.summary.plm <- function(x, digits = max(3, getOption("digits") - 2),
     print(x$ercomp)
   }
   cat("\nResiduals:\n")
-  save.digits <- unlist(options(digits = digits))
-  on.exit(options(digits = save.digits))
-  print(sumres(x))
+  df <- x$df
+  rdf <- df[2L]
+  if (rdf > 5L) {
+    save.digits <- unlist(options(digits = digits))
+    on.exit(options(digits = save.digits))
+    print(sumres(x))
+  } else if (rdf > 0L) print(residuals(x), digits = digits)
+  if (rdf == 0L) { # estimation is a perfect fit
+   cat("ALL", x$df[1L], "residuals are 0: no residual degrees of freedom!")
+   cat("\n")
+  }
   
   if (any(x$aliased, na.rm = TRUE)) {
-    # na.rm = TRUE because currently, RE tw unbalanced models set aliased simply to NA
+    # na.rm = TRUE because currently, RE tw unbalanced models might have NAs?
     naliased <- sum(x$aliased, na.rm = TRUE)
     cat("\nCoefficients: (", naliased, " dropped because of singularities)\n", sep = "")
   } else cat("\nCoefficients:\n")
@@ -766,14 +763,14 @@ print.summary.plm <- function(x, digits = max(3, getOption("digits") - 2),
 }
 
 fitted_exp.plm <- function(x, ...) { #### experimental, non-exported function
-# fitted_exp.plm: gives the fitted values of all types of plm models by substracting the overall 
+# fitted_exp.plm: gives the fitted values of all types of plm models by substracting the overall
 #                 residuals from the untransformed response variable; does not have
 #                 a model argument so it is not as versatile as 'fitted.plm' below.
 # see also test file tests/test_residuals_overall_fitted_exp.R
   model <- describe(x, "model")
   res <- residuals_overall_exp.plm(x)
   
-  # For "between" and "fd" models, the number of fitted values is not equal to the 
+  # For "between" and "fd" models, the number of fitted values is not equal to the
   # number of original observations. Thus, model.frame cannot be used but rather
   # pmodel.response because it has the right length. However, pmodel.response
   # shall not be used for the other models because we want the untransformed data.
@@ -782,9 +779,7 @@ fitted_exp.plm <- function(x, ...) { #### experimental, non-exported function
   } else {
     y <- model.frame(x)[ , 1]
   }
-  return(y - res) # TODO: shall the result be class pseries?
-                  # currently, pmodel.response (used for between and
-                  # fd model) does not set 'pseries' class
+  return(y - res)
 }
 
 
@@ -804,9 +799,9 @@ predict.plm <- function(object, newdata = NULL, ...){
 }
 
 deviance.panelmodel <- function(object, model = NULL, ...){
-  if (is.null(model)) sum(resid(object)^2)
-  else sum(residuals(object, model = model)^2)
-} 
+  if (is.null(model)) as.numeric(crossprod(resid(object)))
+  else as.numeric(crossprod(residuals(object, model = model)))
+}
 
 tss <- function(x, ...){
   UseMethod("tss")
@@ -840,7 +835,7 @@ r.squared <- function(object, model = NULL,
     if (type == "ess"){
         haty <- fitted(object, model = model)
         mhaty <- mean(haty)
-        ess <- sum( (haty - mhaty)^2)
+        ess <- as.numeric(crossprod((haty - mhaty)))
         R2 <- ess / tss(object, model = model)
     }
     # Kevin Tappe 2015-10-19, the computation of the adjusted R2 was wrong
@@ -864,11 +859,11 @@ residuals_overall_exp.plm <- function(x, ...) { #### experimental, non-exported 
   # are also the residuals of the "overall" model
   if (model == "random") {
     # get untransformed data to calculate overall residuals
-    X <- model.matrix(x, model = "pooling") 
+    X <- model.matrix(x, model = "pooling")
     y <- pmodel.response(x, model = "pooling")
     # take care of any aliased coefficients:
     # they are not in x$coefficients but assoc. variables are still present in model.matrix
-    if (any(x$aliased, na.rm = TRUE)) { # na.rm = TRUE because currently, RE tw unbalanced models set aliased simply to NA
+    if (any(x$aliased, na.rm = TRUE)) { # na.rm = TRUE because currently, RE tw unbalanced models set aliased differently
       X <- X[ , !x$aliased, drop = FALSE]
     }
     
@@ -909,7 +904,7 @@ formula.plm <- function(x, ...){
 # describe function: extract characteristics of plm model
 describe <- function(x,
                      what = c("model", "effect", "random.method",
-                              "inst.method", "transformation")){
+                              "inst.method", "transformation", "ht.method")){
   what <- match.arg(what)
   cl <- x$args
 ##   if (is.name(cl$effect)) cl$effect <- eval(cl$effect, parent.frame())
@@ -924,7 +919,8 @@ describe <- function(x,
          "inst.method"    = ifelse(!is.null(cl$inst.method),
                                  cl$inst.method, "bvk"),
          "transformation" = ifelse(!is.null(cl$transformation),
-                                 cl$transformation, "d")
+                                 cl$transformation, "d"),
+         "ht.method"      = ifelse(!is.null(cl$ht.method), cl$ht.method, "ht")
          )
 }
 
@@ -983,6 +979,7 @@ plot.plm <- function(x, dx = 0.2, N = NULL, seed = 1,
 
 residuals.plm <- function(object, model = NULL, effect = NULL,  ...){
     if (is.null(model) & is.null(effect)){
+        model <- describe(object, "model")
         res <- object$residuals
     }
     else{
@@ -994,8 +991,14 @@ residuals.plm <- function(object, model = NULL, effect = NULL,  ...){
         y <- pmodel.response(object, model = model, effect = effect)
         res <- y - bX
     }
-    res <- structure(res, class = union("pseries", class(res)), index = index(object))
-    res
+    res <- if (model %in% c("between", "fd")) {
+      # these models "compress" the data, thus an index does not make sense here
+      # -> do not return pseries but plain numeric
+      res
+    } else {
+      structure(res, index = index(object), class = union("pseries", class(res)))
+    }
+    return(res)
 }
 
 fitted.plm <- function(object, model = NULL, effect = NULL, ...){

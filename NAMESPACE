@@ -1,48 +1,56 @@
-export(plm, pvcm, pgmm, pggls, pht, pcce, pmg, plmtest, phtest, pFtest, 
-       detect_lin_dep, is.pconsecutive, is.pbalanced, make.pconsecutive,
-       make.pbalanced, within_intercept,
-       pvar, pdim, pooltest, dynformula, sargan, mtest, ercomp, pvcovHC,
-       pbsytest, pdwtest, pbgtest, pbltest, pwartest, pwtest, pwfdtest, pcdtest,
-       plm.data, pdata.frame, between, Between, Within, lag, lead, pFormula, pmodel.response,
-       punbalancedness, purtest, cipstest, vcovBK, vcovSCC, r.squared, has.intercept, 
-       index, fixef, ranef, vcovHC, vcovDC, vcovNW, vcovG, piest, aneweytest, pwaldtest,
-       pldv, cortab, pgrangertest,
+export(# estimation:
+       plm, pldv, pvcm, pcce, pgmm, pggls, pht, pmg, ercomp,
+       # tests:
+       piest,
+       pbltest, pbnftest, pbgtest, pbsytest, pcdtest, pdwtest, plmtest, phtest, 
+       pFtest, pwaldtest, pwartest, pwtest, pwfdtest, pgrangertest, purtest,
+       sargan, mtest, pooltest, aneweytest, cipstest,
+       # vcov:
+       vcovHC, vcovDC, vcovNW, vcovG, vcovBK, vcovSCC, pvcovHC,
+       # others:
+       plm.data, pdata.frame, pmodel.response,
+       between, Between, Within, lag, lead, pFormula,
+       punbalancedness, r.squared, has.intercept, detect.lindep, detect_lin_dep, is.pseries,
+       is.pconsecutive, is.pbalanced, make.pconsecutive, make.pbalanced,
+       within_intercept, pvar, pdim, dynformula, index, fixef, ranef, cortab,
+       
+       # re-exports:
        maxLik # re-export maxLik::maxLik so we can place pkg 'maxLik' in 'Imports' rather than 'Depends' as it is only needed for pldv()
               # 'Suggests' is not sufficient for maxLik as it is used in an eval()-statement in pldv().
        )
 
-
-
 import("Formula") # import whole package
-importFrom("stats", "lag", "nobs", "alias",
+importFrom("stats",
+           "lag", "nobs", "alias",
            "pnorm", "dnorm", "qnorm", "pt", "pchisq", "pf", "sd", "var",
-		   "model.weights", "reshape", 
+           "model.weights", "reshape", 
            "approx", "as.formula", "coef", "coefficients", "printCoefmat",
            "cor", "delete.response", "deviance", "df.residual",
            "formula", "lm", "lm.fit", "model.frame",
            "model.matrix", "model.response", "na.omit", "terms", "update",
            "fitted", "resid", "residuals", "vcov")
-
 importFrom("maxLik", "maxLik")
 importFrom("bdsmatrix", "bdsmatrix")
-importFrom("sandwich", "vcovHC") # import generic and associated methods so the vcovHC methods from pkg sandwich and plm do no mask each other
-importFrom("zoo", "index")       # --- same ---
-importFrom("nlme", "fixef")      # --- same ---
-importFrom("nlme", "ranef")      # --- same ---
-importFrom("nlme", "lme")
+importFrom("sandwich", "vcovHC")    # import generic and associated methods so the vcovHC methods from pkg sandwich and plm do no mask each other
+importFrom("zoo", "index")          # --- same ---
+importFrom("nlme",                  # --- same for fixef and ranef ---
+           "fixef", "ranef", "lme")
 importFrom("MASS", "ginv")
-importFrom("lmtest", "bgtest")
-importFrom("lmtest", "dwtest")
-importFrom("lmtest", "grangertest")
+importFrom("lmtest",
+           "bgtest", "dwtest", "grangertest")
 # importFrom("car", "linearHypothesis") # pkg 'car' in 'Suggests', so do not import
 # importFrom("statmod", "gauss.quad")   # pkg 'statmod' in 'Suggests', so do not import
 importFrom("lattice", "xyplot")
 importFrom("grDevices", "heat.colors", "rainbow")
-importFrom("graphics", "abline", "axis", "barplot", "legend", "lines",
+importFrom("graphics",
+           "abline", "axis", "barplot", "legend", "lines",
            "plot", "points")
 
+
+################## register S3 methods ##################
+
 # pFormula
-S3method("model.frame", "pFormula")
+S3method("model.frame",  "pFormula")
 S3method("model.matrix", "pFormula")
 S3method("model.matrix", "plm")
 S3method("model.matrix", "pcce")
@@ -62,10 +70,10 @@ S3method("index", "panelmodel")
 S3method("index", "pseries")
 # pdata.frame
 S3method("print",         "pdata.frame")
-S3method('[',             "pdata.frame")
-S3method('$',             "pdata.frame")
-S3method('[[',            "pdata.frame")
-S3method('$<-',           "pdata.frame")
+S3method("[",             "pdata.frame")
+S3method("$",             "pdata.frame")
+S3method("[[",            "pdata.frame")
+S3method("$<-",           "pdata.frame")
 S3method("as.data.frame", "pdata.frame")
 S3method("as.list",       "pdata.frame")
 # pdim
@@ -86,6 +94,7 @@ S3method("punbalancedness", "panelmodel")
 # pvar
 S3method("pvar",  "data.frame")
 S3method("pvar",  "pdata.frame")
+S3method("pvar",  "pseries")
 S3method("pvar",  "matrix")
 S3method("print", "pvar")
 # panelmodel
@@ -164,6 +173,10 @@ S3method("vcovDC", "pcce")
 # vcovG
 S3method("vcovG", "plm")
 S3method("vcovG", "pcce")
+# groupGenric for pseries, see ?groupGeneric and files R/groupGenerics_pseries.R and tests/test_groupGenerics_pseries.R
+S3method("Ops",       "pseries")
+S3method("Math",      "pseries")
+S3method("Complex",   "pseries")
 # pseries
 S3method("lag",       "pseries")
 S3method("lead",      "pseries")
@@ -174,8 +187,11 @@ S3method("Within",    "pseries")
 S3method("print",     "pseries")
 S3method("summary",   "pseries")
 S3method("as.matrix", "pseries")
+S3method("between",   "matrix")
+S3method("Between",   "matrix")
+S3method("Within",    "matrix")
+#S3method("[",         "pseries") # not implemented yet - sketch in R/pdata.frame.R
 S3method("print", "summary.pseries")
-# S3method("[", "pseries") # not implemented (yet?)
 # ercomp
 S3method("ercomp", "formula")
 S3method("ercomp", "plm")
@@ -195,6 +211,9 @@ S3method("pFtest", "formula")
 # pbltest
 S3method("pbltest", "formula")
 S3method("pbltest", "plm")
+# pbnftest
+S3method("pbnftest", "formula")
+S3method("pbnftest", "panelmodel")
 # pbsytest
 S3method("pbsytest", "formula")
 S3method("pbsytest", "panelmodel")
@@ -223,10 +242,11 @@ S3method("summary", "purtest")
 S3method("print", "summary.purtest")
 # pwaldtest
 S3method("pwaldtest", "plm")
-# detect_lin_dep, alias
-S3method("detect_lin_dep", "matrix")
-S3method("detect_lin_dep", "data.frame")
-S3method("detect_lin_dep", "plm")
+S3method("pwaldtest", "pvcm")
+# detect.lindep, alias
+S3method("detect.lindep", "matrix")
+S3method("detect.lindep", "data.frame")
+S3method("detect.lindep", "plm")
 S3method("alias", "plm")
 S3method("alias", "pFormula")
 # is.pconsecutive

@@ -13,8 +13,8 @@
 
 \usage{
 \method{vcovHC}{plm}(x, method = c("arellano", "white1", "white2"),
-                        type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
-                        cluster = c("group", "time"), \dots)
+          type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
+          cluster = c("group", "time"), \dots)
 \method{vcovHC}{pgmm}(x, \dots)
 }
 
@@ -25,7 +25,7 @@
   \item{method}{one of \code{"arellano"}, \code{"white1"}, \code{"white2"},}
   \item{type}{the weighting scheme used, one of \code{"HC0"}, \code{"sss"}, \code{"HC1"}, \code{"HC2"}, 
               \code{"HC3"}, \code{"HC4"}, see Details,}
-  \item{cluster}{one of \code{"group"}, \code{"time"}}
+  \item{cluster}{one of \code{"group"}, \code{"time"},}
   \item{\dots}{further arguments.}
 }
 
@@ -55,6 +55,8 @@ Weighting schemes specified by \code{type} are analogous to those in \code{\link
 \CRANpkg{sandwich} and are justified theoretically (although in the context
 of the standard linear model) by MacKinnon and White (1985) and
 Cribari-Neto (2004) (see Zeileis (2004)).
+\code{type = "sss"} employs the small sample correction as used by Stata.
+% TODO: give formula for "sss"; elaborate why different result for FE models (intercept)
 
 The main use of \code{vcovHC} is to be an argument to other functions,
 e.g. for Wald--type testing: argument \code{vcov.} to \code{coeftest()}, argument \code{vcov} to
@@ -68,6 +70,10 @@ A special procedure for \code{pgmm} objects, proposed by Windmeijer
 (2005), is also provided.
 
 }
+
+\note{The function \code{pvcovHC} is deprecated. Use \code{vcovHC} for the same
+functionality.}
+
 
 \seealso{
   \code{\link[sandwich]{vcovHC}} from the \CRANpkg{sandwich} package for weighting schemes (\code{type} argument).
@@ -136,10 +142,10 @@ linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovHC)
 
 ## Robust inference for GMM models
 data("EmplUK", package="plm")
-ar <- pgmm(dynformula(log(emp) ~ log(wage) + log(capital) + log(output),
-           list(2, 1, 2, 2)), data = EmplUK, effect = "twoways",
-           model = "twosteps", gmm.inst = ~ log(emp),
-           lag.gmm = list(c(2, 99)))
+ar <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+           + log(capital) + lag(log(capital), 2) + log(output)
+           + lag(log(output),2) | lag(log(emp), 2:99),
+            data = EmplUK, effect = "twoways", model = "twosteps")
 rv <- vcovHC(ar)
 mtest(ar, order = 2, vcov = rv)
 

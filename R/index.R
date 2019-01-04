@@ -7,10 +7,10 @@ index.pindex <- function(x, which = NULL, ...){
         posindividual <- match("individual", which)
         if (! is.na(posindividual)) which[posindividual] <- "id"
     }
-    if (length(which) >  3) stop("the length of which should be at most 3")
+    if (length(which) >  3) stop("the length of argument 'which' should be at most 3")
     if (is.numeric(which)){
         if (! all(which %in% 1:3))
-            stop("if integers, which should contain only 1, 2 and/or 3")
+            stop("if integer, argument 'which' should contain only 1, 2 and/or 3")
         if (ncol(x) == 2 & 3 %in% which) stop("no grouping variable, only 2 indexes")
         which <- names(x)[which]
     }
@@ -21,7 +21,7 @@ index.pindex <- function(x, which = NULL, ...){
     if ("id" %in% which) which[which == "id"] <- names(x)[1]
     if ("time" %in% which) which[which == "time"] <- names(x)[2]
     if ("group" %in% which) which[which == "group"] <- names(x)[3]
-    result <- x[, which]
+    result <- x[ , which]
     result
 }
 
@@ -38,6 +38,21 @@ index.pseries <- function(x, which = NULL, ...){
 index.panelmodel <- function(x, which = NULL, ...){
   anindex <- attr(x$model, "index")
   index(x = anindex, which = which)
+}
+
+is.index <- function(index) {
+# not exported, helper function
+  # checks if the index is an index in the sense of package plm
+  res <- if (all(class(index) == c("pindex", "data.frame"))) TRUE else FALSE
+  return(res)
+}
+
+has.index <- function(object) {
+# not exported, helper function
+  # checks if an object has an index in sense of package plm
+  # (esp. to distinguish from zoo::index() which always returns an index)
+  index <- attr(object, "index")
+  return(is.index(index))
 }
 
 # pos.index:

@@ -10,8 +10,8 @@ Estimators for random and fixed effects models with variable coefficients.
 }
 
 \usage{
-pvcm(formula, data, subset, na.action, effect = c("individual","time"),
-     model = c("within","random"), index = NULL, \dots)
+pvcm(formula, data, subset, na.action, effect = c("individual", "time"),
+     model = c("within", "random"), index = NULL, \dots)
 \method{summary}{pvcm}(object, \dots)
 \method{print}{summary.pvcm}(x, digits = max(3, getOption("digits") -2),
     width = getOption("width"), \dots)
@@ -45,16 +45,15 @@ is estimated. It is a generalized least squares model which uses the results of 
 \value{
 An object of class \code{c("pvcm", "panelmodel")}, which has the following elements:
 
-  \item{coefficients}{the vector (or the list for fixed effects) of coefficients,}
+  \item{coefficients}{the vector (or the data frame for fixed effects) of coefficients,}
   \item{residuals}{the vector of residuals,}
   \item{fitted.values}{the vector of fitted values,}
-  \item{vcov}{the covariance matrix of the coefficients,}
+  \item{vcov}{the covariance matrix of the coefficients (a list for fixed effects),}
   \item{df.residual}{degrees of freedom of the residuals,}
-  \item{model}{a \code{data.frame} containing the variables used for the estimation,}
+  \item{model}{a data frame containing the variables used for the estimation,}
   \item{call}{the call,}
-  \item{Delta}{the estimation of the covariance matrix of the
-   coefficients (random effect models only),}
-  \item{std.error}{the standard errors for all the coefficients for each individual (within models only).}
+  \item{Delta}{the estimation of the covariance matrix of the coefficients (random effect models only),}
+  \item{std.error}{a data frame containing standard errors for all coefficients for each individual (within models only).}
   
 \code{pvcm} objects have \code{print}, \code{summary} and \code{print.summary} methods.
 }
@@ -62,7 +61,7 @@ An object of class \code{c("pvcm", "panelmodel")}, which has the following eleme
 \author{Yves Croissant}
 
 \references{
-Swamy, P.A.V.B. (1970). Efficient Inference in a Random Coefficient Regression Model, \emph{Econometrica}, \bold{38}(2), pp.  311--323.
+Swamy, P.A.V.B. (1970). Efficient Inference in a Random Coefficient Regression Model, \emph{Econometrica}, \bold{38}(2), pp. 311--323.
 }
 
 \examples{
@@ -73,6 +72,13 @@ zr <- pvcm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, mod
 ## replicate Greene (2012), p. 419, table 11.14
 summary(pvcm(log(gsp) ~ log(pc) + log(hwy) + log(water) + log(util) + log(emp) + unemp, 
              data = Produc, model = "random"))
+             
+\dontrun{
+# replicate Swamy (1970), p. 166, table 5.2
+data(Grunfeld, package = "AER") # 11 firm Grunfeld data needed from package AER
+gw <- pvcm(invest ~ value + capital, data = Grunfeld, index = c("firm", "year"))
+}
+             
 }
 
 \keyword{regression}

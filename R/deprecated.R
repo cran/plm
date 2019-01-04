@@ -1,7 +1,7 @@
 ## some deprecated functions
 
 # plm.data() is now deprecated (since February 2017). Need to keep it in package
-# for backward compatibility of users's code out there and packages, especially 
+# for backward compatibility of users' code out there and packages, especially 
 # for package 'systemfit'.
 #
 # While plm.data() was a 'full function' once, it now is now using pdata.frame()
@@ -190,6 +190,9 @@ data2plm.data <- function(data, indexes = NULL){
 
 pht <-  function(formula, data, subset, na.action, model = c("ht", "am", "bms"), index = NULL, ...){
 
+  .Deprecated(old = "pht",
+              msg = "uses of 'pht()' and 'plm(., model = \"ht\"/\"am\"/\"bms\")' are discouraged, better use 'plm(., model =\"random\", random.method = \"ht\", inst.method = \"baltagi\"/\"am\"/\"bms\")'")
+  
   cl <- match.call(expand.dots = TRUE)
   mf <- match.call()
   
@@ -205,12 +208,12 @@ pht <-  function(formula, data, subset, na.action, model = c("ht", "am", "bms"),
   data <- eval(mf, parent.frame())
   # estimate the within model without instrument and extract the fixed
   # effects
-    formula <- pFormula(formula)
+  formula <- pFormula(formula)
   if (length(formula)[2] == 1) stop("a list of exogenous variables should be provided")
   else formula <- expand.formula(formula)
   mf$model = "within"
-    mf$formula <- formula(formula, rhs = 1)
-    within <- eval(mf, parent.frame())
+  mf$formula <- formula(formula, rhs = 1)
+  within <- eval(mf, parent.frame())
   fixef <- fixef(within)
   id <- index(data, "id")
   time <- index(data, "time")
@@ -221,34 +224,30 @@ pht <-  function(formula, data, subset, na.action, model = c("ht", "am", "bms"),
   N <- pdim$nT$N
   Ti <- pdim$Tint$Ti
   # get the typology of the variables
-    X <- model.matrix(formula, data, rhs = 1, model = "within")
-  # YC 2017/10/03, the intercept is no longer removed while computing
-  # the within X matrix, remove it below
-    nouveau <- TRUE
-    if (! nouveau)  if (colnames(X)[1] == "(Intercept)") X <- X[, -1]
-    W <- model.matrix(formula, data, rhs = 2, model = "within")
-if (nouveau)    W <- model.matrix(formula, data, rhs = 2, model = "within", cstcovar.rm = "none")
-#    stop()
+  X <- model.matrix(formula, data, rhs = 1, model = "within", cstcovar.rm = "all")
+  W <- model.matrix(formula, data, rhs = 2, model = "within", cstcovar.rm = "all")
   exo.all <- colnames(W)
   all.all <- colnames(X)
   edo.all <- all.all[!(all.all %in% exo.all)]
   all.cst <- attr(X, "constant")
   exo.cst <- attr(W, "constant")
+  if("(Intercept)" %in% all.cst) all.cst <- setdiff(all.cst, "(Intercept)")
+  if("(Intercept)" %in% exo.cst) exo.cst <- setdiff(exo.cst, "(Intercept)")
   exo.var <- exo.all[!(exo.all %in% exo.cst)]
   edo.cst <- all.cst[!(all.cst %in% exo.cst)]
-    edo.var <- edo.all[!(edo.all %in% edo.cst)]
+  edo.var <- edo.all[!(edo.all %in% edo.cst)]
 
   if (length(edo.cst) > length(exo.var)){
     stop(" The number of endogenous time-invariant variables is greater
            than the number of exogenous time varying variables\n")
     }
   
-    X <- model.matrix(formula, data, model = "pooling", rhs = 1, lhs = 1)
+  X <- model.matrix(formula, data, model = "pooling", rhs = 1, lhs = 1)
   if (length(exo.var) > 0) XV <- X[ , exo.var, drop = FALSE] else XV <- NULL
   if (length(edo.var) > 0) NV <- X[ , edo.var, drop = FALSE] else NV <- NULL
   if (length(exo.cst) > 0) XC <- X[ , exo.cst, drop = FALSE] else XC <- NULL
   if (length(edo.cst) > 0) NC <- X[ , edo.cst, drop = FALSE] else NC <- NULL
-  if (length(all.cst) !=0 )
+  if (length(all.cst) != 0)
     zo <- twosls(fixef[as.character(id)], cbind(XC, NC), cbind(XC, XV), TRUE)
   else zo <- lm(fixef ~ 1)
 
@@ -338,7 +337,7 @@ if (nouveau)    W <- model.matrix(formula, data, rhs = 2, model = "within", cstc
                  varlist      = varlist,
                  ercomp       = estec,
                  call         = cl,
-                 args         = list(model = "ht"))
+                 args         = list(model = "ht", ht.method = model))
   names(result$coefficients) <- colnames(result$vcov) <-
     rownames(result$vcov) <- colnames(X)
   class(result) <- c("pht", "plm", "panelmodel")
@@ -346,7 +345,7 @@ if (nouveau)    W <- model.matrix(formula, data, rhs = 2, model = "within", cstc
 }
 
 summary.pht <- function(object, ...){
-  object$fstatistic <- pwaldtest(object, test = "F")
+  object$fstatistic <- pwaldtest(object, test = "Chisq")
   # construct the table of coefficients
   std.err <- sqrt(diag(vcov(object)))
   b <- coefficients(object)
@@ -366,8 +365,11 @@ print.summary.pht <- function(x, digits = max(3, getOption("digits") - 2),
   has.instruments <- (length(formula)[2] == 2)
   effect <- describe(x, "effect")
   model <- describe(x, "model")
+  ht.method <- describe(x, "ht.method")
   cat(paste(effect.plm.list[effect]," ",sep=""))
-  cat(paste(model.plm.list[model]," Model",sep=""))
+  cat(paste(model.plm.list[model]," Model",sep=""),"\n")
+  cat(paste("(", ht.method.list[ht.method],")",sep=""),"\n")
+  
   cat("\nCall:\n")
   print(x$call)
 
@@ -413,7 +415,10 @@ print.summary.pht <- function(x, digits = max(3, getOption("digits") - 2),
   invisible(x)
 }
 
-dynformula <- function(formula, lag.form = NULL, diff.form = NULL, log.form = NULL){
+dynformula <- function(formula, lag.form = NULL, diff.form = NULL, log.form = NULL) {
+  
+  .Deprecated(msg = "use of 'dynformula' is deprecated, use a multi-part formula instead",
+              old = "dynformula")
 
   # for backward compatibility, accept a list argument and coerce it
   # to a vector
@@ -424,9 +429,9 @@ dynformula <- function(formula, lag.form = NULL, diff.form = NULL, log.form = NU
   # exo / endog are the names of the variable
   # has.int has.resp  TRUE if the formula has an intercept and a response
   # K is the number of exogenous variables
-  exo <- attr(terms(formula),"term.labels")
-  has.int <- attr(terms(formula),"intercept") == 1
-  if(length(formula)==3){
+  exo <- attr(terms(formula), "term.labels")
+  has.int <- attr(terms(formula), "intercept") == 1
+  if(length(formula) == 3){
     endog <- deparse(formula[[2]])
     has.resp <- TRUE
   }
@@ -442,7 +447,7 @@ dynformula <- function(formula, lag.form = NULL, diff.form = NULL, log.form = NU
   diff.form <- unlist(create.list(diff.form, K, has.int, has.resp, endog, exo, FALSE))
   log.form <- unlist(create.list(log.form, K, has.int, has.resp, endog, exo, FALSE))
 
-  structure(formula, class = c("dynformula","formula"), lag = lag.form,
+  structure(formula, class = c("dynformula", "formula"), lag = lag.form,
             diff = diff.form, log = log.form, var = c(endog,exo))
 }
 
@@ -486,7 +491,7 @@ formula.dynformula <- function(x, ...){
 create.list <- function(alist, K, has.int, has.resp, endog, exo, default){
   # if alist is NULL, create a list of 0
   if (is.null(alist)) alist <- rep(list(default), K+has.resp)
-  # if alist is note a list, coerce it
+  # if alist is not a list, coerce it
   if (!is.list(alist)) alist <- list(alist)
 
   if (!is.null(names(alist))){
@@ -497,7 +502,7 @@ create.list <- function(alist, K, has.int, has.resp, endog, exo, default){
     if (any (nam == "")){
     # case where one element is unnamed, and therefore is the default
       unnamed <- which(nam == "")
-      if (length(unnamed) > 1) stop("Only one unnamed element is adminited\n")
+      if (length(unnamed) > 1) stop("Only one unnamed element is admitted")
       default <- alist[[unnamed]]
     }
     else{
@@ -512,7 +517,7 @@ create.list <- function(alist, K, has.int, has.resp, endog, exo, default){
   # case where there are no names, in this case the relevant length is
   # whether 1 or K+1
     if (length(alist) == 1) alist <- rep(alist, c(K+has.resp))
-    else if (!length(alist) %in% c(K+has.resp)) stop("irrelevant length for alist\n")
+    else if (!length(alist) %in% c(K+has.resp)) stop("irrelevant length for alist")
   }
   names(alist) <- c(endog,exo)
   alist

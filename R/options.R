@@ -1,7 +1,12 @@
 random.method.list <- c(swar    = "Swamy-Arora",
                         walhus  = "Wallace-Hussain",
                         amemiya = "Amemiya",
-                        nerlove = "Nerlove")
+                        nerlove = "Nerlove",
+                        ht      = "Hausman-Taylor")
+
+ht.method.list <- c(ht = "Hausman-Taylor estimator",
+                    am = "Amemiya-MaCurdy estimator",
+                    bms = "Breusch-Mizon-Schmidt estimator")
 
 effect.plm.list <- c(individual = "Oneway (individual) effect",
                      time       = "Oneway (time) effect",
@@ -27,11 +32,20 @@ model.plm.list <- c(pooling = "Pooling",
 model.pvcm.list <- c(within = "No-pooling model",
                      random = "Random coefficients model")
 
-model.pggls.list <- c(within = "Within model",
-                      random = "Random effects model")
+model.pggls.list <- c(within  = "Within FGLS model",
+                      random  = "General FGLS model",
+                      pooling = "General FGLS model",
+                      fd      = "First-Difference FGLS model")
 
 model.pgmm.list <- c(onestep  = "One step model",
                      twosteps = "Two steps model")
+
+model.pcce.list <- c(ccemg = "Mean Groups model",
+                     ccep  = "Pooled model")
+
+model.pmg.list <- c(mg  = "Mean Groups model",
+                    dmg = "Demeaned Mean Groups model",
+                    cmg = "Common Correlated Effects Mean Groups model")
 
 inst.method.list <- c(bvk     = "Balestra-Varadharajan-Krishnakumar",
                       baltagi = "Baltagi",

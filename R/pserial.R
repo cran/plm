@@ -42,7 +42,7 @@ pbgtest.panelmodel <- function(x, order = NULL, type = c("Chisq", "F"), ...) {
 
     ## lmtest::bgtest on the demeaned model:
   
-    ## check package availability and load if necessary # not needed as it importFrom in NAMESPACE is now used
+    ## check package availability and load if necessary ## not needed anymore as importFrom in NAMESPACE is now used
     #lm.ok <- require("lmtest")
     #if(!lm.ok) stop("package lmtest is needed but not available")
   
@@ -76,7 +76,6 @@ pwtest.formula <- function(x, data, effect = c("individual", "time"), ...) {
   cl <- cl[c(1L,m)]
   cl[[1L]] <- quote(plm)
   plm.model <- eval(cl,parent.frame())
-  # pwtest(plm.model)
   pwtest.panelmodel(plm.model, effect = effect, ...) # pass on desired 'effect' argument to pwtest.panelmodel
   
   ## "RE" test a la Wooldridge (2002/2010), see 10.4.4
@@ -91,7 +90,6 @@ pwtest.formula <- function(x, data, effect = c("individual", "time"), ...) {
 }
 
 pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
-  ## tind is actually not needed here
   if (describe(x, "model") != "pooling") stop("pwtest only relevant for pooling models")
   effect <- match.arg(effect, choices = c("individual", "time")) # was: effect <- describe(x, "effect")
                                                                  # here we want the effect as in the call of pwtest(),
@@ -123,7 +121,7 @@ pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
   ## ref. Wooldridge (2002), p.264 / Wooldridge (2010), p.299
     
   ## extract resids
-  u <- resid(x)
+  u <- x$residuals
 
   ## est. random effect variance
   ## "pre-allocate" an empty list of length n
@@ -135,18 +133,17 @@ pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
   ## (possibly different sizes if unbal., thus a list
   ## and thus, unlike Wooldridge (eq.10.37), we divide 
   ## every block by *his* t(t-1)/2)
-#  unind <- unique(ind)
   unind <- unique(index) # ????
  
   for(i in 1:n) {
     ut <- u[index == unind[i]]
-    tres[[i]] <- ut%o%ut
+    tres[[i]] <- ut %o% ut
   }
 
   ## sum over all upper triangles of emp. omega blocks:
   ## define aux. function
   uptrisum <- function(x) {
-    uts <- sum(x[upper.tri(x,diag=FALSE)])
+    uts <- sum(x[upper.tri(x, diag = FALSE)])
     return(uts)}
   
   ## det. # of upper triangle members (n*t(t-1)/2 if balanced)
@@ -154,17 +151,17 @@ pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
   uptrinum <- sum(ti*(ti-1)/2)  # don't need this!!
 
   ## ...apply to list and sum over resulting vector (df corrected)
-  W <- sum(sapply(tres,uptrisum)) # /sqrt(n) simplifies out
+  W <- sum(sapply(tres, uptrisum)) # /sqrt(n) simplifies out
   
   ## calculate se(Wstat) as in 10.40
-  seW <- sqrt( sum( sapply(tres,uptrisum)^2 ) )
+  seW <- sqrt( sum( sapply(tres, uptrisum)^2 ) )
   
   ## NB should we apply a df correction here, maybe that of the standard
   ## RE estimator? (see page 261) 
 
   Wstat <- W/seW
   names(Wstat) <- "z"
-  pW <- 2*pnorm(abs(Wstat), lower.tail=FALSE) # unlike LM, test is two-tailed!
+  pW <- 2*pnorm(abs(Wstat), lower.tail = FALSE) # unlike LM, test is two-tailed!
   
   ## insert usual htest features
   dname <- paste(deparse(substitute(formula)))
@@ -206,7 +203,7 @@ pwartest.panelmodel <- function(x, ...) {
   
   if (describe(x, "model") != "within") stop("pwartest only relevant for within models")
 
-  FEres <- resid(x)
+  FEres <- x$residuals
   data <- model.frame(x)
   
   ## this is a bug fix for incorrect naming of the "data" attr.
@@ -218,7 +215,7 @@ pwartest.panelmodel <- function(x, ...) {
   index <- attr(data, "index")
   id <- index[[1]]
   time <- index[[2]]
-  lagid <- as.numeric(id)-c(NA,as.numeric(id)[1:(N-1)])
+  lagid <- as.numeric(id) - c(NA,as.numeric(id)[1:(N-1)])
   FEres.1[lagid!=0] <- NA
   data <- data.frame(id, time, FEres = unclass(FEres), FEres.1 = unclass(FEres.1))
   names(data)[c(1,2)] <- c("id", "time")
@@ -232,15 +229,15 @@ pwartest.panelmodel <- function(x, ...) {
   rho.H0 <- -1/(t.-1)
   myH0 <- paste("FEres.1 = ", as.character(rho.H0), sep="")
   
-  ## test H0: rho=rho.H0 with HAC
-  myvcov <- function(x) vcovHC(x, method = "arellano", ...) # more params may be passed via ellipsis
+  ## test H0: rho=rho.H0 with HAC, more params may be passed via ellipsis
+  myvcov <- function(x) vcovHC(x, method = "arellano", ...)
   
   # calc F stat with restriction rho.H0 and robust vcov
   FEARstat <- ((coef(auxmod)["FEres.1"] - rho.H0)/sqrt(myvcov(auxmod)["FEres.1", "FEres.1"]))^2
   names(FEARstat) <- "F"
   df1 <- c("df1" = 1)
   df2 <- c("df2" = df.residual(auxmod))
-  pFEARstat <- pf(FEARstat, df1 = df1, df2 = df2, lower.tail = F)
+  pFEARstat <- pf(FEARstat, df1 = df1, df2 = df2, lower.tail = FALSE)
   
   ## insert usual htest features
   dname <- paste(deparse(substitute(x)))
@@ -256,11 +253,11 @@ pwartest.panelmodel <- function(x, ...) {
 
 #### pbsytest
 
-## Bera., Sosa-Escudero and Yoon type LM test for random effects
+## Bera, Sosa-Escudero and Yoon type LM test for random effects
 ## under serial correlation (H0: no random effects) or the inverse;
-## test="ar" you get the serial corr. test robust vs. RE
-## test="re" you get the RE test robust vs. serial corr.
-## test="j"  you get the joint test for serial corr. and random effects
+## test="ar": serial corr. test robust vs. RE
+## test="re": RE test robust vs. serial corr.
+## test="j":  joint test for serial corr. and random effects
 
 # Reference for the _balanced_ tests="ar"|"re":
 #                   Bera/Sosa-Escudero/Yoon (2001), Tests for the error component model in the presence of local misspecifcation,
@@ -314,7 +311,7 @@ pbsytest.panelmodel <- function(x, test = c("ar", "re", "j"), re.normal = if (te
   if (test != "re" && !is.null(re.normal)) {
     stop("argument 're.normal' only relevant for test = \"re\", set re.normal = NULL for other tests")}
 
-  poolres <- resid(x)
+  poolres <- x$residuals
   data <- model.frame(x)
   ## extract indices
   index <- attr(data, "index")
@@ -422,7 +419,6 @@ pbsytest.panelmodel <- function(x, test = c("ar", "re", "j"), re.normal = if (te
 }
 
 #### pdwtest
-
 pdwtest <- function (x, ...) {
     UseMethod("pdwtest")
 }
@@ -443,11 +439,13 @@ pdwtest.formula <- function(x, data, ...) {
 }
 
 pdwtest.panelmodel <- function(x, ...) {
+    ## does not respect panel structure: 
     ## residual serial correlation test based on the residuals of the demeaned
-    ## model and the regular dwtest() in {lmtest}
-    ## reference Baltagi (2005),p. 98 for FE application, Wooldridge, p. 288 for
-    ## the general idea.
-
+    ## model and passed on to lmtest::dwtest() for the original DW test
+    ## approach justified in Wooldridge (2002/2010), Econometric Analysis of Cross Section and Panel Data, p. 288/328.
+    ##
+    ## For the Bhargava et al. (1982) generalized DW test see pbnftest()
+  
     ## structure:
     ## 1: take demeaned data from 'plm' object
     ## 2: est. auxiliary model by OLS on demeaned data
@@ -462,11 +460,7 @@ pdwtest.panelmodel <- function(x, ...) {
     demy <- pmodel.response(model.frame(x), model = model, effect = effect, theta = theta)
 
     ## lmtest::dwtest on the demeaned model:
-  
-    ## check package availability and load if necessary # not needed anymore as importFrom in NAMESPACE
-    ##lm.ok <- require("lmtest")
-    ##if(!lm.ok) stop("package lmtest is needed but not available")
-  
+
     ## ARtest is the return value of lmtest::dwtest, exception made for the method attribute
     dots <- match.call(expand.dots=FALSE)[["..."]]
     if (is.null(dots$order.by)) order.by <- NULL else order.by <- dots$order.by
@@ -474,11 +468,12 @@ pdwtest.panelmodel <- function(x, ...) {
     if (is.null(dots$iterations)) iterations <- 15 else iterations <- dots$iterations
     if (is.null(dots$exact)) exact <- NULL else exact <- dots$exact
     if (is.null(dots$tol)) tol <- 1e-10 else tol <- dots$tol
-    
-    auxformula <- demy ~ demX-1 # was: if(model == "within") demy~demX-1 else demy~demX
+
+    demy <- remove_pseries_features(demy) # needed as lmtest::dwtest cannot cope with pseries
+
+    auxformula <- demy ~ demX-1
     lm.mod <- lm(auxformula)
-    lm.mod$model[[1]] <- as.numeric(lm.mod$model[[1]])
-    
+
     ARtest <- dwtest(lm.mod, order.by = order.by,
                      alternative = alternative,
                      iterations = iterations, exact = exact, tol = tol)
@@ -488,6 +483,101 @@ pdwtest.panelmodel <- function(x, ...) {
     ARtest$alternative <- "serial correlation in idiosyncratic errors"
     ARtest$data.name <- paste(deparse(x$call$formula))
     return(ARtest)
+}
+
+#### pbnftest
+
+## references:
+## * balanced and consecutive:
+##    Bhargava/Franzini/Narendranathan (1982), Serial Correlation and the Fixed Effects Model, Review of Economic Studies (1982), XLIX(4), pp. 533-549.
+##    (also in Baltagi (2005/2013), p. 98-99/109-110 for FE application)
+## * unbalanced and/or non-consecutive: modified BNF statistic and LBI statistic
+##    Baltagi/Wu (1999), Unequally spaced panel data regressions with AR(1) disturbances. Econometric Theory, 15(6), pp. 814-823.
+##    (an example is also in Baltagi (2005/2013), p. 90/101)  
+
+pbnftest <- function (x, ...) {
+  UseMethod("pbnftest")
+}
+
+pbnftest.formula <- function(x, data, test = c("bnf", "lbi"), model = c("pooling", "within", "random"), ...) {
+  ## formula method for pdwtest;
+  ## defaults to pooling model
+  
+  test  <- match.arg(test)
+  model <- match.arg(model)
+  
+  cl <- match.call(expand.dots = TRUE)
+  if (is.null(model)) model <- "pooling"
+  names(cl)[2] <- "formula"
+  if (names(cl)[3] == "") names(cl)[3] <- "data"
+  m <- match(plm.arg, names(cl), 0)
+  cl <- cl[c(1L,m)]
+  cl[[1L]] <- quote(plm)
+  plm.model <- eval(cl, parent.frame())
+  pbnftest(plm.model, test = test)
+}
+
+pbnftest.panelmodel <- function(x, test = c("bnf", "lbi"), ...) {
+  
+  test <- match.arg(test)
+  
+  # no test for random effects available: take FE as also consistent (Verbeek (2004, 2nd edition), p. 358)
+  model <- describe(x, "model")
+  if (model == "random") x <- update(x, model = "within")
+  
+  consec <- all(is.pconsecutive(x))
+  balanced <- is.pbalanced(x)
+  
+  # residuals are now class pseries, so diff.pseries is used and the differences are computed within observational units
+  # (not across as it would be the case if base::diff() is used and as it is done for lm-objects)
+  # NAs are introduced by the differencing as one observation is lost per observational unit
+  if (!inherits(residuals(x), "pseries")) stop("pdwtest internal error: residuals are not of class \"pseries\"") # check to be safe: need pseries
+  
+  ind <- index(x)[[1]]
+  obs1 <- !duplicated(ind)                  # first ob of each individual
+  obsn <- !duplicated(ind, fromLast = TRUE) # last ob of each individual
+  
+  #### d1, d2, d3, d4 as in Baltagi/Wu (1999), p. 819 formula (16)
+  res_crossprod <- as.numeric(crossprod(residuals(x))) # denominator
+  
+  ## d1 consists of two parts:
+  ##  d1.1: BNF statistic (sum of squared differenced residuals of consecutive time periods per individual)
+  ##  d1.2: sum of squared "later" residuals (not differenced) surrounded by gaps in time periods
+  ##  typo in Baltagi/Wu (1999) for d1: index j starts at j = 2, not j = 1
+  res_diff <- diff(residuals(x), shift = "time")
+  d1.1 <- sum(res_diff^2, na.rm = T) / res_crossprod # == BNF (1982), formula (4)
+  d1.2_contrib <- as.logical(is.na(res_diff) - obs1)
+  d1.2 <- sum(residuals(x)[d1.2_contrib]^2) / res_crossprod
+  d1 <- d1.1 + d1.2 # == modified BNF statistic = d1 in Baltagi/Wu (1999) formula (16) [reduces to original BNF in case of balanced and consecutive data (d1.2 is zero)]
+  
+  if (test == "bnf") {
+    stat <- d1
+    names(stat) <- "DW"
+    method <- "Bhargava/Franzini/Narendranathan Panel Durbin-Watson Test"
+    if (!consec || !balanced) method <- paste0("modified ", method)
+  }
+  
+  if (test == "lbi")  {
+    ## d2 contains the "earlier" obs sourrounded by gaps in time periods
+    d2_contrib <- as.logical(is.na(lead(residuals(x), shift = "time")) - obsn)
+    d2 <- sum(residuals(x)[d2_contrib]^2) / res_crossprod
+    
+    ## d3, d4: sum squared residual of first/last time period for all inviduals / crossprod(residuals)
+    d3 <- sum(residuals(x)[obs1]^2) / res_crossprod
+    d4 <- sum(residuals(x)[obsn]^2) / res_crossprod
+    
+    stat <- d1 + d2 + d3 + d4
+    names(stat) <- "LBI"
+    method <- "Baltagi/Wu LBI Test for Serial Correlation in Panel Models"
+  }
+  
+  result <- list(statistic = stat,
+                 # p.value   = NA, # none
+                 method    = method,
+                 alternative = "serial correlation in idiosyncratic errors",
+                 data.name = paste(deparse(x$call$formula)))
+  class(result) <- "htest"
+  return(result) 
 }
 
 #### pbltest
@@ -511,7 +601,7 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   ## reduce X to model matrix value (no NAs)
     X <- model.matrix(x, data = data)
   ## reduce data accordingly
-    data <- data[which(row.names(data)%in%row.names(X)),]
+    data <- data[which(row.names(data) %in% row.names(X)), ]
     if (! inherits(data, "pdata.frame"))
         data <- pdata.frame(data, index = index)
 
@@ -528,10 +618,10 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   nt. <- mymod$dims$N
   n. <- as.numeric(mymod$dims$ngrps[1])
   t. <- nt./n.
-  Jt <- matrix(1,ncol=t.,nrow=t.)/t.
-  Et <- diag(1,t.)-Jt
+  Jt <- matrix(1, ncol = t., nrow = t.)/t.
+  Et <- diag(1, t.) - Jt
   ## make 'bidiagonal' matrix (see BL, p.136)
-  G <- matrix(0,ncol=t.,nrow=t.)
+  G <- matrix(0, ncol = t., nrow = t.)
   for(i in 2:t.) {
     G[i-1,i] <- 1
     G[i,i-1] <- 1
@@ -543,7 +633,7 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   ## sigma2.e and sigma2.1 as in BL
   ## break up residuals by group to get rid of Kronecker prod.
   ## data have to be balanced and sorted by group/time, so this works
-  uhat.i <- vector("list",n.)
+  uhat.i <- vector("list", n.)
   for(i in 1:n.) {
     uhat.i[[i]] <- uhat[t.*(i-1)+1:t.]
     }
@@ -551,18 +641,18 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   s21 <- rep(NA, n.)
   for(i in 1:n.) {
     u.i <- uhat.i[[i]]
-    s2e[i] <- as.numeric(crossprod(u.i,Et) %*% u.i)
-    s21[i] <- as.numeric(crossprod(u.i,Jt) %*% u.i)
+    s2e[i] <- as.numeric(crossprod(u.i, Et) %*% u.i)
+    s21[i] <- as.numeric(crossprod(u.i, Jt) %*% u.i)
     }
   sigma2.e <- sum(s2e) / (n.*(t.-1))
   sigma2.1 <- sum(s21) / n.
 
   ## calc. score under the null:
   star1 <- (Jt/sigma2.1 + Et/sigma2.e) %*% G %*% (Jt/sigma2.1 + Et/sigma2.e)
-  star2 <- rep(NA,n.)
+  star2 <- rep(NA, n.)
   ## again, do this group by group to avoid Kronecker prod.
   for(i in 1:n.) {
-    star2[i] <- as.numeric(crossprod(uhat.i[[i]],star1) %*% uhat.i[[i]])
+    star2[i] <- as.numeric(crossprod(uhat.i[[i]], star1) %*% uhat.i[[i]])
     }
   star2 <- sum(star2)
   Drho <- (n.*(t.-1)/t.) * (sigma2.1-sigma2.e)/sigma2.1 + sigma2.e/2 * star2
@@ -597,7 +687,7 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
          },
          twosided = {
            LMr.m <- Drho^2 * J11
-           pval <- pchisq(LMr.m, 1, lower.tail = FALSE)
+           pval <- pchisq(LMr.m, df = 1, lower.tail = FALSE)
            names(LMr.m) <- "chisq"
            parameter <- c(df = 1)
            method1 <- "two-sided"
@@ -623,7 +713,7 @@ pbltest.plm <- function(x, alternative = c("twosided", "onesided"), ...) {
   # only continue if random effects model
   if (describe(x, "model") != "random") stop("Test is only for random effects models.")
   
-  # call pbltest.formula in the right way
+  # call pbltest.formula the right way
   pbltest.formula(formula(x$formula), data=cbind(index(x), x$model), index=names(index(x)), alternative = alternative, ...)
 }
 
@@ -659,7 +749,7 @@ pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
   if (model != "fd") stop(paste0("input 'x' needs to be a \"fd\" model (first-differenced model), but is \"", model, "\""))
 
   ## fetch fd residuals
-  FDres <- resid(x)
+  FDres <- x$residuals
   ## indices (full length! must reduce by 1st time period)
    ## this is an ad-hoc solution for the fact that the 'fd' model
    ## carries on the full indices while losing the first time period
@@ -670,34 +760,34 @@ pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
   ## fetch dimensions and adapt to those of indices
   pdim <- pdim(x)
   n <- pdim$nT$n
+  Ti_minus_one <- pdim$Tint$Ti-1
 
-  ## (re)create groupwise-separated index from 1 to nT 
-  ## - drop first time period
-  ## - correct Ti=Ti-1
-  Ti <- pdim$Tint$Ti-1
+  ## generate new individual index: drop one observation per individual
+  ## NB: This is based on the assumption that the estimated FD model performes
+  ##     its diff-ing row-wise (it currently does so). If the diff-ing for FD
+  ##     is changed to diff-ing based on time dimension, this part about index
+  ##     creation needs to be re-worked because more than 1 observation per
+  ##     individual can be dropped
+    red_id <- integer()
+    for(i in 1:n) {
+      red_id <- c(red_id, rep(i, Ti_minus_one[i]))
+    }
+    # additional check
+    # (but should error earlier already as the FD model should be nonestimable)
+    if(length(red_id) == 0)
+      stop("only individuals with one observation in original data: test not feasible")
   
-  redind <- vector("list",n)
-  tfirst <- 0
-  for(i in 1:n) {
-    redind[[i]] <- (tfirst+2):(tfirst+Ti[i]+1)
-    tfirst <- max(redind[[i]])
-  }
-  ## reduce indices by 1st time period
-  redind <- unlist(redind)
-  time <- time[redind]
-  id <- id[redind]
-
-  N <- length(FDres)
-  FDres.1 <- c(NA,FDres[1:(N-1)])
-  lagid <- id - c(NA,id[1:(N-1)])
-  FDres.1[lagid!=0] <- NA
-
-  ## make (panel) dataframe for auxiliary regression
-  auxdata <- as.data.frame(cbind(id, time))
-  auxdata$FDres <- FDres
-  auxdata$FDres.1 <- FDres.1
+  # make pdata.frame for auxiliary regression: time dimension is not relvant
+  # as the first observation of each individual was dropped -> let time dimension
+  # be created (is not related to the original times anymore)
+  auxdata <- pdata.frame(as.data.frame(cbind(red_id, FDres)), index = "red_id")
+  
+  # lag residuals by row (as the FD model diffes by row)
+  # NB: need to consoder change to shift = "time" if behaviour of FD model is changed
+  auxdata[["FDres.1"]] <- lag(auxdata[["FDres"]], shift = "row")
+  
   ## pooling model FDres vs. lag(FDres), with intercept (might as well do it w.o.)
-  auxmod <- plm(FDres ~ FDres.1, data = na.omit(auxdata), model = "pooling")
+  auxmod <- plm(FDres ~ FDres.1, data = auxdata, model = "pooling")
 
   switch(match.arg(h0), 
              fd = {h0des <- "differenced"
@@ -711,8 +801,8 @@ pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
 
   myH0 <- paste("FDres.1 = ", as.character(rho.H0), sep="")
   
-  ## test H0: rho=rho.H0 with HAC
-  myvcov <- function(x) vcovHC(x, method = "arellano", ...) # more params may be passed via ellipsis
+  ## test H0: rho=rho.H0 with HAC, more params may be passed via ellipsis
+  myvcov <- function(x) vcovHC(x, method = "arellano", ...) 
 
   # calc F stat with restriction rho.H0 and robust vcov
   FDARstat <- ((coef(auxmod)["FDres.1"] - rho.H0)/sqrt(myvcov(auxmod)["FDres.1", "FDres.1"]))^2

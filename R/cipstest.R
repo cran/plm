@@ -9,31 +9,13 @@
 #plm <- plm:::plm
 #pdim <- plm:::pdim
 
-#model.matrix.plm<-plm:::model.matrix.plm
-#pmodel.response<-plm:::pmodel.response.plm
+#model.matrix.plm <- plm:::model.matrix.plm
+#pmodel.response <- plm:::pmodel.response.plm
 
 ## Reference is
 ## Pesaran, M.H. (2007) A simple panel unit root test in the presence of
 ## cross-section dependence, Journal of Applied Econometrics, 22(2), pp. 265-312
 
-pseries2pdata <- function(x) {
-  ## transforms a pseries in a pdataframe with the indices as regular columns
-  ## in positions 1 and 2 (individual index, time index)
-  indices <- attr(x, "index")
-  vx <- as.numeric(x)
-  px <- cbind(indices, vx)
-  dimnames(px)[[2]] <- c("ind", "tind", deparse(substitute(x)))
-  return(pdata.frame(px, index=c("ind", "tind")))
-}
-
-pmerge <- function(x, y, ...) {
-  ## transf. if pseries
-  if("pseries" %in% class(x)) x <- pseries2pdata(x)
-  if("pseries" %in% class(y)) y <- pseries2pdata(y)
-  z <- merge(data.frame(x), data.frame(y), by.x=dimnames(x)[[2]][1:2],
-             by.y=dimnames(y)[[2]][1:2], ...)
-  return(z)
-}
 
 cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
                       model = c("cmg", "mg", "dmg"), truncated = FALSE, ...) {
@@ -50,6 +32,8 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
   dati <- pmerge(diff(x), lag(x))
   dati <- pmerge(dati, diff(lag(x)))
   ## minimal column names
+  indexnames <- c("ind", "tind")
+  dimnames(dati)[[2]][1:2] <- indexnames
   clnames <- c("de", "le", "d1e")
   dimnames(dati)[[2]][3:5] <- clnames
   ## add lags if lags > 1
@@ -104,14 +88,14 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
     y <- as.numeric(model.response(model.frame(pmod))) # remove pseries attribs
     
   ## det. *minimum* group numerosity
-  t <- min(tapply(X[,1],ind,length)) # TODO: == min(Ti) simpler???
+  t <- min(tapply(X[,1], ind, length)) # TODO: == min(Ti) simpler???
 
   ## check min. t numerosity
   ## NB it is also possible to allow estimation if there *is* one group
   ## with t large enough and average on coefficients removing NAs
   ## Here we choose the explicit way: let estimation fail if we lose df
   ## but a warning would do...
-  if(t<(k+1)) stop("Insufficient number of time periods")
+  if(t < (k+1)) stop("Insufficient number of time periods")
 
   ## one regression for each group i in 1..n
   ## and retrieve coefficients putting them into a matrix
@@ -232,7 +216,7 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
 
       ## for each x-sect. i=1..n estimate (over t) an augmented model
       ## y_it = alfa_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
-      unind<-unique(ind)
+      unind <- unique(ind)
       for(i in 1:n) {
         tdati <- adfdati[ind == unind[i], ]
         tmods[[i]] <- lm(adffm, tdati)
@@ -522,7 +506,7 @@ for(i in 1:3) {
     }
 }
 
-## approximate p.values' sequence
+## approximate p-values' sequence
 cvprox <- approx(cv, c(0.01,0.05,0.1), n=200)
 cvseq <- cvprox$x
 pvseq <- cvprox$y
@@ -537,8 +521,8 @@ if(stat < min(cv)) {
                 ## if exactly one of the tabulated values
                 pval <- c(0.01, 0.05, 0.10)[which(cv==stat)]
             } else {
-                ## find interval where true p.value lies and
-                ## set p.value as the mean of bounds
+                ## find interval where true p-value lies and
+                ## set p-value as the mean of bounds
                 kk <- findInterval(stat, cvseq)
                 pval <- mean(pvseq[kk:(kk+1)])
             }

@@ -191,7 +191,11 @@ make.pconsecutive.pdata.frame <- function(x, balanced = FALSE, ...){
 
 make.pconsecutive.pseries <- function(x, balanced = FALSE, ...) {
   is_p <- is.pconsecutive(x)
-  if (anyNA(is_p) || !all(is_p)) {
+  is_bal <- is.pbalanced(x)
+  make_balanced <- balanced == TRUE && !is_bal # consecutive AND balancedness requested but data not balanced 
+                                               #  -> independent of the consecutiveness, we need to treat the balancedness
+  
+  if (anyNA(is_p) || !all(is_p) || make_balanced) {
     
     list_ret_make_index <- make.pconsecutive.indexes(x, balanced = balanced, ...)
     df_index_filled    <- list_ret_make_index[["consec_index"]]
@@ -246,7 +250,7 @@ make.pbalanced.pdata.frame <- function(x, balance.type = c("fill", "shared.times
   if (length(balance.type) == 1 && balance.type == "shared") {
     # accept "shared" for backward compatibility
     balance.type <- "shared.times"
-    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.time'")
+    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.times'")
   }
   balance.type <- match.arg(balance.type)
   index <- attr(x, "index")
@@ -291,7 +295,7 @@ make.pbalanced.pseries <- function(x, balance.type = c("fill", "shared.times", "
   if (length(balance.type) == 1 && balance.type == "shared") {
     # accept "shared" for backward compatibility
     balance.type <- "shared.times"
-    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.time'")
+    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.times'")
   }
   balance.type <- match.arg(balance.type)
   index <- attr(x, "index")

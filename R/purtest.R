@@ -105,11 +105,11 @@ adj.levinlin <- array(v, dim=c(13,2,3),
                       dimnames = list(Tn, c("mu","sigma"),
                         c("none", "intercept", "trend")))
 
-names.exo <- c(none = "None",
-               intercept = "Individual Intercepts",
-               trend = "Individual Intercepts and Trend")
+purtest.names.exo <- c(none = "None",
+                       intercept = "Individual Intercepts",
+                       trend = "Individual Intercepts and Trend")
 
-names.test <- c(levinlin = "Levin-Lin-Chu Unit-Root Test",
+purtest.names.test <- c(levinlin = "Levin-Lin-Chu Unit-Root Test",
                 ips = "Im-Pesaran-Shin Unit-Root Test",
                 madwu = "Maddala-Wu Unit-Root Test",
                 Pm = "Choi's modified P Unit-Root Test",
@@ -214,7 +214,7 @@ lagsel <- function(object, exo = c("intercept", "none", "trend"),
     lags <- pmax + 1 - which.min(l)
   }
   lags
-}        
+}
 
 
 adj.levinlin.value <- function(l, exo = c("intercept", "none", "trend")){
@@ -384,12 +384,12 @@ purtest <- function(object, data = NULL, index = NULL,
   L <- nrow(object)
   n <- ncol(object)
   alternative <- "stationarity"
-  method <- paste0(names.test[test], " (ex. var.: ",
-                    names.exo[exo],")")
+  method <- paste0(purtest.names.test[test], " (ex. var.: ",
+                   purtest.names.exo[exo],")")
 
   if (test == "hadri"){
     ## Hadri's test is applicable to balanced data only
-    
+    ## TODO: catch unbalanced case
     if (exo == "none") stop("exo = \"none\" is not a valid option for Hadri's test")
     
     if (exo == "intercept"){
@@ -419,6 +419,13 @@ purtest <- function(object, data = NULL, index = NULL,
                 }
       S <- sum(unlist(cumres2))/(L^2 * n)
       LM <- S / sigma2
+      
+      ## This would give the individual LM statistics for this case:
+        ## TODO: generalise for all cases and plug in in returned object,
+        ## so summary() on a Hadri returns these
+      # indsigma2 <- unlist(lapply(resid, function(x) mean(x^2)))
+      # indS <- unlist(lapply(cumres2, function(x) sum(x)))
+      # indLM <- indS / (L^2 * n) / indsigma2
     }
     else{
       sigma2i <- if (!dfcor) {
@@ -437,12 +444,12 @@ purtest <- function(object, data = NULL, index = NULL,
     stat <- c(z = sqrt(n) * (LM - adj[1])  / sqrt(adj[2])) # eq. (14), (22) in Hadri (2000)
     pvalue <- pnorm(stat, lower.tail = FALSE) # is one-sided! was until rev. 572: 2*(pnorm(abs(stat), lower.tail = FALSE))
     
-    htest <- structure(list(statistic = stat,
-                            parameter = NULL,
+    htest <- structure(list(statistic   = stat,
+                            parameter   = NULL,
                             alternative = "at least one series has a unit root",
-                            data.name = data.name,
-                            method = method,
-                            p.value = pvalue),
+                            data.name   = data.name,
+                            method      = method,
+                            p.value     = pvalue),
                        class = "htest")
   
     result <- list(statistic = htest,
@@ -468,8 +475,7 @@ purtest <- function(object, data = NULL, index = NULL,
                           pmax = pmax, dfcor = dfcor, fixedT = fixedT))
   }
   
-  # compute the augmented Dickey-Fuller regressions for each time
-  # series
+  # compute the augmented Dickey-Fuller regressions for each time series
   comp.aux.reg <- (test == "levinlin")
   idres <- mapply(function(x, y)
                   tsadf(x, exo = exo, lags = y, dfcor = dfcor,
@@ -569,21 +575,19 @@ purtest <- function(object, data = NULL, index = NULL,
     adjval <- NULL
   }
   
-  
-  
-  htest <- structure(list(statistic = stat,
-                          parameter = parameter,
+  htest <- structure(list(statistic   = stat,
+                          parameter   = parameter,
                           alternative = alternative,
-                          data.name = data.name,
-                          method = method,
-                          p.value = pvalue),
+                          data.name   = data.name,
+                          method      = method,
+                          p.value     = pvalue),
                      class = "htest")
   
   result <- list(statistic = htest,
-                 call = cl,
-                 args = args,
-                 idres = idres,
-                 adjval = adjval)
+                 call      = cl,
+                 args      = args,
+                 idres     = idres,
+                 adjval    = adjval)
   class(result) <- "purtest"
   result
 }
@@ -594,6 +598,10 @@ print.purtest <- function(x, ...){
 }
 
 summary.purtest <- function(object, ...){
+  if (object$args$test == "hadri"){
+    stop("summary() not applicable for Hadri's test, i.e. for the result of purtest(<.>, test = \"hadri\")")
+  }
+  
   lags <- sapply(object$idres, function(x) x[["lags"]])
   L <- sapply(object$idres, function(x) x[["T"]])
   nam <- names(object$idres)
@@ -611,8 +619,8 @@ summary.purtest <- function(object, ...){
 }
 
 print.summary.purtest <- function(x, ...){
-  cat(paste(names.test[x$args$test], "\n"))
-  cat(paste("Exogenous variables:", names.exo[x$args$exo], "\n"))
+  cat(paste(purtest.names.test[x$args$test], "\n"))
+  cat(paste("Exogenous variables:", purtest.names.exo[x$args$exo], "\n"))
   thelags <- sapply(x$idres, function(x) x[["lags"]])
   if (is.character(x$args$lags)){
     lagselectionmethod <- if (x$args$lags == "Hall") "Hall's method" else x$args$lags

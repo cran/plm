@@ -24,7 +24,7 @@ pdata.frame(x, index = NULL, drop.index = FALSE, row.names = TRUE,
 \method{[[}{pdata.frame}(x, y)
 \method{$}{pdata.frame}(x, y)
 \method{print}{pdata.frame}(x, \dots)
-\method{as.data.frame}{pdata.frame}(x, row.names = NULL, optional = FALSE, \dots)
+\method{as.data.frame}{pdata.frame}(x, row.names = NULL, optional = FALSE, keep.attributes = TRUE, \dots)
 \method{as.list}{pdata.frame}(x, keep.attributes = FALSE, \dots)
 }
 \arguments{
@@ -47,8 +47,7 @@ pdata.frame(x, index = NULL, drop.index = FALSE, row.names = TRUE,
   \item{drop.const.series}{logical, indicating whether constant columns are to be removed from the pdata.frame (defaults to \code{FALSE}),}
   \item{drop.unused.levels}{logical, indicating whether unused levels of factors are to be dropped (defaults to \code{FALSE})
     (unused levels are always dropped from variables serving to construct the index variables),}
-
-  \item{keep.attributes}{logical, only for as.list, indicating the elements of the returned list should have the pdata.frame's attributes added (default: FALSE),}
+  \item{keep.attributes}{logical, only for as.list and as.data.frame methods, indicating whether the elements of the returned list/columns of the data.frame should have the pdata.frame's attributes added (default: FALSE for as.list, TRUE for as.data.frame),}
   \item{\dots}{further arguments}
 }
 
@@ -88,7 +87,7 @@ pdata.frame(x, index = NULL, drop.index = FALSE, row.names = TRUE,
   \code{as.data.frame} removes the index from the \code{pdata.frame} and
   adds it to each column.
   
-  \code{as.list} behaves by default identical to \code{\link[base]{as.list.data.frame}}
+  \code{as.list} behaves by default identical to \code{\link[base:list]{as.list.data.frame}}
   which means it drops the attributes specific to a pdata.frame; if a list of pseries
   is wanted, the attribute \code{keep.attributes} can to be set to \code{TRUE}. This also
   makes \code{lapply} work as expected on a pdata.frame (see also \bold{Examples}).
@@ -98,7 +97,7 @@ pdata.frame(x, index = NULL, drop.index = FALSE, row.names = TRUE,
  \code{\link{index}} to extract the index variables from a 'pdata.frame' (and other objects),
  \code{\link{pdim}} to check the dimensions of a 'pdata.frame' (and other objects), 
  \code{\link{pvar}} to check for each variable if it varies cross-sectionally and over time. 
- To check if the time periods are consecutive per individual, see \code{\link[plm]{is.pconsecutive}}.
+ To check if the time periods are consecutive per individual, see \code{\link{is.pconsecutive}}.
 }
 
 \examples{
