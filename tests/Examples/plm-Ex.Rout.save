@@ -1,7 +1,7 @@
 
 R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
 Copyright (C) 2018 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -20,9 +20,7 @@ Type 'q()' to quit R.
 > pkgname <- "plm"
 > source(file.path(R.home("share"), "R", "examples-header.R"))
 > options(warn = 1)
-> options(pager = "console")
 > library('plm')
-Loading required package: Formula
 > 
 > base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
 > base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
@@ -39,15 +37,17 @@ Loading required package: Formula
 > 
 > ### ** Examples
 > 
+> 
 > ## Not run: 
 > ##D # Compare plm's Grunfeld data to Baltagi's (2001) Grunfeld data:
-> ##D   data("Grunfeld"", package="plm")
+> ##D   data("Grunfeld", package="plm")
 > ##D   Grunfeld_baltagi2001 <- read.csv("http://www.wiley.com/legacy/wileychi/
 > ##D     baltagi/supp/Grunfeld.fil", sep="", header = FALSE)
 > ##D   library(compare)
 > ##D   compare::compare(Grunfeld, Grunfeld_baltagi2001, allowAll = T) # same data set
 > ##D   
 > ## End(Not run)
+> 
 > 
 > 
 > 
@@ -64,9 +64,11 @@ Loading required package: Formula
 > 
 > ### ** Examples
 > 
+> 
 > # data set 'Wages' is organized as a stacked time series/balanced panel
 > data("Wages", package = "plm")
 > Wag <- pdata.frame(Wages, index=595)
+> 
 > 
 > 
 > 
@@ -78,10 +80,11 @@ Loading required package: Formula
 > 
 > ### Name: aneweytest
 > ### Title: Chamberlain estimator and test for fixed effects
-> ### Aliases: aneweytest summary.aneweytest print.summary.aneweytest
-> ### Keywords: aneweytest
+> ### Aliases: aneweytest
+> ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("RiceFarms", package = "plm")
 > aneweytest(log(goutput) ~ log(seed) + log(totlabor) + log(size), RiceFarms, index = "id")
@@ -94,6 +97,7 @@ chisq = 141.89, df = 87, p-value = 0.0001851
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("cipstest")
 > ### * cipstest
@@ -103,10 +107,11 @@ chisq = 141.89, df = 87, p-value = 0.0001851
 > ### Name: cipstest
 > ### Title: Cross-sectionally Augmented IPS Test for Unit Roots in Panel
 > ###   Models
-> ### Aliases: cipstest cipstest.panelmodel cipstest.formula
+> ### Aliases: cipstest
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > Produc <- pdata.frame(Produc, index=c("state", "year"))
@@ -124,20 +129,21 @@ alternative hypothesis: Stationarity
 > 
 > 
 > 
+> 
 > cleanEx()
-> nameEx("detect_lin_dep_alias")
-> ### * detect_lin_dep_alias
+> nameEx("detect.lindep")
+> ### * detect.lindep
 > 
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: detect.lindep
 > ### Title: Functions to detect linear dependence
-> ### Aliases: detect.lindep detect_lin_dep detect.lindep.matrix
-> ###   detect.lindep.data.frame detect.lindep.plm alias alias.plm
-> ###   alias.pFormula
-> ### Keywords: manip array
+> ### Aliases: detect.lindep detect.lindep.matrix detect.lindep.data.frame
+> ###   detect.lindep.plm alias.plm alias.pdata.frame
+> ### Keywords: array manip
 > 
 > ### ** Examples
+> 
 > 
 > ### Example 1 ###
 > # prepare the data
@@ -146,19 +152,19 @@ alternative hypothesis: Stationarity
 > Cigar[ , "fact2"] <- c(1,0)
 > Cigar.p <- pdata.frame(Cigar)
 > 
-> # setup a pFormula and a model frame
-> pform <- pFormula(price ~ 0 + cpi + fact1 + fact2)
-> mf <- model.frame(pform, data = Cigar.p)
+> # setup a formula and a model frame
+> form <- price ~ 0 + cpi + fact1 + fact2
+> mf <- model.frame(Cigar.p, form)
 > # no linear dependence in the pooling model's model matrix
 > # (with intercept in the formula, there would be linear depedence)
-> detect.lindep(model.matrix(pform, data = mf, model = "pooling"))
+> detect.lindep(model.matrix(mf, model = "pooling"))
 [1] "No linear dependent column(s) detected."
 > # linear dependence present in the FE transformed model matrix
-> modmat_FE <- model.matrix(pform, data = mf, model = "within")
+> modmat_FE <- model.matrix(mf, model = "within")
 > detect.lindep(modmat_FE)
 [1] "Suspiscious column number(s): 2, 3"
 [1] "Suspiscious column name(s):   fact1, fact2"
-> mod_FE <- plm(pform, data = Cigar.p, model = "within")
+> mod_FE <- plm(form, data = Cigar.p, model = "within")
 > detect.lindep(mod_FE) 
 [1] "Suspiscious column number(s): 2, 3"
 [1] "Suspiscious column name(s):   fact1, fact2"
@@ -170,7 +176,7 @@ Complete :
       cpi fact1
 fact2  0  -1   
 
-> plm(pform, data = mf, model = "within")$aliased # "fact2" indicated as aliased
+> plm(form, data = mf, model = "within")$aliased # "fact2" indicated as aliased
   cpi fact1 fact2 
 FALSE FALSE  TRUE 
 > 
@@ -253,13 +259,13 @@ FALSE FALSE  TRUE
 49    3 1943   61.3 1749.4   319.9        11     72
 50    3 1944   56.8 1687.2   321.3        12     73
 > 
-> pform <- pFormula(inv ~ value + capital + CEOtenure + CEOage)
-> mf <- model.frame(pform, data=pdata.frame(Grunfeld))
+> form <- inv ~ value + capital + CEOtenure + CEOage
+> mf <- model.frame(pdata.frame(Grunfeld), form)
 > # no linear dependent columns in original data/pooling model
-> modmat_pool <- model.matrix(pform, data = mf, model="pooling")
+> modmat_pool <- model.matrix(mf, model="pooling")
 > detect.lindep(modmat_pool)
 [1] "No linear dependent column(s) detected."
-> mod_pool <- plm(pform, data = Grunfeld, model = "pooling")
+> mod_pool <- plm(form, data = Grunfeld, model = "pooling")
 > alias(mod_pool)
 Model :
 [1] "inv ~ value + capital + CEOtenure + CEOage"
@@ -267,11 +273,11 @@ Model :
 > 
 > # CEOtenure and CEOage are linear dependent after FE transformation
 > # (demeaning per individual)
-> modmat_FE <- model.matrix(pform, data = mf, model="within")
+> modmat_FE <- model.matrix(mf, model="within")
 > detect.lindep(modmat_FE)
 [1] "Suspiscious column number(s): 3, 4"
 [1] "Suspiscious column name(s):   CEOtenure, CEOage"
-> mod_FE <- plm(pform, data = Grunfeld, model = "within")
+> mod_FE <- plm(form, data = Grunfeld, model = "within")
 > detect.lindep(mod_FE)
 [1] "Suspiscious column number(s): 3, 4"
 [1] "Suspiscious column name(s):   CEOtenure, CEOage"
@@ -342,30 +348,6 @@ CEOage 0     0       1
 > 
 > 
 > 
-> cleanEx()
-> nameEx("dynformula")
-> ### * dynformula
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: dynformula
-> ### Title: Dynamic Formula
-> ### Aliases: dynformula print.dynformula formula.dynformula
-> ### Keywords: classes
-> 
-> ### ** Examples
-> 
-> # all variables in log, x1, x2 and x3 laged twice, y laged once and x3 differenced
-> z <- dynformula(y ~ x1 + x2 + x3, lag.form = list(2, y = 1),
-+                 diff.form = c(x3 = TRUE), log.form = TRUE)
-Warning: use of 'dynformula' is deprecated, use a multi-part formula instead
-> formula(z)
-log(y) ~ lag(log(y), 1) + log(x1) + lag(log(x1), 1) + lag(log(x1), 
-    2) + log(x2) + lag(log(x2), 1) + lag(log(x2), 2) + diff(log(x3)) + 
-    diff(log(x3), 1) + diff(log(x3), 2)
-<environment: 0x0000000006fe93f0>
-> 
-> 
 > 
 > cleanEx()
 > nameEx("ercomp")
@@ -375,10 +357,12 @@ log(y) ~ lag(log(y), 1) + log(x1) + lag(log(x1), 1) + lag(log(x1),
 > 
 > ### Name: ercomp
 > ### Title: Estimation of the error components
-> ### Aliases: ercomp ercomp.formula ercomp.plm print.ercomp
+> ### Aliases: ercomp ercomp.plm ercomp.pdata.frame ercomp.formula
+> ###   print.ercomp
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > # an example of the formula method
@@ -408,6 +392,7 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("fixef.plm")
 > ### * fixef.plm
@@ -416,10 +401,11 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 > 
 > ### Name: fixef.plm
 > ### Title: Extract the Fixed Effects
-> ### Aliases: fixef.plm fixef print.fixef summary.fixef print.summary.fixef
+> ### Aliases: fixef.plm print.fixef summary.fixef print.summary.fixef
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
@@ -441,7 +427,7 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 9   -87.2223    12.8919 -6.7657 1.635e-10 ***
 10   -6.5678    11.8269 -0.5553   0.57933    
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > summary(fixef(gi))[ , c("Estimate", "Pr(>|t|)")] # only estimates and p-values
       Estimate     Pr(>|t|)
 1   -70.296717 1.589588e-01
@@ -491,7 +477,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 9   -87.2223    21.5669 -4.0443 7.654e-05 ***
 10   -6.5678    11.8616 -0.5537 0.5804368    
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > 
 > # calc. fitted values of oneway within model:
 > fixefs <- fixef(gi)[index(gi, which = "id")]
@@ -500,19 +486,21 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > 
 > 
+> 
 > cleanEx()
-> nameEx("index")
-> ### * index
+> nameEx("index.plm")
+> ### * index.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> ### Name: index
+> ### Name: index.plm
 > ### Title: Extract the indexes of panel data
-> ### Aliases: index index.pdata.frame index.pindex index.pseries
+> ### Aliases: index.plm index.pindex index.pdata.frame index.pseries
 > ###   index.panelmodel
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > Gr <- pdata.frame(Grunfeld, index = c("firm", "year"))
@@ -846,12 +834,13 @@ Levels: 1 2 3 4 5 6 7 8 9
 > 
 > ### Name: is.pbalanced
 > ### Title: Check if data are balanced
-> ### Aliases: is.pbalanced is.pbalanced.data.frame is.pbalanced.pdata.frame
-> ###   is.pbalanced.pseries is.pbalanced.panelmodel is.pbalanced.pgmm
-> ###   is.pbalanced.default
+> ### Aliases: is.pbalanced is.pbalanced.default is.pbalanced.data.frame
+> ###   is.pbalanced.pdata.frame is.pbalanced.pseries is.pbalanced.panelmodel
+> ###   is.pbalanced.pgmm
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > # take balanced data and make it unbalanced
 > # by deletion of 2nd row (2nd time period for first individual)
@@ -873,6 +862,7 @@ Levels: 1 2 3 4 5 6 7 8 9
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("is.pconsecutive")
 > ### * is.pconsecutive
@@ -881,12 +871,13 @@ Levels: 1 2 3 4 5 6 7 8 9
 > 
 > ### Name: is.pconsecutive
 > ### Title: Check if time periods are consecutive
-> ### Aliases: is.pconsecutive is.pconsecutive.data.frame
+> ### Aliases: is.pconsecutive is.pconsecutive.default
+> ###   is.pconsecutive.data.frame is.pconsecutive.pseries
 > ###   is.pconsecutive.pdata.frame is.pconsecutive.panelmodel
-> ###   is.pconsecutive.pseries is.pconsecutive.default
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > is.pconsecutive(Grunfeld)
@@ -978,6 +969,7 @@ TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("is.pseries")
 > ### * is.pseries
@@ -990,6 +982,7 @@ TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > # Create a pdata.frame and extract a series, which becomes a pseries
 > data("EmplUK", package = "plm")
@@ -1008,18 +1001,20 @@ TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 > 
 > 
 > 
+> 
 > cleanEx()
-> nameEx("lag_lead_diff")
-> ### * lag_lead_diff
+> nameEx("lag.plm")
+> ### * lag.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> ### Name: lag
+> ### Name: lag.plm
 > ### Title: lag, lead, and diff for panel data
-> ### Aliases: lag lead diff lag.pseries lead.pseries diff.pseries
+> ### Aliases: lag.plm lead lag.pseries lead.pseries diff.pseries
 > ### Keywords: classes
 > 
 > ### ** Examples
+> 
 > 
 > # First, create a pdata.frame
 > data("EmplUK", package = "plm")
@@ -4479,6 +4474,7 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("make.pbalanced")
 > ### * make.pbalanced
@@ -4487,11 +4483,12 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > ### Name: make.pbalanced
 > ### Title: Make data balanced
-> ### Aliases: make.pbalanced make.pbalanced.data.frame
-> ###   make.pbalanced.pdata.frame make.pbalanced.pseries
+> ### Aliases: make.pbalanced make.pbalanced.pdata.frame
+> ###   make.pbalanced.pseries make.pbalanced.data.frame
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > # take data and make it unbalanced
 > # by deletion of 2nd row (2nd time period for first individual)
@@ -5254,6 +5251,7 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("make.pconsecutive")
 > ### * make.pconsecutive
@@ -5267,6 +5265,7 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > # take data and make it non-consecutive
 > # by deletion of 2nd row (2nd time period for first individual)
@@ -5802,441 +5801,446 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > 
 > 
+> 
 > cleanEx()
-> nameEx("model.frame_model.matrix")
-> ### * model.frame_model.matrix
+> nameEx("model.frame.pdata.frame")
+> ### * model.frame.pdata.frame
 > 
 > flush(stderr()); flush(stdout())
 > 
-> ### Name: model.frame.pFormula
+> ### Name: model.frame.pdata.frame
 > ### Title: model.frame and model.matrix for panel data
-> ### Aliases: model.frame.pFormula model.matrix.pFormula model.matrix.plm
-> ###   model.matrix model.frame
+> ### Aliases: model.frame.pdata.frame model.frame.pdata.frame
+> ###   formula.pdata.frame model.matrix.plm model.matrix.pdata.frame
 > ### Keywords: classes
 > 
 > ### ** Examples
+> 
 > 
 > # First, make a pdata.frame
 > data("Grunfeld", package = "plm")
 > pGrunfeld <- pdata.frame(Grunfeld)
 > 
 > # then make a model frame from a pFormula and a pdata.frame
-> pform <- pFormula(inv ~ value + capital)
-> mf <- model.frame(pform, data = pGrunfeld)
+> #pform <- pFormula(inv ~ value + capital)
+> #mf <- model.frame(pform, data = pGrunfeld)
+> form <- inv ~ value
+> mf <- model.frame(pGrunfeld, form)
 > 
 > # then construct the (transformed) model matrix (design matrix)
 > # from formula and model frame
-> modmat <- model.matrix(pform, data = mf, model = "within")
-> 
+> #modmat <- model.matrix(pform, data = mf, model = "within")
+> modmat <- model.matrix(mf, model = "within")
 > 
 > ## retrieve model frame and model matrix from an estimated plm object
-> fe_model <- plm(pform, data = pGrunfeld, model = "within")
+> #fe_model <- plm(pform, data = pGrunfeld, model = "within")
+> fe_model <- plm(form, data = pGrunfeld, model = "within")
 > model.frame(fe_model)
-            inv   value capital
-1-1935   317.60 3078.50    2.80
-1-1936   391.80 4661.70   52.60
-1-1937   410.60 5387.10  156.90
-1-1938   257.70 2792.20  209.20
-1-1939   330.80 4313.20  203.40
-1-1940   461.20 4643.90  207.20
-1-1941   512.00 4551.20  255.20
-1-1942   448.00 3244.10  303.70
-1-1943   499.60 4053.70  264.10
-1-1944   547.50 4379.30  201.60
-1-1945   561.20 4840.90  265.00
-1-1946   688.10 4900.90  402.20
-1-1947   568.90 3526.50  761.50
-1-1948   529.20 3254.70  922.40
-1-1949   555.10 3700.20 1020.10
-1-1950   642.90 3755.60 1099.00
-1-1951   755.90 4833.00 1207.70
-1-1952   891.20 4924.90 1430.50
-1-1953  1304.40 6241.70 1777.30
-1-1954  1486.70 5593.60 2226.30
-2-1935   209.90 1362.40   53.80
-2-1936   355.30 1807.10   50.50
-2-1937   469.90 2676.30  118.10
-2-1938   262.30 1801.90  260.20
-2-1939   230.40 1957.30  312.70
-2-1940   361.60 2202.90  254.20
-2-1941   472.80 2380.50  261.40
-2-1942   445.60 2168.60  298.70
-2-1943   361.60 1985.10  301.80
-2-1944   288.20 1813.90  279.10
-2-1945   258.70 1850.20  213.80
-2-1946   420.30 2067.70  132.60
-2-1947   420.50 1796.70  264.80
-2-1948   494.50 1625.80  306.90
-2-1949   405.10 1667.00  351.10
-2-1950   418.80 1677.40  357.80
-2-1951   588.20 2289.50  342.10
-2-1952   645.50 2159.40  444.20
-2-1953   641.00 2031.30  623.60
-2-1954   459.30 2115.50  669.70
-3-1935    33.10 1170.60   97.80
-3-1936    45.00 2015.80  104.40
-3-1937    77.20 2803.30  118.00
-3-1938    44.60 2039.70  156.20
-3-1939    48.10 2256.20  172.60
-3-1940    74.40 2132.20  186.60
-3-1941   113.00 1834.10  220.90
-3-1942    91.90 1588.00  287.80
-3-1943    61.30 1749.40  319.90
-3-1944    56.80 1687.20  321.30
-3-1945    93.60 2007.70  319.60
-3-1946   159.90 2208.30  346.00
-3-1947   147.20 1656.70  456.40
-3-1948   146.30 1604.40  543.40
-3-1949    98.30 1431.80  618.30
-3-1950    93.50 1610.50  647.40
-3-1951   135.20 1819.40  671.30
-3-1952   157.30 2079.70  726.10
-3-1953   179.50 2371.60  800.30
-3-1954   189.60 2759.90  888.90
-4-1935    40.29  417.50   10.50
-4-1936    72.76  837.80   10.20
-4-1937    66.26  883.90   34.70
-4-1938    51.60  437.90   51.80
-4-1939    52.41  679.70   64.30
-4-1940    69.41  727.80   67.10
-4-1941    68.35  643.60   75.20
-4-1942    46.80  410.90   71.40
-4-1943    47.40  588.40   67.10
-4-1944    59.57  698.40   60.50
-4-1945    88.78  846.40   54.60
-4-1946    74.12  893.80   84.80
-4-1947    62.68  579.00   96.80
-4-1948    89.36  694.60  110.20
-4-1949    78.98  590.30  147.40
-4-1950   100.66  693.50  163.20
-4-1951   160.62  809.00  203.50
-4-1952   145.00  727.00  290.60
-4-1953   174.93 1001.50  346.10
-4-1954   172.49  703.20  414.90
-5-1935    39.68  157.70  183.20
-5-1936    50.73  167.90  204.00
-5-1937    74.24  192.90  236.00
-5-1938    53.51  156.70  291.70
-5-1939    42.65  191.40  323.10
-5-1940    46.48  185.50  344.00
-5-1941    61.40  199.60  367.70
-5-1942    39.67  189.50  407.20
-5-1943    62.24  151.20  426.60
-5-1944    52.32  187.70  470.00
-5-1945    63.21  214.70  499.20
-5-1946    59.37  232.90  534.60
-5-1947    58.02  249.00  566.60
-5-1948    70.34  224.50  595.30
-5-1949    67.42  237.30  631.40
-5-1950    55.74  240.10  662.30
-5-1951    80.30  327.30  683.90
-5-1952    85.40  359.40  729.30
-5-1953    91.90  398.40  774.30
-5-1954    81.43  365.70  804.90
-6-1935    20.36  197.00    6.50
-6-1936    25.98  210.30   15.80
-6-1937    25.94  223.10   27.70
-6-1938    27.53  216.70   39.20
-6-1939    24.60  286.40   48.60
-6-1940    28.54  298.00   52.50
-6-1941    43.41  276.90   61.50
-6-1942    42.81  272.60   80.50
-6-1943    27.84  287.40   94.40
-6-1944    32.60  330.30   92.60
-6-1945    39.03  324.40   92.30
-6-1946    50.17  401.90   94.20
-6-1947    51.85  407.40  111.40
-6-1948    64.03  409.20  127.40
-6-1949    68.16  482.20  149.30
-6-1950    77.34  673.80  164.40
-6-1951    95.30  676.90  177.20
-6-1952    99.49  702.00  200.00
-6-1953   127.52  793.50  211.50
-6-1954   135.72  927.30  238.70
-7-1935    24.43  138.00  100.20
-7-1936    23.21  200.10  125.00
-7-1937    32.78  210.10  142.40
-7-1938    32.54  161.20  165.10
-7-1939    26.65  161.70  194.80
-7-1940    33.71  145.10  222.90
-7-1941    43.50  110.60  252.10
-7-1942    34.46   98.10  276.30
-7-1943    44.28  108.80  300.30
-7-1944    70.80  118.20  318.20
-7-1945    44.12  126.50  336.20
-7-1946    48.98  156.70  351.20
-7-1947    48.51  119.40  373.60
-7-1948    50.00  129.10  389.40
-7-1949    50.59  134.80  406.70
-7-1950    42.53  140.80  429.50
-7-1951    64.77  179.00  450.60
-7-1952    72.68  178.10  466.90
-7-1953    73.86  186.80  486.20
-7-1954    89.51  192.70  511.30
-8-1935    12.93  191.50    1.80
-8-1936    25.90  516.00    0.80
-8-1937    35.05  729.00    7.40
-8-1938    22.89  560.40   18.10
-8-1939    18.84  519.90   23.50
-8-1940    28.57  628.50   26.50
-8-1941    48.51  537.10   36.20
-8-1942    43.34  561.20   60.80
-8-1943    37.02  617.20   84.40
-8-1944    37.81  626.70   91.20
-8-1945    39.27  737.20   92.40
-8-1946    53.46  760.50   86.00
-8-1947    55.56  581.40  111.10
-8-1948    49.56  662.30  130.60
-8-1949    32.04  583.80  141.80
-8-1950    32.24  635.20  136.70
-8-1951    54.38  723.80  129.70
-8-1952    71.78  864.10  145.50
-8-1953    90.08 1193.50  174.80
-8-1954    68.60 1188.90  213.50
-9-1935    26.63  290.60  162.00
-9-1936    23.39  291.10  174.00
-9-1937    30.65  335.00  183.00
-9-1938    20.89  246.00  198.00
-9-1939    28.78  356.20  208.00
-9-1940    26.93  289.80  223.00
-9-1941    32.08  268.20  234.00
-9-1942    32.21  213.30  248.00
-9-1943    35.69  348.20  274.00
-9-1944    62.47  374.20  282.00
-9-1945    52.32  387.20  316.00
-9-1946    56.95  347.40  302.00
-9-1947    54.32  291.90  333.00
-9-1948    40.53  297.20  359.00
-9-1949    32.54  276.90  370.00
-9-1950    43.48  274.60  376.00
-9-1951    56.49  339.90  391.00
-9-1952    65.98  474.80  414.00
-9-1953    66.11  496.00  443.00
-9-1954    49.34  474.50  468.00
-10-1935    2.54   70.91    4.50
-10-1936    2.00   87.94    4.71
-10-1937    2.19   82.20    4.57
-10-1938    1.99   58.72    4.56
-10-1939    2.03   80.54    4.38
-10-1940    1.81   86.47    4.21
-10-1941    2.14   77.68    4.12
-10-1942    1.86   62.16    3.83
-10-1943    0.93   62.24    3.58
-10-1944    1.18   61.82    3.41
-10-1945    1.36   65.85    3.31
-10-1946    2.24   69.54    3.23
-10-1947    3.81   64.97    3.90
-10-1948    5.66   68.00    5.38
-10-1949    4.21   71.24    7.39
-10-1950    3.42   69.05    8.74
-10-1951    4.67   83.04    9.07
-10-1952    6.00   74.42    9.93
-10-1953    6.53   63.51   11.68
-10-1954    5.12   58.12   14.33
+            inv   value
+1-1935   317.60 3078.50
+1-1936   391.80 4661.70
+1-1937   410.60 5387.10
+1-1938   257.70 2792.20
+1-1939   330.80 4313.20
+1-1940   461.20 4643.90
+1-1941   512.00 4551.20
+1-1942   448.00 3244.10
+1-1943   499.60 4053.70
+1-1944   547.50 4379.30
+1-1945   561.20 4840.90
+1-1946   688.10 4900.90
+1-1947   568.90 3526.50
+1-1948   529.20 3254.70
+1-1949   555.10 3700.20
+1-1950   642.90 3755.60
+1-1951   755.90 4833.00
+1-1952   891.20 4924.90
+1-1953  1304.40 6241.70
+1-1954  1486.70 5593.60
+2-1935   209.90 1362.40
+2-1936   355.30 1807.10
+2-1937   469.90 2676.30
+2-1938   262.30 1801.90
+2-1939   230.40 1957.30
+2-1940   361.60 2202.90
+2-1941   472.80 2380.50
+2-1942   445.60 2168.60
+2-1943   361.60 1985.10
+2-1944   288.20 1813.90
+2-1945   258.70 1850.20
+2-1946   420.30 2067.70
+2-1947   420.50 1796.70
+2-1948   494.50 1625.80
+2-1949   405.10 1667.00
+2-1950   418.80 1677.40
+2-1951   588.20 2289.50
+2-1952   645.50 2159.40
+2-1953   641.00 2031.30
+2-1954   459.30 2115.50
+3-1935    33.10 1170.60
+3-1936    45.00 2015.80
+3-1937    77.20 2803.30
+3-1938    44.60 2039.70
+3-1939    48.10 2256.20
+3-1940    74.40 2132.20
+3-1941   113.00 1834.10
+3-1942    91.90 1588.00
+3-1943    61.30 1749.40
+3-1944    56.80 1687.20
+3-1945    93.60 2007.70
+3-1946   159.90 2208.30
+3-1947   147.20 1656.70
+3-1948   146.30 1604.40
+3-1949    98.30 1431.80
+3-1950    93.50 1610.50
+3-1951   135.20 1819.40
+3-1952   157.30 2079.70
+3-1953   179.50 2371.60
+3-1954   189.60 2759.90
+4-1935    40.29  417.50
+4-1936    72.76  837.80
+4-1937    66.26  883.90
+4-1938    51.60  437.90
+4-1939    52.41  679.70
+4-1940    69.41  727.80
+4-1941    68.35  643.60
+4-1942    46.80  410.90
+4-1943    47.40  588.40
+4-1944    59.57  698.40
+4-1945    88.78  846.40
+4-1946    74.12  893.80
+4-1947    62.68  579.00
+4-1948    89.36  694.60
+4-1949    78.98  590.30
+4-1950   100.66  693.50
+4-1951   160.62  809.00
+4-1952   145.00  727.00
+4-1953   174.93 1001.50
+4-1954   172.49  703.20
+5-1935    39.68  157.70
+5-1936    50.73  167.90
+5-1937    74.24  192.90
+5-1938    53.51  156.70
+5-1939    42.65  191.40
+5-1940    46.48  185.50
+5-1941    61.40  199.60
+5-1942    39.67  189.50
+5-1943    62.24  151.20
+5-1944    52.32  187.70
+5-1945    63.21  214.70
+5-1946    59.37  232.90
+5-1947    58.02  249.00
+5-1948    70.34  224.50
+5-1949    67.42  237.30
+5-1950    55.74  240.10
+5-1951    80.30  327.30
+5-1952    85.40  359.40
+5-1953    91.90  398.40
+5-1954    81.43  365.70
+6-1935    20.36  197.00
+6-1936    25.98  210.30
+6-1937    25.94  223.10
+6-1938    27.53  216.70
+6-1939    24.60  286.40
+6-1940    28.54  298.00
+6-1941    43.41  276.90
+6-1942    42.81  272.60
+6-1943    27.84  287.40
+6-1944    32.60  330.30
+6-1945    39.03  324.40
+6-1946    50.17  401.90
+6-1947    51.85  407.40
+6-1948    64.03  409.20
+6-1949    68.16  482.20
+6-1950    77.34  673.80
+6-1951    95.30  676.90
+6-1952    99.49  702.00
+6-1953   127.52  793.50
+6-1954   135.72  927.30
+7-1935    24.43  138.00
+7-1936    23.21  200.10
+7-1937    32.78  210.10
+7-1938    32.54  161.20
+7-1939    26.65  161.70
+7-1940    33.71  145.10
+7-1941    43.50  110.60
+7-1942    34.46   98.10
+7-1943    44.28  108.80
+7-1944    70.80  118.20
+7-1945    44.12  126.50
+7-1946    48.98  156.70
+7-1947    48.51  119.40
+7-1948    50.00  129.10
+7-1949    50.59  134.80
+7-1950    42.53  140.80
+7-1951    64.77  179.00
+7-1952    72.68  178.10
+7-1953    73.86  186.80
+7-1954    89.51  192.70
+8-1935    12.93  191.50
+8-1936    25.90  516.00
+8-1937    35.05  729.00
+8-1938    22.89  560.40
+8-1939    18.84  519.90
+8-1940    28.57  628.50
+8-1941    48.51  537.10
+8-1942    43.34  561.20
+8-1943    37.02  617.20
+8-1944    37.81  626.70
+8-1945    39.27  737.20
+8-1946    53.46  760.50
+8-1947    55.56  581.40
+8-1948    49.56  662.30
+8-1949    32.04  583.80
+8-1950    32.24  635.20
+8-1951    54.38  723.80
+8-1952    71.78  864.10
+8-1953    90.08 1193.50
+8-1954    68.60 1188.90
+9-1935    26.63  290.60
+9-1936    23.39  291.10
+9-1937    30.65  335.00
+9-1938    20.89  246.00
+9-1939    28.78  356.20
+9-1940    26.93  289.80
+9-1941    32.08  268.20
+9-1942    32.21  213.30
+9-1943    35.69  348.20
+9-1944    62.47  374.20
+9-1945    52.32  387.20
+9-1946    56.95  347.40
+9-1947    54.32  291.90
+9-1948    40.53  297.20
+9-1949    32.54  276.90
+9-1950    43.48  274.60
+9-1951    56.49  339.90
+9-1952    65.98  474.80
+9-1953    66.11  496.00
+9-1954    49.34  474.50
+10-1935    2.54   70.91
+10-1936    2.00   87.94
+10-1937    2.19   82.20
+10-1938    1.99   58.72
+10-1939    2.03   80.54
+10-1940    1.81   86.47
+10-1941    2.14   77.68
+10-1942    1.86   62.16
+10-1943    0.93   62.24
+10-1944    1.18   61.82
+10-1945    1.36   65.85
+10-1946    2.24   69.54
+10-1947    3.81   64.97
+10-1948    5.66   68.00
+10-1949    4.21   71.24
+10-1950    3.42   69.05
+10-1951    4.67   83.04
+10-1952    6.00   74.42
+10-1953    6.53   63.51
+10-1954    5.12   58.12
 > model.matrix(fe_model)
-            value   capital
-1-1935  -1255.345 -645.6350
-1-1936    327.855 -595.8350
-1-1937   1053.255 -491.5350
-1-1938  -1541.645 -439.2350
-1-1939    -20.645 -445.0350
-1-1940    310.055 -441.2350
-1-1941    217.355 -393.2350
-1-1942  -1089.745 -344.7350
-1-1943   -280.145 -384.3350
-1-1944     45.455 -446.8350
-1-1945    507.055 -383.4350
-1-1946    567.055 -246.2350
-1-1947   -807.345  113.0650
-1-1948  -1079.145  273.9650
-1-1949   -633.645  371.6650
-1-1950   -578.245  450.5650
-1-1951    499.155  559.2650
-1-1952    591.055  782.0650
-1-1953   1907.855 1128.8650
-1-1954   1259.755 1577.8650
-2-1935   -609.425 -241.0550
-2-1936   -164.725 -244.3550
-2-1937    704.475 -176.7550
-2-1938   -169.925  -34.6550
-2-1939    -14.525   17.8450
-2-1940    231.075  -40.6550
-2-1941    408.675  -33.4550
-2-1942    196.775    3.8450
-2-1943     13.275    6.9450
-2-1944   -157.925  -15.7550
-2-1945   -121.625  -81.0550
-2-1946     95.875 -162.2550
-2-1947   -175.125  -30.0550
-2-1948   -346.025   12.0450
-2-1949   -304.825   56.2450
-2-1950   -294.425   62.9450
-2-1951    317.675   47.2450
-2-1952    187.575  149.3450
-2-1953     59.475  328.7450
-2-1954    143.675  374.8450
-3-1935   -770.725 -302.3600
-3-1936     74.475 -295.7600
-3-1937    861.975 -282.1600
-3-1938     98.375 -243.9600
-3-1939    314.875 -227.5600
-3-1940    190.875 -213.5600
-3-1941   -107.225 -179.2600
-3-1942   -353.325 -112.3600
-3-1943   -191.925  -80.2600
-3-1944   -254.125  -78.8600
-3-1945     66.375  -80.5600
-3-1946    266.975  -54.1600
-3-1947   -284.625   56.2400
-3-1948   -336.925  143.2400
-3-1949   -509.525  218.1400
-3-1950   -330.825  247.2400
-3-1951   -121.925  271.1400
-3-1952    138.375  325.9400
-3-1953    430.275  400.1400
-3-1954    818.575  488.7400
-4-1935   -275.710 -110.7450
-4-1936    144.590 -111.0450
-4-1937    190.690  -86.5450
-4-1938   -255.310  -69.4450
-4-1939    -13.510  -56.9450
-4-1940     34.590  -54.1450
-4-1941    -49.610  -46.0450
-4-1942   -282.310  -49.8450
-4-1943   -104.810  -54.1450
-4-1944      5.190  -60.7450
-4-1945    153.190  -66.6450
-4-1946    200.590  -36.4450
-4-1947   -114.210  -24.4450
-4-1948      1.390  -11.0450
-4-1949   -102.910   26.1550
-4-1950      0.290   41.9550
-4-1951    115.790   82.2550
-4-1952     33.790  169.3550
-4-1953    308.290  224.8550
-4-1954      9.990  293.6550
-5-1935    -73.770 -303.5650
-5-1936    -63.570 -282.7650
-5-1937    -38.570 -250.7650
-5-1938    -74.770 -195.0650
-5-1939    -40.070 -163.6650
-5-1940    -45.970 -142.7650
-5-1941    -31.870 -119.0650
-5-1942    -41.970  -79.5650
-5-1943    -80.270  -60.1650
-5-1944    -43.770  -16.7650
-5-1945    -16.770   12.4350
-5-1946      1.430   47.8350
-5-1947     17.530   79.8350
-5-1948     -6.970  108.5350
-5-1949      5.830  144.6350
-5-1950      8.630  175.5350
-5-1951     95.830  197.1350
-5-1952    127.930  242.5350
-5-1953    166.930  287.5350
-5-1954    134.230  318.1350
-6-1935   -222.865  -97.7850
-6-1936   -209.565  -88.4850
-6-1937   -196.765  -76.5850
-6-1938   -203.165  -65.0850
-6-1939   -133.465  -55.6850
-6-1940   -121.865  -51.7850
-6-1941   -142.965  -42.7850
-6-1942   -147.265  -23.7850
-6-1943   -132.465   -9.8850
-6-1944    -89.565  -11.6850
-6-1945    -95.465  -11.9850
-6-1946    -17.965  -10.0850
-6-1947    -12.465    7.1150
-6-1948    -10.665   23.1150
-6-1949     62.335   45.0150
-6-1950    253.935   60.1150
-6-1951    257.035   72.9150
-6-1952    282.135   95.7150
-6-1953    373.635  107.2150
-6-1954    507.435  134.4150
-7-1935    -11.790 -214.7450
-7-1936     50.310 -189.9450
-7-1937     60.310 -172.5450
-7-1938     11.410 -149.8450
-7-1939     11.910 -120.1450
-7-1940     -4.690  -92.0450
-7-1941    -39.190  -62.8450
-7-1942    -51.690  -38.6450
-7-1943    -40.990  -14.6450
-7-1944    -31.590    3.2550
-7-1945    -23.290   21.2550
-7-1946      6.910   36.2550
-7-1947    -30.390   58.6550
-7-1948    -20.690   74.4550
-7-1949    -14.990   91.7550
-7-1950     -8.990  114.5550
-7-1951     29.210  135.6550
-7-1952     28.310  151.9550
-7-1953     37.010  171.2550
-7-1954     42.910  196.3550
-8-1935   -479.410  -83.8400
-8-1936   -154.910  -84.8400
-8-1937     58.090  -78.2400
-8-1938   -110.510  -67.5400
-8-1939   -151.010  -62.1400
-8-1940    -42.410  -59.1400
-8-1941   -133.810  -49.4400
-8-1942   -109.710  -24.8400
-8-1943    -53.710   -1.2400
-8-1944    -44.210    5.5600
-8-1945     66.290    6.7600
-8-1946     89.590    0.3600
-8-1947    -89.510   25.4600
-8-1948     -8.610   44.9600
-8-1949    -87.110   56.1600
-8-1950    -35.710   51.0600
-8-1951     52.890   44.0600
-8-1952    193.190   59.8600
-8-1953    522.590   89.1600
-8-1954    517.990  127.8600
-9-1935    -43.050 -135.9000
-9-1936    -42.550 -123.9000
-9-1937      1.350 -114.9000
-9-1938    -87.650  -99.9000
-9-1939     22.550  -89.9000
-9-1940    -43.850  -74.9000
-9-1941    -65.450  -63.9000
-9-1942   -120.350  -49.9000
-9-1943     14.550  -23.9000
-9-1944     40.550  -15.9000
-9-1945     53.550   18.1000
-9-1946     13.750    4.1000
-9-1947    -41.750   35.1000
-9-1948    -36.450   61.1000
-9-1949    -56.750   72.1000
-9-1950    -59.050   78.1000
-9-1951      6.250   93.1000
-9-1952    141.150  116.1000
-9-1953    162.350  145.1000
-9-1954    140.850  170.1000
-10-1935    -0.011   -1.4415
-10-1936    17.019   -1.2315
-10-1937    11.279   -1.3715
-10-1938   -12.201   -1.3815
-10-1939     9.619   -1.5615
-10-1940    15.549   -1.7315
-10-1941     6.759   -1.8215
-10-1942    -8.761   -2.1115
-10-1943    -8.681   -2.3615
-10-1944    -9.101   -2.5315
-10-1945    -5.071   -2.6315
-10-1946    -1.381   -2.7115
-10-1947    -5.951   -2.0415
-10-1948    -2.921   -0.5615
-10-1949     0.319    1.4485
-10-1950    -1.871    2.7985
-10-1951    12.119    3.1285
-10-1952     3.499    3.9885
-10-1953    -7.411    5.7385
-10-1954   -12.801    8.3885
+            value
+1-1935  -1255.345
+1-1936    327.855
+1-1937   1053.255
+1-1938  -1541.645
+1-1939    -20.645
+1-1940    310.055
+1-1941    217.355
+1-1942  -1089.745
+1-1943   -280.145
+1-1944     45.455
+1-1945    507.055
+1-1946    567.055
+1-1947   -807.345
+1-1948  -1079.145
+1-1949   -633.645
+1-1950   -578.245
+1-1951    499.155
+1-1952    591.055
+1-1953   1907.855
+1-1954   1259.755
+2-1935   -609.425
+2-1936   -164.725
+2-1937    704.475
+2-1938   -169.925
+2-1939    -14.525
+2-1940    231.075
+2-1941    408.675
+2-1942    196.775
+2-1943     13.275
+2-1944   -157.925
+2-1945   -121.625
+2-1946     95.875
+2-1947   -175.125
+2-1948   -346.025
+2-1949   -304.825
+2-1950   -294.425
+2-1951    317.675
+2-1952    187.575
+2-1953     59.475
+2-1954    143.675
+3-1935   -770.725
+3-1936     74.475
+3-1937    861.975
+3-1938     98.375
+3-1939    314.875
+3-1940    190.875
+3-1941   -107.225
+3-1942   -353.325
+3-1943   -191.925
+3-1944   -254.125
+3-1945     66.375
+3-1946    266.975
+3-1947   -284.625
+3-1948   -336.925
+3-1949   -509.525
+3-1950   -330.825
+3-1951   -121.925
+3-1952    138.375
+3-1953    430.275
+3-1954    818.575
+4-1935   -275.710
+4-1936    144.590
+4-1937    190.690
+4-1938   -255.310
+4-1939    -13.510
+4-1940     34.590
+4-1941    -49.610
+4-1942   -282.310
+4-1943   -104.810
+4-1944      5.190
+4-1945    153.190
+4-1946    200.590
+4-1947   -114.210
+4-1948      1.390
+4-1949   -102.910
+4-1950      0.290
+4-1951    115.790
+4-1952     33.790
+4-1953    308.290
+4-1954      9.990
+5-1935    -73.770
+5-1936    -63.570
+5-1937    -38.570
+5-1938    -74.770
+5-1939    -40.070
+5-1940    -45.970
+5-1941    -31.870
+5-1942    -41.970
+5-1943    -80.270
+5-1944    -43.770
+5-1945    -16.770
+5-1946      1.430
+5-1947     17.530
+5-1948     -6.970
+5-1949      5.830
+5-1950      8.630
+5-1951     95.830
+5-1952    127.930
+5-1953    166.930
+5-1954    134.230
+6-1935   -222.865
+6-1936   -209.565
+6-1937   -196.765
+6-1938   -203.165
+6-1939   -133.465
+6-1940   -121.865
+6-1941   -142.965
+6-1942   -147.265
+6-1943   -132.465
+6-1944    -89.565
+6-1945    -95.465
+6-1946    -17.965
+6-1947    -12.465
+6-1948    -10.665
+6-1949     62.335
+6-1950    253.935
+6-1951    257.035
+6-1952    282.135
+6-1953    373.635
+6-1954    507.435
+7-1935    -11.790
+7-1936     50.310
+7-1937     60.310
+7-1938     11.410
+7-1939     11.910
+7-1940     -4.690
+7-1941    -39.190
+7-1942    -51.690
+7-1943    -40.990
+7-1944    -31.590
+7-1945    -23.290
+7-1946      6.910
+7-1947    -30.390
+7-1948    -20.690
+7-1949    -14.990
+7-1950     -8.990
+7-1951     29.210
+7-1952     28.310
+7-1953     37.010
+7-1954     42.910
+8-1935   -479.410
+8-1936   -154.910
+8-1937     58.090
+8-1938   -110.510
+8-1939   -151.010
+8-1940    -42.410
+8-1941   -133.810
+8-1942   -109.710
+8-1943    -53.710
+8-1944    -44.210
+8-1945     66.290
+8-1946     89.590
+8-1947    -89.510
+8-1948     -8.610
+8-1949    -87.110
+8-1950    -35.710
+8-1951     52.890
+8-1952    193.190
+8-1953    522.590
+8-1954    517.990
+9-1935    -43.050
+9-1936    -42.550
+9-1937      1.350
+9-1938    -87.650
+9-1939     22.550
+9-1940    -43.850
+9-1941    -65.450
+9-1942   -120.350
+9-1943     14.550
+9-1944     40.550
+9-1945     53.550
+9-1946     13.750
+9-1947    -41.750
+9-1948    -36.450
+9-1949    -56.750
+9-1950    -59.050
+9-1951      6.250
+9-1952    141.150
+9-1953    162.350
+9-1954    140.850
+10-1935    -0.011
+10-1936    17.019
+10-1937    11.279
+10-1938   -12.201
+10-1939     9.619
+10-1940    15.549
+10-1941     6.759
+10-1942    -8.761
+10-1943    -8.681
+10-1944    -9.101
+10-1945    -5.071
+10-1946    -1.381
+10-1947    -5.951
+10-1948    -2.921
+10-1949     0.319
+10-1950    -1.871
+10-1951    12.119
+10-1952     3.499
+10-1953    -7.411
+10-1954   -12.801
 attr(,"assign")
-[1] 0 1 2
+[1] 0 1
 attr(,"index")
     firm year
 1      1 1935
@@ -6448,6 +6452,7 @@ attr(,"index")
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("mtest")
 > ### * mtest
@@ -6460,6 +6465,7 @@ attr(,"index")
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("EmplUK", package = "plm")
 > ar <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) +
@@ -6482,16 +6488,17 @@ normal = -0.36744, p-value = 0.7133
 > 
 > 
 > 
+> 
 > cleanEx()
-> nameEx("nobs")
-> ### * nobs
+> nameEx("nobs.plm")
+> ### * nobs.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> ### Name: nobs
+> ### Name: nobs.plm
 > ### Title: Extract Total Number of Observations Used in Estimated
 > ###   Panelmodel
-> ### Aliases: nobs nobs.panelmodel
+> ### Aliases: nobs.plm nobs.panelmodel nobs.pgmm
 > ### Keywords: attribute
 > 
 > ### ** Examples
@@ -6519,32 +6526,6 @@ Unbalanced Panel: n = 48, T = 9-17, N = 808
 > 
 > 
 > 
-> cleanEx()
-> nameEx("pFormula")
-> ### * pFormula
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: pFormula
-> ### Title: pFormula: An extended Formula interface for panel data
-> ### Aliases: pFormula as.Formula.pFormula
-> ### Keywords: classes
-> 
-> ### ** Examples
-> 
-> # First, make a pdata.frame
-> data("Grunfeld", package = "plm")
-> pGrunfeld <- pdata.frame(Grunfeld)
-> 
-> # then make a model frame from a pFormula and a pdata.frame
-> pform <- pFormula(inv ~ value + capital)
-> mf <- model.frame(pform, data = pGrunfeld)
-> 
-> # then construct the (transformed) model matrix (design matrix)
-> # from formula and model frame
-> modmat <- model.matrix(pform, data = mf, model = "within")
-> 
-> 
 > 
 > cleanEx()
 > nameEx("pFtest")
@@ -6558,6 +6539,7 @@ Unbalanced Panel: n = 48, T = 9-17, N = 808
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package="plm")
 > gp <- plm(inv ~ value + capital, data = Grunfeld, model = "pooling")
@@ -6602,6 +6584,7 @@ alternative hypothesis: significant effects
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pbgtest")
 > ### * pbgtest
@@ -6614,6 +6597,7 @@ alternative hypothesis: significant effects
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > g <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
@@ -6666,6 +6650,7 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pbltest")
 > ### * pbltest
@@ -6678,6 +6663,7 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > 
@@ -6712,6 +6698,7 @@ alternative hypothesis: AR(1)/MA(1) errors in RE panel model
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pbnftest")
 > ### * pbnftest
@@ -6725,6 +6712,7 @@ alternative hypothesis: AR(1)/MA(1) errors in RE panel model
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > 
@@ -6768,6 +6756,7 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pbsytest")
 > ### * pbsytest
@@ -6782,7 +6771,9 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > ### ** Examples
 > 
-> ## Bera et al. (2001), p. 13, table 1 use a subset of the original Grunfeld
+> 
+> ## Bera et. al (2001), p. 13, table 1 use
+> ## a subset of the original Grunfeld
 > ## data which contains three errors -> construct this subset:
 > data("Grunfeld", package = "plm")
 > Grunsubset <- rbind(Grunfeld[1:80, ], Grunfeld[141:160, ])
@@ -6839,6 +6830,7 @@ alternative hypothesis: AR(1) errors sub random effects
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pcce")
 > ### * pcce
@@ -6847,10 +6839,12 @@ alternative hypothesis: AR(1) errors sub random effects
 > 
 > ### Name: pcce
 > ### Title: Common Correlated Effects estimators
-> ### Aliases: pcce summary.pcce print.summary.pcce
+> ### Aliases: pcce summary.pcce print.summary.pcce residuals.pcce
+> ###   model.matrix.pcce pmodel.response.pcce
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
@@ -6874,7 +6868,7 @@ log(pc)    0.0363922  0.0368432  0.9878    0.3233
 log(emp)   0.8209632  0.1390202  5.9054 3.519e-09 ***
 unemp     -0.0020925  0.0014973 -1.3976    0.1622    
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
@@ -6900,10 +6894,11 @@ log(pc)    0.0335784  0.0423362  0.7931   0.42770
 log(emp)   0.6258659  0.1071719  5.8398 5.225e-09 ***
 unemp     -0.0031178  0.0014389 -2.1668   0.03025 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.056978
 HPY R-squared: 0.99312
+> 
 > 
 > 
 > 
@@ -6919,6 +6914,7 @@ HPY R-squared: 0.99312
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > ## test on heterogeneous model (separate time series regressions)
@@ -6990,6 +6986,7 @@ alternative hypothesis: cross-sectional dependence
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pdata.frame")
 > ### * pdata.frame
@@ -6998,13 +6995,16 @@ alternative hypothesis: cross-sectional dependence
 > 
 > ### Name: pdata.frame
 > ### Title: data.frame for panel data
-> ### Aliases: pdata.frame print.pdata.frame [.pdata.frame [[.pdata.frame
-> ###   $.pdata.frame as.data.frame.pdata.frame as.list.pdata.frame
+> ### Aliases: pdata.frame $<-.pdata.frame [.pdata.frame [[.pdata.frame
+> ###   $.pdata.frame print.pdata.frame as.list.pdata.frame
+> ###   as.data.frame.pdata.frame
 > ### Keywords: classes
 > 
 > ### ** Examples
 > 
-> # Gasoline contains two variables which are individual and time indexes
+> 
+> # Gasoline contains two variables which are individual and time
+> # indexes
 > data("Gasoline", package = "plm")
 > Gas <- pdata.frame(Gasoline, index = c("country", "year"), drop.index = TRUE)
 > 
@@ -7012,8 +7012,9 @@ alternative hypothesis: cross-sectional dependence
 > data("Hedonic", package = "plm")
 > Hed <- pdata.frame(Hedonic, index = "townid", row.names = FALSE)
 > 
-> # In case of balanced panel, it is sufficient to give number of individuals 
-> # data set 'Wages' is organized as a stacked time series
+> # In case of balanced panel, it is sufficient to give number of
+> # individuals data set 'Wages' is organized as a stacked time
+> # series
 > data("Wages", package = "plm")
 > Wag <- pdata.frame(Wages, 595)
 > 
@@ -8503,6 +8504,7 @@ $lwage
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pdim")
 > ### * pdim
@@ -8511,19 +8513,20 @@ $lwage
 > 
 > ### Name: pdim
 > ### Title: Check for the Dimensions of the Panel
-> ### Aliases: pdim pdim.data.frame pdim.pdata.frame pdim.pseries
-> ###   pdim.panelmodel pdim.pgmm pdim.default print.pdim
+> ### Aliases: pdim pdim.default pdim.data.frame pdim.pdata.frame
+> ###   pdim.pseries pdim.panelmodel pdim.pgmm print.pdim
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > # There are 595 individuals
 > data("Wages", package = "plm")
 > pdim(Wages, 595)
 Balanced Panel: n = 595, T = 7, N = 4165
 > 
-> # Gasoline contains two variables which are individual and time indexes
-> # and are the first two variables
+> # Gasoline contains two variables which are individual and time
+> # indexes and are the first two variables
 > data("Gasoline", package="plm")
 > pdim(Gasoline)
 Balanced Panel: n = 18, T = 19, N = 342
@@ -8542,6 +8545,7 @@ Unbalanced Panel: n = 48, T = 9-17, N = 808
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pdwtest")
 > ### * pdwtest
@@ -8554,6 +8558,7 @@ Unbalanced Panel: n = 48, T = 9-17, N = 808
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > g <- plm(inv ~ value + capital, data = Grunfeld, model="random")
@@ -8585,6 +8590,7 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pggls")
 > ### * pggls
@@ -8593,10 +8599,11 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > ### Name: pggls
 > ### Title: General FGLS Estimators
-> ### Aliases: pggls summary.pggls print.summary.pggls
+> ### Aliases: pggls summary.pggls print.summary.pggls residuals.pggls
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > zz_wi <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
@@ -8621,12 +8628,12 @@ log(pc)    0.17151298  0.01807934  9.4867 < 2.2e-16 ***
 log(emp)   0.84449144  0.02042362 41.3488 < 2.2e-16 ***
 unemp     -0.00357102  0.00047319 -7.5468 4.462e-14 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 1.1623
 Multiple R-squared: 0.99863
 > 
-> zz_pool <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
+> zz_pool <- pggls(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
 +                  data = Produc, model = "pooling")
 > summary(zz_pool)
 Oneway (individual) effect General FGLS model
@@ -8649,7 +8656,7 @@ log(pc)      0.21643137  0.01539471 14.0588 < 2.2e-16 ***
 log(emp)     0.71293894  0.01863632 38.2553 < 2.2e-16 ***
 unemp       -0.00447265  0.00045214 -9.8921 < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 7.5587
 Multiple R-squared: 0.99111
@@ -8677,10 +8684,11 @@ log(pc)     -0.03100727  0.01248722  -2.4831  0.01302 *
 log(emp)     0.87411813  0.02077388  42.0777  < 2e-16 ***
 unemp       -0.00483240  0.00040668 -11.8825  < 2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.33459
 Multiple R-squared: 0.99961
+> 
 > 
 > 
 > 
@@ -8693,10 +8701,11 @@ Multiple R-squared: 0.99961
 > 
 > ### Name: pgmm
 > ### Title: Generalized Method of Moments (GMM) Estimation for Panel Data
-> ### Aliases: pgmm summary.pgmm print.summary.pgmm
+> ### Aliases: pgmm coef.pgmm summary.pgmm print.summary.pgmm
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("EmplUK", package = "plm")
 > 
@@ -8730,7 +8739,7 @@ log(capital)            0.292723   0.039463   7.4177 1.191e-13 ***
 lag(log(output), 0:1)0  0.609775   0.108524   5.6188 1.923e-08 ***
 lag(log(output), 0:1)1 -0.446373   0.124815  -3.5763 0.0003485 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
 Autocorrelation test (1): normal = -2.427829 (p-value = 0.01519)
@@ -8769,7 +8778,7 @@ lag(log(wage), 0:1)1     0.482620   0.136887  3.5257 0.0004224 ***
 lag(log(capital), 0:1)0  0.483930   0.053867  8.9838 < 2.2e-16 ***
 lag(log(capital), 0:1)1 -0.424393   0.058479 -7.2572 3.952e-13 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Sargan test: chisq(100) = 118.763 (p-value = 0.097096)
 Autocorrelation test (1): normal = -4.808434 (p-value = 1.5212e-06)
@@ -8796,6 +8805,7 @@ Wald test for time dummies: chisq(7) = 14.71138 (p-value = 0.039882)
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pgrangertest")
 > ### * pgrangertest
@@ -8808,6 +8818,7 @@ Wald test for time dummies: chisq(7) = 14.71138 (p-value = 0.039882)
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > ## not meaningful, just to demonstrate usage
 > ## H0: 'value' Granger causes 'inv' for all invididuals
@@ -8851,6 +8862,7 @@ alternative hypothesis: Granger causality for at least one individual
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pht")
 > ### * pht
@@ -8863,6 +8875,7 @@ alternative hypothesis: Granger causality for at least one individual
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > ## replicates Baltagi (2005, 2013), table 7.4
 > ## preferred way with plm()
@@ -8914,7 +8927,7 @@ sexfemale   -1.3092e-01  1.2666e-01 -1.0337   0.30129
 blackyes    -2.8575e-01  1.5570e-01 -1.8352   0.06647 .  
 ed           1.3794e-01  2.1248e-02  6.4919 8.474e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4163.6
@@ -8969,7 +8982,7 @@ sexfemale   -1.3201e-01  1.2660e-01 -1.0427   0.29709
 blackyes    -2.8590e-01  1.5549e-01 -1.8388   0.06595 .  
 ed           1.3720e-01  2.0570e-02  6.6703 2.553e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4160.3
@@ -8993,6 +9006,7 @@ Chisq: 6879.2 on 12 DF, p-value: < 2.22e-16
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("phtest")
 > ### * phtest
@@ -9005,6 +9019,7 @@ Chisq: 6879.2 on 12 DF, p-value: < 2.22e-16
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Gasoline", package = "plm")
 > form <- lgaspcar ~ lincomep + lrpmg + lcarpcap
@@ -9060,6 +9075,7 @@ alternative hypothesis: one model is inconsistent
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("piest")
 > ### * piest
@@ -9068,10 +9084,11 @@ alternative hypothesis: one model is inconsistent
 > 
 > ### Name: piest
 > ### Title: Chamberlain estimator and test for fixed effects
-> ### Aliases: piest summary.piest print.summary.piest
-> ### Keywords: piest
+> ### Aliases: piest print.piest summary.piest print.summary.piest
+> ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("RiceFarms", package = "plm")
 > pirice <- piest(log(goutput) ~ log(seed) + log(totlabor) + log(size), RiceFarms, index = "id")
@@ -9107,6 +9124,7 @@ chisq = 113.72, df = 87, p-value = 0.02882
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("plm-package")
 > ### * plm-package
@@ -9116,9 +9134,10 @@ chisq = 113.72, df = 87, p-value = 0.02882
 > ### Name: plm-package
 > ### Title: plm package: linear models for panel data
 > ### Aliases: plm-package
-> ### Keywords: package model regression
+> ### Keywords: package
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
@@ -9143,7 +9162,7 @@ log(pc)    0.29200693  0.02511967 11.6246 < 2.2e-16 ***
 log(emp)   0.76815947  0.03009174 25.5273 < 2.2e-16 ***
 unemp     -0.00529774  0.00098873 -5.3582 1.114e-07 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    18.941
 Residual Sum of Squares: 1.1112
@@ -9172,6 +9191,7 @@ F-statistic: 3064.81 on 4 and 764 DF, p-value: < 2.22e-16
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("plm")
 > ### * plm
@@ -9180,10 +9200,14 @@ F-statistic: 3064.81 on 4 and 764 DF, p-value: < 2.22e-16
 > 
 > ### Name: plm
 > ### Title: Panel Data Estimators
-> ### Aliases: plm has.intercept print.panelmodel plot.plm
+> ### Aliases: plm terms.panelmodel vcov.panelmodel fitted.panelmodel
+> ###   residuals.panelmodel df.residual.panelmodel coef.panelmodel
+> ###   print.panelmodel update.panelmodel deviance.panelmodel predict.plm
+> ###   formula.plm plot.plm residuals.plm fitted.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
@@ -9208,7 +9232,7 @@ log(pc)    0.29200693  0.02511967 11.6246 < 2.2e-16 ***
 log(emp)   0.76815947  0.03009174 25.5273 < 2.2e-16 ***
 unemp     -0.00529774  0.00098873 -5.3582 1.114e-07 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    18.941
 Residual Sum of Squares: 1.1112
@@ -9255,7 +9279,7 @@ Coefficients:
 value   0.117716   0.013751  8.5604 6.653e-15 ***
 capital 0.357916   0.022719 15.7540 < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9282,7 +9306,7 @@ Coefficients:
 value   0.117716   0.009712  12.121 < 2.2e-16 ***
 capital 0.357916   0.042931   8.337 2.552e-14 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9309,7 +9333,7 @@ Coefficients:
 value   0.117716   0.009712  12.121 < 2.2e-16 ***
 capital 0.357916   0.042931   8.337 2.552e-14 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9336,7 +9360,7 @@ Coefficients:
 value    0.11772    0.01881  6.2582 3.095e-09 ***
 capital  0.35792    0.03178 11.2622 < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9384,7 +9408,7 @@ log(water)   0.07645327  0.01385767  5.5170 3.448e-08 ***
 log(util)   -0.09437398  0.01677289 -5.6266 1.838e-08 ***
 unemp       -0.00616304  0.00090331 -6.8227 8.933e-12 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    43.035
 Residual Sum of Squares: 1.1245
@@ -9426,7 +9450,7 @@ log(water)   0.07639159  0.01386702  5.5089 3.611e-08 ***
 log(util)   -0.09523031  0.01677247 -5.6778 1.365e-08 ***
 unemp       -0.00614840  0.00090786 -6.7724 1.267e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    40.423
 Residual Sum of Squares: 1.1195
@@ -9484,7 +9508,7 @@ sexfemale   -1.3092e-01  1.2666e-01 -1.0337   0.30129
 blackyes    -2.8575e-01  1.5570e-01 -1.8352   0.06647 .  
 ed           1.3794e-01  2.1248e-02  6.4919 8.474e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4163.6
@@ -9539,7 +9563,7 @@ sexfemale   -1.3201e-01  1.2660e-01 -1.0427   0.29709
 blackyes    -2.8590e-01  1.5549e-01 -1.8388   0.06595 .  
 ed           1.3720e-01  2.0570e-02  6.6703 2.553e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4160.3
@@ -9547,53 +9571,6 @@ R-Squared:      0.60948
 Adj. R-Squared: 0.60835
 Chisq: 6879.2 on 12 DF, p-value: < 2.22e-16
 > 
-> 
-> 
-> cleanEx()
-> nameEx("plm.data")
-> ### * plm.data
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: plm.data
-> ### Title: Data Frame Special Format for Panel Data (Deprecated)
-> ### Aliases: plm.data
-> ### Keywords: attribute
-> 
-> ### ** Examples
-> 
-> # There are 595 individuals
-> data("Wages", package = "plm")
-> Wages <- plm.data(Wages, 595)
-Warning: use of 'plm.data' is discouraged, better use 'pdata.frame' instead
-> 
-> # Gasoline contains two variables which are individual and time indexes
-> # The pdata.frame is called gas
-> data("Gasoline", package = "plm")
-> Gasoline <- plm.data(Gasoline, c("country","year"))
-Warning: use of 'plm.data' is discouraged, better use 'pdata.frame' instead
-> summary(Gasoline)
-    country         year        lgaspcar        lincomep          lrpmg        
- AUSTRIA: 19   1960   : 18   Min.   :3.380   Min.   :-8.073   Min.   :-2.8965  
- BELGIUM: 19   1961   : 18   1st Qu.:3.944   1st Qu.:-6.320   1st Qu.:-0.6523  
- CANADA : 19   1962   : 18   Median :4.088   Median :-5.985   Median :-0.3795  
- DENMARK: 19   1963   : 18   Mean   :4.296   Mean   :-6.139   Mean   :-0.5231  
- FRANCE : 19   1964   : 18   3rd Qu.:4.556   3rd Qu.:-5.720   3rd Qu.:-0.2234  
- GERMANY: 19   1965   : 18   Max.   :6.157   Max.   :-5.221   Max.   : 1.1253  
- (Other):228   (Other):234                                                     
-    lcarpcap      
- Min.   :-13.475  
- 1st Qu.: -9.307  
- Median : -8.658  
- Mean   : -9.042  
- 3rd Qu.: -8.262  
- Max.   : -7.536  
-                  
-> 
-> # Hedonic is an unbalanced panel, townid is the individual index
-> data("Hedonic", package = "plm")
-> Hedonic <- plm.data(Hedonic, "townid")
-Warning: use of 'plm.data' is discouraged, better use 'pdata.frame' instead
 > 
 > 
 > 
@@ -9604,11 +9581,12 @@ Warning: use of 'plm.data' is discouraged, better use 'pdata.frame' instead
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: plmtest
-> ### Title: Lagrange Multiplier Tests for Panel Models
+> ### Title: Lagrange FF Multiplier Tests for Panel Models
 > ### Aliases: plmtest plmtest.plm plmtest.formula
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > g <- plm(inv ~ value + capital, data = Grunfeld, model = "pooling")
@@ -9686,6 +9664,7 @@ alternative hypothesis: significant effects
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pmg")
 > ### * pmg
@@ -9694,10 +9673,11 @@ alternative hypothesis: significant effects
 > 
 > ### Name: pmg
 > ### Title: Mean Groups (MG), Demeaned MG and CCE MG estimators
-> ### Aliases: pmg summary.pmg print.summary.pmg
+> ### Aliases: pmg summary.pmg print.summary.pmg residuals.pmg
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > ## Mean Groups estimator
@@ -9723,7 +9703,7 @@ log(pc)      0.2182539  0.0500862  4.3576 1.315e-05 ***
 log(emp)     0.9334776  0.0750072 12.4452 < 2.2e-16 ***
 unemp       -0.0037216  0.0016427 -2.2655   0.02348 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.33009
 Multiple R-squared: 0.99961
@@ -9752,7 +9732,7 @@ log(pc)      0.1607882  0.0591334  2.7191  0.006546 **
 log(emp)     0.8425585  0.0704896 11.9529 < 2.2e-16 ***
 unemp       -0.0050181  0.0020770 -2.4160  0.015693 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.23666
 Multiple R-squared: 0.99972
@@ -9760,7 +9740,7 @@ Multiple R-squared: 0.99972
 > ## Common Correlated Effects Mean Groups
 > ccemgmod <- pmg(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
 +                 data = Produc, model = "cmg")
-> summary(ccemgmod)
+> summary(ccemgmod) 
 Common Correlated Effects Mean Groups model
 
 Call:
@@ -9786,7 +9766,7 @@ log(pc).bar   -0.0033198  0.1576547 -0.0211  0.983200
 log(emp).bar  -0.6978359  0.2432887 -2.8683  0.004126 ** 
 unemp.bar      0.0025544  0.0031848  0.8021  0.422505    
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.056978
 Multiple R-squared: 0.99993
@@ -9801,28 +9781,29 @@ Multiple R-squared: 0.99993
 > 
 > ### Name: pmodel.response
 > ### Title: A function to extract the model.response
-> ### Aliases: pmodel.response pmodel.response.data.frame
-> ###   pmodel.response.formula pmodel.response.plm
+> ### Aliases: pmodel.response pmodel.response.plm pmodel.response.data.frame
+> ###   pmodel.response.formula
 > ### Keywords: manip
 > 
 > ### ** Examples
 > 
+> 
 > # First, make a pdata.frame
-> data(Grunfeld)
+> data("Grunfeld", package = "plm")
 > pGrunfeld <- pdata.frame(Grunfeld)
 > 
 > # then make a model frame from a pFormula and a pdata.frame
-> pform <- pFormula(inv ~ value + capital)
-> mf <- model.frame(pform, data = pGrunfeld)
 > 
+> 
+> form <- inv ~ value + capital
+> mf <- model.frame(pGrunfeld, form)
 > # construct (transformed) response of the within model
-> resp <- pmodel.response(pform, data = mf, model = "within", effect = "individual")
-> 
+> resp <- pmodel.response(form, data = mf, model = "within", effect = "individual")
 > # retrieve (transformed) response directly from model frame
 > resp_mf <- pmodel.response(mf, model = "within", effect = "individual")
 > 
 > # retrieve (transformed) response from a plm object, i.e. an estimated model
-> fe_model <- plm(pform, data = pGrunfeld, model = "within")
+> fe_model <- plm(form, data = pGrunfeld, model = "within")
 > pmodel.response(fe_model)
    1-1935    1-1936    1-1937    1-1938    1-1939    1-1940    1-1941    1-1942 
 -290.4200 -216.2200 -197.4200 -350.3200 -277.2200 -146.8200  -96.0200 -160.0200 
@@ -9881,6 +9862,7 @@ Multiple R-squared: 0.99993
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pooltest")
 > ### * pooltest
@@ -9893,6 +9875,7 @@ Multiple R-squared: 0.99993
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Gasoline", package = "plm")
 > form <- lgaspcar ~ lincomep + lrpmg + lcarpcap
@@ -9935,6 +9918,7 @@ alternative hypothesis: unstability
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pseries")
 > ### * pseries
@@ -9943,12 +9927,15 @@ alternative hypothesis: unstability
 > 
 > ### Name: pseries
 > ### Title: panel series
-> ### Aliases: pseries Between between Within Between.pseries between.pseries
-> ###   Within.pseries summary.pseries print.summary.pseries
-> ###   as.matrix.pseries
+> ### Aliases: pseries print.pseries as.matrix.pseries plot.pseries
+> ###   summary.pseries plot.summary.pseries print.summary.pseries Between
+> ###   Between.default Between.pseries Between.matrix between
+> ###   between.default between.pseries between.matrix Within Within.default
+> ###   Within.pseries Within.matrix
 > ### Keywords: classes
 > 
 > ### ** Examples
+> 
 > 
 > # First, create a pdata.frame
 > data("EmplUK", package = "plm")
@@ -12156,6 +12143,7 @@ alternative hypothesis: unstability
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("punbalancedness")
 > ### * punbalancedness
@@ -12164,11 +12152,12 @@ alternative hypothesis: unstability
 > 
 > ### Name: punbalancedness
 > ### Title: Measures for Unbalancedness of Panel Data
-> ### Aliases: punbalancedness punbalancedness.data.frame
-> ###   punbalancedness.pdata.frame punbalancedness.panelmodel
+> ### Aliases: punbalancedness punbalancedness.pdata.frame
+> ###   punbalancedness.data.frame punbalancedness.panelmodel
 > ### Keywords: attribute
 > 
 > ### ** Examples
+> 
 > 
 > # Grunfeld is a balanced panel, Hedonic is an unbalanced panel
 > data(list=c("Grunfeld", "Hedonic"), package="plm")
@@ -12218,6 +12207,7 @@ gamma    nu
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("purtest")
 > ### * purtest
@@ -12230,6 +12220,7 @@ gamma    nu
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
@@ -12255,6 +12246,7 @@ alternative hypothesis: stationarity
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pvar")
 > ### * pvar
@@ -12263,14 +12255,16 @@ alternative hypothesis: stationarity
 > 
 > ### Name: pvar
 > ### Title: Check for Cross-Sectional and Time Variation
-> ### Aliases: pvar pvar.data.frame pvar.pdata.frame pvar.matrix print.pvar
+> ### Aliases: pvar pvar.matrix pvar.data.frame pvar.pdata.frame pvar.pseries
+> ###   print.pvar
 > ### Keywords: attribute
 > 
 > ### ** Examples
 > 
 > 
-> # Gasoline contains two variables which are individual and time indexes
-> # and are the first two variables
+> 
+> # Gasoline contains two variables which are individual and time
+> # indexes and are the first two variables
 > data("Gasoline", package = "plm")
 > pvar(Gasoline)
 no time variation:       country 
@@ -12298,6 +12292,7 @@ no individual variation: year
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pvcm")
 > ### * pvcm
@@ -12310,6 +12305,7 @@ no individual variation: year
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > zw <- pvcm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model = "within")
@@ -12340,7 +12336,7 @@ log(util)   -0.0149021  0.0988643 -0.1507  0.88019
 log(emp)     0.9190594  0.1044486  8.7992  < 2e-16 ***
 unemp       -0.0047055  0.0020673 -2.2761  0.02284 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Estimated variance of the coefficients:
             (Intercept)    log(pc)   log(hwy) log(water)  log(util)   log(emp)
@@ -12374,6 +12370,7 @@ Chisq: 434.623 on 6 DF, p-value: < 2.22e-16
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pwaldtest")
 > ### * pwaldtest
@@ -12386,6 +12383,7 @@ Chisq: 434.623 on 6 DF, p-value: < 2.22e-16
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > mod_fe <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
@@ -12443,6 +12441,7 @@ Chisq = 63.549, df = 2, p-value = 1.587e-14
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pwartest")
 > ### * pwartest
@@ -12451,10 +12450,11 @@ Chisq = 63.549, df = 2, p-value = 1.587e-14
 > 
 > ### Name: pwartest
 > ### Title: Wooldridge Test for AR(1) Errors in FE Panel Models
-> ### Aliases: pwartest pwartest.panelmodel pwartest.formula
+> ### Aliases: pwartest pwartest.formula pwartest.panelmodel
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("EmplUK", package = "plm")
 > pwartest(log(emp) ~ log(wage) + log(capital), data = EmplUK)
@@ -12479,6 +12479,7 @@ alternative hypothesis: serial correlation
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pwfdtest")
 > ### * pwfdtest
@@ -12492,6 +12493,7 @@ alternative hypothesis: serial correlation
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("EmplUK" , package = "plm")
 > pwfdtest(log(emp) ~ log(wage) + log(capital), data = EmplUK)
@@ -12552,6 +12554,7 @@ alternative hypothesis: serial correlation in original errors
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("pwtest")
 > ### * pwtest
@@ -12560,10 +12563,11 @@ alternative hypothesis: serial correlation in original errors
 > 
 > ### Name: pwtest
 > ### Title: Wooldridge's Test for Unobserved Effects in Panel Models
-> ### Aliases: pwtest pwtest.panelmodel pwtest.formula
+> ### Aliases: pwtest pwtest.formula pwtest.panelmodel
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > ## formula interface
@@ -12607,6 +12611,7 @@ alternative hypothesis: unobserved effect
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("r.squared")
 > ### * r.squared
@@ -12620,12 +12625,14 @@ alternative hypothesis: unobserved effect
 > 
 > ### ** Examples
 > 
+> 
 > data("Grunfeld", package = "plm")
 > p <- plm(inv ~ value + capital, data = Grunfeld, model = "pooling")
 > r.squared(p)
 [1] 0.812408
 > r.squared(p, dfcor = TRUE)
 [1] 0.8105035
+> 
 > 
 > 
 > 
@@ -12637,10 +12644,11 @@ alternative hypothesis: unobserved effect
 > 
 > ### Name: ranef.plm
 > ### Title: Extract the Random Effects
-> ### Aliases: ranef.plm ranef
+> ### Aliases: ranef.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Grunfeld", package = "plm")
 > m1 <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
@@ -12650,7 +12658,8 @@ alternative hypothesis: unobserved effect
            7            8            9           10 
   -7.8977584    0.6726376  -28.1393497   50.3144442 
 > 
-> # compare to random effects by ML estimation via lmer from package lme4
+> # compare to random effects by ML estimation via lmer from package
+> # lme4
 > ## Not run: 
 > ##D   library(lme4)
 > ##D   m2 <- lmer(inv ~ value + capital + (1 | firm), data = Grunfeld) 
@@ -12692,6 +12701,7 @@ alternative hypothesis: unobserved effect
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("sargan")
 > ### * sargan
@@ -12704,6 +12714,7 @@ alternative hypothesis: unobserved effect
 > ### Keywords: htest
 > 
 > ### ** Examples
+> 
 > 
 > data("EmplUK", package = "plm")
 > ar <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) +
@@ -12719,6 +12730,7 @@ chisq = 31.381, df = 25, p-value = 0.1767
 > 
 > 
 > 
+> 
 > cleanEx()
 > nameEx("summary.plm")
 > ### * summary.plm
@@ -12731,6 +12743,7 @@ chisq = 31.381, df = 25, p-value = 0.1767
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package = "plm")
 > zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
@@ -12755,7 +12768,7 @@ log(pc)    0.29200693  0.02511967 11.6246 < 2.2e-16 ***
 log(emp)   0.76815947  0.03009174 25.5273 < 2.2e-16 ***
 unemp     -0.00529774  0.00098873 -5.3582 1.114e-07 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    18.941
 Residual Sum of Squares: 1.1112
@@ -12788,7 +12801,7 @@ Coefficients:
 value   0.110124   0.014342  7.6783 8.566e-13 ***
 capital 0.310065   0.049793  6.2271 3.033e-09 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12815,7 +12828,7 @@ Coefficients:
 value   0.110124   0.014342  7.6783 8.566e-13 ***
 capital 0.310065   0.049793  6.2271 3.033e-09 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12842,7 +12855,7 @@ Coefficients:
 value   0.110124   0.018925  5.8191  2.51e-08 ***
 capital 0.310065   0.027787 11.1585 < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12876,13 +12889,14 @@ Coefficients:
       Estimate Std. Error t-value  Pr(>|t|)    
 value 0.110124   0.011857  9.2879 < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
 R-Squared:      0.76676
 Adj. R-Squared: 0.75311
 F-statistic: 309.014 on 2 and 188 DF, p-value: < 2.22e-16
+> 
 > 
 > 
 > 
@@ -12899,12 +12913,13 @@ F-statistic: 309.014 on 2 and 188 DF, p-value: < 2.22e-16
 > 
 > ### ** Examples
 > 
+> 
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: 'zoo'
+Attaching package: ‘zoo’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.Date, as.Date.numeric
 
@@ -12924,7 +12939,7 @@ log(pc)      0.31054843  0.01980475 15.6805 < 2.2e-16 ***
 log(emp)     0.72967053  0.02492022 29.2803 < 2.2e-16 ***
 unemp       -0.00617247  0.00090728 -6.8033 1.986e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## robust significance test, cluster by group
 > ## (robust vs. serial correlation), default arguments
@@ -12939,7 +12954,7 @@ log(pc)      0.3105484  0.0427824  7.2588 9.153e-13 ***
 log(emp)     0.7296705  0.0497995 14.6522 < 2.2e-16 ***
 unemp       -0.0061725  0.0017190 -3.5908 0.0003495 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovBK(x, type="HC1"))
@@ -12953,7 +12968,7 @@ log(pc)      0.3105484  0.0429141  7.2365 1.068e-12 ***
 log(emp)     0.7296705  0.0499528 14.6072 < 2.2e-16 ***
 unemp       -0.0061725  0.0017242 -3.5798 0.0003643 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem, cluster by time period
 > ## (robust vs. cross-sectional correlation)
@@ -12969,7 +12984,7 @@ log(pc)      0.3105484  0.0458243  6.7769 2.360e-11 ***
 log(emp)     0.7296705  0.0562371 12.9749 < 2.2e-16 ***
 unemp       -0.0061725  0.0018531 -3.3309 0.0009049 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a matrix argument
 > coeftest(zz, vcov.=vcovBK(zz, type="HC1"))
@@ -12983,7 +12998,7 @@ log(pc)      0.3105484  0.0429141  7.2365 1.068e-12 ***
 log(emp)     0.7296705  0.0499528 14.6072 < 2.2e-16 ***
 unemp       -0.0061725  0.0017242 -3.5798 0.0003643 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovBK)
@@ -12995,7 +13010,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 411.05  < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovBK)
 Linear hypothesis test
@@ -13014,10 +13029,11 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
+> 
 > cleanEx()
 
-detaching 'package:car', 'package:carData', 'package:lmtest',
-  'package:zoo'
+detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
+  ‘package:zoo’
 
 > nameEx("vcovDC")
 > ### * vcovDC
@@ -13026,17 +13042,18 @@ detaching 'package:car', 'package:carData', 'package:lmtest',
 > 
 > ### Name: vcovDC
 > ### Title: Double-Clustering Robust Covariance Matrix Estimator
-> ### Aliases: vcovDC vcovDC.plm vcovDC.pcce
+> ### Aliases: vcovDC vcovDC.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
 > 
+> 
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: 'zoo'
+Attaching package: ‘zoo’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.Date, as.Date.numeric
 
@@ -13056,7 +13073,7 @@ log(pc)      0.3091902  0.0102720 30.1003 < 2.2e-16 ***
 log(emp)     0.5939349  0.0137475 43.2032 < 2.2e-16 ***
 unemp       -0.0067330  0.0014164 -4.7537 2.363e-06 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## DC robust significance test, default
 > coeftest(zz, vcov.=vcovDC)
@@ -13070,7 +13087,7 @@ log(pc)      0.309190   0.044957  6.8774 1.217e-11 ***
 log(emp)     0.593935   0.070203  8.4603 < 2.2e-16 ***
 unemp       -0.006733   0.003330 -2.0219   0.04351 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovDC(x, type="HC1", maxlag=4))
@@ -13084,7 +13101,7 @@ log(pc)      0.3091902  0.0450955  6.8563 1.400e-11 ***
 log(emp)     0.5939349  0.0704186  8.4343 < 2.2e-16 ***
 unemp       -0.0067330  0.0033403 -2.0157   0.04416 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovDC)
@@ -13096,7 +13113,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 109.61  < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovDC)
 Linear hypothesis test
@@ -13115,10 +13132,11 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
+> 
 > cleanEx()
 
-detaching 'package:car', 'package:carData', 'package:lmtest',
-  'package:zoo'
+detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
+  ‘package:zoo’
 
 > nameEx("vcovG")
 > ### * vcovG
@@ -13128,10 +13146,11 @@ detaching 'package:car', 'package:carData', 'package:lmtest',
 > ### Name: vcovG
 > ### Title: Generic Lego building block for Robust Covariance Matrix
 > ###   Estimators
-> ### Aliases: vcovG vcovG.plm vcovG.pcce
+> ### Aliases: vcovG vcovG.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
+> 
 > 
 > data("Produc", package="plm")
 > zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc,
@@ -13156,9 +13175,9 @@ attr(,"cluster")
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: 'zoo'
+Attaching package: ‘zoo’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.Date, as.Date.numeric
 
@@ -13177,33 +13196,35 @@ log(pc)      0.3091902  0.0462297  6.6881 4.209e-11 ***
 log(emp)     0.5939349  0.0686061  8.6572 < 2.2e-16 ***
 unemp       -0.0067330  0.0030904 -2.1787   0.02964 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
+> 
 > 
 > 
 > 
 > cleanEx()
 
-detaching 'package:lmtest', 'package:zoo'
+detaching ‘package:lmtest’, ‘package:zoo’
 
-> nameEx("vcovHC")
-> ### * vcovHC
+> nameEx("vcovHC.plm")
+> ### * vcovHC.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> ### Name: vcovHC
+> ### Name: vcovHC.plm
 > ### Title: Robust Covariance Matrix Estimators
-> ### Aliases: vcovHC vcovHC.plm vcovHC.pgmm vcovHC.pcce pvcovHC
+> ### Aliases: vcovHC.plm vcovHC.plm vcovHC.pgmm
 > ### Keywords: regression
 > 
 > ### ** Examples
 > 
+> 
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: 'zoo'
+Attaching package: ‘zoo’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.Date, as.Date.numeric
 
@@ -13224,7 +13245,7 @@ log(pc)      0.31054843  0.01980475 15.6805 < 2.2e-16 ***
 log(emp)     0.72967053  0.02492022 29.2803 < 2.2e-16 ***
 unemp       -0.00617247  0.00090728 -6.8033 1.986e-11 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## robust significance test, cluster by group
 > ## (robust vs. serial correlation)
@@ -13239,7 +13260,7 @@ log(pc)      0.3105484  0.0435922  7.1239 2.317e-12 ***
 log(emp)     0.7296705  0.0699680 10.4286 < 2.2e-16 ***
 unemp       -0.0061725  0.0023326 -2.6461  0.008299 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovHC(x, method="arellano", type="HC1"))
@@ -13253,7 +13274,7 @@ log(pc)      0.3105484  0.0437264  7.1021 2.689e-12 ***
 log(emp)     0.7296705  0.0701833 10.3966 < 2.2e-16 ***
 unemp       -0.0061725  0.0023398 -2.6380  0.008499 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem, cluster by time period
 > ## (robust vs. cross-sectional correlation)
@@ -13269,7 +13290,7 @@ log(pc)      0.3105484  0.0437264  7.1021 2.689e-12 ***
 log(emp)     0.7296705  0.0701833 10.3966 < 2.2e-16 ***
 unemp       -0.0061725  0.0023398 -2.6380  0.008499 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a matrix argument
 > coeftest(zz, vcov.=vcovHC(zz, method="arellano", type="HC1"))
@@ -13283,7 +13304,7 @@ log(pc)      0.3105484  0.0437264  7.1021 2.689e-12 ***
 log(emp)     0.7296705  0.0701833 10.3966 < 2.2e-16 ***
 unemp       -0.0061725  0.0023398 -2.6380  0.008499 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovHC)
@@ -13295,7 +13316,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 404.16  < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovHC)
 Linear hypothesis test
@@ -13329,11 +13350,10 @@ normal = -0.1165, p-value = 0.9073
 > 
 > 
 > 
-> 
 > cleanEx()
 
-detaching 'package:car', 'package:carData', 'package:lmtest',
-  'package:zoo'
+detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
+  ‘package:zoo’
 
 > nameEx("vcovNW")
 > ### * vcovNW
@@ -13342,17 +13362,18 @@ detaching 'package:car', 'package:carData', 'package:lmtest',
 > 
 > ### Name: vcovNW
 > ### Title: Newey and West (1987) Robust Covariance Matrix Estimator
-> ### Aliases: vcovNW vcovNW.plm vcovNW.pcce
+> ### Aliases: vcovNW vcovNW.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
 > 
+> 
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: 'zoo'
+Attaching package: ‘zoo’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.Date, as.Date.numeric
 
@@ -13372,7 +13393,7 @@ log(pc)      0.3091902  0.0102720 30.1003 < 2.2e-16 ***
 log(emp)     0.5939349  0.0137475 43.2032 < 2.2e-16 ***
 unemp       -0.0067330  0.0014164 -4.7537 2.363e-06 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## NW robust significance test, default
 > coeftest(zz, vcov.=vcovNW)
@@ -13386,7 +13407,7 @@ log(pc)      0.3091902  0.0206394 14.9806 < 2.2e-16 ***
 log(emp)     0.5939349  0.0316213 18.7827 < 2.2e-16 ***
 unemp       -0.0067330  0.0020247 -3.3254 0.0009225 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovNW(x, type="HC1", maxlag=4))
@@ -13400,7 +13421,7 @@ log(pc)      0.3091902  0.0256858 12.0374 < 2.2e-16 ***
 log(emp)     0.5939349  0.0388977 15.2691 < 2.2e-16 ***
 unemp       -0.0067330  0.0023634 -2.8488  0.004499 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovNW)
@@ -13412,7 +13433,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 480.18  < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovNW)
 Linear hypothesis test
@@ -13431,10 +13452,11 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
+> 
 > cleanEx()
 
-detaching 'package:car', 'package:carData', 'package:lmtest',
-  'package:zoo'
+detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
+  ‘package:zoo’
 
 > nameEx("vcovSCC")
 > ### * vcovSCC
@@ -13443,17 +13465,18 @@ detaching 'package:car', 'package:carData', 'package:lmtest',
 > 
 > ### Name: vcovSCC
 > ### Title: Driscoll and Kraay (1998) Robust Covariance Matrix Estimator
-> ### Aliases: vcovSCC vcovSCC.plm vcovSCC.pcce
+> ### Aliases: vcovSCC vcovSCC.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
 > 
+> 
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: 'zoo'
+Attaching package: ‘zoo’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.Date, as.Date.numeric
 
@@ -13473,7 +13496,7 @@ log(pc)      0.3091902  0.0102720 30.1003 < 2.2e-16 ***
 log(emp)     0.5939349  0.0137475 43.2032 < 2.2e-16 ***
 unemp       -0.0067330  0.0014164 -4.7537 2.363e-06 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## SCC robust significance test, default
 > coeftest(zz, vcov.=vcovSCC)
@@ -13487,7 +13510,7 @@ log(pc)      0.3091902  0.0076442 40.4479 < 2.2e-16 ***
 log(emp)     0.5939349  0.0387024 15.3462 < 2.2e-16 ***
 unemp       -0.0067330  0.0025389 -2.6520  0.008159 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovSCC(x, type="HC1", maxlag=4))
@@ -13501,7 +13524,7 @@ log(pc)      0.3091902  0.0069837 44.2731 < 2.2e-16 ***
 log(emp)     0.5939349  0.0454539 13.0668 < 2.2e-16 ***
 unemp       -0.0067330  0.0029520 -2.2808  0.022817 *  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovSCC)
@@ -13513,7 +13536,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                        
 2    813 -2   531  < 2.2e-16 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovSCC)
 Linear hypothesis test
@@ -13532,10 +13555,11 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
+> 
 > cleanEx()
 
-detaching 'package:car', 'package:carData', 'package:lmtest',
-  'package:zoo'
+detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
+  ‘package:zoo’
 
 > nameEx("within_intercept")
 > ### * within_intercept
@@ -13549,18 +13573,22 @@ detaching 'package:car', 'package:carData', 'package:lmtest',
 > 
 > ### ** Examples
 > 
-> # estimate within model (unbalanced data)
+> 
+> # TODO: two-way unbalanced case, once fixef() produces results that
+> # are compatible estimate within model (unbalanced data)
 > data("Hedonic", package = "plm")
 > mod_fe <- plm(mv ~ age + crim, data = Hedonic, index = "townid")
 > overallint <- within_intercept(mod_fe)
 > attr(overallint, "se") # standard error
 [1] 0.04853606
 > 
-> # overall intercept is the weighted mean of fixed effects in the one-way case
+> # overall intercept is the weighted mean of fixed effects in the
+> # one-way case
 > weighted.mean(fixef(mod_fe), as.numeric(table(index(mod_fe)[[1]])))
 [1] 10.25964
 > 
-> # relationship of type="dmean", "level" and within_intercept in the one-way case
+> # relationship of type="dmean", "level" and within_intercept in the
+> # one-way case
 > data("Grunfeld", package = "plm")
 > gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 > fx_level <- fixef(gi, type = "level")
@@ -13578,12 +13606,13 @@ attr(,"se")
 > 
 > 
 > 
+> 
 > ### * <FOOTER>
 > ###
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  18.28 1.25 19.65 NA NA 
+Time elapsed:  16.254 0.261 16.555 0 0 
 > grDevices::dev.off()
 null device 
           1 
