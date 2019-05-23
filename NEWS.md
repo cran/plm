@@ -1,6 +1,13 @@
-# plm 1.8-0
+# plm 2.0-1
 
-* class pFormula is deprecated and will be removed soon.
+* Minor update: tests updated to pacify CRAN's testing procedure with
+  OpenBLAS.
+* bug fix in model.frame.pdata.frame : dot previously set to
+  "separate" now set to "previous"  
+
+# plm 2.0-0
+
+* class 'pFormula' is deprecated and will be removed soon.
 * model.frame now has a pdata.frame method (instead of a pFormula
     method) and model.matrix has a pdata.frame method (a pdata.frame
     with a terms attribute). formula as an argument in model.matrix
@@ -10,7 +17,7 @@
     (plmModelComponents.Rmd).
 * plm: the informative error message about the deprecated argument
     'instruments' is removed and this argument is no longer supported
-* man pages and NAMESPACE files are now generated using roxygen2
+* man pages and NAMESPACE file are now generated using roxygen2
 
 # plm 1.7-0
 
@@ -23,15 +30,15 @@
     model estimation by plm(..., model = "fd") is based on row-wise differences
     of the model matrix per individual.
 * pbnftest: new function for (modified) BNF statistic (Durbin-Watson test 
-    generalised to panels) and Baltagi/Wu's LBI statistic.
+    generalised to panels) and Baltagi/Wu's LBI statistic
     (Bhargava/Franzini/Narendranathan (1982), Baltagi/Wu (1999)).
 * pcdtest: bias-corrected scaled LM test implemented (test = "bcsclm") as in
     Baltagi/Feng/Kao (2012).
 * summary.plm: for all random models and for all instrumental variable models,
     single coefficient tests are based on std. normal distribution and joint
     coefficient (Wald) test on Chi-square distribution.
-* pwaldtest: now handles IV models correctly (Wooldridge (1990)); method added
-    for random pvcm models added (and used in summary.pvcm).
+* pwaldtest: now handles IV models correctly (Wooldridge (1990)); method for
+    random pvcm models added (and used in summary.pvcm).
 * pht: fixed estimation (plm 1.6-6 introduced a slight regression).
 * summary.pht: waldtest now uses Chi-square distribution (was F distribution).
 * Fixed first-difference models (plm(., model = "fd"), pggls(., model = "fd"))
@@ -183,10 +190,12 @@
 * aneweytest: changed to use the residuals of the one-way individual within model 
                 (was: two-ways within model).
 * cortab: new function to compute cross-sectional correlation matrix.
-* pwartest, pwfdtest: * statistics are labelled as F statistics.
-                      * calculations now done without car::linearHypothesis().
-* diff.pseries: * logicals can now be diff'ed (result is integer, mimics base::diff).
-                * does not warn anymore if argument 'lag' has length > 1.
+* pwartest, pwfdtest:
+    * statistics are labelled as F statistics.
+    * calculations now done without car::linearHypothesis().
+* diff.pseries:
+    * logicals can now be diff'ed (result is integer, mimics base::diff).
+    * does not warn anymore if argument 'lag' has length > 1.
 * difft.pseries (note the "t") implemented (non-exported), diff-ing with
     taking the value of the time dimension into account, analogous to already
     implemented (non-exported) functions lagt.pseries/leadt.pseries.
@@ -284,7 +293,7 @@
 * Ftest: support for vcovs from package clubSandwich to allow df2 adjustment in robust F test
            (new func trans_clubSandwich_vcov added for this purpose).
 * (internal) model.matrix.pFormula: case "pooling" added to twoways/unbalanced condition;
-                                      for unknown cases, give meaningful error.
+                                    for unknown cases, give meaningful error.
 * alias.plm, alias.pFormula: added functions to complement the generic stats::alias to detect
                                linear dependence (much like detect_lin_dep).
 * detect_lin_dep.plm: added (complementing previously added detect_lin_dep methods from version 1.5-15).
@@ -292,8 +301,9 @@
     silently dropped during estimation by plm (cf. summary.lm objects).
 * fix: vcovXX.plm / vcovG framework now handle plm models with aliased coefficients (linear dependent columns
     in model matrix).
-* phtest: * better support for between models.
-          * for method="aux", argument effect is now extracted from dots.
+* phtest:
+  * better support for between models.
+  * for method="aux", argument effect is now extracted from dots.
 
 
 # plm 1.5-33
@@ -348,9 +358,10 @@
 
 # plm 1.5-25
 
-* fixef: * summary.fixef: t distribution is used for p-value calculation (like the heading states).
-         * fixef: for the t distribution to be applied for p-value calculation, objects of class "fixef" 
-             gained a "df.residual" element.
+* fixef:
+  * summary.fixef: t distribution is used for p-value calculation (like the heading states).
+  * fixef: for the t distribution to be applied for p-value calculation, objects of class "fixef" 
+           gained a "df.residual" element.
 
 
 # plm 1.5-24
@@ -421,9 +432,10 @@
 
 * pcdtest: small efficiency enhancement (calc only lower.tri of rhos).
 * pos.index (internal, not exported): new func to determine column numbers of index vars in a pdata.frame.
-* cosmetics: * some extraction/subsetting functions doubled 'pseries' in the class of returned value (fixed now).
-             * extraction methods for pdata.frame and pseries now preserve order of attributes.
-             * class "pindex" for attribute index not lost anymore after subsetting a pdata.frame.
+* cosmetics:
+    * some extraction/subsetting functions doubled 'pseries' in the class of returned value (fixed now).
+    * extraction methods for pdata.frame and pseries now preserve order of attributes.
+    * class "pindex" for attribute index not lost anymore after subsetting a pdata.frame.
 
 
 # plm 1.5-17
@@ -434,31 +446,34 @@
 
 # plm 1.5-16
 
-* plmtest: * fixed p-values [for type="kw" and "ghm"],
-           * unbalanced version of all test statistics implemented,
-           * doc update with literature references to unbalanced tests,
-           * if requested, the "kw" statistic is now also calculated as one-way ("individual" or "time"), 
-               albeit it coincides with the respective "bp" statistic.
+* plmtest:
+    * fixed p-values [for type="kw" and "ghm"],
+    * unbalanced version of all test statistics implemented,
+    * doc update with literature references to unbalanced tests,
+    * if requested, the "kw" statistic is now also calculated as one-way ("individual" or "time"), 
+      albeit it coincides with the respective "bp" statistic.
 * pwtest: formula interface respects 'effect' argument, 'effect' argument now mentioned in doc.
 * data set 'Wages': factor 'sex' re-leveled to c("male", "female") to match use in original paper.
 * print.summary.plm: suppress printing of 'effects' argument in top line in case of 'pooling' model.
 * doc for between, Between, Within extended; doc for lag, lead, diff in separate file now (lag_lead_diff.Rd)
-* pdata.frame: * fixed bug: do not assume a specific order of data when only individual index is supplied,
-               * resulting pdata.frame is ordered by individual, then time index,
-               * when duplicate couples (id-time) are created, a warning is issued,
-               * new argument 'stringAsFactors'.
+* pdata.frame:
+    * fixed bug: do not assume a specific order of data when only individual index is supplied,
+    * resulting pdata.frame is ordered by individual, then time index,
+    * when duplicate couples (id-time) are created, a warning is issued,
+    * new argument 'stringAsFactors'.
 * pvar: 
   * fixed warning about var on factor variable (var on factors is deprecated as of R 3.2.3),
   * fixed corner case with one group being all NA and other non-varying,
   * print.pvar: better handling of NA values.
 * lag/lead: fixed bug with dropped factor levels, added testfile tests/test_lag_lead_factor_levels.R.
-* is.pconsecutive: * new function to check if time periods are consecutive per individual,
-                   * better NA handling by added argument 'rm.na.tindex'.
+* is.pconsecutive:
+    * new function to check if time periods are consecutive per individual,
+    * better NA handling by added argument 'rm.na.tindex'.
 * pgmm: fixed bugs affecting the instrument matrix in the following cases:
-  * gmm instruments are collapsed and restricted in lag length;
-  * first lags are used as gmm instruments;
-  * gmm instruments are collapsed in system GMM;
-  * gmm instruments are restricted in lag length in system GMM.
+    * gmm instruments are collapsed and restricted in lag length;
+    * first lags are used as gmm instruments;
+    * gmm instruments are collapsed in system GMM;
+    * gmm instruments are restricted in lag length in system GMM.
 * punbalancedness: data frame interface gains 'index' argument.
 * within_intercept: new function to calculate an overall intercept along its standard error for FE models
                       a la Stata and gretl, accepts argument '.vcov' for user defined vcov.

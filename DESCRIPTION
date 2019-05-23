@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.0-0
-Date: 2019-05-13
+Version: 2.0-1
+Date: 2019-05-21
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
@@ -11,6 +11,7 @@ Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"
       	     person(given = "Arne",      family = "Henningsen",   role = "ctb", email = "arne.henningsen@googlemail.com"),
       	     person(given = "Liviu",     family = "Andronic",     role = "ctb", email = "landronimirc@gmail.com"),
       	     person(given = "Nina",      family = "Schoenfelder", role = "ctb", email = "nina.schoenfelder@fernuni-hagen.de"))
+Depends: R (>= 3.1.0)
 Imports: MASS, bdsmatrix, zoo, nlme, sandwich, lattice, lmtest, maxLik,
         Rdpack, Formula, stats
 Suggests: AER, car, pcse, clusterSEs, clubSandwich, pglm, spdep, splm,
@@ -24,7 +25,7 @@ License: GPL (>= 2)
 VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm,
         https://r-forge.r-project.org/projects/plm/
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 RdMacros: Rdpack
 Encoding: UTF-8
 Author: Yves Croissant [aut, cre],
@@ -39,9 +40,8 @@ Author: Yves Croissant [aut, cre],
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
 Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 864
-Repository/R-Forge/DateTimeStamp: 2019-05-14 06:21:35
-Date/Publication: 2019-05-14 11:40:03 UTC
+Repository/R-Forge/Revision: 876
+Repository/R-Forge/DateTimeStamp: 2019-05-22 12:03:35
+Date/Publication: 2019-05-23 05:00:13 UTC
 NeedsCompilation: no
-Packaged: 2019-05-14 06:38:06 UTC; rforge
-Depends: R (>= 2.10)
+Packaged: 2019-05-22 12:18:11 UTC; rforge
