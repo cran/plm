@@ -1,0 +1,511 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> # Testfile for plm::bgtest()
+> #
+> # (1) check if inputs are passed correctly for formula and panelmodel interface
+> # (2) compare results to lmtest::bgtest()
+> 
+> 
+> # Estimate some models first
+> library(plm)
+> data("Grunfeld", package = "plm")
+> g_re <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
+> g_fe <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
+> g_pool <- plm(inv ~ value + capital, data = Grunfeld, model = "pooling")
+> g_pool_lm <- lm(inv ~ value + capital, data = Grunfeld)
+> g_fe_lm <- lm(inv ~ factor(firm) + value + capital, data = Grunfeld)
+> 
+> 
+> 
+> # Results should all be the same for same model (statistics, df, p-value)
+> 
+>   # compare plm::bgtests panelmodel interface to formula interface
+>   plm::pbgtest(inv ~ value + capital, order=1, data=Grunfeld) # default is pooling model
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 135.25, df = 1, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(inv ~ value + capital, order=1, data=Grunfeld, model="pooling")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 135.25, df = 1, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_pool, order=1)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 135.25, df = 1, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   
+>   plm::pbgtest(inv ~ value + capital, order=1, model="within", data=Grunfeld)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 42.085, df = 1, p-value = 8.737e-11
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_fe, order=1)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 42.085, df = 1, p-value = 8.737e-11
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   
+>   plm::pbgtest(inv ~ value + capital, order=1, model="random", data=Grunfeld)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 50.135, df = 1, p-value = 1.435e-12
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_re, order=1)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 50.135, df = 1, p-value = 1.435e-12
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+> 
+> 
+> 
+> 
+>   # compare plm::pbgtest to lmtest::bgtest
+>   # Hint: for lm::bgtest(), if no order argument is supplied, order=1 is default,
+>   #      while plm::pbgtest() assues mininum number of obs over time (typically != 1)
+> 
+>   # panelmodel interface
+>   plm::pbgtest(g_pool, order = 1)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 135.25, df = 1, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(g_pool)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool
+LM test = 135.25, df = 1, p-value < 2.2e-16
+
+>   lmtest::bgtest(g_pool_lm)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool_lm
+LM test = 135.25, df = 1, p-value < 2.2e-16
+
+>   
+>   plm::pbgtest(g_pool, order = 1, type="F")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 409.42, df1 = 1, df2 = 196, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(g_pool,          type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool
+LM test = 409.42, df1 = 1, df2 = 196, p-value < 2.2e-16
+
+>   lmtest::bgtest(g_pool_lm,       type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool_lm
+LM test = 409.42, df1 = 1, df2 = 196, p-value < 2.2e-16
+
+> 
+>   
+>     
+> 
+>   ## formula interface
+>   plm:::pbgtest( inv ~ value + capital, data = Grunfeld, order=1)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 135.25, df = 1, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(inv ~ value + capital, data = Grunfeld, order=1)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 135.25, df = 1, p-value < 2.2e-16
+
+> 
+>   plm::pbgtest(  inv ~ value + capital, data = Grunfeld, order=1, type="F")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 409.42, df1 = 1, df2 = 196, p-value < 2.2e-16
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(inv ~ value + capital, data = Grunfeld, order=1, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 409.42, df1 = 1, df2 = 196, p-value < 2.2e-16
+
+> 
+> # Use of order.by:
+>   
+>   # order.by as vector
+>   plm::pbgtest(g_pool,      order = 1, order.by=g_pool$model$capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.077, df = 1, p-value = 0.1495
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(g_pool,    order = 1, order.by=g_pool$model$capital)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   lmtest::bgtest(g_pool_lm, order = 1, order.by=g_pool_lm$model$capital)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool_lm
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   
+>   plm::pbgtest(  inv ~ value + capital, data=Grunfeld, order = 1, order.by=g_pool$model$capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.077, df = 1, p-value = 0.1495
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(inv ~ value + capital, data=Grunfeld, order = 1, order.by=g_pool$model$capital)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   lmtest::bgtest(inv ~ value + capital, data=Grunfeld, order = 1, order.by=g_pool_lm$model$capital)  
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   
+>   
+>   
+>   plm::pbgtest(g_pool,      order = 1, order.by=g_pool$model$capital,    type="F")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(g_pool,    order = 1, order.by=g_pool$model$capital,    type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+>   lmtest::bgtest(g_pool_lm, order = 1, order.by=g_pool_lm$model$capital, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool_lm
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+>   
+>   plm::pbgtest(  inv ~ value + capital, data=Grunfeld, order = 1, order.by=g_pool$model$capital,    type="F")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(inv ~ value + capital, data=Grunfeld, order = 1, order.by=g_pool$model$capital,    type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+>   lmtest::bgtest(inv ~ value + capital, data=Grunfeld, order = 1, order.by=g_pool_lm$model$capital, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+>   
+>   
+>   
+>   
+>   # order.by as formula
+>   # when order.by is given as formula, also supply data= [requirement of lmtest::bgtest()]
+>   plm::pbgtest(g_pool,      order.by=~capital, order = 1, data=Grunfeld)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.077, df = 1, p-value = 0.1495
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(g_pool,    order.by=~capital,            data=Grunfeld)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   lmtest::bgtest(g_pool_lm, order.by=~capital,            data=Grunfeld)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool_lm
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   
+>   plm::pbgtest(  inv ~ value + capital,    order.by=~capital, order = 1, data=Grunfeld, model="pooling")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.077, df = 1, p-value = 0.1495
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(  inv ~ value + capital,    order.by=~capital, order = 1, data=Grunfeld) # default is pooling model
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.077, df = 1, p-value = 0.1495
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(inv ~ value + capital,    order.by=~capital,            data=Grunfeld)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   lmtest::bgtest(inv ~ value + capital,    order.by=~capital,            data=Grunfeld)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.077, df = 1, p-value = 0.1495
+
+>   
+> 
+> 
+>   plm::pbgtest(g_pool,      order.by=~capital, order = 1, data=Grunfeld, type="F")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(g_pool,    order.by=~capital,            data=Grunfeld, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+>   lmtest::bgtest(g_pool_lm, order.by=~capital,            data=Grunfeld, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  g_pool_lm
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+> 
+>   plm::pbgtest(  inv ~ value + capital,     order.by=~capital, order = 1, data=Grunfeld, type="F", model="pooling")
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(  inv ~ value + capital,     order.by=~capital, order = 1, data=Grunfeld, type="F") # default is pooling model
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+F = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   lmtest::bgtest(inv ~ value + capital,     order.by=~capital,            data=Grunfeld, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+>   lmtest::bgtest(inv ~ value + capital,     order.by=~capital,            data=Grunfeld, type="F")
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  inv ~ value + capital
+LM test = 2.0568, df1 = 1, df2 = 196, p-value = 0.1531
+
+> 
+> 
+>   plm::pbgtest(inv ~ value + capital, order=1, model="within", data=Grunfeld, order.by=~capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.8858, df = 1, p-value = 0.08937
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_fe,                  order=1,                 data=Grunfeld, order.by=~capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.8858, df = 1, p-value = 0.08937
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(inv ~ value + capital, order=1, model="within", data=Grunfeld, order.by=~g_fe$model$capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.8858, df = 1, p-value = 0.08937
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_fe,                  order=1,                 data=Grunfeld, order.by=~g_fe$model$capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 2.8858, df = 1, p-value = 0.08937
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   
+> 
+>   plm::pbgtest(inv ~ value + capital, order=1, model="random", data=Grunfeld, order.by=~capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 4.6203, df = 1, p-value = 0.0316
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_re,                  order=1,                 data=Grunfeld, order.by=~capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 4.6203, df = 1, p-value = 0.0316
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(inv ~ value + capital, order=1, model="random", data=Grunfeld, order.by=g_re$model$capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 4.6203, df = 1, p-value = 0.0316
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   plm::pbgtest(g_re,                  order=1,                 data=Grunfeld, order.by=g_re$model$capital)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 4.6203, df = 1, p-value = 0.0316
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   
+>   
+>   
+>   g_re <- plm(inv ~ value, model = "random", data = Grunfeld)
+>   g_re <- plm(inv ~ value + capital, model = "random", data = Grunfeld)
+>   X <- model.matrix(g_re)
+>   y <- pmodel.response(g_re)
+>   df <- as.data.frame(cbind(y, X[,-1]))
+>   lm.mod <- lm(y ~ X - 1)
+>   lm.mod2 <- lm(df)
+>   all.equal(lm.mod$residuals,  g_re$residuals)
+[1] TRUE
+>   all.equal(lm.mod2$residuals, g_re$residuals)
+[1] "Attributes: < names for current but not for target >"             
+[2] "Attributes: < Length mismatch: comparison on first 0 components >"
+[3] "target is numeric, current is pseries"                            
+> 
+>   lmtest::bgtest(lm.mod)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  lm.mod
+LM test = 50.135, df = 1, p-value = 1.435e-12
+
+>   lmtest::bgtest(lm.mod2)
+
+	Breusch-Godfrey test for serial correlation of order up to 1
+
+data:  lm.mod2
+LM test = 50.135, df = 1, p-value = 1.435e-12
+
+>   pbgtest(g_re, order = 1)
+
+	Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  inv ~ value + capital
+chisq = 50.135, df = 1, p-value = 1.435e-12
+alternative hypothesis: serial correlation in idiosyncratic errors
+
+>   
+>   
+>   
+> 
+> proc.time()
+   user  system elapsed 
+  1.252   0.053   1.296 

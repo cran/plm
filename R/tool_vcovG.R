@@ -562,6 +562,12 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     return(mycov)
 }
 
+
+#' @rdname vcovG
+#' @export
+vcovG.pcce   <- vcovG.plm
+
+
 #' Robust Covariance Matrix Estimators
 #' 
 #' Robust covariance matrix estimators *a la White* for panel
@@ -700,6 +706,11 @@ vcovHC.plm <- function(x, method=c("arellano", "white1", "white2"),
                         l=0, inner=inner, ...))
 }
 
+#' @rdname vcovHC.plm
+#' @export
+vcovHC.pcce  <- vcovHC.plm
+
+
 #' @rdname vcovNW
 #' @export
 vcovNW.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
@@ -713,6 +724,11 @@ vcovNW.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     return(vcovSCC(x, type=type, maxlag=maxlag, inner="white", wj=wj, ...))
 }
+
+#' @rdname vcovNW
+#' @export
+vcovNW.pcce  <- vcovNW.plm
+
 
 #' @rdname vcovDC
 #' @export
@@ -732,6 +748,10 @@ vcovDC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     attr(res, which = "cluster") <- "group-time"
     return(res)
 }
+
+#' @rdname vcovDC
+#' @export
+vcovDC.pcce  <- vcovDC.plm
 
 #' @rdname vcovSCC
 #' @export
@@ -763,6 +783,12 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     return(S0)
 }
+
+
+
+#' @rdname vcovSCC
+#' @export
+vcovSCC.pcce <- vcovSCC.plm
 
                                         # ICI
 
@@ -1109,11 +1135,6 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
 ## data from model.matrix.pcce and pmodel.response.pcce
 
 ## TODO: vcovBK.pcce missing? Or not valid?
-vcovG.pcce   <- vcovG.plm
-vcovHC.pcce  <- vcovHC.plm
-vcovNW.pcce  <- vcovNW.plm
-vcovSCC.pcce <- vcovSCC.plm
-vcovDC.pcce  <- vcovDC.plm
 
 
 ####################################

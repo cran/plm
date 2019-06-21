@@ -1,0 +1,94 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### some of summary.pseries error'ed or gave warnings pre rev. 445
+> 
+> library("plm")
+> data("Grunfeld", package = "plm")
+> 
+> Grunfeld$char <- rep("ab", 200)
+> Grunfeld$logi <- rep(c(T, F), 100)
+> Grunfeld$fac <- factor(rep(c("a", "b"), 100))
+> 
+> pGrund <- pdata.frame(Grunfeld, stringsAsFactors = FALSE)
+> 
+> # summary on original data
+> summary(Grunfeld$inv)   # numeric
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   0.93   33.56   57.48  145.96  138.04 1486.70 
+> summary(Grunfeld$char)  # character
+   Length     Class      Mode 
+      200 character character 
+> summary(Grunfeld$logi)  # logical
+   Mode   FALSE    TRUE 
+logical     100     100 
+> summary(Grunfeld$fac)   # factor
+  a   b 
+100 100 
+> 
+> # summary.pseries
+> summary(pGrund$inv)
+total sum of squares: 9359944 
+        id       time 
+0.76021734 0.06716957 
+> summary(pGrund$char)
+   Length     Class      Mode 
+      200 character character 
+> summary(pGrund$logi)
+   Mode   FALSE    TRUE 
+logical     100     100 
+> summary(pGrund$fac)
+  a   b 
+100 100 
+> 
+> 
+> summary(Grunfeld)
+      firm           year           inv              value        
+ Min.   : 1.0   Min.   :1935   Min.   :   0.93   Min.   :  58.12  
+ 1st Qu.: 3.0   1st Qu.:1940   1st Qu.:  33.56   1st Qu.: 199.97  
+ Median : 5.5   Median :1944   Median :  57.48   Median : 517.95  
+ Mean   : 5.5   Mean   :1944   Mean   : 145.96   Mean   :1081.68  
+ 3rd Qu.: 8.0   3rd Qu.:1949   3rd Qu.: 138.04   3rd Qu.:1679.85  
+ Max.   :10.0   Max.   :1954   Max.   :1486.70   Max.   :6241.70  
+    capital            char              logi         fac    
+ Min.   :   0.80   Length:200         Mode :logical   a:100  
+ 1st Qu.:  79.17   Class :character   FALSE:100       b:100  
+ Median : 205.60   Mode  :character   TRUE :100              
+ Mean   : 276.02                                             
+ 3rd Qu.: 358.10                                             
+ Max.   :2226.30                                             
+> summary(pGrund)
+      firm         year          inv              value        
+ 1      :20   1935   : 10   Min.   :   0.93   Min.   :  58.12  
+ 2      :20   1936   : 10   1st Qu.:  33.56   1st Qu.: 199.97  
+ 3      :20   1937   : 10   Median :  57.48   Median : 517.95  
+ 4      :20   1938   : 10   Mean   : 145.96   Mean   :1081.68  
+ 5      :20   1939   : 10   3rd Qu.: 138.04   3rd Qu.:1679.85  
+ 6      :20   1940   : 10   Max.   :1486.70   Max.   :6241.70  
+ (Other):80   (Other):140                                      
+    capital            char              logi         fac    
+ Min.   :   0.80   Length:200         Mode :logical   a:100  
+ 1st Qu.:  79.17   Class :character   FALSE:100       b:100  
+ Median : 205.60   Mode  :character   TRUE :100              
+ Mean   : 276.02                                             
+ 3rd Qu.: 358.10                                             
+ Max.   :2226.30                                             
+                                                             
+> 
+> proc.time()
+   user  system elapsed 
+  0.615   0.048   0.661 

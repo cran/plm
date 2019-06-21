@@ -1,0 +1,399 @@
+
+R version 3.6.0 (2019-04-26) -- "Planting of a Tree"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## plm does not respect argument na.action for padding residuals:
+> ##  There is no element "na.action" in the plm object.
+> ##  Putting it in, would allow for padding the residuals with NA to
+> ##  match the number of rows of the original data by using the standard
+> ##  framework like it is in place for lm().
+> ##
+> ## However, many functions in the plm package (statistical tests, ...) rely
+> ## on the non-padded residuals but extract the residuals by residuals(plm_object)
+> ## or the shortcut resid(plm_object), instead of using plm_object$residuals which
+> ## give the "correct" residuals for such tests.
+> ## 
+> ## There is an experimental branch with an added na.action element and changed
+> ## functions to use plm_object$residuals where appropriate, but likely not all
+> ## cases have been caught in that branch.
+> ##
+> ##
+> ## compare lm()'s and plm()'s behaviour
+> ## when residuals() is called on plm objects, na.action element is disrepected;
+> ## na.action = na.omit drops NAs from residuals extracted by residuals 
+> ## na.action = na.exclude performs NA padding to match original data length
+> 
+> library(plm)
+> data("Grunfeld", package = "plm")
+> form <- formula(inv ~ value + capital)
+> 
+> # set some arbitrary value to NA, so it is left out of the estimation
+> Grunfeld_1NA <- Grunfeld
+> line_no <- 6L
+> Grunfeld_1NA[line_no, "inv"] <- NA
+> 
+> 
+> ############ lm ############
+> 
+> # lm and na.action set to default [usually na.omit]
+> lm_gr_1NA <- lm(form, data = Grunfeld_1NA)
+> nobs(lm_gr_1NA)
+[1] 199
+> length(residuals(lm_gr_1NA))
+[1] 199
+> residuals(lm_gr_1NA)[line_no]
+        7 
+-34.79252 
+> 
+> # lm and na.omit
+> lm_gr_na_omit <- lm(form, data = Grunfeld_1NA, na.action = na.omit)
+> nobs(lm_gr_na_omit)
+[1] 199
+> length(residuals(lm_gr_na_omit))  # should be equal to no. of obs used (199)
+[1] 199
+> residuals(lm_gr_na_omit)[line_no] # element #line_no should be non-NA (a real data point)
+        7 
+-34.79252 
+> is.na(residuals(lm_gr_na_omit)[line_no])
+    7 
+FALSE 
+> lm_gr_na_omit$na.action
+6 
+6 
+attr(,"class")
+[1] "omit"
+> head(lm_gr_na_omit$model)
+    inv  value capital
+1 317.6 3078.5     2.8
+2 391.8 4661.7    52.6
+3 410.6 5387.1   156.9
+4 257.7 2792.2   209.2
+5 330.8 4313.2   203.4
+7 512.0 4551.2   255.2
+> na.action(lm_gr_na_omit)
+6 
+6 
+attr(,"class")
+[1] "omit"
+> 
+> 
+> # lm and na.exclude
+> lm_gr_na_exclude <- lm(form, data = Grunfeld_1NA, na.action = na.exclude)
+> nobs(lm_gr_na_exclude)
+[1] 199
+> length(residuals(lm_gr_na_exclude))  # should be equal to length of original data, due to padding with NA values (200)
+[1] 200
+> length(lm_gr_na_exclude$residuals)   # but element "residuals" in lm object has only values without NA
+[1] 199
+> residuals(lm_gr_na_exclude)[line_no] # element #line_no should be NA, due to padding performed
+ 6 
+NA 
+> is.na(residuals(lm_gr_na_exclude)[line_no])
+   6 
+TRUE 
+> head(lm_gr_na_exclude$model)
+    inv  value capital
+1 317.6 3078.5     2.8
+2 391.8 4661.7    52.6
+3 410.6 5387.1   156.9
+4 257.7 2792.2   209.2
+5 330.8 4313.2   203.4
+7 512.0 4551.2   255.2
+> na.action(lm_gr_na_exclude)
+6 
+6 
+attr(,"class")
+[1] "exclude"
+> 
+> # lm and na.pass
+> # lm_gr_na_pass <- lm(form, data=Grunfeld_1NA, na.action = na.pass) # yields an error for lm: Error in lm.fit(....) : NA/NaN/Inf in 'y'
+> 
+> # Should be TRUE [199 + 1 == 200]
+> # if (!(length(residuals(lm_gr_na_omit)) + 1 == length(residuals(lm_gr_na_exclude))))
+> #   stop("in lm: na.action with na.omit and na.exclude not working correctly")
+> 
+> 
+> 
+> ############ plm ############
+> 
+> # plm and na.action set to default [usually na.omit]
+> plm_gr_1NA <- plm(form, data = Grunfeld_1NA, model = "pooling")
+> nobs(plm_gr_1NA)
+[1] 199
+> length(residuals(plm_gr_1NA))
+[1] 199
+> residuals(plm_gr_1NA)[line_no]
+        7 
+-34.79252 
+> is.na(residuals(plm_gr_1NA)[line_no])
+    7 
+FALSE 
+> plm_gr_1NA$na.action
+NULL
+> 
+> # plm and na.omit
+> plm_gr_na_omit <- plm(form, data = Grunfeld_1NA, model = "pooling", na.action = na.omit)
+> nobs(plm_gr_na_omit)
+[1] 199
+> length(residuals(plm_gr_na_omit))
+[1] 199
+> residuals(plm_gr_na_omit)[line_no]
+        7 
+-34.79252 
+> is.na(residuals(plm_gr_na_omit)[line_no])
+    7 
+FALSE 
+> plm_gr_na_omit$na.action
+NULL
+> #if (is.null(plm_gr_na_omit$na.action)) stop("no na.action element found")
+> 
+> # plm and na.exclude
+> plm_gr_na_exclude <- plm(form, data = Grunfeld_1NA, model = "pooling", na.action = na.exclude)
+> nobs(plm_gr_na_exclude)
+[1] 199
+> length(residuals(plm_gr_na_exclude))
+[1] 199
+> residuals(plm_gr_na_exclude)[line_no]
+        7 
+-34.79252 
+> is.na(residuals(plm_gr_na_exclude)[line_no])
+    7 
+FALSE 
+> plm_gr_na_exclude$na.action
+NULL
+> #if (is.null(plm_gr_na_exclude$na.action)) stop("no na.action element found")
+> 
+> # plm and na.pass
+> # as opposed to lm, plm does not stop with na.pass
+> # NB: as na.pass returns the object unchanged, there is no attribute "na.action"
+> #     in this case for the data or for the plm object
+> plm_gr_na_pass <- plm(form, data = Grunfeld_1NA, model = "pooling", na.action = na.pass)
+> nobs(plm_gr_na_pass)
+[1] 199
+> length(residuals(plm_gr_na_pass))
+[1] 199
+> residuals(plm_gr_na_pass)[line_no]
+        7 
+-34.79252 
+> is.na(residuals(plm_gr_na_pass)[line_no])
+    7 
+FALSE 
+> plm_gr_na_pass$na.action
+NULL
+> # if (!is.null(plm_gr_na_pass$na.action))
+> #   stop("na.pass: na.action element found in plm object, albeit there should be non for na.action = na.pass")
+> 
+> # plm and na.pass without NAs
+> plm_gr_no_NA_na_pass <- plm(form, data = Grunfeld, model = "pooling", na.action = na.pass)
+> # if (!is.null(plm_gr_no_NA_na_pass$na.action))
+> #   stop("na.pass: na.action element found in plm object, albeit there should be non for na.action = na.pass")
+> 
+> 
+> # Should be TRUE [199 + 1 == 200]
+> length(residuals(plm_gr_na_omit)) + 1 == length(residuals(plm_gr_na_exclude))
+[1] FALSE
+> 
+> # formal test:
+>  # if (!(length(residuals(plm_gr_na_omit)) + 1 == length(residuals(plm_gr_na_exclude))))
+>  #   stop("residuals not padded!")
+> 
+> # test with randomly missing data
+> Grunfeld_NA_rand <- Grunfeld
+> set.seed(1)
+> Grunfeld_NA_rand[sample(1:nrow(Grunfeld_NA_rand), size = 25), "inv"] <- NA
+> sum(is.na(Grunfeld_NA_rand$inv))
+[1] 25
+> plm_gr_wi_na_exclude <- plm(form, data = Grunfeld_NA_rand, model = "within", na.action = na.exclude)
+> data_NA_structure <- is.na(Grunfeld_NA_rand$inv)
+> res_NA_structure  <- is.na(residuals(plm_gr_wi_na_exclude))
+> # if (!isTRUE(all.equal(data_NA_structure, res_NA_structure, check.attributes = FALSE)))
+> #   stop("na.exclude: NA pattern does not match NA pattern of original data")
+> 
+> 
+> 
+> ## test with summary call etc.
+> ## some show NA values
+> summary(plm_gr_1NA)
+Pooling Model
+
+Call:
+plm(formula = form, data = Grunfeld_1NA, model = "pooling")
+
+Unbalanced Panel: n = 10, T = 19-20, N = 199
+
+Residuals:
+     Min.   1st Qu.    Median   3rd Qu.      Max. 
+-292.3524  -27.7670    5.9703   34.3828  369.2295 
+
+Coefficients:
+               Estimate  Std. Error t-value  Pr(>|t|)    
+(Intercept) -42.7939799   9.5176267 -4.4963 1.182e-05 ***
+value         0.1167736   0.0059998 19.4630 < 2.2e-16 ***
+capital       0.2277678   0.0257051  8.8608 4.825e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    9260100
+Residual Sum of Squares: 1749000
+R-Squared:      0.81113
+Adj. R-Squared: 0.8092
+F-statistic: 420.871 on 2 and 196 DF, p-value: < 2.22e-16
+> summary(plm_gr_na_omit)
+Pooling Model
+
+Call:
+plm(formula = form, data = Grunfeld_1NA, na.action = na.omit, 
+    model = "pooling")
+
+Unbalanced Panel: n = 10, T = 19-20, N = 199
+
+Residuals:
+     Min.   1st Qu.    Median   3rd Qu.      Max. 
+-292.3524  -27.7670    5.9703   34.3828  369.2295 
+
+Coefficients:
+               Estimate  Std. Error t-value  Pr(>|t|)    
+(Intercept) -42.7939799   9.5176267 -4.4963 1.182e-05 ***
+value         0.1167736   0.0059998 19.4630 < 2.2e-16 ***
+capital       0.2277678   0.0257051  8.8608 4.825e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    9260100
+Residual Sum of Squares: 1749000
+R-Squared:      0.81113
+Adj. R-Squared: 0.8092
+F-statistic: 420.871 on 2 and 196 DF, p-value: < 2.22e-16
+> summary(plm_gr_na_exclude)
+Pooling Model
+
+Call:
+plm(formula = form, data = Grunfeld_1NA, na.action = na.exclude, 
+    model = "pooling")
+
+Unbalanced Panel: n = 10, T = 19-20, N = 199
+
+Residuals:
+     Min.   1st Qu.    Median   3rd Qu.      Max. 
+-292.3524  -27.7670    5.9703   34.3828  369.2295 
+
+Coefficients:
+               Estimate  Std. Error t-value  Pr(>|t|)    
+(Intercept) -42.7939799   9.5176267 -4.4963 1.182e-05 ***
+value         0.1167736   0.0059998 19.4630 < 2.2e-16 ***
+capital       0.2277678   0.0257051  8.8608 4.825e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    9260100
+Residual Sum of Squares: 1749000
+R-Squared:      0.81113
+Adj. R-Squared: 0.8092
+F-statistic: 420.871 on 2 and 196 DF, p-value: < 2.22e-16
+> summary(plm_gr_na_pass)
+Pooling Model
+
+Call:
+plm(formula = form, data = Grunfeld_1NA, na.action = na.pass, 
+    model = "pooling")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+     Min.   1st Qu.    Median   3rd Qu.      Max. 
+-292.3524  -27.7670    5.9703   34.3828  369.2295 
+
+Coefficients:
+               Estimate  Std. Error t-value  Pr(>|t|)    
+(Intercept) -42.7939799   9.5176267 -4.4963 1.182e-05 ***
+value         0.1167736   0.0059998 19.4630 < 2.2e-16 ***
+capital       0.2277678   0.0257051  8.8608 4.825e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    NA
+Residual Sum of Squares: 1749000
+R-Squared:      NA
+Adj. R-Squared: NA
+F-statistic: NA on 2 and 196 DF, p-value: NA
+> summary(plm_gr_no_NA_na_pass)
+Pooling Model
+
+Call:
+plm(formula = form, data = Grunfeld, na.action = na.pass, model = "pooling")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+     Min.   1st Qu.    Median   3rd Qu.      Max. 
+-291.6757  -30.0137    5.3033   34.8293  369.4464 
+
+Coefficients:
+               Estimate  Std. Error t-value  Pr(>|t|)    
+(Intercept) -42.7143694   9.5116760 -4.4907 1.207e-05 ***
+value         0.1155622   0.0058357 19.8026 < 2.2e-16 ***
+capital       0.2306785   0.0254758  9.0548 < 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    9359900
+Residual Sum of Squares: 1755900
+R-Squared:      0.81241
+Adj. R-Squared: 0.8105
+F-statistic: 426.576 on 2 and 197 DF, p-value: < 2.22e-16
+> summary(plm_gr_wi_na_exclude)
+Oneway (individual) effect Within Model
+
+Call:
+plm(formula = form, data = Grunfeld_NA_rand, na.action = na.exclude, 
+    model = "within")
+
+Unbalanced Panel: n = 10, T = 16-20, N = 175
+
+Residuals:
+      Min.    1st Qu.     Median    3rd Qu.       Max. 
+-173.10886  -20.01108    0.41742   20.87163  248.28473 
+
+Coefficients:
+        Estimate Std. Error t-value  Pr(>|t|)    
+value   0.107599   0.013435  8.0086 2.085e-13 ***
+capital 0.312037   0.018843 16.5600 < 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    2133200
+Residual Sum of Squares: 479630
+R-Squared:      0.77516
+Adj. R-Squared: 0.75999
+F-statistic: 280.988 on 2 and 163 DF, p-value: < 2.22e-16
+> 
+> class(residuals(plm_gr_1NA))
+[1] "pseries" "numeric"
+> class(residuals(plm_gr_na_omit))
+[1] "pseries" "numeric"
+> class(residuals(plm_gr_na_exclude))
+[1] "pseries" "numeric"
+> class(residuals(plm_gr_na_pass))
+[1] "pseries" "numeric"
+> class(residuals(plm_gr_no_NA_na_pass))
+[1] "pseries" "numeric"
+> class(residuals(plm_gr_wi_na_exclude))
+[1] "pseries" "numeric"
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.719   0.039   0.756 

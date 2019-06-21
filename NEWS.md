@@ -1,3 +1,9 @@
+# plm 2.0-2
+
+* vcov###.pcce are now exported
+* vignettes are switched from bookdown::html_document2 to
+  html_vignette
+
 # plm 2.0-1
 
 * Minor update: tests updated to pacify CRAN's testing procedure with

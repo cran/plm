@@ -1,0 +1,378 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> # Test of conversion to pdata.frame if only an individual index in supplied
+> # bug fixed in rev. 204
+>  
+> 
+> library(plm)
+> data("Hedonic", package = "plm")
+> 
+> # insert test columns
+> Hedonic$str <- c(rep(c(letters), nrow(Hedonic)%/%length(letters)), letters[1:(nrow(Hedonic)%%length(letters))])
+> Hedonic$str_const <- rep("const", nrow(Hedonic))
+> temp <- pdata.frame(Hedonic, index = "townid")
+> Hedonic$fac <- factor(Hedonic$str)
+> Hedonic$fac_const <- rep(factor("fac_const"), nrow(Hedonic))
+> Hedonic$na <- rep(NA, nrow(Hedonic))
+> temp <- pdata.frame(Hedonic, index = "townid")
+> Hedonic$na2 <- rep(NA, nrow(Hedonic))
+> 
+> rm(temp)
+> 
+> Hedonic2 <- Hedonic[order(Hedonic$mv), ] # sorted a different way
+> Hedonic3 <- Hedonic[order(Hedonic$townid, decreasing = TRUE), ] # in descending order
+> 
+> Hed1 <- pdata.frame(Hedonic, index = "townid", stringsAsFactors = FALSE) # works 
+> pdim(Hed1)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed1)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-2 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+3-3 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-2 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+3-3 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> 
+> Hed1_2.1 <- pdata.frame(Hedonic, index = "townid", stringsAsFactors = TRUE) # works 
+> pdim(Hed1_2.1)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed1_2.1)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-2 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+3-3 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-2 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+3-3 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> #str(Hed1_2.1)
+> sapply(Hed1_2.1, function(x) class(x))
+       mv      crim        zn     indus      chas       nox        rm       age 
+"numeric" "numeric" "numeric" "numeric"  "factor" "numeric" "numeric" "numeric" 
+      dis       rad       tax   ptratio    blacks     lstat    townid       str 
+"numeric" "numeric" "integer" "numeric" "numeric" "numeric"  "factor"  "factor" 
+str_const       fac fac_const        na       na2      time 
+ "factor"  "factor"  "factor" "logical" "logical"  "factor" 
+> 
+> Hed1_2.2 <- pdata.frame(Hedonic, index = "townid", stringsAsFactors = FALSE) # works 
+> pdim(Hed1_2.2)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed1_2.2)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-2 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+3-3 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-2 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+3-3 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> #str(Hed1_2.2)
+> sapply(Hed1_2.2, function(x) class(x))
+         mv        crim          zn       indus        chas         nox 
+  "numeric"   "numeric"   "numeric"   "numeric"    "factor"   "numeric" 
+         rm         age         dis         rad         tax     ptratio 
+  "numeric"   "numeric"   "numeric"   "numeric"   "integer"   "numeric" 
+     blacks       lstat      townid         str   str_const         fac 
+  "numeric"   "numeric"    "factor" "character" "character"    "factor" 
+  fac_const          na         na2        time 
+   "factor"   "logical"   "logical"    "factor" 
+> 
+> 
+> 
+> Hed2 <- pdata.frame(Hedonic2, index = "townid")
+> pdim(Hed2)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed2)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+3-2 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-3 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+3-2 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-3 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> 
+> Hed2_2 <- pdata.frame(Hedonic2, index = "townid")
+> pdim(Hed2_2)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed2_2)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+3-2 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-3 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+3-2 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-3 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> head(Hedonic2)
+         mv     crim zn    indus chas     nox      rm       age     dis     rad
+399 8.51719 38.35180  0 18.09999   no 48.0248 29.7352 100.00000 0.39851 3.17805
+406 8.51719 67.92080  0 18.09999   no 48.0248 32.2965 100.00000 0.35445 3.17805
+401 8.63052 25.04610  0 18.09999   no 48.0248 35.8442 100.00000 0.46298 3.17805
+400 8.74831  9.91655  0 18.09999   no 48.0248 34.2459  77.79999 0.40573 3.17805
+415 8.85367 45.74610  0 18.09999   no 48.0248 20.4213 100.00000 0.50573 3.17805
+490 8.85367  0.18337  0 27.73999   no 37.0881 29.3114  98.29999 0.56270 1.38629
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+399 666 20.20000 0.39690 -1.18453     81   i     const   i fac_const NA  NA
+406 666 20.20000 0.38497 -1.47072     81   p     const   p fac_const NA  NA
+401 666 20.20000 0.39690 -1.31793     81   k     const   k fac_const NA  NA
+400 666 20.20000 0.33817 -1.20481     81   j     const   j fac_const NA  NA
+415 666 20.20000 0.08827 -0.99474     83   y     const   y fac_const NA  NA
+490 711 20.09999 0.34405 -1.42828     90   v     const   v fac_const NA  NA
+> 
+> 
+> Hed3 <- pdata.frame(Hedonic3, index = "townid")
+> pdim(Hed3)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed3)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-2 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+3-3 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-2 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+3-3 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> 
+> Hed3_2 <- pdata.frame(Hedonic3, index = "townid")
+> pdim(Hed3_2)
+Unbalanced Panel: n = 92, T = 1-30, N = 506
+> head(Hed3_2)
+          mv    crim zn    indus chas     nox      rm      age     dis     rad
+1-1 10.08580 0.00632 18 2.309999   no 28.9444 43.2306 65.19995 1.40854 0.00000
+2-1  9.98045 0.02731  0 7.070000   no 21.9961 41.2292 78.89996 1.60283 0.69315
+2-2 10.45450 0.02730  0 7.070000   no 21.9961 51.6242 61.09998 1.60283 0.69315
+3-1 10.41630 0.03237  0 2.179998   no 20.9764 48.9720 45.79999 1.80207 1.09861
+3-2 10.49680 0.06905  0 2.179998   no 20.9764 51.0796 54.19998 1.80207 1.09861
+3-3 10.26470 0.02985  0 2.179998   no 20.9764 41.3449 58.69998 1.80207 1.09861
+    tax  ptratio  blacks    lstat townid str str_const fac fac_const na na2
+1-1 296 15.29999 0.39690 -3.00074      1   a     const   a fac_const NA  NA
+2-1 242 17.79999 0.39690 -2.39251      2   b     const   b fac_const NA  NA
+2-2 242 17.79999 0.39283 -3.21165      2   c     const   c fac_const NA  NA
+3-1 222 18.70000 0.39464 -3.52744      3   d     const   d fac_const NA  NA
+3-2 222 18.70000 0.39690 -2.93163      3   e     const   e fac_const NA  NA
+3-3 222 18.70000 0.39412 -2.95555      3   f     const   f fac_const NA  NA
+    time
+1-1    1
+2-1    1
+2-2    2
+3-1    1
+3-2    2
+3-3    3
+> head(Hedonic3)
+          mv    crim zn     indus chas     nox      rm      age     dis     rad
+502 10.01680 0.06263  0 11.929993   no 32.8329 43.4677 69.09998 0.90769 0.00000
+503  9.93305 0.04527  0 11.929993   no 32.8329 37.4544 76.69995 0.82746 0.00000
+504 10.08160 0.06076  0 11.929993   no 32.8329 48.6646 91.00000 0.77357 0.00000
+505  9.99880 0.10959  0 11.929993   no 32.8329 46.1584 89.29999 0.87083 0.00000
+506  9.38429 0.04741  0 11.929993   no 32.8329 36.3609 80.79999 0.91829 0.00000
+494  9.98967 0.17331  0  9.689995   no 34.2225 32.5698 54.00000 0.86781 1.79176
+    tax ptratio  blacks    lstat townid str str_const fac fac_const na na2
+502 273    21.0 0.39199 -2.33604     92   h     const   h fac_const NA  NA
+503 273    21.0 0.39690 -2.39910     92   i     const   i fac_const NA  NA
+504 273    21.0 0.39690 -2.87582     92   j     const   j fac_const NA  NA
+505 273    21.0 0.39346 -2.73630     92   k     const   k fac_const NA  NA
+506 273    21.0 0.39690 -2.54033     92   l     const   l fac_const NA  NA
+494 391    19.2 0.39690 -2.11943     91   z     const   z fac_const NA  NA
+> 
+> # test for warning of duplicated couples
+>   data("Grunfeld", package = "plm")
+>   Grunfeld_dup <- rbind(Grunfeld, Grunfeld[200, ])
+>   ttC <-  tryCatch(pdata.frame(Grunfeld_dup), error=function(e) e, warning=function(w) w)
+>   if(!is(ttC,"warning") | ttC$message != "duplicate couples (id-time) in resulting pdata.frame\n to find out which, use e.g. table(index(your_pdataframe), useNA = \"ifany\")")
++     stop("warning of duplicated couples not successful")
+> 
+> 
+> # test: character as individual index
+> Grunfeld.p <- pdata.frame(Grunfeld)
+> Grunfeld_charac <- Grunfeld
+> Grunfeld_charac$firm <- as.character(Grunfeld_charac$firm)
+> Grunfeld_charac.p <- pdata.frame(Grunfeld_charac)
+> Grunfeld_charac.p2 <- pdata.frame(Grunfeld_charac, stringsAsFactors = FALSE)
+> if(!identical(Grunfeld_charac.p, Grunfeld_charac.p2)) stop("pdata.frames not identical)")
+> pdim(Grunfeld_charac.p)
+Balanced Panel: n = 10, T = 20, N = 200
+> pdim(Grunfeld_charac.p2)
+Balanced Panel: n = 10, T = 20, N = 200
+> 
+> 
+> # test: character as individual index
+> Grunfeld_charac2 <- Grunfeld
+> Grunfeld_charac2$firm <- as.character(Grunfeld_charac2$firm)
+> Grunfeld_charac2$year <- as.character(Grunfeld_charac2$year)
+> Grunfeld_charac2.p <- pdata.frame(Grunfeld_charac2)
+> Grunfeld_charac2.p2 <- pdata.frame(Grunfeld_charac2, stringsAsFactors = FALSE)
+> if(!identical(Grunfeld_charac2.p, Grunfeld_charac2.p2)) stop("pdata.frames not identical)")
+> pdim(Grunfeld_charac2.p)
+Balanced Panel: n = 10, T = 20, N = 200
+> pdim(Grunfeld_charac2.p2)
+Balanced Panel: n = 10, T = 20, N = 200
+> 
+> # index with two variables
+> Grunfeld.p3 <- pdata.frame(Grunfeld, index = c("firm", "year"))
+> pdim(Grunfeld.p3)
+Balanced Panel: n = 10, T = 20, N = 200
+> 
+> # index is numeric
+> data("Wages", package = "plm")
+> Wag <- pdata.frame(Wages, 595)
+> pdim(Wag)
+Balanced Panel: n = 595, T = 7, N = 4165
+> 
+> # test for warning about time index
+> ttC2 <-  tryCatch(pdata.frame(Wages, index=c(595, 3)), error=function(e) e, warning = function(w) w)
+> if(!is(ttC2,"warning") | ttC2$message != "The time index (second element of 'index' argument) will be ignored\n") stop("warning about unused time index not sent")
+> 
+> # test for error about length(index)>2
+> # Should result in error with informative message
+> #ttC3 <-  tryCatch(pdata.frame(Wages, index=c(595, 3, 5)), error=function(e) e, warning = function(w) w)
+> #if(!is(ttC3,"error") | ttC3$message != "'index' can be of length 2 at the most (one individual and one time index)") stop("error about length(index)>2 not sent")
+> #YC deprecated, the index can be now of length 3
+> 
+> #### larger data set ###
+> ## commented because needs other package
+> # require(plm)
+> # library(ggplot2)
+> # data("diamonds", package = "ggplot2")
+> # 
+> # class(diamonds$cut) # ordered factor
+> # 
+> # diamonds.p <- pdata.frame(diamonds, index = "cut") # wrong indexes created
+> # pdim(diamonds.p)
+> # 
+> # # order data set
+> # diamonds3_asc <- diamonds[order(diamonds$cut), ]
+> # diamonds3_asc.p <- pdata.frame(diamonds3_asc, index = "cut")
+> # pdim(diamonds3_asc.p) # works
+> # 
+> # diamonds3_desc <- diamonds[order(diamonds$cut, decreasing = T), ]
+> # diamonds3_desc.p <- pdata.frame(diamonds3_desc, index = "cut")
+> # pdim(diamonds3_desc.p)
+> # 
+> # 
+> # # try numeric index
+> # diamonds2 <- diamonds
+> # diamonds2$cut_num  <- as.numeric(diamonds2$cut) # make index numeric
+> # 
+> # diamonds2_asc  <- diamonds2[order(diamonds2$cut_num), ] # ascending order of index
+> # diamonds2_desc <- diamonds2[order(diamonds2$cut_num, decreasing = T), ] # descending order of index
+> # 
+> # head(diamonds2_asc)
+> # head(diamonds2_desc)
+> # 
+> # diamonds2_asc.p <- pdata.frame(diamonds2_asc, index = "cut_num")
+> # pdim(diamonds2_asc.p)
+> # 
+> # diamonds2_desc.p <- pdata.frame(diamonds2_desc, index = "cut_num") # wrong index created
+> # pdim(diamonds2_desc.p)
+> # 
+> # 
+> # # Some further tests about the blocks of individuals
+> # # - does it depend on asc. block length?
+> # # -> no, works fine
+> # diamonds2_asc_short <- diamonds2_asc[-c(33940:nrow(diamonds2_asc)), ]
+> # diamonds2_asc_short.p <- pdata.frame(diamonds2_asc_short, index = "cut_num")
+> # pdim(diamonds2_asc_short.p)
+> # 
+> # diamonds2_asc_short2 <- diamonds2_asc[-c(6517:18517), ]
+> # diamonds2_asc_short2.p <- pdata.frame(diamonds2_asc_short2, index = "cut_num")
+> # pdim(diamonds2_asc_short2.p)
+> 
+> proc.time()
+   user  system elapsed 
+  0.829   0.050   0.858 

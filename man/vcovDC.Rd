@@ -3,11 +3,15 @@
 \name{vcovDC}
 \alias{vcovDC}
 \alias{vcovDC.plm}
+\alias{vcovDC.pcce}
 \title{Double-Clustering Robust Covariance Matrix Estimator}
 \usage{
 vcovDC(x, ...)
 
 \method{vcovDC}{plm}(x, type = c("HC0", "sss", "HC1", "HC2", "HC3",
+  "HC4"), ...)
+
+\method{vcovDC}{pcce}(x, type = c("HC0", "sss", "HC1", "HC2", "HC3",
   "HC4"), ...)
 }
 \arguments{
