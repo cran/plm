@@ -20,18 +20,6 @@ Type 'q()' to quit R.
 > pkgname <- "plm"
 > source(file.path(R.home("share"), "R", "examples-header.R"))
 > options(warn = 1)
-> base::assign(".ExTimings", "plm-Ex.timings", pos = 'CheckExEnv')
-> base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
-> base::assign(".format_ptime",
-+ function(x) {
-+   if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
-+   if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
-+   options(OutDec = '.')
-+   format(x[1L:3L], digits = 7L)
-+ },
-+ pos = 'CheckExEnv')
-> 
-> ### * </HEADER>
 > library('plm')
 > 
 > base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
@@ -42,7 +30,6 @@ Type 'q()' to quit R.
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: Grunfeld
 > ### Title: Grunfeld's Investment Data
 > ### Aliases: Grunfeld
@@ -64,15 +51,12 @@ Type 'q()' to quit R.
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("Grunfeld", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("Wages")
 > ### * Wages
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: Wages
 > ### Title: Panel Data of Individual Wages
 > ### Aliases: Wages
@@ -88,15 +72,12 @@ Type 'q()' to quit R.
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("Wages", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("aneweytest")
 > ### * aneweytest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: aneweytest
 > ### Title: Chamberlain estimator and test for fixed effects
 > ### Aliases: aneweytest
@@ -117,15 +98,12 @@ chisq = 141.89, df = 87, p-value = 0.0001851
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("aneweytest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("cipstest")
 > ### * cipstest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: cipstest
 > ### Title: Cross-sectionally Augmented IPS Test for Unit Roots in Panel
 > ###   Models
@@ -152,15 +130,12 @@ alternative hypothesis: Stationarity
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("cipstest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("detect.lindep")
 > ### * detect.lindep
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: detect.lindep
 > ### Title: Functions to detect linear dependence
 > ### Aliases: detect.lindep detect.lindep.matrix detect.lindep.data.frame
@@ -374,15 +349,12 @@ CEOage 0     0       1
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("detect.lindep", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("ercomp")
 > ### * ercomp
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: ercomp
 > ### Title: Estimation of the error components
 > ### Aliases: ercomp ercomp.plm ercomp.pdata.frame ercomp.formula
@@ -421,15 +393,12 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("ercomp", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("fixef.plm")
 > ### * fixef.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: fixef.plm
 > ### Title: Extract the Fixed Effects
 > ### Aliases: fixef.plm print.fixef summary.fixef print.summary.fixef
@@ -518,15 +487,12 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("fixef.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("index.plm")
 > ### * index.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: index.plm
 > ### Title: Extract the indexes of panel data
 > ### Aliases: index.plm index.pindex index.pdata.frame index.pseries
@@ -860,15 +826,12 @@ Levels: 1 2 3 4 5 6 7 8 9
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("index.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("is.pbalanced")
 > ### * is.pbalanced
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: is.pbalanced
 > ### Title: Check if data are balanced
 > ### Aliases: is.pbalanced is.pbalanced.default is.pbalanced.data.frame
@@ -900,15 +863,12 @@ Levels: 1 2 3 4 5 6 7 8 9
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("is.pbalanced", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("is.pconsecutive")
 > ### * is.pconsecutive
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: is.pconsecutive
 > ### Title: Check if time periods are consecutive
 > ### Aliases: is.pconsecutive is.pconsecutive.default
@@ -1010,15 +970,12 @@ TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("is.pconsecutive", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("is.pseries")
 > ### * is.pseries
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: is.pseries
 > ### Title: Check if an object is a pseries
 > ### Aliases: is.pseries
@@ -1045,15 +1002,12 @@ TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("is.pseries", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("lag.plm")
 > ### * lag.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: lag.plm
 > ### Title: lag, lead, and diff for panel data
 > ### Aliases: lag.plm lead lag.pseries lead.pseries diff.pseries
@@ -4521,15 +4475,12 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("lag.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("make.pbalanced")
 > ### * make.pbalanced
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: make.pbalanced
 > ### Title: Make data balanced
 > ### Aliases: make.pbalanced make.pbalanced.pdata.frame
@@ -5301,15 +5252,12 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("make.pbalanced", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("make.pconsecutive")
 > ### * make.pconsecutive
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: make.pconsecutive
 > ### Title: Make data consecutive (and, optionally, also balanced)
 > ### Aliases: make.pconsecutive make.pconsecutive.data.frame
@@ -5854,15 +5802,12 @@ FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("make.pconsecutive", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("model.frame.pdata.frame")
 > ### * model.frame.pdata.frame
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: model.frame.pdata.frame
 > ### Title: model.frame and model.matrix for panel data
 > ### Aliases: model.frame.pdata.frame formula.pdata.frame model.matrix.plm
@@ -6508,15 +6453,12 @@ attr(,"index")
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("model.frame.pdata.frame", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("mtest")
 > ### * mtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: mtest
 > ### Title: Arellano-Bond test of Serial Correlation
 > ### Aliases: mtest
@@ -6547,15 +6489,12 @@ normal = -0.36744, p-value = 0.7133
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("mtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("nobs.plm")
 > ### * nobs.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: nobs.plm
 > ### Title: Extract Total Number of Observations Used in Estimated
 > ###   Panelmodel
@@ -6588,15 +6527,12 @@ Unbalanced Panel: n = 48, T = 9-17, N = 808
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("nobs.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pFtest")
 > ### * pFtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pFtest
 > ### Title: F Test for Individual and/or Time Effects
 > ### Aliases: pFtest pFtest.formula pFtest.plm
@@ -6649,15 +6585,12 @@ alternative hypothesis: significant effects
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pFtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pbgtest")
 > ### * pbgtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pbgtest
 > ### Title: Breusch-Godfrey Test for Panel Models
 > ### Aliases: pbgtest pbgtest.panelmodel pbgtest.formula
@@ -6718,15 +6651,12 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pbgtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pbltest")
 > ### * pbltest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pbltest
 > ### Title: Baltagi and Li Serial Dependence Test For Random Effects Models
 > ### Aliases: pbltest pbltest.formula pbltest.plm
@@ -6769,15 +6699,12 @@ alternative hypothesis: AR(1)/MA(1) errors in RE panel model
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pbltest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pbnftest")
 > ### * pbnftest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pbnftest
 > ### Title: Modified BNF-Durbin-Watson Test and Baltagi-Wu's LBI Test for
 > ###   Panel Models
@@ -6830,15 +6757,12 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pbnftest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pbsytest")
 > ### * pbsytest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pbsytest
 > ### Title: Bera, Sosa-Escudero and Yoon Locally-Robust Lagrange Multiplier
 > ###   Tests for Panel Models and Joint Test by Baltagi and Li
@@ -6907,15 +6831,12 @@ alternative hypothesis: AR(1) errors sub random effects
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pbsytest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pcce")
 > ### * pcce
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pcce
 > ### Title: Common Correlated Effects estimators
 > ### Aliases: pcce summary.pcce print.summary.pcce residuals.pcce
@@ -6951,6 +6872,32 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
+> summary(ccepmod, vcov = vcovHC) # use argument vcov for robust std. errors
+Common Correlated Effects Pooled model
+
+Note: Coefficient variance-covariance matrix supplied: vcovHC
+
+Call:
+pcce(formula = log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
+    data = Produc, model = "p")
+
+Balanced Panel: n = 48, T = 17, N = 816
+
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.0918843 -0.0060964  0.0005035  0.0000000  0.0059796  0.0682325 
+
+Coefficients:
+            Estimate Std. Error z-value  Pr(>|z|)    
+log(pcap)  0.0432376  0.0972332  0.4447    0.6566    
+log(pc)    0.0363922  0.0322477  1.1285    0.2591    
+log(emp)   0.8209632  0.1104438  7.4333 1.059e-13 ***
+unemp     -0.0020925  0.0013959 -1.4990    0.1339    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Total Sum of Squares: 849.81
+Residual Sum of Squares: 0.11927
+HPY R-squared: 0.99077
 > 
 > ccemgmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="mg")
 > summary(ccemgmod)
@@ -6981,15 +6928,12 @@ HPY R-squared: 0.99312
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pcce", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pcdtest")
 > ### * pcdtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pcdtest
 > ### Title: Tests of cross-section dependence for panel models
 > ### Aliases: pcdtest pcdtest.formula pcdtest.panelmodel pcdtest.pseries
@@ -7069,15 +7013,12 @@ alternative hypothesis: cross-sectional dependence
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pcdtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pdata.frame")
 > ### * pdata.frame
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pdata.frame
 > ### Title: data.frame for panel data
 > ### Aliases: pdata.frame $<-.pdata.frame [.pdata.frame [[.pdata.frame
@@ -8590,15 +8531,12 @@ $lwage
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pdata.frame", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pdim")
 > ### * pdim
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pdim
 > ### Title: Check for the Dimensions of the Panel
 > ### Aliases: pdim pdim.default pdim.data.frame pdim.pdata.frame
@@ -8634,15 +8572,12 @@ Unbalanced Panel: n = 48, T = 9-17, N = 808
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pdim", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pdwtest")
 > ### * pdwtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pdwtest
 > ### Title: Durbin-Watson Test for Panel Models
 > ### Aliases: pdwtest pdwtest.panelmodel pdwtest.formula
@@ -8682,15 +8617,12 @@ alternative hypothesis: serial correlation in idiosyncratic errors
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pdwtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pggls")
 > ### * pggls
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pggls
 > ### Title: General FGLS Estimators
 > ### Aliases: pggls summary.pggls print.summary.pggls residuals.pggls
@@ -8787,15 +8719,12 @@ Multiple R-squared: 0.99961
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pggls", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pgmm")
 > ### * pgmm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pgmm
 > ### Title: Generalized Method of Moments (GMM) Estimation for Panel Data
 > ### Aliases: pgmm coef.pgmm summary.pgmm print.summary.pgmm
@@ -8903,15 +8832,12 @@ Wald test for time dummies: chisq(7) = 14.71138 (p-value = 0.039882)
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pgmm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pgrangertest")
 > ### * pgrangertest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pgrangertest
 > ### Title: Panel Granger (Non-)Causality Test (Dumitrescu/Hurlin (2012))
 > ### Aliases: pgrangertest
@@ -8963,15 +8889,12 @@ alternative hypothesis: Granger causality for at least one individual
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pgrangertest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pht")
 > ### * pht
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pht
 > ### Title: Hausman-Taylor Estimator for Panel Data
 > ### Aliases: pht summary.pht print.summary.pht
@@ -9110,15 +9033,12 @@ Chisq: 6879.2 on 12 DF, p-value: < 2.22e-16
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pht", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("phtest")
 > ### * phtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: phtest
 > ### Title: Hausman Test for Panel Models
 > ### Aliases: phtest phtest.formula phtest.panelmodel
@@ -9182,15 +9102,12 @@ alternative hypothesis: one model is inconsistent
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("phtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("piest")
 > ### * piest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: piest
 > ### Title: Chamberlain estimator and test for fixed effects
 > ### Aliases: piest print.piest summary.piest print.summary.piest
@@ -9234,15 +9151,12 @@ chisq = 113.72, df = 87, p-value = 0.02882
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("piest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("plm-package")
 > ### * plm-package
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: plm-package
 > ### Title: plm package: linear models for panel data
 > ### Aliases: plm-package
@@ -9304,15 +9218,12 @@ F-statistic: 3064.81 on 4 and 764 DF, p-value: < 2.22e-16
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("plm-package", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("plm")
 > ### * plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: plm
 > ### Title: Panel Data Estimators
 > ### Aliases: plm terms.panelmodel vcov.panelmodel fitted.panelmodel
@@ -9689,15 +9600,12 @@ Chisq: 6879.2 on 12 DF, p-value: < 2.22e-16
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("plmtest")
 > ### * plmtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: plmtest
 > ### Title: Lagrange FF Multiplier Tests for Panel Models
 > ### Aliases: plmtest plmtest.plm plmtest.formula
@@ -9783,15 +9691,12 @@ alternative hypothesis: significant effects
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("plmtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pmg")
 > ### * pmg
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pmg
 > ### Title: Mean Groups (MG), Demeaned MG and CCE MG estimators
 > ### Aliases: pmg summary.pmg print.summary.pmg residuals.pmg
@@ -9894,15 +9799,12 @@ Multiple R-squared: 0.99993
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pmg", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pmodel.response")
 > ### * pmodel.response
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pmodel.response
 > ### Title: A function to extract the model.response
 > ### Aliases: pmodel.response pmodel.response.plm pmodel.response.data.frame
@@ -9987,15 +9889,12 @@ Multiple R-squared: 0.99993
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pmodel.response", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pooltest")
 > ### * pooltest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pooltest
 > ### Title: Test of Poolability
 > ### Aliases: pooltest pooltest.plm pooltest.formula
@@ -10046,15 +9945,12 @@ alternative hypothesis: unstability
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pooltest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pseries")
 > ### * pseries
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pseries
 > ### Title: panel series
 > ### Aliases: pseries print.pseries as.matrix.pseries plot.pseries
@@ -12274,15 +12170,12 @@ alternative hypothesis: unstability
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pseries", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("punbalancedness")
 > ### * punbalancedness
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: punbalancedness
 > ### Title: Measures for Unbalancedness of Panel Data
 > ### Aliases: punbalancedness punbalancedness.pdata.frame
@@ -12341,15 +12234,12 @@ gamma    nu
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("punbalancedness", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("purtest")
 > ### * purtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: purtest
 > ### Title: Unit root tests for panel data
 > ### Aliases: purtest print.purtest summary.purtest print.summary.purtest
@@ -12383,15 +12273,12 @@ alternative hypothesis: stationarity
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("purtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pvar")
 > ### * pvar
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pvar
 > ### Title: Check for Cross-Sectional and Time Variation
 > ### Aliases: pvar pvar.matrix pvar.data.frame pvar.pdata.frame pvar.pseries
@@ -12432,15 +12319,12 @@ no individual variation: year
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pvar", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pvcm")
 > ### * pvcm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pvcm
 > ### Title: Variable Coefficients Models for Panel Data
 > ### Aliases: pvcm summary.pvcm print.summary.pvcm
@@ -12513,15 +12397,12 @@ Chisq: 434.623 on 6 DF, p-value: < 2.22e-16
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pvcm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pwaldtest")
 > ### * pwaldtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pwaldtest
 > ### Title: Wald-style Chi-square Test and F Test
 > ### Aliases: pwaldtest pwaldtest.plm pwaldtest.pvcm
@@ -12587,15 +12468,12 @@ Chisq = 63.549, df = 2, p-value = 1.587e-14
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pwaldtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pwartest")
 > ### * pwartest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pwartest
 > ### Title: Wooldridge Test for AR(1) Errors in FE Panel Models
 > ### Aliases: pwartest pwartest.formula pwartest.panelmodel
@@ -12628,15 +12506,12 @@ alternative hypothesis: serial correlation
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pwartest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pwfdtest")
 > ### * pwfdtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pwfdtest
 > ### Title: Wooldridge first-difference-based test for AR(1) errors in
 > ###   levels or first-differenced panel models
@@ -12706,15 +12581,12 @@ alternative hypothesis: serial correlation in original errors
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pwfdtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("pwtest")
 > ### * pwtest
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: pwtest
 > ### Title: Wooldridge's Test for Unobserved Effects in Panel Models
 > ### Aliases: pwtest pwtest.formula pwtest.panelmodel
@@ -12766,15 +12638,12 @@ alternative hypothesis: unobserved effect
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("pwtest", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("r.squared")
 > ### * r.squared
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: r.squared
 > ### Title: R squared and adjusted R squared for panel models
 > ### Aliases: r.squared
@@ -12793,15 +12662,12 @@ alternative hypothesis: unobserved effect
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("r.squared", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("ranef.plm")
 > ### * ranef.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: ranef.plm
 > ### Title: Extract the Random Effects
 > ### Aliases: ranef.plm
@@ -12862,15 +12728,12 @@ alternative hypothesis: unobserved effect
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("ranef.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("sargan")
 > ### * sargan
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: sargan
 > ### Title: Hansen-Sargan Test of Overidentifying Restrictions
 > ### Aliases: sargan
@@ -12894,15 +12757,12 @@ chisq = 31.381, df = 25, p-value = 0.1767
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("sargan", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("summary.plm")
 > ### * summary.plm
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: summary.plm
 > ### Title: Summary for plm objects
 > ### Aliases: summary.plm print.summary.plm
@@ -13066,15 +12926,12 @@ F-statistic: 309.014 on 2 and 188 DF, p-value: < 2.22e-16
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("summary.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 > nameEx("vcovBK")
 > ### * vcovBK
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: vcovBK
 > ### Title: Beck and Katz Robust Covariance Matrix Estimators
 > ### Aliases: vcovBK vcovBK.plm
@@ -13199,8 +13056,6 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("vcovBK", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 
 detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
@@ -13211,10 +13066,9 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: vcovDC
 > ### Title: Double-Clustering Robust Covariance Matrix Estimator
-> ### Aliases: vcovDC vcovDC.plm vcovDC.pcce
+> ### Aliases: vcovDC vcovDC.plm
 > ### Keywords: regression
 > 
 > ### ** Examples
@@ -13305,8 +13159,6 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("vcovDC", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 
 detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
@@ -13317,7 +13169,6 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: vcovG
 > ### Title: Generic Lego building block for Robust Covariance Matrix
 > ###   Estimators
@@ -13377,8 +13228,6 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("vcovG", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 
 detaching ‘package:lmtest’, ‘package:zoo’
@@ -13388,7 +13237,6 @@ detaching ‘package:lmtest’, ‘package:zoo’
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: vcovHC.plm
 > ### Title: Robust Covariance Matrix Estimators
 > ### Aliases: vcovHC.plm vcovHC.pcce vcovHC.pgmm
@@ -13511,6 +13359,36 @@ Note: Coefficient covariance matrix supplied.
 1    812                     
 2    811  1 0.5878     0.4433
 > 
+> ## Robust inference for CCE models
+> data("Produc", package = "plm")
+> ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
+> summary(ccepmod, vcov = vcovHC)
+Common Correlated Effects Pooled model
+
+Note: Coefficient variance-covariance matrix supplied: vcovHC
+
+Call:
+pcce(formula = log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
+    data = Produc, model = "p")
+
+Balanced Panel: n = 48, T = 17, N = 816
+
+Residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.0918843 -0.0060964  0.0005035  0.0000000  0.0059796  0.0682325 
+
+Coefficients:
+            Estimate Std. Error z-value  Pr(>|z|)    
+log(pcap)  0.0432376  0.0972332  0.4447    0.6566    
+log(pc)    0.0363922  0.0322477  1.1285    0.2591    
+log(emp)   0.8209632  0.1104438  7.4333 1.059e-13 ***
+unemp     -0.0020925  0.0013959 -1.4990    0.1339    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Total Sum of Squares: 849.81
+Residual Sum of Squares: 0.11927
+HPY R-squared: 0.99077
+> 
 > ## Robust inference for GMM models
 > data("EmplUK", package="plm")
 > ar <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
@@ -13528,8 +13406,6 @@ normal = -0.1165, p-value = 0.9073
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("vcovHC.plm", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 
 detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
@@ -13540,7 +13416,6 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: vcovNW
 > ### Title: Newey and West (1987) Robust Covariance Matrix Estimator
 > ### Aliases: vcovNW vcovNW.plm vcovNW.pcce
@@ -13634,8 +13509,6 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("vcovNW", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 
 detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
@@ -13646,7 +13519,6 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: vcovSCC
 > ### Title: Driscoll and Kraay (1998) Robust Covariance Matrix Estimator
 > ### Aliases: vcovSCC vcovSCC.plm vcovSCC.pcce
@@ -13740,8 +13612,6 @@ Note: Coefficient covariance matrix supplied.
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("vcovSCC", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > cleanEx()
 
 detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
@@ -13752,7 +13622,6 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > 
 > flush(stderr()); flush(stdout())
 > 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 > ### Name: within_intercept
 > ### Title: Overall Intercept for Within Models Along its Standard Error
 > ### Aliases: within_intercept within_intercept.plm
@@ -13794,14 +13663,12 @@ attr(,"se")
 > 
 > 
 > 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("within_intercept", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 > ### * <FOOTER>
 > ###
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  21.886 0.345 22.349 0 0.009 
+Time elapsed:  11.331 0.248 11.666 0.001 0.006 
 > grDevices::dev.off()
 null device 
           1 

@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-<meta name="date" content="2019-06-21" />
+<meta name="date" content="2019-07-23" />
 
 <title>Estimation of error components models with the plm function</title>
 
@@ -302,8 +302,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Estimation of error components models with the plm function</h1>
 <h4 class="author">Yves Croissant</h4>
-<address class="author_afil">
-University of La Reunion<br><h4 class="date">2019-06-21</h4>
+<h4 class="date">2019-07-23</h4>
 
 
 
@@ -377,7 +376,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## s_idios                                                53.74518       52.76797       52.76797    
 ## s_id                                                   87.35803       83.52354       84.20095    
 ## =================================================================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 <p>The estimated variance can be extracted using the <code>ercomp</code> function. For example, for the <code>amemiya</code> model :</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">ercomp</span>(amemiya)</a></code></pre></div>
 <pre><code>##                   var std.dev share
@@ -451,7 +450,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Adj. R^2       0.76722          0.76706        0.74643    
 ## Num. obs.    200              200            200          
 ## ==========================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 <p>The estimated variance of the time component is negative for the Wallace-Hussain as well as the Swamy-Arora models and <code>plm</code> sets it to 0.</p>
 <p><span class="citation">Baltagi (2009)</span> p. 60-62, presents EViews’ output for the <code>Produc</code> data.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
@@ -483,7 +482,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Adj. R^2       0.92880          0.93178        0.85756    
 ## Num. obs.    816              816            816          
 ## ==========================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 </div>
 <div id="unbalanced-panels" class="section level1">
 <h1>Unbalanced panels</h1>
@@ -528,7 +527,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Adj. R^2       0.99067                  0.99004                  0.99057              
 ## Num. obs.    506                      506                      506                    
 ## ======================================================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 <p>The difference is due to the fact that Stata uses a between regression on <span class="math inline">\(N\)</span> observations while EViews uses a between regression on <span class="math inline">\(\sum_n T_n\)</span> observations, which are not the same on unbalanced panels. Note the use of between with or without the B capitalized in the <code>random.models</code> argument. <code>plm</code>’s default is to use the between regression with <span class="math inline">\(\sum_n T_n\)</span> observations when setting <code>model = &quot;random&quot;, random.method = &quot;swar&quot;</code>. The default employed is what the original paper for the unbalanced one-way Swamy-Arora estimator defined (in <span class="citation">Baltagi and Chang (1994)</span>, p. 73). A more detailed analysis of Stata’s Swamy-Arora estimation procedure is given by <span class="citation">Cottrell (2017)</span>.</p>
 </div>
 <div id="instrumental-variable-estimators" class="section level1">
@@ -589,7 +588,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## s_idios                             0.14924                  0.14924              
 ## s_id                                0.21456                  0.21456              
 ## ==================================================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 <p>The Hausman-Taylor model (<span class="citation">Hausman and Taylor (1981)</span>) may be estimated with the <code>plm</code> function by setting argument <code>random.method = &quot;ht&quot;</code>. The following example is from <span class="citation">Baltagi (2005)</span>, p. 130 and <span class="citation">Baltagi (2013)</span>, p. 146.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2">ht &lt;-<span class="st"> </span><span class="kw">plm</span>(lwage <span class="op">~</span><span class="st"> </span>wks <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span></a>
@@ -614,7 +613,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## smsayes        -0.04183 (0.01896) *      -0.04195 (0.01895) *  
 ## marriedyes     -0.02985 (0.01898)        -0.03009 (0.01897)    
 ## exp             0.11313 (0.00247) ***     0.11297 (0.00247) ***
-## I(exp^2)       -0.00042 (0.00005) ***    -0.00042 (0.00005) ***
+## exp^2          -0.00042 (0.00005) ***    -0.00042 (0.00005) ***
 ## bluecolyes     -0.02070 (0.01378)        -0.02085 (0.01377)    
 ## ind             0.01360 (0.01524)         0.01363 (0.01523)    
 ## unionyes        0.03277 (0.01491) *       0.03248 (0.01489) *  
@@ -628,7 +627,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Adj. R^2        0.60833                   0.60835              
 ## Num. obs.    4165                      4165                    
 ## ===============================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 </div>
 <div id="nested-error-component-model" class="section level1">
 <h1>Nested error component model</h1>
@@ -665,7 +664,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Adj. R^2       0.97368        0.97210          0.96776    
 ## Num. obs.    816            816              816          
 ## ==========================================================
-## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 </div>
 <div id="bibliography" class="section level1 unnumbered">
 <h1>Bibliography</h1>

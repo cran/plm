@@ -562,12 +562,6 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     return(mycov)
 }
 
-
-#' @rdname vcovG
-#' @export
-vcovG.pcce   <- vcovG.plm
-
-
 #' Robust Covariance Matrix Estimators
 #' 
 #' Robust covariance matrix estimators *a la White* for panel
@@ -679,6 +673,11 @@ vcovG.pcce   <- vcovG.plm
 #' ## test of hyp.: 2*log(pc)=log(emp)
 #' linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovHC)
 #' 
+#' ## Robust inference for CCE models
+#' data("Produc", package = "plm")
+#' ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
+#' summary(ccepmod, vcov = vcovHC)
+#' 
 #' ## Robust inference for GMM models
 #' data("EmplUK", package="plm")
 #' ar <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
@@ -706,11 +705,6 @@ vcovHC.plm <- function(x, method=c("arellano", "white1", "white2"),
                         l=0, inner=inner, ...))
 }
 
-#' @rdname vcovHC.plm
-#' @export
-vcovHC.pcce  <- vcovHC.plm
-
-
 #' @rdname vcovNW
 #' @export
 vcovNW.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
@@ -724,11 +718,6 @@ vcovNW.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     return(vcovSCC(x, type=type, maxlag=maxlag, inner="white", wj=wj, ...))
 }
-
-#' @rdname vcovNW
-#' @export
-vcovNW.pcce  <- vcovNW.plm
-
 
 #' @rdname vcovDC
 #' @export
@@ -748,10 +737,6 @@ vcovDC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     attr(res, which = "cluster") <- "group-time"
     return(res)
 }
-
-#' @rdname vcovDC
-#' @export
-vcovDC.pcce  <- vcovDC.plm
 
 #' @rdname vcovSCC
 #' @export
@@ -783,12 +768,6 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     return(S0)
 }
-
-
-
-#' @rdname vcovSCC
-#' @export
-vcovSCC.pcce <- vcovSCC.plm
 
                                         # ICI
 
@@ -1135,6 +1114,22 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
 ## data from model.matrix.pcce and pmodel.response.pcce
 
 ## TODO: vcovBK.pcce missing? Or not valid?
+
+#' @rdname vcovG
+#' @export
+vcovG.pcce   <- vcovG.plm
+
+#' @rdname vcovHC.plm
+#' @export
+vcovHC.pcce  <- vcovHC.plm
+
+#' @rdname vcovNW
+#' @export
+vcovNW.pcce  <- vcovNW.plm
+
+#' @rdname vcovSCC
+#' @export
+vcovSCC.pcce <- vcovSCC.plm
 
 
 ####################################

@@ -1,15 +1,19 @@
-# plm 2.0-2
+# plm 2.1-0
+* problems with vignettes (all the text in italics fixed)
+* in test_Estimators, L256, tolerance lowered to 1E-04
 
-* vcov###.pcce are now exported
-* vignettes are switched from bookdown::html_document2 to
-  html_vignette
+# plm 2.0-2
+* vcovXX.pcce functions exported again (export was lost in plm 2.0-0).
+* summary.pcce gained argument 'vcov', summary.pcce object carries robust vcov in
+  element 'rvcov'.
+* vignettes switched from bookdown::html_document2 to html_vignette.
 
 # plm 2.0-1
 
 * Minor update: tests updated to pacify CRAN's testing procedure with
   OpenBLAS.
 * bug fix in model.frame.pdata.frame : dot previously set to
-  "separate" now set to "previous"  
+  "separate" now set to "previous".
 
 # plm 2.0-0
 
@@ -22,8 +26,8 @@
 * A thrid vignette was added describing the plm model components
     (plmModelComponents.Rmd).
 * plm: the informative error message about the deprecated argument
-    'instruments' is removed and this argument is no longer supported
-* man pages and NAMESPACE file are now generated using roxygen2
+    'instruments' is removed and this argument is no longer supported.
+* man pages and NAMESPACE file are now generated using roxygen2.
 
 # plm 1.7-0
 
