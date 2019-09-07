@@ -1,3 +1,11 @@
+# plm 2.2-0
+* methods for plm.list where not exported, they are now
+* lagt is changed so that it can deal with time factors for which
+  cannot be coerced to numeric (ex "1950-54", "1955-59", ...)
+* cortab was not exported, it is now 
+* pvcm failed for random effect models when there is some NA coefs for
+  some individual level ols regressions, fixed
+
 # plm 2.1-0
 * problems with vignettes (all the text in italics fixed)
 * in test_Estimators, L256, tolerance lowered to 1E-04

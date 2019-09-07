@@ -7,11 +7,12 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-<meta name="date" content="2019-07-23" />
+<meta name="date" content="2019-09-06" />
 
 <title>Model components for fitted models with plm</title>
 
@@ -36,7 +37,7 @@ a.sourceLine { text-indent: -1em; padding-left: 1em; }
 pre.numberSource a.sourceLine
   { position: relative; left: -4em; }
 pre.numberSource a.sourceLine::before
-  { content: attr(data-line-number);
+  { content: attr(title);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
     border: none; pointer-events: all; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
@@ -95,7 +96,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -302,7 +303,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Model components for fitted models with plm</h1>
 <h4 class="author">Yves Croissant</h4>
-<h4 class="date">2019-07-23</h4>
+<h4 class="date">2019-09-06</h4>
 
 
 
@@ -319,36 +320,36 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>As for the <code>model.frame.formula</code> method, a <code>data.frame</code> is returned, with a <code>terms</code> attribute.</p>
 <p>Next, the <code>X</code> matrix is extracted using <code>model.matrix</code>. The usual way to do so is to feed the function with to arguments, a <code>formula</code> or a <code>terms</code> object and a <code>data.frame</code> created with <code>model.frame</code>. <code>lm</code> use something like <code>model.matrix(terms(mf), mf)</code> where <code>mf</code> is a <code>data.frame</code> created with a <code>model.frame</code>. Therefore, <code>model.matrix</code> needs actually one argument and not two and we therefore wrote a <code>model.matrix.pdata.frame</code> which does the job ; the method first check that the argument has a <code>term</code> attribute, extract the <code>terms</code> (actually the <code>formula</code>) and then compute the <code>model.matrix</code>.</p>
 <p>The response <code>y</code> is usually extracted using <code>model.response</code>, with a <code>data.frame</code> created with <code>model.frame</code> as first argument, but it is not generic. We therefore create a generic called <code>pmodel.response</code> and provide a <code>pmodel.response.pdata.frame</code> method. We illustrate these features using a simplified (in terms of covariates) example with the <code>SeatBelt</code> data set :</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">data</span>(<span class="st">&quot;SeatBelt&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;pder&quot;</span>)</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">SeatBelt<span class="op">$</span>occfat &lt;-<span class="st"> </span><span class="kw">with</span>(SeatBelt, <span class="kw">log</span>(farsocc <span class="op">/</span><span class="st"> </span>(vmtrural <span class="op">+</span><span class="st"> </span>vmturban)))</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">pSB &lt;-<span class="st"> </span><span class="kw">pdata.frame</span>(SeatBelt)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">data</span>(<span class="st">&quot;SeatBelt&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;pder&quot;</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">SeatBelt<span class="op">$</span>occfat &lt;-<span class="st"> </span><span class="kw">with</span>(SeatBelt, <span class="kw">log</span>(farsocc <span class="op">/</span><span class="st"> </span>(vmtrural <span class="op">+</span><span class="st"> </span>vmturban)))</a>
+<a class="sourceLine" id="cb1-4" title="4">pSB &lt;-<span class="st"> </span><span class="kw">pdata.frame</span>(SeatBelt)</a></code></pre></div>
 <p>We start with an OLS (<code>pooling</code>) specification.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">formols &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin)</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">mfols &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formols)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">Xols &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfols)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">y &lt;-<span class="st"> </span><span class="kw">pmodel.response</span>(mfols)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">coef</span>(<span class="kw">lm.fit</span>(Xols, y))</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">formols &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin)</a>
+<a class="sourceLine" id="cb2-2" title="2">mfols &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formols)</a>
+<a class="sourceLine" id="cb2-3" title="3">Xols &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfols)</a>
+<a class="sourceLine" id="cb2-4" title="4">y &lt;-<span class="st"> </span><span class="kw">pmodel.response</span>(mfols)</a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">coef</span>(<span class="kw">lm.fit</span>(Xols, y))</a></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.4193570     0.1657293    -1.1583712</code></pre>
 <p>which is equivalent with :</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">coef</span>(<span class="kw">plm</span>(formols, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">coef</span>(<span class="kw">plm</span>(formols, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</a></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.4193570     0.1657293    -1.1583712</code></pre>
 <p>Next we use an instrumental variables specification. <code>usage</code> is endogenous and instrumented by three variables indicating the law context : <code>ds</code>, <code>dp</code> and <code>dsp</code>.</p>
 <p>The model is described using a two-parts formula, the first part of the RHS describing the covariates and the second part the instruments. The following two formulations can be used :</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">formiv1 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">formiv2 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">formiv1 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</a>
+<a class="sourceLine" id="cb6-2" title="2">formiv2 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</a></code></pre></div>
 <p>The second formulation has two advantages :</p>
 <ul>
 <li>in the common case when a lot of covariates are instruments, these covariates don’t need to be indicated in the second RHS part of the formula,</li>
 <li>the endogenous variables clearly appear as they are proceeded by a <code>-</code> sign in the second RHS part of the formula.</li>
 </ul>
 <p>The formula is coerced to a <code>Formula</code>, using the <code>Formula</code> package. <code>model.matrix.pdata.frame</code> then internally calls the <code>model.matrix.Formula</code> in order to extract the covariates and instruments model matrices :</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">mfSB1 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv1)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">X1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">W1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="kw">head</span>(X1, <span class="dv">3</span>) ; <span class="kw">head</span>(W1, <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">mfSB1 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv1)</a>
+<a class="sourceLine" id="cb7-2" title="2">X1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb7-3" title="3">W1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="kw">head</span>(X1, <span class="dv">3</span>) ; <span class="kw">head</span>(W1, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -0.7985077      9.955748
 ## 9            1 -0.4155154      9.975622
@@ -363,8 +364,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <li>the previous covariates used while updating a formula.</li>
 </ul>
 <p>which correspond respectively to <code>dot = &quot;seperate&quot;</code> (the default) and <code>dot = &quot;previous&quot;</code>. See the difference between :</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;Formula&quot;</span>)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt), <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">library</span>(<span class="st">&quot;Formula&quot;</span>)</a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt), <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>##       occfat log(usage) log(percapin) state year farsocc farsnocc usage
 ## 8  -3.788976 -0.7985077      9.955748    AK 1990      90        8  0.45
 ## 9  -3.904837 -0.4155154      9.975622    AK 1991      81       20  0.66
@@ -381,17 +382,17 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 ## 8      0  0  0   0
 ## 9      0  1  0   0
 ## 10     0  1  0   0</code></pre>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt, <span class="dt">dot =</span> <span class="st">&quot;previous&quot;</span>), <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt, <span class="dt">dot =</span> <span class="st">&quot;previous&quot;</span>), <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>##       occfat log(usage) log(percapin) ds dp dsp
 ## 8  -3.788976 -0.7985077      9.955748  0  0   0
 ## 9  -3.904837 -0.4155154      9.975622  1  0   0
 ## 10 -3.699611 -0.4155154     10.002110  1  0   0</code></pre>
 <p>In the first case, all the covariates are returned by <code>model.frame</code> as the <code>.</code> is understood by default as “everything”.</p>
 <p>In <code>plm</code>, the <code>dot</code> argument is internally set to <code>previous</code> so that the end-user doesn’t have to worry about these subtleties.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">mfSB2 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv2)</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">X2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">W2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="kw">head</span>(X2, <span class="dv">3</span>) ; <span class="kw">head</span>(W2, <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">mfSB2 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv2)</a>
+<a class="sourceLine" id="cb14-2" title="2">X2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb14-3" title="3">W2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="kw">head</span>(X2, <span class="dv">3</span>) ; <span class="kw">head</span>(W2, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -0.7985077      9.955748
 ## 9            1 -0.4155154      9.975622
@@ -401,25 +402,28 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 ## 9            1      9.975622  1  0   0
 ## 10           1     10.002110  1  0   0</code></pre>
 <p>The iv estimator can then be obtained as a 2SLS estimator : first regress the covariates on the instruments and get the fitted values :</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1">HX1 &lt;-<span class="st"> </span><span class="kw">lm.fit</span>(W1, X1)<span class="op">$</span>fitted.values</a>
-<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="kw">head</span>(HX1, <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1">HX1 &lt;-<span class="st"> </span><span class="kw">lm.fit</span>(W1, X1)<span class="op">$</span>fitted.values</a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="kw">head</span>(HX1, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -1.0224257      9.955748
 ## 9            1 -0.5435055      9.975622
 ## 10           1 -0.5213364     10.002110</code></pre>
 <p>Next regress the response on these fitted values :</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">coef</span>(<span class="kw">lm.fit</span>(HX1, y))</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">coef</span>(<span class="kw">lm.fit</span>(HX1, y))</a></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 <p>Or using the <code>formula</code>-<code>data</code> interface with the <code>ivreg</code> function :</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">coef</span>(AER<span class="op">::</span><span class="kw">ivreg</span>(formiv1, <span class="dt">data =</span> SeatBelt))</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">coef</span>(AER<span class="op">::</span><span class="kw">ivreg</span>(formiv1, <span class="dt">data =</span> SeatBelt))</a></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 <p>or <code>plm</code> :</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">coef</span>(<span class="kw">plm</span>(formiv1, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">coef</span>(<span class="kw">plm</span>(formiv1, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</a></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 
+
+
+<!-- code folding -->
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

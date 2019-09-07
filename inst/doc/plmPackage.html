@@ -7,6 +7,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -35,7 +36,7 @@ a.sourceLine { text-indent: -1em; padding-left: 1em; }
 pre.numberSource a.sourceLine
   { position: relative; left: -4em; }
 pre.numberSource a.sourceLine::before
-  { content: attr(data-line-number);
+  { content: attr(title);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
     border: none; pointer-events: all; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
@@ -94,7 +95,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -486,16 +487,16 @@ Wooldridge-type serial correlation tests.
 <h1>Managing data and formulae</h1>
 <p></p>
 <p>The package is now illustrated by application to some well-known examples. It is loaded using</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</a></code></pre></div>
 <p>The four data sets used are <code>EmplUK</code> which was used by <span class="citation">Arellano and Bond (1991)</span>, the <code>Grunfeld</code> data <span class="citation">(Kleiber and Zeileis 2008)</span> which is used in several econometric books, the <code>Produc</code> data used by <span class="citation">Munnell (1990)</span> and the <code>Wages</code> used by <span class="citation">Cornwell and Rupert (1988)</span>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span>(<span class="st">&quot;EmplUK&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">data</span>(<span class="st">&quot;Grunfeld&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">data</span>(<span class="st">&quot;EmplUK&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">data</span>(<span class="st">&quot;Grunfeld&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="dt">package=</span><span class="st">&quot;plm&quot;</span>)</a></code></pre></div>
 <div id="data-structure-1" class="section level2">
 <h2>Data structure</h2>
 <p>As observed above, the current version of <code>plm</code> is capable of working with a regular <code>data.frame</code> without any further transformation, provided that the individual and time indexes are in the first two columns, as in all the example data sets but <code>Wages</code>. If this weren’t the case, an <code>index</code> optional argument would have to be passed on to the estimating and testing functions.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">head</span>(Grunfeld)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">head</span>(Grunfeld)</a></code></pre></div>
 <pre><code>##   firm year   inv  value capital
 ## 1    1 1935 317.6 3078.5     2.8
 ## 2    1 1936 391.8 4661.7    52.6
@@ -503,8 +504,8 @@ Wooldridge-type serial correlation tests.
 ## 4    1 1938 257.7 2792.2   209.2
 ## 5    1 1939 330.8 4313.2   203.4
 ## 6    1 1940 461.2 4643.9   207.2</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">E &lt;-<span class="st"> </span><span class="kw">pdata.frame</span>(EmplUK, <span class="dt">index=</span><span class="kw">c</span>(<span class="st">&quot;firm&quot;</span>,<span class="st">&quot;year&quot;</span>), <span class="dt">drop.index=</span><span class="ot">TRUE</span>, <span class="dt">row.names=</span><span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">head</span>(E)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">E &lt;-<span class="st"> </span><span class="kw">pdata.frame</span>(EmplUK, <span class="dt">index=</span><span class="kw">c</span>(<span class="st">&quot;firm&quot;</span>,<span class="st">&quot;year&quot;</span>), <span class="dt">drop.index=</span><span class="ot">TRUE</span>, <span class="dt">row.names=</span><span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">head</span>(E)</a></code></pre></div>
 <pre><code>##        sector   emp    wage capital   output
 ## 1-1977      7 5.041 13.1516  0.5894  95.7072
 ## 1-1978      7 5.600 12.3018  0.6318  97.3569
@@ -512,7 +513,7 @@ Wooldridge-type serial correlation tests.
 ## 1-1980      7 4.715 13.8039  0.6171 100.5501
 ## 1-1981      7 4.093 14.2897  0.5076  99.5581
 ## 1-1982      7 3.166 14.8681  0.4229  98.6151</code></pre>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">attr</span>(E, <span class="st">&quot;index&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">head</span>(<span class="kw">attr</span>(E, <span class="st">&quot;index&quot;</span>))</a></code></pre></div>
 <pre><code>##   firm year
 ## 1    1 1977
 ## 2    1 1978
@@ -521,11 +522,11 @@ Wooldridge-type serial correlation tests.
 ## 5    1 1981
 ## 6    1 1982</code></pre>
 <p>Two further arguments are logical: <code>drop.index = TRUE</code> drops the indexes from the <code>data.frame</code> and <code>row.names = TRUE</code> computes “fancy” row names by pasting the individual and the time indexes. While extracting a series from a <code>pdata.frame</code>, a <code>pseries</code> is created, which is the original series with the index attribute. This object has specific methods, like <code>summary</code> and <code>as.matrix</code>. The former indicates the total variation of the variable and the shares of this variation due to the individual and the time dimensions. The latter gives the matrix representation of the series, with, by default, individuals as rows and times as columns.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">summary</span>(E<span class="op">$</span>emp)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">summary</span>(E<span class="op">$</span>emp)</a></code></pre></div>
 <pre><code>## total sum of squares: 261539.4 
 ##          id        time 
 ## 0.980765381 0.009108488</code></pre>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">as.matrix</span>(E<span class="op">$</span>emp))</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">head</span>(<span class="kw">as.matrix</span>(E<span class="op">$</span>emp))</a></code></pre></div>
 <pre><code>##     1976   1977   1978   1979   1980   1981   1982   1983 1984
 ## 1     NA  5.041  5.600  5.015  4.715  4.093  3.166  2.936   NA
 ## 2     NA 71.319 70.643 70.918 72.031 73.689 72.419 68.518   NA
@@ -545,7 +546,7 @@ Wooldridge-type serial correlation tests.
 <p><span class="math inline">\(d=\left( \begin{array}{ccccccc} 1 &amp; -1 &amp; 0 &amp; 0 &amp; ... &amp; 0 &amp; 0 \\ 0 &amp; 1 &amp; -1 &amp; 0 &amp; ... &amp; 0 &amp; 0 \\ 0 &amp; 0 &amp; 1 &amp; -1 &amp; ... &amp; 0 &amp; 0 \\ \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots &amp; \vdots \\ 0 &amp; 0 &amp; 0 &amp; 0 &amp; ... &amp; 1 &amp; -1 \\ \end{array} \right)\)</span></p>
 <p>is of dimension <span class="math inline">\((T-1,T)\)</span>.</p>
 <p>Note that <code>R</code>’s <code>diff()</code> and <code>lag()</code> functions don’t compute correctly these transformations for panel data because they are unable to identify when there is a change in individual in the data. Therefore, specific methods for <code>pseries</code> objects have been written in order to handle correctly panel data. Note that compared to the <code>lag()</code> method for <code>ts</code> objects, the order of lags are indicated by a positive integer. Moreover, 0 is a relevant value and a vector argument may be provided:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">lag</span>(E<span class="op">$</span>emp, <span class="dv">0</span><span class="op">:</span><span class="dv">2</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">head</span>(<span class="kw">lag</span>(E<span class="op">$</span>emp, <span class="dv">0</span><span class="op">:</span><span class="dv">2</span>))</a></code></pre></div>
 <pre><code>##            0     1     2
 ## 1-1977 5.041    NA    NA
 ## 1-1978 5.600 5.041    NA
@@ -554,21 +555,21 @@ Wooldridge-type serial correlation tests.
 ## 1-1981 4.093 4.715 5.015
 ## 1-1982 3.166 4.093 4.715</code></pre>
 <p>Further functions called <code>Between</code>, <code>between</code> and <code>Within</code> are also provided to compute the between and the within transformation. The <code>between</code> returns unique values, whereas <code>Between</code> duplicates the values and returns a vector which length is the number of observations.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">diff</span>(E<span class="op">$</span>emp), <span class="dv">10</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">head</span>(<span class="kw">diff</span>(E<span class="op">$</span>emp), <span class="dv">10</span>)</a></code></pre></div>
 <pre><code>##     1-1977     1-1978     1-1979     1-1980     1-1981     1-1982 
 ##         NA  0.5590000 -0.5850000 -0.2999997 -0.6220003 -0.9270000 
 ##     1-1983     2-1977     2-1978     2-1979 
 ## -0.2299998         NA -0.6760020  0.2750010</code></pre>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">lag</span>(E<span class="op">$</span>emp, <span class="dv">2</span>), <span class="dv">10</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">head</span>(<span class="kw">lag</span>(E<span class="op">$</span>emp, <span class="dv">2</span>), <span class="dv">10</span>)</a></code></pre></div>
 <pre><code>## 1-1977 1-1978 1-1979 1-1980 1-1981 1-1982 1-1983 2-1977 2-1978 2-1979 
 ##     NA     NA  5.041  5.600  5.015  4.715  4.093     NA     NA 71.319</code></pre>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">Within</span>(E<span class="op">$</span>emp))</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">head</span>(<span class="kw">Within</span>(E<span class="op">$</span>emp))</a></code></pre></div>
 <pre><code>##     1-1977     1-1978     1-1979     1-1980     1-1981     1-1982 
 ##  0.6744285  1.2334285  0.6484285  0.3484288 -0.2735715 -1.2005715</code></pre>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">between</span>(E<span class="op">$</span>emp), <span class="dv">4</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">head</span>(<span class="kw">between</span>(E<span class="op">$</span>emp), <span class="dv">4</span>)</a></code></pre></div>
 <pre><code>##         1         2         3         4 
 ##  4.366571 71.362428 19.040143 26.035000</code></pre>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">head</span>(<span class="kw">Between</span>(E<span class="op">$</span>emp), <span class="dv">10</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">head</span>(<span class="kw">Between</span>(E<span class="op">$</span>emp), <span class="dv">10</span>)</a></code></pre></div>
 <pre><code>##         1         1         1         1         1         1         1 
 ##  4.366571  4.366571  4.366571  4.366571  4.366571  4.366571  4.366571 
 ##         2         2         2 
@@ -579,9 +580,9 @@ Wooldridge-type serial correlation tests.
 <p>In some circumstances, standard <code>formula</code>s are not very useful to describe a model, notably while using instrumental variable like estimators: to deal with these situations, we use the <code>Formula</code> package.</p>
 <p>The <code>Formula</code> package provides a class which enables to construct multi-part formula, each part being separated by a pipe sign (<code>|</code>).</p>
 <p>The two formulas below are identical:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1">emp <span class="op">~</span><span class="st"> </span>wage <span class="op">+</span><span class="st"> </span>capital <span class="op">|</span><span class="st"> </span><span class="kw">lag</span>(wage,<span class="dv">1</span>) <span class="op">+</span><span class="st"> </span>capital</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" title="1">emp <span class="op">~</span><span class="st"> </span>wage <span class="op">+</span><span class="st"> </span>capital <span class="op">|</span><span class="st"> </span><span class="kw">lag</span>(wage,<span class="dv">1</span>) <span class="op">+</span><span class="st"> </span>capital</a></code></pre></div>
 <pre><code>## emp ~ wage + capital | lag(wage, 1) + capital</code></pre>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1">emp <span class="op">~</span><span class="st"> </span>wage <span class="op">+</span><span class="st"> </span>capital <span class="op">|</span><span class="st"> </span>. <span class="op">-</span>wage <span class="op">+</span><span class="st"> </span><span class="kw">lag</span>(wage,<span class="dv">1</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" title="1">emp <span class="op">~</span><span class="st"> </span>wage <span class="op">+</span><span class="st"> </span>capital <span class="op">|</span><span class="st"> </span>. <span class="op">-</span>wage <span class="op">+</span><span class="st"> </span><span class="kw">lag</span>(wage,<span class="dv">1</span>)</a></code></pre></div>
 <pre><code>## emp ~ wage + capital | . - wage + lag(wage, 1)</code></pre>
 <p>In the second case, the <code>.</code> means the previous parts which describes the covariates and this part is “updated”. This is particularly interesting when there are a few external instruments.</p>
 </div>
@@ -600,9 +601,9 @@ Wooldridge-type serial correlation tests.
 <li>the error components model (<code>&quot;random&quot;</code>).</li>
 </ul>
 <p>The basic use of <code>plm</code> is to indicate the model formula, the data and the model to be estimated. For example, the fixed effects model and the random effects model are estimated using:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1">grun.fe &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data =</span> Grunfeld, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</a></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1">grun.re &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data =</span> Grunfeld, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>)</a></code></pre></div>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="kw">summary</span>(grun.re)</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1">grun.fe &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data =</span> Grunfeld, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" title="1">grun.re &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data =</span> Grunfeld, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">summary</span>(grun.re)</a></code></pre></div>
 <pre><code>## Oneway (individual) effect Random Effect Model 
 ##    (Swamy-Arora's transformation)
 ## 
@@ -635,13 +636,13 @@ Wooldridge-type serial correlation tests.
 ## Adj. R-Squared: 0.76716
 ## Chisq: 657.674 on 2 DF, p-value: &lt; 2.22e-16</code></pre>
 <p>For a <code>random</code> model, the <code>summary</code> method gives information about the variance of the components of the errors. Fixed effects may be extracted easily using <code>fixef</code>. An argument <code>type</code> indicates how fixed effects should be computed: in levels <code>type = &quot;level&quot;</code> (the default), in deviations from the overall mean <code>type = &quot;dmean&quot;</code> or in deviations from the first individual <code>type = &quot;dfirst&quot;</code>.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw">fixef</span>(grun.fe, <span class="dt">type =</span> <span class="st">&quot;dmean&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" title="1"><span class="kw">fixef</span>(grun.fe, <span class="dt">type =</span> <span class="st">&quot;dmean&quot;</span>)</a></code></pre></div>
 <pre><code>##           1           2           3           4           5           6 
 ##  -11.552778  160.649753 -176.827902   30.934645  -55.872873   35.582644 
 ##           7           8           9          10 
 ##   -7.809534    1.198282  -28.478333   52.176096</code></pre>
 <p>The <code>fixef</code> function returns an object of class <code>fixef</code>. A summary method is provided, which prints the effects (in deviation from the overall intercept), their standard errors and the test of equality to the overall intercept.</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="kw">summary</span>(<span class="kw">fixef</span>(grun.fe, <span class="dt">type =</span> <span class="st">&quot;dmean&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" title="1"><span class="kw">summary</span>(<span class="kw">fixef</span>(grun.fe, <span class="dt">type =</span> <span class="st">&quot;dmean&quot;</span>))</a></code></pre></div>
 <pre><code>##     Estimate Std. Error t-value  Pr(&gt;|t|)    
 ## 1   -11.5528    49.7080 -0.2324 0.8164700    
 ## 2   160.6498    24.9383  6.4419 9.627e-10 ***
@@ -656,8 +657,8 @@ Wooldridge-type serial correlation tests.
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>In case of a two-ways effect model, an additional argument <code>effect</code> is required to extract fixed effects:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" data-line-number="1">grun.twfe &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>)</a>
-<a class="sourceLine" id="cb37-2" data-line-number="2"><span class="kw">fixef</span>(grun.twfe, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" title="1">grun.twfe &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>)</a>
+<a class="sourceLine" id="cb37-2" title="2"><span class="kw">fixef</span>(grun.twfe, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</a></code></pre></div>
 <pre><code>##       1935       1936       1937       1938       1939       1940 
 ##  -32.83632  -52.03372  -73.52633  -72.06272 -102.30660  -77.07140 
 ##       1941       1942       1943       1944       1945       1946 
@@ -680,10 +681,10 @@ Wooldridge-type serial correlation tests.
 <li><code>&quot;nerlove&quot;</code>: from <span class="citation">Nerlove (1971)</span>.</li>
 </ul>
 <p>For example, to use the <code>amemiya</code> estimator:</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1">grun.amem &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld,</a>
-<a class="sourceLine" id="cb39-2" data-line-number="2">                 <span class="dt">model=</span><span class="st">&quot;random&quot;</span>, <span class="dt">random.method=</span><span class="st">&quot;amemiya&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" title="1">grun.amem &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld,</a>
+<a class="sourceLine" id="cb39-2" title="2">                 <span class="dt">model=</span><span class="st">&quot;random&quot;</span>, <span class="dt">random.method=</span><span class="st">&quot;amemiya&quot;</span>)</a></code></pre></div>
 <p>The estimation of the variance of the error components are performed using the <code>ercomp</code> function, which has a <code>method</code> and an <code>effect</code> argument, and can be used by itself:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="kw">ercomp</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">method =</span> <span class="st">&quot;amemiya&quot;</span>, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" title="1"><span class="kw">ercomp</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">method =</span> <span class="st">&quot;amemiya&quot;</span>, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>)</a></code></pre></div>
 <pre><code>##                   var std.dev share
 ## idiosyncratic 2644.13   51.42 0.256
 ## individual    7452.02   86.33 0.721
@@ -698,9 +699,9 @@ Wooldridge-type serial correlation tests.
 <li>individual and time effects (<code>effect = &quot;twoways&quot;</code>).</li>
 </ul>
 <p>For example, to estimate a two-ways effect model for the <code>Grunfeld</code> data:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1">grun.tways &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data =</span> Grunfeld, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>,</a>
-<a class="sourceLine" id="cb42-2" data-line-number="2">                  <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</a>
-<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="kw">summary</span>(grun.tways)</a></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" title="1">grun.tways &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data =</span> Grunfeld, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>,</a>
+<a class="sourceLine" id="cb42-2" title="2">                  <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</a>
+<a class="sourceLine" id="cb42-3" title="3"><span class="kw">summary</span>(grun.tways)</a></code></pre></div>
 <pre><code>## Twoways effects Random Effect Model 
 ##    (Amemiya's transformation)
 ## 
@@ -743,10 +744,10 @@ Wooldridge-type serial correlation tests.
 <li>there is no random two-ways effect model for <code>random.method = &quot;nerlove&quot;</code>.</li>
 </ul>
 <p>The following example is using data used by <span class="citation">Harrison and Rubinfeld (1978)</span> to estimate an hedonic housing prices function. It is reproduced in <span class="citation">Baltagi (2005)</span>, p.174/ <span class="citation">Baltagi (2013)</span>, p.197.</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="kw">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb44-2" data-line-number="2">Hed &lt;-<span class="st"> </span><span class="kw">plm</span>(mv<span class="op">~</span>crim<span class="op">+</span>zn<span class="op">+</span>indus<span class="op">+</span>chas<span class="op">+</span>nox<span class="op">+</span>rm<span class="op">+</span>age<span class="op">+</span>dis<span class="op">+</span>rad<span class="op">+</span>tax<span class="op">+</span>ptratio<span class="op">+</span>blacks<span class="op">+</span>lstat,</a>
-<a class="sourceLine" id="cb44-3" data-line-number="3">           <span class="dt">data =</span> Hedonic, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">index =</span> <span class="st">&quot;townid&quot;</span>)</a>
-<a class="sourceLine" id="cb44-4" data-line-number="4"><span class="kw">summary</span>(Hed)</a></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb44-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
+<a class="sourceLine" id="cb44-2" title="2">Hed &lt;-<span class="st"> </span><span class="kw">plm</span>(mv<span class="op">~</span>crim<span class="op">+</span>zn<span class="op">+</span>indus<span class="op">+</span>chas<span class="op">+</span>nox<span class="op">+</span>rm<span class="op">+</span>age<span class="op">+</span>dis<span class="op">+</span>rad<span class="op">+</span>tax<span class="op">+</span>ptratio<span class="op">+</span>blacks<span class="op">+</span>lstat,</a>
+<a class="sourceLine" id="cb44-3" title="3">           <span class="dt">data =</span> Hedonic, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">index =</span> <span class="st">&quot;townid&quot;</span>)</a>
+<a class="sourceLine" id="cb44-4" title="4"><span class="kw">summary</span>(Hed)</a></code></pre></div>
 <pre><code>## Oneway (individual) effect Random Effect Model 
 ##    (Swamy-Arora's transformation)
 ## 
@@ -794,7 +795,7 @@ Wooldridge-type serial correlation tests.
 ## Adj. R-Squared: 0.99067
 ## Chisq: 53522.6 on 13 DF, p-value: &lt; 2.22e-16</code></pre>
 <p>Measures for the unbalancedness of a panel data set or the data used in estimated models are provided by function <code>punbalancedness</code>. It gives the measures <span class="math inline">\(\gamma\)</span> and <span class="math inline">\(\nu\)</span> from <span class="citation">Ahrens and Pincus (1981)</span> where for both 1 represents balanced data and the more unbalanced the data the lower the value.</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="kw">punbalancedness</span>(Hed)</a></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" title="1"><span class="kw">punbalancedness</span>(Hed)</a></code></pre></div>
 <pre><code>##     gamma        nu 
 ## 0.4715336 0.5188292</code></pre>
 </div>
@@ -809,13 +810,13 @@ Wooldridge-type serial correlation tests.
 <li><code>&quot;bms&quot;</code>, from <span class="citation">Breusch, Mizon, and Schmidt (1989)</span>.</li>
 </ul>
 <p>An illustration is in the following example from <span class="citation">Baltagi (2005)</span>, p.120 / <span class="citation">Baltagi (2013)</span>, p.137 (“G2SLS”).</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="kw">data</span>(<span class="st">&quot;Crime&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb48-2" data-line-number="2">cr &lt;-<span class="st"> </span><span class="kw">plm</span>(lcrmrte <span class="op">~</span><span class="st"> </span>lprbarr <span class="op">+</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>lprbconv <span class="op">+</span><span class="st"> </span>lprbpris <span class="op">+</span><span class="st"> </span>lavgsen <span class="op">+</span></a>
-<a class="sourceLine" id="cb48-3" data-line-number="3"><span class="st">          </span>ldensity <span class="op">+</span><span class="st"> </span>lwcon <span class="op">+</span><span class="st"> </span>lwtuc <span class="op">+</span><span class="st"> </span>lwtrd <span class="op">+</span><span class="st"> </span>lwfir <span class="op">+</span><span class="st"> </span>lwser <span class="op">+</span><span class="st"> </span>lwmfg <span class="op">+</span><span class="st"> </span>lwfed <span class="op">+</span></a>
-<a class="sourceLine" id="cb48-4" data-line-number="4"><span class="st">          </span>lwsta <span class="op">+</span><span class="st"> </span>lwloc <span class="op">+</span><span class="st"> </span>lpctymle <span class="op">+</span><span class="st"> </span>lpctmin <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span><span class="kw">factor</span>(year)</a>
-<a class="sourceLine" id="cb48-5" data-line-number="5">          <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span>lprbarr <span class="op">-</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>ltaxpc <span class="op">+</span><span class="st"> </span>lmix,</a>
-<a class="sourceLine" id="cb48-6" data-line-number="6">          <span class="dt">data =</span> Crime, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>)</a>
-<a class="sourceLine" id="cb48-7" data-line-number="7"><span class="kw">summary</span>(cr)</a></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Crime&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
+<a class="sourceLine" id="cb48-2" title="2">cr &lt;-<span class="st"> </span><span class="kw">plm</span>(lcrmrte <span class="op">~</span><span class="st"> </span>lprbarr <span class="op">+</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>lprbconv <span class="op">+</span><span class="st"> </span>lprbpris <span class="op">+</span><span class="st"> </span>lavgsen <span class="op">+</span></a>
+<a class="sourceLine" id="cb48-3" title="3"><span class="st">          </span>ldensity <span class="op">+</span><span class="st"> </span>lwcon <span class="op">+</span><span class="st"> </span>lwtuc <span class="op">+</span><span class="st"> </span>lwtrd <span class="op">+</span><span class="st"> </span>lwfir <span class="op">+</span><span class="st"> </span>lwser <span class="op">+</span><span class="st"> </span>lwmfg <span class="op">+</span><span class="st"> </span>lwfed <span class="op">+</span></a>
+<a class="sourceLine" id="cb48-4" title="4"><span class="st">          </span>lwsta <span class="op">+</span><span class="st"> </span>lwloc <span class="op">+</span><span class="st"> </span>lpctymle <span class="op">+</span><span class="st"> </span>lpctmin <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span><span class="kw">factor</span>(year)</a>
+<a class="sourceLine" id="cb48-5" title="5">          <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span>lprbarr <span class="op">-</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>ltaxpc <span class="op">+</span><span class="st"> </span>lmix,</a>
+<a class="sourceLine" id="cb48-6" title="6">          <span class="dt">data =</span> Crime, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>)</a>
+<a class="sourceLine" id="cb48-7" title="7"><span class="kw">summary</span>(cr)</a></code></pre></div>
 <pre><code>## Oneway (individual) effect Random Effect Model 
 ##    (Swamy-Arora's transformation)
 ## Instrumental variable estimation
@@ -878,18 +879,18 @@ Wooldridge-type serial correlation tests.
 ## Adj. R-Squared: 0.57472
 ## Chisq: 542.478 on 26 DF, p-value: &lt; 2.22e-16</code></pre>
 <p>The Hausman-Taylor model (see <span class="citation">Hausman and Taylor (1981)</span>) may be estimated with the <code>plm</code> function by setting parameters accordingly like in the example below. The following replicates <span class="citation">Baltagi (2005)</span>, p. 130/ <span class="citation">Baltagi (2013)</span>, p. 146.</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="co">## (note: function pht is a deprecated way to estimate this type of model</span></a>
-<a class="sourceLine" id="cb50-2" data-line-number="2"><span class="co">## ht &lt;- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+</span></a>
-<a class="sourceLine" id="cb50-3" data-line-number="3"><span class="co">##           bluecol+ind+union+sex+black+ed | </span></a>
-<a class="sourceLine" id="cb50-4" data-line-number="4"><span class="co">##           sex+black+bluecol+south+smsa+ind,</span></a>
-<a class="sourceLine" id="cb50-5" data-line-number="5"><span class="co">##           data=Wages,index=595)</span></a>
-<a class="sourceLine" id="cb50-6" data-line-number="6">ht &lt;-<span class="st"> </span><span class="kw">plm</span>(lwage <span class="op">~</span><span class="st"> </span>wks <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp <span class="op">^</span><span class="st"> </span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb50-7" data-line-number="7"><span class="st">              </span>bluecol <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">+</span><span class="st"> </span>ed <span class="op">|</span></a>
-<a class="sourceLine" id="cb50-8" data-line-number="8"><span class="st">              </span>bluecol <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">|</span></a>
-<a class="sourceLine" id="cb50-9" data-line-number="9"><span class="st">              </span>wks <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp <span class="op">^</span><span class="st"> </span><span class="dv">2</span>), </a>
-<a class="sourceLine" id="cb50-10" data-line-number="10">          <span class="dt">data =</span> Wages, <span class="dt">index =</span> <span class="dv">595</span>,</a>
-<a class="sourceLine" id="cb50-11" data-line-number="11">          <span class="dt">random.method =</span> <span class="st">&quot;ht&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>)</a>
-<a class="sourceLine" id="cb50-12" data-line-number="12"><span class="kw">summary</span>(ht)</a></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb50-1" title="1"><span class="co">## (note: function pht is a deprecated way to estimate this type of model</span></a>
+<a class="sourceLine" id="cb50-2" title="2"><span class="co">## ht &lt;- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+</span></a>
+<a class="sourceLine" id="cb50-3" title="3"><span class="co">##           bluecol+ind+union+sex+black+ed | </span></a>
+<a class="sourceLine" id="cb50-4" title="4"><span class="co">##           sex+black+bluecol+south+smsa+ind,</span></a>
+<a class="sourceLine" id="cb50-5" title="5"><span class="co">##           data=Wages,index=595)</span></a>
+<a class="sourceLine" id="cb50-6" title="6">ht &lt;-<span class="st"> </span><span class="kw">plm</span>(lwage <span class="op">~</span><span class="st"> </span>wks <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp <span class="op">^</span><span class="st"> </span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb50-7" title="7"><span class="st">              </span>bluecol <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">+</span><span class="st"> </span>ed <span class="op">|</span></a>
+<a class="sourceLine" id="cb50-8" title="8"><span class="st">              </span>bluecol <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">|</span></a>
+<a class="sourceLine" id="cb50-9" title="9"><span class="st">              </span>wks <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp <span class="op">^</span><span class="st"> </span><span class="dv">2</span>), </a>
+<a class="sourceLine" id="cb50-10" title="10">          <span class="dt">data =</span> Wages, <span class="dt">index =</span> <span class="dv">595</span>,</a>
+<a class="sourceLine" id="cb50-11" title="11">          <span class="dt">random.method =</span> <span class="st">&quot;ht&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>)</a>
+<a class="sourceLine" id="cb50-12" title="12"><span class="kw">summary</span>(ht)</a></code></pre></div>
 <pre><code>## Oneway (individual) effect Random Effect Model 
 ##    (Hausman-Taylor's transformation)
 ## Instrumental variable estimation
@@ -953,9 +954,9 @@ Wooldridge-type serial correlation tests.
 \end{equation}\]</span></p>
 <p>If this matrix is not positive-definite, the second term is dropped.</p>
 <p>With the <code>Grunfeld</code> data, we get:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb52-1" data-line-number="1">grun.varw &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb52-2" data-line-number="2">grun.varr &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
-<a class="sourceLine" id="cb52-3" data-line-number="3"><span class="kw">summary</span>(grun.varr)</a></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb52-1" title="1">grun.varw &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
+<a class="sourceLine" id="cb52-2" title="2">grun.varr &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
+<a class="sourceLine" id="cb52-3" title="3"><span class="kw">summary</span>(grun.varr)</a></code></pre></div>
 <pre><code>## Oneway (individual) effect Random coefficients model
 ## 
 ## Call:
@@ -1065,10 +1066,10 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p>The <code>effect</code> argument is either <code>NULL</code>, <code>&quot;individual&quot;</code> (the default), or <code>&quot;twoways&quot;</code>. In the first case, the model is estimated in levels. In the second case, the model is estimated in first differences to get rid of the individuals effects. In the last case, the model is estimated in first differences and time dummies are included.</p>
 <p>The <code>model</code> argument specifies whether a one-step or a two-steps model is requested (<code>&quot;onestep&quot;</code> or <code>&quot;twosteps&quot;</code>).</p>
 <p>The following example is from <span class="citation">Arellano and Bond (1991)</span>. Employment is explained by past values of employment (two lags), current and first lag of wages and output and current value of capital.</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb54-1" data-line-number="1">emp.gmm &lt;-<span class="st"> </span><span class="kw">pgmm</span>(<span class="kw">log</span>(emp)<span class="op">~</span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">1</span><span class="op">:</span><span class="dv">2</span>)<span class="op">+</span><span class="kw">lag</span>(<span class="kw">log</span>(wage), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>)<span class="op">+</span><span class="kw">log</span>(capital)<span class="op">+</span></a>
-<a class="sourceLine" id="cb54-2" data-line-number="2"><span class="st">                </span><span class="kw">lag</span>(<span class="kw">log</span>(output), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>)<span class="op">|</span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>),</a>
-<a class="sourceLine" id="cb54-3" data-line-number="3">                <span class="dt">data =</span> EmplUK, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;twosteps&quot;</span>)</a>
-<a class="sourceLine" id="cb54-4" data-line-number="4"><span class="kw">summary</span>(emp.gmm)</a></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb54-1" title="1">emp.gmm &lt;-<span class="st"> </span><span class="kw">pgmm</span>(<span class="kw">log</span>(emp)<span class="op">~</span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">1</span><span class="op">:</span><span class="dv">2</span>)<span class="op">+</span><span class="kw">lag</span>(<span class="kw">log</span>(wage), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>)<span class="op">+</span><span class="kw">log</span>(capital)<span class="op">+</span></a>
+<a class="sourceLine" id="cb54-2" title="2"><span class="st">                </span><span class="kw">lag</span>(<span class="kw">log</span>(output), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>)<span class="op">|</span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>),</a>
+<a class="sourceLine" id="cb54-3" title="3">                <span class="dt">data =</span> EmplUK, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;twosteps&quot;</span>)</a>
+<a class="sourceLine" id="cb54-4" title="4"><span class="kw">summary</span>(emp.gmm)</a></code></pre></div>
 <pre><code>## Twoways effects Two steps model
 ## 
 ## Call:
@@ -1102,12 +1103,12 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## Wald test for coefficients: chisq(7) = 142.0353 (p-value = &lt; 2.22e-16)
 ## Wald test for time dummies: chisq(6) = 16.97046 (p-value = 0.0093924)</code></pre>
 <p>The following example is from <span class="citation">Blundell and Bond (1998)</span>. The “sys” estimator is obtained using <code>transformation = &quot;ld&quot;</code> for level and difference. The <code>robust</code> argument of the <code>summary</code> method enables to use the robust covariance matrix proposed by <span class="citation">Windmeijer (2005)</span>.</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" data-line-number="1">z2 &lt;-<span class="st"> </span><span class="kw">pgmm</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">1</span>)<span class="op">+</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(wage), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb56-2" data-line-number="2"><span class="st">           </span><span class="kw">lag</span>(<span class="kw">log</span>(capital), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>) <span class="op">|</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb56-3" data-line-number="3"><span class="st">           </span><span class="kw">lag</span>(<span class="kw">log</span>(wage), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>) <span class="op">+</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(capital), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>),        </a>
-<a class="sourceLine" id="cb56-4" data-line-number="4">           <span class="dt">data =</span> EmplUK, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;onestep&quot;</span>, </a>
-<a class="sourceLine" id="cb56-5" data-line-number="5">           <span class="dt">transformation =</span> <span class="st">&quot;ld&quot;</span>)</a>
-<a class="sourceLine" id="cb56-6" data-line-number="6"><span class="kw">summary</span>(z2, <span class="dt">robust =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" title="1">z2 &lt;-<span class="st"> </span><span class="kw">pgmm</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">1</span>)<span class="op">+</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(wage), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb56-2" title="2"><span class="st">           </span><span class="kw">lag</span>(<span class="kw">log</span>(capital), <span class="dv">0</span><span class="op">:</span><span class="dv">1</span>) <span class="op">|</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(emp), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb56-3" title="3"><span class="st">           </span><span class="kw">lag</span>(<span class="kw">log</span>(wage), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>) <span class="op">+</span><span class="st"> </span><span class="kw">lag</span>(<span class="kw">log</span>(capital), <span class="dv">2</span><span class="op">:</span><span class="dv">99</span>),        </a>
+<a class="sourceLine" id="cb56-4" title="4">           <span class="dt">data =</span> EmplUK, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;onestep&quot;</span>, </a>
+<a class="sourceLine" id="cb56-5" title="5">           <span class="dt">transformation =</span> <span class="st">&quot;ld&quot;</span>)</a>
+<a class="sourceLine" id="cb56-6" title="6"><span class="kw">summary</span>(z2, <span class="dt">robust =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <pre><code>## Twoways effects One step model
 ## 
 ## Call:
@@ -1149,8 +1150,8 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p>In a pooled time series context (<code>effect = &quot;time&quot;</code>), symmetrically, this estimator is able to account for arbitrary cross-sectional correlation, provided that the latter is time-invariant (see <span class="citation">Greene (2003)</span> 13.9.1–2, pp. 321–2). In this case serial correlation has to be assumed away and the estimator is consistent with respect to the time dimension, keeping <span class="math inline">\(n\)</span> fixed.</p>
 <p>The function <code>pggls</code> estimates general FGLS models, with either fixed or “random” effects<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>.</p>
 <p>The “random effect” general FGLS is estimated by:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" data-line-number="1">zz &lt;-<span class="st"> </span><span class="kw">pggls</span>(<span class="kw">log</span>(emp)<span class="op">~</span><span class="kw">log</span>(wage)<span class="op">+</span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
-<a class="sourceLine" id="cb58-2" data-line-number="2"><span class="kw">summary</span>(zz)</a></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" title="1">zz &lt;-<span class="st"> </span><span class="kw">pggls</span>(<span class="kw">log</span>(emp)<span class="op">~</span><span class="kw">log</span>(wage)<span class="op">+</span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
+<a class="sourceLine" id="cb58-2" title="2"><span class="kw">summary</span>(zz)</a></code></pre></div>
 <pre><code>## Oneway (individual) effect General FGLS model
 ## 
 ## Call:
@@ -1174,7 +1175,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## Residual Sum of Squares: 402.55
 ## Multiple R-squared: 0.78283</code></pre>
 <p>The fixed effects <code>pggls</code> (see <span class="citation">Wooldridge (2002)</span>, p. 276) is based on the estimation of a within model in the first step; the rest follows as above. It is estimated by:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1">zz &lt;-<span class="st"> </span><span class="kw">pggls</span>(<span class="kw">log</span>(emp)<span class="op">~</span><span class="kw">log</span>(wage)<span class="op">+</span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" title="1">zz &lt;-<span class="st"> </span><span class="kw">pggls</span>(<span class="kw">log</span>(emp)<span class="op">~</span><span class="kw">log</span>(wage)<span class="op">+</span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a></code></pre></div>
 <p>The <code>pggls</code> function is similar to <code>plm</code> in many respects. An exception is that the estimate of the group covariance matrix of errors (<code>zz$sigma</code>, a matrix, not shown) is reported in the model objects instead of the usual estimated variances of the two error components.</p>
 </div>
 </div>
@@ -1186,9 +1187,9 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <h2>Tests of poolability</h2>
 <p><code>pooltest</code> tests the hypothesis that the same coefficients apply to each individual. It is a standard F test, based on the comparison of a model obtained for the full sample and a model based on the estimation of an equation for each individual. The first argument of <code>pooltest</code> is a <code>plm</code> object. The second argument is a <code>pvcm</code> object obtained with <code>model=&quot;within&quot;</code>. If the first argument is a pooling model, the test applies to all the coefficients (including the intercepts), if it is a within model, different intercepts are assumed.</p>
 <p>To test the hypothesis that all the coefficients in the <code>Grunfeld</code> example, excluding the intercepts, are equal, we use :</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb61-1" data-line-number="1">znp &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb61-2" data-line-number="2">zplm &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb61-3" data-line-number="3"><span class="kw">pooltest</span>(zplm, znp)</a></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb61-1" title="1">znp &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
+<a class="sourceLine" id="cb61-2" title="2">zplm &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
+<a class="sourceLine" id="cb61-3" title="3"><span class="kw">pooltest</span>(zplm, znp)</a></code></pre></div>
 <pre><code>## 
 ##  F statistic
 ## 
@@ -1196,7 +1197,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## F = 5.7805, df1 = 18, df2 = 170, p-value = 1.219e-10
 ## alternative hypothesis: unstability</code></pre>
 <p>The same test can be computed using a formula as first argument of the <code>pooltest</code> function:</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="kw">pooltest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" title="1"><span class="kw">pooltest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a></code></pre></div>
 </div>
 <div id="tests-for-individual-and-time-effects" class="section level2">
 <h2>Tests for individual and time effects</h2>
@@ -1210,8 +1211,8 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 </ul>
 <p>The effects tested are indicated with the <code>effect</code> argument (one of <code>&quot;individual&quot;</code>, <code>&quot;time&quot;</code>, or <code>&quot;twoways&quot;</code>). The test statistics implemented are also suitable for unbalanced panels.<a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a></p>
 <p>To test the presence of individual and time effects in the <code>Grunfeld</code> example, using the <span class="citation">Gourieroux, Holly, and Monfort (1982)</span> test, we use:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" data-line-number="1">g &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
-<a class="sourceLine" id="cb64-2" data-line-number="2"><span class="kw">plmtest</span>(g, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>, <span class="dt">type=</span><span class="st">&quot;ghm&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" title="1">g &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
+<a class="sourceLine" id="cb64-2" title="2"><span class="kw">plmtest</span>(g, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>, <span class="dt">type=</span><span class="st">&quot;ghm&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Lagrange Multiplier Test - two-ways effects (Gourieroux, Holly
 ##  and Monfort) for balanced panels
@@ -1221,25 +1222,25 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## w1 = 0.50, w2 = 0.25, p-value &lt; 2.2e-16
 ## alternative hypothesis: significant effects</code></pre>
 <p>or</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="kw">plmtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>, <span class="dt">type=</span><span class="st">&quot;ghm&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" title="1"><span class="kw">plmtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>, <span class="dt">type=</span><span class="st">&quot;ghm&quot;</span>)</a></code></pre></div>
 <p><code>pFtest</code> computes F tests of effects based on the comparison of the within and the pooling model. Its main arguments are either two <code>plm</code> objects (a pooling and a within model) or a formula.</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb67-1" data-line-number="1">gw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb67-2" data-line-number="2">gp &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
-<a class="sourceLine" id="cb67-3" data-line-number="3"><span class="kw">pFtest</span>(gw, gp)</a></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb67-1" title="1">gw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
+<a class="sourceLine" id="cb67-2" title="2">gp &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
+<a class="sourceLine" id="cb67-3" title="3"><span class="kw">pFtest</span>(gw, gp)</a></code></pre></div>
 <pre><code>## 
 ##  F test for twoways effects
 ## 
 ## data:  inv ~ value + capital
 ## F = 17.403, df1 = 28, df2 = 169, p-value &lt; 2.2e-16
 ## alternative hypothesis: significant effects</code></pre>
-<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">pFtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb69-1" title="1"><span class="kw">pFtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>)</a></code></pre></div>
 </div>
 <div id="hausman-test" class="section level2">
 <h2>Hausman test</h2>
 <p><code>phtest</code> computes the Hausman test which is based on the comparison of two sets of estimates (see <span class="citation">Hausman (1978)</span>). Its main arguments are two <code>panelmodel</code> objects or a formula. A classical application of the Hausman test for panel data is to compare the fixed and the random effects models:</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" data-line-number="1">gw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb70-2" data-line-number="2">gr &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
-<a class="sourceLine" id="cb70-3" data-line-number="3"><span class="kw">phtest</span>(gw, gr)</a></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" title="1">gw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a>
+<a class="sourceLine" id="cb70-2" title="2">gr &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
+<a class="sourceLine" id="cb70-3" title="3"><span class="kw">phtest</span>(gw, gr)</a></code></pre></div>
 <pre><code>## 
 ##  Hausman Test
 ## 
@@ -1262,7 +1263,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p>It has power both against the standard random effects specification, where the unobserved effects are constant within every group, as well as against any kind of serial correlation. As such, it “nests” both random effects and serial correlation tests, trading some power against more specific alternatives in exchange for robustness.</p>
 <p>While not rejecting the null favours the use of pooled OLS, rejection may follow from serial correlation of different kinds, and in particular, quoting <span class="citation">Wooldridge (2002)</span>, “should not be interpreted as implying that the random effects error structure <em>must</em> be true”.</p>
 <p>Below, the test is applied to the data and model in <span class="citation">Munnell (1990)</span>:</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="kw">pwtest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc)</a></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" title="1"><span class="kw">pwtest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc)</a></code></pre></div>
 <pre><code>## 
 ##  Wooldridge's test for unobserved individual effects
 ## 
@@ -1273,7 +1274,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <div id="locally-robust-tests-for-serial-correlation-or-random-effects" class="section level3">
 <h3>Locally robust tests for serial correlation or random effects</h3>
 <p>The presence of random effects may affect tests for residual serial correlation, and the opposite. One solution is to use a joint test, which has power against both alternatives. A joint LM test for random effects <em>and</em> serial correlation under normality and homoskedasticity of the idiosyncratic errors has been derived by <span class="citation">Baltagi and Li (1991)</span> and <span class="citation">Baltagi and Li (1995)</span> and is implemented as an option in <code>pbsytest</code>:</p>
-<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">pbsytest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc, <span class="dt">test=</span><span class="st">&quot;j&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" title="1"><span class="kw">pbsytest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc, <span class="dt">test=</span><span class="st">&quot;j&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Baltagi and Li AR-RE joint test - balanced panel
 ## 
@@ -1284,7 +1285,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p><span class="citation">Bera, Sosa–Escudero, and Yoon (2001)</span> derive locally robust tests both for individual random effects and for first-order serial correlation in residuals as “corrected” versions of the standard LM test (see <code>plmtest</code>). While still dependent on normality and homoskedasticity, these are robust to <em>local</em> departures from the hypotheses of, respectively, no serial correlation or no random effects. The authors observe that, although suboptimal, these tests may help detecting the right direction of the departure from the null, thus complementing the use of joint tests. Moreover, being based on pooled OLS residuals, the BSY tests are computationally far less demanding than likelihood-based conditional tests.</p>
 <p>On the other hand, the statistical properties of these “locally corrected” tests are inferior to those of the non-corrected counterparts when the latter are correctly specified. If there is no serial correlation, then the optimal test for random effects is the likelihood-based LM test of Breusch and Godfrey (with refinements by Honda, see <code>plmtest</code>), while if there are no random effects the optimal test for serial correlation is, again, Breusch-Godfrey’s test<a href="#fn11" class="footnote-ref" id="fnref11"><sup>11</sup></a>. If the presence of a random effect is taken for granted, then the optimal test for serial correlation is the likelihood-based conditional LM test of <span class="citation">Baltagi and Li (1995)</span> (see <code>pbltest</code>).</p>
 <p>The serial correlation version is the default:</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">pbsytest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc)</a></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" title="1"><span class="kw">pbsytest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc)</a></code></pre></div>
 <pre><code>## 
 ##  Bera, Sosa-Escudero and Yoon locally robust test - balanced panel
 ## 
@@ -1292,7 +1293,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## chisq = 52.636, df = 1, p-value = 4.015e-13
 ## alternative hypothesis: AR(1) errors sub random effects</code></pre>
 <p>The BSY test for random effects is implemented in the one-sided version<a href="#fn12" class="footnote-ref" id="fnref12"><sup>12</sup></a>, which takes heed that the variance of the random effect must be non-negative:</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">pbsytest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc, <span class="dt">test=</span><span class="st">&quot;re&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" title="1"><span class="kw">pbsytest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, <span class="dt">data=</span>Produc, <span class="dt">test=</span><span class="st">&quot;re&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Bera, Sosa-Escudero and Yoon locally robust test (one-sided) -
 ##  balanced panel
@@ -1304,8 +1305,8 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <div id="conditional-lm-test-for-ar1-or-ma1-errors-under-random-effects" class="section level3">
 <h3>Conditional LM test for AR(1) or MA(1) errors under random effects</h3>
 <p><span class="citation">Baltagi and Li (1991)</span> and <span class="citation">Baltagi and Li (1995)</span> derive a Lagrange multiplier test for serial correlation in the idiosyncratic component of the errors under (normal, heteroskedastic) random effects. Under the null of serially uncorrelated errors, the test turns out to be identical for both the alternative of AR(1) and MA(1) processes. One- and two-sided versions are provided, the one-sided having power against positive serial correlation only. The two-sided is the default, while for the other one must specify the <code>alternative</code> option to <code>&quot;onesided&quot;</code>:</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" data-line-number="1"><span class="kw">pbltest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, </a>
-<a class="sourceLine" id="cb80-2" data-line-number="2">        <span class="dt">data=</span>Produc, <span class="dt">alternative=</span><span class="st">&quot;onesided&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" title="1"><span class="kw">pbltest</span>(<span class="kw">log</span>(gsp)<span class="op">~</span><span class="kw">log</span>(pcap)<span class="op">+</span><span class="kw">log</span>(pc)<span class="op">+</span><span class="kw">log</span>(emp)<span class="op">+</span>unemp, </a>
+<a class="sourceLine" id="cb80-2" title="2">        <span class="dt">data=</span>Produc, <span class="dt">alternative=</span><span class="st">&quot;onesided&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Baltagi and Li one-sided LM test
 ## 
@@ -1322,7 +1323,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p>For the random effects model, <span class="citation">Wooldridge (2002)</span> observes that under the null of homoskedasticity and no serial correlation in the idiosyncratic errors, the residuals from the quasi-demeaned regression must be spherical as well. Else, as the individual effects are wiped out in the demeaning, any remaining serial correlation must be due to the idiosyncratic component. Hence, a simple way of testing for serial correlation is to apply a standard serial correlation test to the quasi-demeaned model. The same applies in a pooled model, w.r.t. the original data.</p>
 <p>The FE case needs some qualification. It is well-known that if the original model’s errors are uncorrelated then FE residuals are negatively serially correlated, with <span class="math inline">\(cor(\hat{u}_{it}, \hat{u}_{is})=-1/(T-1)\)</span> for each <span class="math inline">\(t,s\)</span> (see <span class="citation">Wooldridge (2002)</span> 10.5.4). This correlation clearly dies out as T increases, so this kind of AR test is applicable to <code>within</code> model objects only for T “sufficiently large”<a href="#fn13" class="footnote-ref" id="fnref13"><sup>13</sup></a>. On the converse, in short panels the test gets severely biased towards rejection (or, as the induced correlation is negative, towards acceptance in the case of the one-sided DW test with <code>alternative=&quot;greater&quot;</code>). See below for a serial correlation test applicable to “short” FE panel models.</p>
 <p><code>plm</code> objects retain the “demeaned” data, so the procedure is straightforward for them. The wrapper functions <code>pbgtest</code> and <code>pdwtest</code> re-estimate the relevant quasi-demeaned model by OLS and apply, respectively, standard Breusch-Godfrey and Durbin-Watson tests from package <code>lmtest</code>:</p>
-<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="kw">pbgtest</span>(grun.fe, <span class="dt">order =</span> <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" title="1"><span class="kw">pbgtest</span>(grun.fe, <span class="dt">order =</span> <span class="dv">2</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Breusch-Godfrey/Wooldridge test for serial correlation in panel
 ##  models
@@ -1337,7 +1338,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p>For the reasons reported above, under the null of no serial correlation in the errors, the residuals of a FE model must be negatively serially correlated, with <span class="math inline">\(cor(\hat{\epsilon}_{it}, \hat{\epsilon}_{is})=-1/(T-1)\)</span> for each <span class="math inline">\(t,s\)</span>. Wooldridge suggests basing a test for this null hypothesis on a pooled regression of FE residuals on themselves, lagged one period: <span class="math display">\[\hat{\epsilon}_{i,t}=\alpha + \delta
 \hat{\epsilon}_{i,t-1} + \eta_{i,t}\]</span> Rejecting the restriction <span class="math inline">\(\delta = -1/(T-1)\)</span> makes us conclude against the original null of no serial correlation.</p>
 <p>The building blocks available in <code>plm</code> make it easy to construct a function carrying out this procedure: first the FE model is estimated and the residuals retrieved, then they are lagged and a <code>pooling</code> AR(1) model is estimated. The test statistic is obtained by applying the above restriction on <span class="math inline">\(\delta\)</span> and supplying a heteroskedasticity- and autocorrelation-consistent covariance matrix (<code>vcovHC</code> with the appropriate options, in particular <code>method=&quot;arellano&quot;</code>)<a href="#fn14" class="footnote-ref" id="fnref14"><sup>14</sup></a>.</p>
-<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" data-line-number="1"><span class="kw">pwartest</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(wage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK)</a></code></pre></div>
+<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" title="1"><span class="kw">pwartest</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(wage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK)</a></code></pre></div>
 <pre><code>## 
 ##  Wooldridge's test for serial correlation in FE panels
 ## 
@@ -1353,7 +1354,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 \eta_{i,t}\]</span> and testing the restriction <span class="math inline">\(\delta = -0.5\)</span>, corresponding to the null of no serial correlation. <span class="citation">Drukker (2003)</span> provides Monte Carlo evidence of the good empirical properties of the test.</p>
 <p>On the other extreme (see <span class="citation">Wooldridge (2002)</span> 10.6.1), if the differenced errors <span class="math inline">\(e_{it}\)</span> are uncorrelated, as by definition <span class="math inline">\(u_{it} = u_{i,t-1} + e_{it}\)</span>, then <span class="math inline">\(u_{it}\)</span> is a random walk. In this latter case, the most efficient estimator is the first difference (<code>fd</code>) one; in the former case, it is the fixed effects one (<code>within</code>).</p>
 <p>The function <code>pwfdtest</code> allows testing either hypothesis: the default behaviour <code>h0=&quot;fd&quot;</code> is to test for serial correlation in <em>first-differenced</em> errors:</p>
-<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" data-line-number="1"><span class="kw">pwfdtest</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(wage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK)</a></code></pre></div>
+<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" title="1"><span class="kw">pwfdtest</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(wage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK)</a></code></pre></div>
 <pre><code>## 
 ##  Wooldridge's first-difference test for serial correlation in
 ##  panels
@@ -1362,7 +1363,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## F = 1.5251, df1 = 1, df2 = 749, p-value = 0.2172
 ## alternative hypothesis: serial correlation in differenced errors</code></pre>
 <p>while specifying <code>h0=&quot;fe&quot;</code> the null hypothesis becomes no serial correlation in <em>original</em> errors, which is similar to the <code>pwartest</code>.</p>
-<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb88-1" data-line-number="1"><span class="kw">pwfdtest</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(wage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK, <span class="dt">h0=</span><span class="st">&quot;fe&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb88-1" title="1"><span class="kw">pwfdtest</span>(<span class="kw">log</span>(emp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(wage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(capital), <span class="dt">data=</span>EmplUK, <span class="dt">h0=</span><span class="st">&quot;fe&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Wooldridge's first-difference test for serial correlation in
 ##  panels
@@ -1392,7 +1393,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p><span class="math display">\[CD=\sqrt{\frac{2}{n(n-1)}} ( \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} \sqrt{T_{ij}} \hat{\rho}_{ij} )\]</span></p>
 <p>based on <span class="math inline">\(\rho_{ij}\)</span> without squaring (also distributed as a standard normal) is appropriate both in <span class="math inline">\(n\)</span>– and in <span class="math inline">\(T\)</span>–asymptotic settings. It has remarkable properties in samples of any practically relevant size and is robust to a variety of settings. The only big drawback is that the test loses power against the alternative of cross-sectional dependence if the latter is due to a factor structure with factor loadings averaging zero, that is, some units react positively to common shocks, others negatively.</p>
 <p>The default version of the test is <code>&quot;cd&quot;</code> yielding Pesaran’s <span class="math inline">\(CD\)</span> test. These tests are originally meant to use the residuals of separate estimation of one time-series regression for each cross-sectional unit, so this is the default behaviour of <code>pcdtest</code>.</p>
-<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb90-1" data-line-number="1"><span class="kw">pcdtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld)</a></code></pre></div>
+<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb90-1" title="1"><span class="kw">pcdtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld)</a></code></pre></div>
 <pre><code>## 
 ##  Pesaran CD test for cross-sectional dependence in panels
 ## 
@@ -1400,7 +1401,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 ## z = 5.3401, p-value = 9.292e-08
 ## alternative hypothesis: cross-sectional dependence</code></pre>
 <p>If a different model specification (<code>within</code>, <code>random</code>, …) is assumed consistent, one can resort to its residuals for testing<a href="#fn18" class="footnote-ref" id="fnref18"><sup>18</sup></a> by specifying the relevant <code>model</code> type. The main argument of this function may be either a model of class <code>panelmodel</code> or a <code>formula</code> and a <code>data.frame</code>; in the second case, unless <code>model</code> is set to <code>NULL</code>, all usual parameters relative to the estimation of a <code>plm</code> model may be passed on. The test is compatible with any consistent <code>panelmodel</code> for the data at hand, with any specification of <code>effect</code>. E.g., specifying <code>effect = &quot;time&quot;</code> or <code>effect = &quot;twoways&quot;</code> allows to test for residual cross-sectional dependence after the introduction of time fixed effects to account for common shocks.</p>
-<div class="sourceCode" id="cb92"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb92-1" data-line-number="1"><span class="kw">pcdtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb92"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb92-1" title="1"><span class="kw">pcdtest</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ##  Pesaran CD test for cross-sectional dependence in panels
 ## 
@@ -1514,15 +1515,15 @@ z = \frac{\sqrt{n}\left(\bar{t}- E(\bar{t})\right)}{\sqrt{V(\bar{t})}}
 <p>The fixed effects case, as already observed in Section @ref(tests-of-serial-correlation) on serial correlation, is complicated by the fact that the demeaning induces serial correlation in the errors. The original White estimator (<code>white1</code>) turns out to be inconsistent for fixed <span class="math inline">\(T\)</span> as <span class="math inline">\(n\)</span> grows, so in this case it is advisable to use the <code>arellano</code> version (see <span class="citation">Stock and Watson (2008)</span>).</p>
 <p>The errors may be weighted according to the schemes proposed by <span class="citation">MacKinnon and White (1985)</span> and <span class="citation">Cribari–Neto (2004)</span> to improve small-sample performance<a href="#fn21" class="footnote-ref" id="fnref21"><sup>21</sup></a>.</p>
 <p>The main use of <code>vcovHC</code> is together with testing functions from the <code>lmtest</code> and <code>car</code> packages. These typically allow passing the <code>vcov</code> parameter either as a matrix or as a function (see <span class="citation">Zeileis (2004)</span>). If one is happy with the defaults, it is easiest to pass the function itself<a href="#fn22" class="footnote-ref" id="fnref22"><sup>22</sup></a>:</p>
-<div class="sourceCode" id="cb94"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb94-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lmtest&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb94"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb94-1" title="1"><span class="kw">library</span>(<span class="st">&quot;lmtest&quot;</span>)</a></code></pre></div>
 <pre><code>## Loading required package: zoo</code></pre>
 <pre><code>## 
 ## Attaching package: 'zoo'</code></pre>
 <pre><code>## The following objects are masked from 'package:base':
 ## 
 ##     as.Date, as.Date.numeric</code></pre>
-<div class="sourceCode" id="cb98"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb98-1" data-line-number="1">re &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
-<a class="sourceLine" id="cb98-2" data-line-number="2"><span class="kw">coeftest</span>(re, vcovHC, <span class="dt">df =</span> <span class="ot">Inf</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb98"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb98-1" title="1">re &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
+<a class="sourceLine" id="cb98-2" title="2"><span class="kw">coeftest</span>(re, vcovHC, <span class="dt">df =</span> <span class="ot">Inf</span>)</a></code></pre></div>
 <pre><code>## 
 ## z test of coefficients:
 ## 
@@ -1533,10 +1534,10 @@ z = \frac{\sqrt{n}\left(\bar{t}- E(\bar{t})\right)}{\sqrt{V(\bar{t})}}
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>else one may do the covariance computation inside the call to <code>coeftest</code>, thus passing on a matrix:</p>
-<div class="sourceCode" id="cb100"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb100-1" data-line-number="1"><span class="kw">coeftest</span>(re, <span class="kw">vcovHC</span>(re, <span class="dt">method=</span><span class="st">&quot;white2&quot;</span>, <span class="dt">type=</span><span class="st">&quot;HC3&quot;</span>), <span class="dt">df =</span> <span class="ot">Inf</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb100"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb100-1" title="1"><span class="kw">coeftest</span>(re, <span class="kw">vcovHC</span>(re, <span class="dt">method=</span><span class="st">&quot;white2&quot;</span>, <span class="dt">type=</span><span class="st">&quot;HC3&quot;</span>), <span class="dt">df =</span> <span class="ot">Inf</span>)</a></code></pre></div>
 <p>For some tests, e.g. for multiple model comparisons by <code>waldtest</code>, one should always provide a function<a href="#fn23" class="footnote-ref" id="fnref23"><sup>23</sup></a>. In this case, optional parameters are provided as shown below (see also <span class="citation">Zeileis (2004)</span>, p. 12):</p>
-<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb101-1" data-line-number="1"><span class="kw">waldtest</span>(re, <span class="kw">update</span>(re,.<span class="op">~</span>.<span class="op">-</span>capital),</a>
-<a class="sourceLine" id="cb101-2" data-line-number="2">         <span class="dt">vcov=</span><span class="cf">function</span>(x) <span class="kw">vcovHC</span>(x, <span class="dt">method=</span><span class="st">&quot;white2&quot;</span>, <span class="dt">type=</span><span class="st">&quot;HC3&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb101-1" title="1"><span class="kw">waldtest</span>(re, <span class="kw">update</span>(re,.<span class="op">~</span>.<span class="op">-</span>capital),</a>
+<a class="sourceLine" id="cb101-2" title="2">         <span class="dt">vcov=</span><span class="cf">function</span>(x) <span class="kw">vcovHC</span>(x, <span class="dt">method=</span><span class="st">&quot;white2&quot;</span>, <span class="dt">type=</span><span class="st">&quot;HC3&quot;</span>))</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: inv ~ value + capital
@@ -1547,9 +1548,9 @@ z = \frac{\sqrt{n}\left(\bar{t}- E(\bar{t})\right)}{\sqrt{V(\bar{t})}}
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>Moreover, <code>linearHypothesis</code> from package <code>car</code> may be used to test for linear restrictions:</p>
-<div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb103-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;car&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb103-1" title="1"><span class="kw">library</span>(<span class="st">&quot;car&quot;</span>)</a></code></pre></div>
 <pre><code>## Loading required package: carData</code></pre>
-<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb105-1" data-line-number="1"><span class="kw">linearHypothesis</span>(re, <span class="st">&quot;2*value=capital&quot;</span>, <span class="dt">vcov.=</span>vcovHC)</a></code></pre></div>
+<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb105-1" title="1"><span class="kw">linearHypothesis</span>(re, <span class="st">&quot;2*value=capital&quot;</span>, <span class="dt">vcov.=</span>vcovHC)</a></code></pre></div>
 <pre><code>## Linear hypothesis test
 ## 
 ## Hypothesis:
@@ -1616,15 +1617,15 @@ b_{ik} &amp; \sim &amp; N(0,\psi^2_k), \phantom{p} Cov(b_k,b_{k'}) = \psi_{kk'} 
 <div id="random-effects" class="section level3">
 <h3>Random effects</h3>
 <p>In the Laird and Ware notation, the RE specification is a model with only one random effects regressor: the intercept. Formally, <span class="math inline">\(z_{1ij}=1 \phantom{p}\forall i,j, \phantom{p} z_{qij}=0 \phantom{p} \forall i, \forall j, \forall q \neq 1\)</span> <span class="math inline">\(\lambda_{ij}=1\)</span> for <span class="math inline">\(i=j\)</span>, <span class="math inline">\(0\)</span> else). The composite error is therefore <span class="math inline">\(u_{ij}=1b_{i1} + \epsilon_{ij}\)</span>. Below we report coefficients of Grunfeld’s model estimated by GLS and then by ML:</p>
-<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb107-1" data-line-number="1"><span class="kw">library</span>(nlme)</a>
-<a class="sourceLine" id="cb107-2" data-line-number="2">reGLS &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
-<a class="sourceLine" id="cb107-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb107-4" data-line-number="4">reML &lt;-<span class="st"> </span><span class="kw">lme</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">random=</span><span class="op">~</span><span class="dv">1</span><span class="op">|</span>firm)</a>
-<a class="sourceLine" id="cb107-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb107-6" data-line-number="6"><span class="kw">coef</span>(reGLS)</a></code></pre></div>
+<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb107-1" title="1"><span class="kw">library</span>(nlme)</a>
+<a class="sourceLine" id="cb107-2" title="2">reGLS &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>)</a>
+<a class="sourceLine" id="cb107-3" title="3"></a>
+<a class="sourceLine" id="cb107-4" title="4">reML &lt;-<span class="st"> </span><span class="kw">lme</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">random=</span><span class="op">~</span><span class="dv">1</span><span class="op">|</span>firm)</a>
+<a class="sourceLine" id="cb107-5" title="5"></a>
+<a class="sourceLine" id="cb107-6" title="6"><span class="kw">coef</span>(reGLS)</a></code></pre></div>
 <pre><code>## (Intercept)       value     capital 
 ## -57.8344149   0.1097812   0.3081130</code></pre>
-<div class="sourceCode" id="cb109"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb109-1" data-line-number="1"><span class="kw">summary</span>(reML)<span class="op">$</span>coefficients<span class="op">$</span>fixed</a></code></pre></div>
+<div class="sourceCode" id="cb109"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb109-1" title="1"><span class="kw">summary</span>(reML)<span class="op">$</span>coefficients<span class="op">$</span>fixed</a></code></pre></div>
 <pre><code>## (Intercept)       value     capital 
 ## -57.8644245   0.1097897   0.3081881</code></pre>
 </div>
@@ -1632,39 +1633,39 @@ b_{ik} &amp; \sim &amp; N(0,\psi^2_k), \phantom{p} Cov(b_k,b_{k'}) = \psi_{kk'} 
 <h3>Variable coefficients, “random”</h3>
 <p>Swamy’s variable coefficients model <span class="citation">(Swamy 1970)</span> has coefficients varying randomly (and independently of each other) around a set of fixed values, so the equivalent specification is <span class="math inline">\(z_{q}=x_{q} \phantom{p} \forall q\)</span>, i.e. the fixed effects and the random effects regressors are the same, and <span class="math inline">\(\psi_{kk'}=\sigma_\mu^2 I_N\)</span>, and <span class="math inline">\(\lambda_{ijj}=1\)</span>, <span class="math inline">\(\lambda_{ijj'}=0\)</span> for <span class="math inline">\(j \neq j'\)</span>, that’s to say they are not correlated.</p>
 <p>Estimation of a mixed model with random coefficients on all regressors is rather demanding from the computational side. Some models from our examples fail to converge. The below example is estimated on the Grunfeld data and model with time effects.</p>
-<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb111-1" data-line-number="1">vcm &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</a>
-<a class="sourceLine" id="cb111-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb111-3" data-line-number="3">vcmML &lt;-<span class="st"> </span><span class="kw">lme</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">random=</span><span class="op">~</span>value<span class="op">+</span>capital<span class="op">|</span>year)</a>
-<a class="sourceLine" id="cb111-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb111-5" data-line-number="5"><span class="kw">coef</span>(vcm)</a></code></pre></div>
+<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb111-1" title="1">vcm &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;random&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</a>
+<a class="sourceLine" id="cb111-2" title="2"></a>
+<a class="sourceLine" id="cb111-3" title="3">vcmML &lt;-<span class="st"> </span><span class="kw">lme</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">random=</span><span class="op">~</span>value<span class="op">+</span>capital<span class="op">|</span>year)</a>
+<a class="sourceLine" id="cb111-4" title="4"></a>
+<a class="sourceLine" id="cb111-5" title="5"><span class="kw">coef</span>(vcm)</a></code></pre></div>
 <pre><code>## (Intercept)       value     capital 
 ## -18.5538638   0.1239595   0.1114579</code></pre>
-<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb113-1" data-line-number="1"><span class="kw">summary</span>(vcmML)<span class="op">$</span>coefficients<span class="op">$</span>fixed</a></code></pre></div>
+<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb113-1" title="1"><span class="kw">summary</span>(vcmML)<span class="op">$</span>coefficients<span class="op">$</span>fixed</a></code></pre></div>
 <pre><code>## (Intercept)       value     capital 
 ## -26.3558395   0.1241982   0.1381782</code></pre>
 </div>
 <div id="variable-coefficients-within" class="section level3">
 <h3>Variable coefficients, “within”</h3>
 <p>This specification actually entails separate estimation of <span class="math inline">\(T\)</span> different standard linear models, one for each group in the data, so the estimation approach is the same: OLS. In <code>nlme</code> this is done by creating an <code>lmList</code> object, so that the two models below are equivalent (output suppressed):</p>
-<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb115-1" data-line-number="1">vcmf &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</a>
-<a class="sourceLine" id="cb115-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb115-3" data-line-number="3">vcmfML &lt;-<span class="st"> </span><span class="kw">lmList</span>(inv<span class="op">~</span>value<span class="op">+</span>capital<span class="op">|</span>year, <span class="dt">data=</span>Grunfeld)</a></code></pre></div>
+<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb115-1" title="1">vcmf &lt;-<span class="st"> </span><span class="kw">pvcm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</a>
+<a class="sourceLine" id="cb115-2" title="2"></a>
+<a class="sourceLine" id="cb115-3" title="3">vcmfML &lt;-<span class="st"> </span><span class="kw">lmList</span>(inv<span class="op">~</span>value<span class="op">+</span>capital<span class="op">|</span>year, <span class="dt">data=</span>Grunfeld)</a></code></pre></div>
 </div>
 <div id="general-fgls" class="section level3">
 <h3>General FGLS</h3>
 <p>The general, or unrestricted, feasible GLS (FGLS), <code>pggls</code> in the <code>plm</code> nomenclature, is equivalent to a model with no random effects regressors (<span class="math inline">\(b_{iq}=0 \phantom{p} \forall i,q\)</span>) and an error covariance structure which is unrestricted within groups apart from the usual requirements. The function for estimating such models with correlation in the errors but no random effects is <code>gls()</code>.</p>
 <p>This very general serial correlation and heteroskedasticity structure is not estimable for the original Grunfeld data, which have more time periods than firms, therefore we restrict them to firms 4 to 6.</p>
-<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" data-line-number="1">sGrunfeld &lt;-<span class="st"> </span>Grunfeld[Grunfeld<span class="op">$</span>firm <span class="op">%in%</span><span class="st"> </span><span class="dv">4</span><span class="op">:</span><span class="dv">6</span>, ]</a>
-<a class="sourceLine" id="cb116-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb116-3" data-line-number="3">ggls &lt;-<span class="st"> </span><span class="kw">pggls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>sGrunfeld, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
-<a class="sourceLine" id="cb116-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb116-5" data-line-number="5">gglsML &lt;-<span class="st"> </span><span class="kw">gls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>sGrunfeld,</a>
-<a class="sourceLine" id="cb116-6" data-line-number="6">              <span class="dt">correlation=</span><span class="kw">corSymm</span>(<span class="dt">form=</span><span class="op">~</span><span class="dv">1</span><span class="op">|</span>year))</a>
-<a class="sourceLine" id="cb116-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb116-8" data-line-number="8"><span class="kw">coef</span>(ggls)</a></code></pre></div>
+<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" title="1">sGrunfeld &lt;-<span class="st"> </span>Grunfeld[Grunfeld<span class="op">$</span>firm <span class="op">%in%</span><span class="st"> </span><span class="dv">4</span><span class="op">:</span><span class="dv">6</span>, ]</a>
+<a class="sourceLine" id="cb116-2" title="2"></a>
+<a class="sourceLine" id="cb116-3" title="3">ggls &lt;-<span class="st"> </span><span class="kw">pggls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>sGrunfeld, <span class="dt">model=</span><span class="st">&quot;pooling&quot;</span>)</a>
+<a class="sourceLine" id="cb116-4" title="4"></a>
+<a class="sourceLine" id="cb116-5" title="5">gglsML &lt;-<span class="st"> </span><span class="kw">gls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>sGrunfeld,</a>
+<a class="sourceLine" id="cb116-6" title="6">              <span class="dt">correlation=</span><span class="kw">corSymm</span>(<span class="dt">form=</span><span class="op">~</span><span class="dv">1</span><span class="op">|</span>year))</a>
+<a class="sourceLine" id="cb116-7" title="7"></a>
+<a class="sourceLine" id="cb116-8" title="8"><span class="kw">coef</span>(ggls)</a></code></pre></div>
 <pre><code>## (Intercept)       value     capital 
 ##  1.19679342  0.10555908  0.06600166</code></pre>
-<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" data-line-number="1"><span class="kw">summary</span>(gglsML)<span class="op">$</span>coefficients</a></code></pre></div>
+<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" title="1"><span class="kw">summary</span>(gglsML)<span class="op">$</span>coefficients</a></code></pre></div>
 <pre><code>## (Intercept)       value     capital 
 ##  -2.4156266   0.1163550   0.0735837</code></pre>
 <p>The <em>within</em> case is analogous, with the regressor set augmented by <span class="math inline">\(n-1\)</span> group dummies.</p>
@@ -1676,17 +1677,17 @@ b_{ik} &amp; \sim &amp; N(0,\psi^2_k), \phantom{p} Cov(b_k,b_{k'}) = \psi_{kk'} 
 <div id="ar1-pooling-or-random-effects-panel" class="section level3">
 <h3>AR(1) pooling or random effects panel</h3>
 <p>Linear models with groupwise structures of time-dependence<a href="#fn29" class="footnote-ref" id="fnref29"><sup>29</sup></a> may be fitted by <code>gls()</code>, specifying the correlation structure in the <code>correlation</code> option<a href="#fn30" class="footnote-ref" id="fnref30"><sup>30</sup></a>:</p>
-<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" data-line-number="1">Grunfeld<span class="op">$</span>year &lt;-<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">as.character</span>(Grunfeld<span class="op">$</span>year))</a>
-<a class="sourceLine" id="cb120-2" data-line-number="2">lmAR1ML &lt;-<span class="st"> </span><span class="kw">gls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital,<span class="dt">data=</span>Grunfeld,</a>
-<a class="sourceLine" id="cb120-3" data-line-number="3">               <span class="dt">correlation=</span><span class="kw">corAR1</span>(<span class="dv">0</span>,<span class="dt">form=</span><span class="op">~</span>year<span class="op">|</span>firm))</a></code></pre></div>
+<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" title="1">Grunfeld<span class="op">$</span>year &lt;-<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">as.character</span>(Grunfeld<span class="op">$</span>year))</a>
+<a class="sourceLine" id="cb120-2" title="2">lmAR1ML &lt;-<span class="st"> </span><span class="kw">gls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital,<span class="dt">data=</span>Grunfeld,</a>
+<a class="sourceLine" id="cb120-3" title="3">               <span class="dt">correlation=</span><span class="kw">corAR1</span>(<span class="dv">0</span>,<span class="dt">form=</span><span class="op">~</span>year<span class="op">|</span>firm))</a></code></pre></div>
 <p>and analogously the random effects panel with, e.g., AR(1) errors (see <span class="citation">Baltagi (2005)</span>, <span class="citation">Baltagi (2013)</span>, ch. 5), which is a very common specification in econometrics, may be fit by <code>lme</code> specifying an additional random intercept:</p>
-<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1">reAR1ML &lt;-<span class="st"> </span><span class="kw">lme</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld,<span class="dt">random=</span><span class="op">~</span><span class="dv">1</span><span class="op">|</span>firm,</a>
-<a class="sourceLine" id="cb121-2" data-line-number="2">               <span class="dt">correlation=</span><span class="kw">corAR1</span>(<span class="dv">0</span>,<span class="dt">form=</span><span class="op">~</span>year<span class="op">|</span>firm))</a></code></pre></div>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" title="1">reAR1ML &lt;-<span class="st"> </span><span class="kw">lme</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld,<span class="dt">random=</span><span class="op">~</span><span class="dv">1</span><span class="op">|</span>firm,</a>
+<a class="sourceLine" id="cb121-2" title="2">               <span class="dt">correlation=</span><span class="kw">corAR1</span>(<span class="dv">0</span>,<span class="dt">form=</span><span class="op">~</span>year<span class="op">|</span>firm))</a></code></pre></div>
 <p>The regressors’ coefficients and the error’s serial correlation coefficient may be retrieved this way:</p>
-<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb122-1" data-line-number="1"><span class="kw">summary</span>(reAR1ML)<span class="op">$</span>coefficients<span class="op">$</span>fixed</a></code></pre></div>
+<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb122-1" title="1"><span class="kw">summary</span>(reAR1ML)<span class="op">$</span>coefficients<span class="op">$</span>fixed</a></code></pre></div>
 <pre><code>##  (Intercept)        value      capital 
 ## -40.27650822   0.09336672   0.31323330</code></pre>
-<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" data-line-number="1"><span class="kw">coef</span>(reAR1ML<span class="op">$</span>modelStruct<span class="op">$</span>corStruct, <span class="dt">unconstrained=</span><span class="ot">FALSE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" title="1"><span class="kw">coef</span>(reAR1ML<span class="op">$</span>modelStruct<span class="op">$</span>corStruct, <span class="dt">unconstrained=</span><span class="ot">FALSE</span>)</a></code></pre></div>
 <pre><code>##      Phi 
 ## 0.823845</code></pre>
 <p>Significance statistics for the regressors’ coefficients are to be found in the usual <code>summary</code> object, while to get the significance test of the serial correlation coefficient one can do a likelihood ratio test as shown in the following.</p>
@@ -1696,23 +1697,23 @@ b_{ik} &amp; \sim &amp; N(0,\psi^2_k), \phantom{p} Cov(b_k,b_{k'}) = \psi_{kk'} 
 <p>A likelihood ratio test for serial correlation in the idiosyncratic residuals can be done as a nested models test, by <code>anova()</code>, comparing the model with spherical idiosyncratic residuals with the more general alternative featuring AR(1) residuals. The test takes the form of a zero restriction test on the autoregressive parameter.</p>
 <p>This can be done on pooled or random effects models alike. First we report the simpler case.</p>
 <p>We already estimated the pooling AR(1) model above. The GLS model without correlation in the residuals is the same as OLS, and one could well use <code>lm()</code> for the restricted model. Here we estimate it by <code>gls()</code>.</p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb126-1" data-line-number="1">lmML &lt;-<span class="st"> </span><span class="kw">gls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld)</a>
-<a class="sourceLine" id="cb126-2" data-line-number="2"><span class="kw">anova</span>(lmML, lmAR1ML)</a></code></pre></div>
+<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb126-1" title="1">lmML &lt;-<span class="st"> </span><span class="kw">gls</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld)</a>
+<a class="sourceLine" id="cb126-2" title="2"><span class="kw">anova</span>(lmML, lmAR1ML)</a></code></pre></div>
 <pre><code>##         Model df      AIC      BIC    logLik   Test  L.Ratio p-value
 ## lmML        1  4 2400.217 2413.350 -1196.109                        
 ## lmAR1ML     2  5 2094.936 2111.352 -1042.468 1 vs 2 307.2813  &lt;.0001</code></pre>
 <p>The AR(1) test on the random effects model is to be done in much the same way, using the random effects model objects estimated above:</p>
-<div class="sourceCode" id="cb128"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb128-1" data-line-number="1"><span class="kw">anova</span>(reML, reAR1ML)</a></code></pre></div>
+<div class="sourceCode" id="cb128"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb128-1" title="1"><span class="kw">anova</span>(reML, reAR1ML)</a></code></pre></div>
 <pre><code>##         Model df      AIC      BIC    logLik   Test  L.Ratio p-value
 ## reML        1  5 2205.851 2222.267 -1097.926                        
 ## reAR1ML     2  6 2094.802 2114.501 -1041.401 1 vs 2 113.0496  &lt;.0001</code></pre>
 <p>A likelihood ratio test for random effects compares the specifications with and without random effects and spherical idiosyncratic errors:</p>
-<div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb130-1" data-line-number="1"><span class="kw">anova</span>(lmML, reML)</a></code></pre></div>
+<div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb130-1" title="1"><span class="kw">anova</span>(lmML, reML)</a></code></pre></div>
 <pre><code>##      Model df      AIC      BIC    logLik   Test L.Ratio p-value
 ## lmML     1  4 2400.217 2413.350 -1196.109                       
 ## reML     2  5 2205.851 2222.267 -1097.926 1 vs 2 196.366  &lt;.0001</code></pre>
 <p>The random effects, AR(1) errors model in turn nests the AR(1) pooling model, therefore a likelihood ratio test for random effects sub AR(1) errors may be carried out, again, by comparing the two autoregressive specifications:</p>
-<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb132-1" data-line-number="1"><span class="kw">anova</span>(lmAR1ML, reAR1ML)</a></code></pre></div>
+<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb132-1" title="1"><span class="kw">anova</span>(lmAR1ML, reAR1ML)</a></code></pre></div>
 <pre><code>##         Model df      AIC      BIC    logLik   Test  L.Ratio p-value
 ## lmAR1ML     1  5 2094.936 2111.352 -1042.468                        
 ## reAR1ML     2  6 2094.802 2114.501 -1041.401 1 vs 2 2.134349   0.144</code></pre>
@@ -1982,6 +1983,9 @@ diagnostics, which is another subject for future work.
 </ol>
 </div>
 
+
+
+<!-- code folding -->
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
