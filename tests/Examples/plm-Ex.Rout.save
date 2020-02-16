@@ -1,6 +1,6 @@
 
-R version 3.6.0 (2019-04-26) -- "Planting of a Tree"
-Copyright (C) 2019 The R Foundation for Statistical Computing
+R Under development (unstable) (2020-02-16 r77809) -- "Unsuffered Consequences"
+Copyright (C) 2020 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -6848,6 +6848,7 @@ alternative hypothesis: AR(1) errors sub random effects
 > 
 > data("Produc", package = "plm")
 > ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
+> ## IGNORE_RDIFF_BEGIN
 > summary(ccepmod)
 Common Correlated Effects Pooled model
 
@@ -6898,8 +6899,10 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
+> ## IGNORE_RDIFF_END
 > 
 > ccemgmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="mg")
+> ## IGNORE_RDIFF_BEGIN
 > summary(ccemgmod)
 Common Correlated Effects Mean Groups model
 
@@ -6924,7 +6927,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.056978
 HPY R-squared: 0.99312
-> 
+> ## IGNORE_RDIFF_END
 > 
 > 
 > 
@@ -13364,6 +13367,7 @@ Note: Coefficient covariance matrix supplied.
 > ## Robust inference for CCE models
 > data("Produc", package = "plm")
 > ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
+> ## IGNORE_RDIFF_BEGIN
 > summary(ccepmod, vcov = vcovHC)
 Common Correlated Effects Pooled model
 
@@ -13390,6 +13394,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
+> ## IGNORE_RDIFF_END
 > 
 > ## Robust inference for GMM models
 > data("EmplUK", package="plm")
@@ -13670,7 +13675,7 @@ attr(,"se")
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  11.784 0.288 12.66 0 0.007 
+Time elapsed:  25.754 0.563 26.522 0.004 0.001 
 > grDevices::dev.off()
 null device 
           1 

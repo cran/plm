@@ -1,8 +1,8 @@
-## ----setup, echo=FALSE---------------------------------------------------
+## ----setup, echo=FALSE--------------------------------------------------------
 library("knitr")
 opts_chunk$set(message = FALSE, warning = FALSE)
 
-## ----texreg, echo = FALSE, results = "hide"------------------------------
+## ----texreg, echo = FALSE, results = "hide"-----------------------------------
 library("texreg")
 extract.plm <- function(model, include.rsquared = TRUE, include.adjrs = TRUE, 
     include.nobs = TRUE, include.ercomp = TRUE, ...) {
@@ -59,7 +59,7 @@ setMethod("extract", signature = className("plm", "plm"),
     definition = extract.plm)
 
 
-## ----grunfeld------------------------------------------------------------
+## ----grunfeld-----------------------------------------------------------------
 library("plm")
 data("Grunfeld", package = "plm")
 ols <- plm(inv ~ value + capital, Grunfeld, model = "pooling")
@@ -69,29 +69,29 @@ walhus <- update(ols, model = "random", random.method = "walhus", random.dfcor =
 amemiya <- update(walhus, random.method = "amemiya")
 swar <- update(amemiya, random.method = "swar")
 
-## ----grunfeldresults, echo = TRUE----------------------------------------
+## ----grunfeldresults, echo = TRUE---------------------------------------------
 library("texreg")
 screenreg(list(ols = ols, between = between, within = within, 
             walhus = walhus, amemiya = amemiya, swar = swar),
         digits = 5, omit.coef = "(Intercept)")
 
-## ----ercompamemiya-------------------------------------------------------
+## ----ercompamemiya------------------------------------------------------------
 ercomp(amemiya)
 
-## ----produc--------------------------------------------------------------
+## ----produc-------------------------------------------------------------------
 data("Produc", package = "plm")
 PrSwar <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, Produc, 
            model = "random", random.method = "swar", random.dfcor = 3)
 summary(PrSwar)
 
-## ----grunfeld2ways-------------------------------------------------------
+## ----grunfeld2ways------------------------------------------------------------
 Grw <- plm(inv ~ value + capital, Grunfeld, model = "random", effect = "twoways", 
            random.method = "walhus", random.dfcor = 3)
 Grs <- update(Grw, random.method = "swar")
 Gra <- update(Grw, random.method = "amemiya")
 screenreg(list("Wallace-Hussain" = Grw, "Swamy-Arora" = Grs, "Amemiya" = Gra), digits = 5)
 
-## ----produc2ways---------------------------------------------------------
+## ----produc2ways--------------------------------------------------------------
 data("Produc", package = "plm")
 Prw <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, Produc, 
            model = "random", random.method = "walhus", 
@@ -100,7 +100,7 @@ Prs <- update(Prw, random.method = "swar")
 Pra <- update(Prw, random.method = "amemiya")
 screenreg(list("Wallace-Hussain" = Prw, "Swamy-Arora" = Prs, "Amemiya" = Pra), digits = 5)
 
-## ----hedonic-------------------------------------------------------------
+## ----hedonic------------------------------------------------------------------
 data("Hedonic", package = "plm")
 form <- mv ~ crim + zn + indus + chas + nox + rm + 
     age + dis + rad + tax + ptratio + blacks + lstat
@@ -112,7 +112,7 @@ HedEviewsWH <- update(HedEviews, random.models = "pooling")
 screenreg(list(EViews = HedEviews, Stata = HedStata, "Wallace-Hussain" = HedEviewsWH), 
           digits = 5, single.row = TRUE)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("Crime", package = "plm")
 crbalt <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
               ldensity + lwcon + lwtuc + lwtrd + lwfir + lwser + lwmfg + lwfed +
@@ -125,7 +125,7 @@ screenreg(list(FE2SLS = crwth, EC2SLS = crbalt, G2SLS = crbvk),
           single.row = TRUE, digits = 5, omit.coef = "(region)|(year)",
           reorder.coef = c(1:16, 19, 18, 17))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("Wages", package = "plm")
 ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp^2) + 
             bluecol + ind + union + sex + black + ed | 
@@ -140,7 +140,7 @@ am <- update(ht, inst.method = "am")
 screenreg(list("Hausman-Taylor" = ht, "Amemiya-MaCurdy" = am), 
           digits = 5, single.row = TRUE)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("Produc", package = "plm")
 swar <- plm(form <- log(gsp) ~ log(pc) + log(emp) + log(hwy) + log(water) + log(util) + unemp, 
             Produc, index = c("state", "year", "region"), effect = "nested", random.method = "swar")

@@ -1,80 +1,80 @@
-## ----echo=FALSE,results='hide'-------------------------------------------
+## ----echo=FALSE,results='hide'------------------------------------------------
 options(prompt= "R> ", useFancyQuotes = FALSE)
 
-## ----echo=TRUE,results='hide'--------------------------------------------
+## ----echo=TRUE,results='hide'-------------------------------------------------
 library("plm")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("EmplUK", package="plm")
 data("Produc", package="plm")
 data("Grunfeld", package="plm")
 data("Wages", package="plm")
 
-## ----setdata1------------------------------------------------------------
+## ----setdata1-----------------------------------------------------------------
 head(Grunfeld)
 E <- pdata.frame(EmplUK, index=c("firm","year"), drop.index=TRUE, row.names=TRUE)
 head(E)
 head(attr(E, "index"))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 summary(E$emp)
 head(as.matrix(E$emp))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 head(lag(E$emp, 0:2))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 head(diff(E$emp), 10)
 head(lag(E$emp, 2), 10)
 head(Within(E$emp))
 head(between(E$emp), 4)
 head(Between(E$emp), 10)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 emp ~ wage + capital | lag(wage,1) + capital
 emp ~ wage + capital | . -wage + lag(wage,1)
 
-## ----fe------------------------------------------------------------------
+## ----fe-----------------------------------------------------------------------
 grun.fe <- plm(inv~value+capital, data = Grunfeld, model = "within")
 
-## ----re------------------------------------------------------------------
+## ----re-----------------------------------------------------------------------
 grun.re <- plm(inv~value+capital, data = Grunfeld, model = "random")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 summary(grun.re)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 fixef(grun.fe, type = "dmean")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 summary(fixef(grun.fe, type = "dmean"))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 grun.twfe <- plm(inv~value+capital, data=Grunfeld, model="within", effect="twoways")
 fixef(grun.twfe, effect="time")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 grun.amem <- plm(inv~value+capital, data=Grunfeld,
                  model="random", random.method="amemiya")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 ercomp(inv~value+capital, data=Grunfeld, method = "amemiya", effect = "twoways")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 grun.tways <- plm(inv~value+capital, data = Grunfeld, effect = "twoways",
                   model = "random", random.method = "amemiya")
 summary(grun.tways)
 
-## ----hedonic-------------------------------------------------------------
+## ----hedonic------------------------------------------------------------------
 data("Hedonic", package = "plm")
 Hed <- plm(mv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+blacks+lstat,
            data = Hedonic, model = "random", index = "townid")
 summary(Hed)
 
-## ----hedonic-punbal------------------------------------------------------
+## ----hedonic-punbal-----------------------------------------------------------
 punbalancedness(Hed)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("Crime", package = "plm")
 cr <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
           ldensity + lwcon + lwtuc + lwtrd + lwfir + lwser + lwmfg + lwfed +
@@ -83,7 +83,7 @@ cr <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
           data = Crime, model = "random")
 summary(cr)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 ## (note: function pht is a deprecated way to estimate this type of model
 ## ht <- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+
 ##           bluecol+ind+union+sex+black+ed | 
@@ -97,18 +97,18 @@ ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp ^ 2) +
           random.method = "ht", model = "random", inst.method = "baltagi")
 summary(ht)
 
-## ----grunfeld.within-----------------------------------------------------
+## ----grunfeld.within----------------------------------------------------------
 grun.varw <- pvcm(inv~value+capital, data=Grunfeld, model="within")
 grun.varr <- pvcm(inv~value+capital, data=Grunfeld, model="random")
 summary(grun.varr)
 
-## ----gmm-----------------------------------------------------------------
+## ----gmm----------------------------------------------------------------------
 emp.gmm <- pgmm(log(emp)~lag(log(emp), 1:2)+lag(log(wage), 0:1)+log(capital)+
                 lag(log(output), 0:1)|lag(log(emp), 2:99),
                 data = EmplUK, effect = "twoways", model = "twosteps")
 summary(emp.gmm)
 
-## ----gmm2----------------------------------------------------------------
+## ----gmm2---------------------------------------------------------------------
 z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
            lag(log(capital), 0:1) | lag(log(emp), 2:99) +
            lag(log(wage), 2:99) + lag(log(capital), 2:99),        
@@ -116,92 +116,92 @@ z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
            transformation = "ld")
 summary(z2, robust = TRUE)
 
-## ----pggls---------------------------------------------------------------
+## ----pggls--------------------------------------------------------------------
 zz <- pggls(log(emp)~log(wage)+log(capital), data=EmplUK, model="pooling")
 summary(zz)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 zz <- pggls(log(emp)~log(wage)+log(capital), data=EmplUK, model="within")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 znp <- pvcm(inv~value+capital, data=Grunfeld, model="within")
 zplm <- plm(inv~value+capital, data=Grunfeld, model="within")
 pooltest(zplm, znp)
 
-## ----results='hide'------------------------------------------------------
+## ----results='hide'-----------------------------------------------------------
 pooltest(inv~value+capital, data=Grunfeld, model="within")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 g <- plm(inv ~ value + capital, data=Grunfeld, model="pooling")
 plmtest(g, effect="twoways", type="ghm")
 
-## ----results='hide'------------------------------------------------------
+## ----results='hide'-----------------------------------------------------------
 plmtest(inv~value+capital, data=Grunfeld, effect="twoways", type="ghm")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 gw <- plm(inv ~ value + capital, data=Grunfeld, effect="twoways", model="within")
 gp <- plm(inv ~ value + capital, data=Grunfeld, model="pooling")
 pFtest(gw, gp)
 
-## ----results='hide'------------------------------------------------------
+## ----results='hide'-----------------------------------------------------------
 pFtest(inv~value+capital, data=Grunfeld, effect="twoways")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 gw <- plm(inv~value+capital, data=Grunfeld, model="within")
 gr <- plm(inv~value+capital, data=Grunfeld, model="random")
 phtest(gw, gr)
 
-## ----wtest---------------------------------------------------------------
+## ----wtest--------------------------------------------------------------------
 pwtest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc)
 
-## ----pbsytestJoint-------------------------------------------------------
+## ----pbsytestJoint------------------------------------------------------------
 pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, test="j")
 
-## ----pbsytestAR----------------------------------------------------------
+## ----pbsytestAR---------------------------------------------------------------
 pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc)
 
-## ----pbsytestRE----------------------------------------------------------
+## ----pbsytestRE---------------------------------------------------------------
 pbsytest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, test="re")
 
-## ----pbltest-------------------------------------------------------------
+## ----pbltest------------------------------------------------------------------
 pbltest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, 
         data=Produc, alternative="onesided")
 
-## ----generalAR-----------------------------------------------------------
+## ----generalAR----------------------------------------------------------------
 pbgtest(grun.fe, order = 2)
 
-## ----pwartest------------------------------------------------------------
+## ----pwartest-----------------------------------------------------------------
 pwartest(log(emp) ~ log(wage) + log(capital), data=EmplUK)
 
-## ----pwfdtest1-----------------------------------------------------------
+## ----pwfdtest1----------------------------------------------------------------
 pwfdtest(log(emp) ~ log(wage) + log(capital), data=EmplUK)
 
-## ----pwfdtest2-----------------------------------------------------------
+## ----pwfdtest2----------------------------------------------------------------
 pwfdtest(log(emp) ~ log(wage) + log(capital), data=EmplUK, h0="fe")
 
-## ----pcdtest1------------------------------------------------------------
+## ----pcdtest1-----------------------------------------------------------------
 pcdtest(inv~value+capital, data=Grunfeld)
 
-## ----pcdtest2------------------------------------------------------------
+## ----pcdtest2-----------------------------------------------------------------
 pcdtest(inv~value+capital, data=Grunfeld, model="within")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library("lmtest")
 re <- plm(inv~value+capital, data=Grunfeld, model="random")
 coeftest(re, vcovHC, df = Inf)
 
-## ----results='hide'------------------------------------------------------
+## ----results='hide'-----------------------------------------------------------
 coeftest(re, vcovHC(re, method="white2", type="HC3"), df = Inf)
 
-## ----waldtest------------------------------------------------------------
+## ----waldtest-----------------------------------------------------------------
 waldtest(re, update(re,.~.-capital),
          vcov=function(x) vcovHC(x, method="white2", type="HC3"))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library("car")
 linearHypothesis(re, "2*value=capital", vcov.=vcovHC)
 
-## ----re2-----------------------------------------------------------------
+## ----re2----------------------------------------------------------------------
 library(nlme)
 reGLS <- plm(inv~value+capital, data=Grunfeld, model="random")
 
@@ -211,7 +211,7 @@ coef(reGLS)
 
 summary(reML)$coefficients$fixed
 
-## ----vcmrand-------------------------------------------------------------
+## ----vcmrand------------------------------------------------------------------
 vcm <- pvcm(inv~value+capital, data=Grunfeld, model="random", effect="time")
 
 vcmML <- lme(inv~value+capital, data=Grunfeld, random=~value+capital|year)
@@ -220,12 +220,12 @@ coef(vcm)
 
 summary(vcmML)$coefficients$fixed
 
-## ----vcmfixed------------------------------------------------------------
+## ----vcmfixed-----------------------------------------------------------------
 vcmf <- pvcm(inv~value+capital, data=Grunfeld, model="within", effect="time")
 
 vcmfML <- lmList(inv~value+capital|year, data=Grunfeld)
 
-## ----gglsre--------------------------------------------------------------
+## ----gglsre-------------------------------------------------------------------
 sGrunfeld <- Grunfeld[Grunfeld$firm %in% 4:6, ]
 
 ggls <- pggls(inv~value+capital, data=sGrunfeld, model="pooling")
@@ -237,29 +237,29 @@ coef(ggls)
 
 summary(gglsML)$coefficients
 
-## ----lmAR1---------------------------------------------------------------
+## ----lmAR1--------------------------------------------------------------------
 Grunfeld$year <- as.numeric(as.character(Grunfeld$year))
 lmAR1ML <- gls(inv~value+capital,data=Grunfeld,
                correlation=corAR1(0,form=~year|firm))
 
-## ----reAR1---------------------------------------------------------------
+## ----reAR1--------------------------------------------------------------------
 reAR1ML <- lme(inv~value+capital, data=Grunfeld,random=~1|firm,
                correlation=corAR1(0,form=~year|firm))
 
-## ----fetchcoefs----------------------------------------------------------
+## ----fetchcoefs---------------------------------------------------------------
 summary(reAR1ML)$coefficients$fixed
 coef(reAR1ML$modelStruct$corStruct, unconstrained=FALSE)
 
-## ----LRar----------------------------------------------------------------
+## ----LRar---------------------------------------------------------------------
 lmML <- gls(inv~value+capital, data=Grunfeld)
 anova(lmML, lmAR1ML)
 
-## ----LRarsubRE-----------------------------------------------------------
+## ----LRarsubRE----------------------------------------------------------------
 anova(reML, reAR1ML)
 
-## ----LRre----------------------------------------------------------------
+## ----LRre---------------------------------------------------------------------
 anova(lmML, reML)
 
-## ----LRresubAR-----------------------------------------------------------
+## ----LRresubAR----------------------------------------------------------------
 anova(lmAR1ML, reAR1ML)
 

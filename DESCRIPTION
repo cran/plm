@@ -1,5 +1,5 @@
 Package: plm
-Version: 2.2-0
+Version: 2.2-1
 Date: 2019-09-07
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
@@ -37,11 +37,15 @@ Author: Yves Croissant [aut, cre],
   Arne Henningsen [ctb],
   Liviu Andronic [ctb],
   Nina Schoenfelder [ctb]
-Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
+Maintainer: ORPHANED
 Repository: CRAN
 Repository/R-Forge/Project: plm
 Repository/R-Forge/Revision: 892
 Repository/R-Forge/DateTimeStamp: 2019-09-06 04:42:37
-Date/Publication: 2019-09-07 07:00:06 UTC
+Date/Publication: 2020-02-16 18:29:07 UTC
 NeedsCompilation: no
-Packaged: 2019-09-06 05:15:26 UTC; rforge
+Packaged: 2020-02-16 16:53:44 UTC; ripley
+X-CRAN-Original-Maintainer: Yves Croissant
+        <yves.croissant@univ-reunion.fr>
+X-CRAN-Comment: Orphaned and corrected on 2020-02-16 as there was no
+        response to repeated requests.

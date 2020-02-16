@@ -1,45 +1,58 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2019-09-06" />
+<meta name="date" content="2020-02-16" />
 
 <title>Estimation of error components models with the plm function</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
 
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
 }
 @media print {
-code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -48,9 +61,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; font-weight: bold; } /* Alert */
 code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
@@ -117,9 +130,6 @@ padding-right: 2em;
 font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 font-size: 14px;
 line-height: 1.35;
-}
-#header {
-text-align: center;
 }
 #TOC {
 clear: both;
@@ -288,7 +298,8 @@ code > span.st { color: #d14; }
 code > span.co { color: #888888; font-style: italic; } 
 code > span.ot { color: #007020; } 
 code > span.al { color: #ff0000; font-weight: bold; } 
-code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
 </style>
 
 
@@ -303,7 +314,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Estimation of error components models with the plm function</h1>
 <h4 class="author">Yves Croissant</h4>
-<h4 class="date">2019-09-06</h4>
+<h4 class="date">2020-02-16</h4>
 
 
 
@@ -349,19 +360,19 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 </ul>
 <p>Note that when only one model is provided in <code>models</code>, this means that the same residuals are used to compute the two quadratic forms.</p>
 <p>To illustrate the use of <code>plm</code>, we use examples reproduced in <span class="citation">Baltagi (2013)</span>. Table 2.1 on page 21 presents EViews’ results of the estimation on the <code>Grunfeld</code> data set :</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="kw">data</span>(<span class="st">&quot;Grunfeld&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb1-3" title="3">ols &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, Grunfeld, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>)</a>
-<a class="sourceLine" id="cb1-4" title="4">between &lt;-<span class="st"> </span><span class="kw">update</span>(ols, <span class="dt">model =</span> <span class="st">&quot;between&quot;</span>)</a>
-<a class="sourceLine" id="cb1-5" title="5">within &lt;-<span class="st"> </span><span class="kw">update</span>(ols, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb1-6" title="6">walhus &lt;-<span class="st"> </span><span class="kw">update</span>(ols, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb1-7" title="7">amemiya &lt;-<span class="st"> </span><span class="kw">update</span>(walhus, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</a>
-<a class="sourceLine" id="cb1-8" title="8">swar &lt;-<span class="st"> </span><span class="kw">update</span>(amemiya, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">data</span>(<span class="st">&quot;Grunfeld&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a>ols &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, Grunfeld, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4"></a>between &lt;-<span class="st"> </span><span class="kw">update</span>(ols, <span class="dt">model =</span> <span class="st">&quot;between&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>within &lt;-<span class="st"> </span><span class="kw">update</span>(ols, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6"></a>walhus &lt;-<span class="st"> </span><span class="kw">update</span>(ols, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</span>
+<span id="cb1-7"><a href="#cb1-7"></a>amemiya &lt;-<span class="st"> </span><span class="kw">update</span>(walhus, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8"></a>swar &lt;-<span class="st"> </span><span class="kw">update</span>(amemiya, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span></code></pre></div>
 <p>Note that the <code>random.dfcor</code> argument is set to <code>3</code>, which means that the unbiased version of the estimation of the error components is used. We use the <code>texreg</code> package to present the results :</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">library</span>(<span class="st">&quot;texreg&quot;</span>)</a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">ols =</span> ols, <span class="dt">between =</span> between, <span class="dt">within =</span> within, </a>
-<a class="sourceLine" id="cb2-3" title="3">            <span class="dt">walhus =</span> walhus, <span class="dt">amemiya =</span> amemiya, <span class="dt">swar =</span> swar),</a>
-<a class="sourceLine" id="cb2-4" title="4">        <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">omit.coef =</span> <span class="st">&quot;(Intercept)&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">library</span>(<span class="st">&quot;texreg&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">ols =</span> ols, <span class="dt">between =</span> between, <span class="dt">within =</span> within, </span>
+<span id="cb2-3"><a href="#cb2-3"></a>            <span class="dt">walhus =</span> walhus, <span class="dt">amemiya =</span> amemiya, <span class="dt">swar =</span> swar),</span>
+<span id="cb2-4"><a href="#cb2-4"></a>        <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">omit.coef =</span> <span class="st">&quot;(Intercept)&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## =================================================================================================
 ##            ols            between      within         walhus         amemiya        swar         
@@ -379,18 +390,18 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## =================================================================================================
 ## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
 <p>The estimated variance can be extracted using the <code>ercomp</code> function. For example, for the <code>amemiya</code> model :</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">ercomp</span>(amemiya)</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">ercomp</span>(amemiya)</span></code></pre></div>
 <pre><code>##                   var std.dev share
 ## idiosyncratic 2784.46   52.77 0.285
 ## individual    6976.18   83.52 0.715
 ## theta: 0.8601</code></pre>
 <p><span class="citation">Baltagi (2013)</span>, p. 27, presents the Stata estimation of the Swamy-Arora estimator ; the Swamy-Arora estimator is the same if <code>random.dfcor</code> is set to <code>3</code> or <code>2</code> (the quadratic forms are divided by <span class="math inline">\(\sum_n T_n - K - N\)</span> and by <span class="math inline">\(N - K - 1\)</span>), so I don’t know what is the behaviour of Stata for the other estimators for which the unbiased estimators differs from the simple one.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb6-2" title="2">PrSwar &lt;-<span class="st"> </span><span class="kw">plm</span>(<span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pcap) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span>unemp, Produc, </a>
-<a class="sourceLine" id="cb6-3" title="3">           <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb6-4" title="4"><span class="kw">summary</span>(PrSwar)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2"></a>PrSwar &lt;-<span class="st"> </span><span class="kw">plm</span>(<span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pcap) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span>unemp, Produc, </span>
+<span id="cb6-3"><a href="#cb6-3"></a>           <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="kw">summary</span>(PrSwar)</span></code></pre></div>
 <pre><code>## Oneway (individual) effect Random Effect Model 
-##    (Swamy-Arora's transformation)
+##    (Swamy-Arora&#39;s transformation)
 ## 
 ## Call:
 ## plm(formula = log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
@@ -417,7 +428,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## log(emp)     0.72967053  0.02492022 29.2803 &lt; 2.2e-16 ***
 ## unemp       -0.00617247  0.00090728 -6.8033 1.023e-11 ***
 ## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Total Sum of Squares:    29.209
 ## Residual Sum of Squares: 1.1879
@@ -428,11 +439,11 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <div id="the-twoways-effect-model" class="section level1">
 <h1>The twoways effect model</h1>
 <p>The two-ways effect model is obtained by setting the <code>effect</code> argument to <code>&quot;twoways&quot;</code>. <span class="citation">Baltagi (2013)</span> p. 44-46, presents EViews’ output for the Grunfeld data set.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">Grw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, Grunfeld, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, </a>
-<a class="sourceLine" id="cb8-2" title="2">           <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb8-3" title="3">Grs &lt;-<span class="st"> </span><span class="kw">update</span>(Grw, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</a>
-<a class="sourceLine" id="cb8-4" title="4">Gra &lt;-<span class="st"> </span><span class="kw">update</span>(Grw, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</a>
-<a class="sourceLine" id="cb8-5" title="5"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>Grw, <span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>Grs, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>Gra), <span class="dt">digits =</span> <span class="dv">5</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>Grw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, Grunfeld, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, </span>
+<span id="cb8-2"><a href="#cb8-2"></a>           <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</span>
+<span id="cb8-3"><a href="#cb8-3"></a>Grs &lt;-<span class="st"> </span><span class="kw">update</span>(Grw, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4"></a>Gra &lt;-<span class="st"> </span><span class="kw">update</span>(Grw, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>Grw, <span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>Grs, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>Gra), <span class="dt">digits =</span> <span class="dv">5</span>)</span></code></pre></div>
 <pre><code>## 
 ## ==========================================================
 ##              Wallace-Hussain  Swamy-Arora    Amemiya      
@@ -454,13 +465,13 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
 <p>The estimated variance of the time component is negative for the Wallace-Hussain as well as the Swamy-Arora models and <code>plm</code> sets it to 0.</p>
 <p><span class="citation">Baltagi (2009)</span> p. 60-62, presents EViews’ output for the <code>Produc</code> data.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb10-2" title="2">Prw &lt;-<span class="st"> </span><span class="kw">plm</span>(<span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pcap) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span>unemp, Produc, </a>
-<a class="sourceLine" id="cb10-3" title="3">           <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, </a>
-<a class="sourceLine" id="cb10-4" title="4">           <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb10-5" title="5">Prs &lt;-<span class="st"> </span><span class="kw">update</span>(Prw, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</a>
-<a class="sourceLine" id="cb10-6" title="6">Pra &lt;-<span class="st"> </span><span class="kw">update</span>(Prw, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</a>
-<a class="sourceLine" id="cb10-7" title="7"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>Prw, <span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>Prs, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>Pra), <span class="dt">digits =</span> <span class="dv">5</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2"></a>Prw &lt;-<span class="st"> </span><span class="kw">plm</span>(<span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pcap) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span>unemp, Produc, </span>
+<span id="cb10-3"><a href="#cb10-3"></a>           <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, </span>
+<span id="cb10-4"><a href="#cb10-4"></a>           <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</span>
+<span id="cb10-5"><a href="#cb10-5"></a>Prs &lt;-<span class="st"> </span><span class="kw">update</span>(Prw, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
+<span id="cb10-6"><a href="#cb10-6"></a>Pra &lt;-<span class="st"> </span><span class="kw">update</span>(Prw, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>Prw, <span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>Prs, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>Pra), <span class="dt">digits =</span> <span class="dv">5</span>)</span></code></pre></div>
 <pre><code>## 
 ## ==========================================================
 ##              Wallace-Hussain  Swamy-Arora    Amemiya      
@@ -493,16 +504,16 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <li>For the one-way effect model, the estimator is still obtained by applying <em>OLS</em> on demeaned data (the individual <strong>and</strong> the time means are now deduced) for the within model and on quasi-demeaned data for the random effects model ; this is not the case for the two-ways effects model.</li>
 </ul>
 <p><span class="citation">Baltagi (2013)</span> and <span class="citation">Baltagi (2009)</span> present results of the estimation of the <span class="citation">Swamy and Arora (1972)</span> model with the <code>Hedonic</code> data set. <span class="citation">Baltagi (2013)</span>, p. 174, presents the Stata output as <span class="citation">Baltagi (2009)</span>, p. 211 presents EViews’ output. EViews’ Wallace-Hussain estimator is reported in <span class="citation">Baltagi (2009)</span>, p. 210.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb12-2" title="2">form &lt;-<span class="st"> </span>mv <span class="op">~</span><span class="st"> </span>crim <span class="op">+</span><span class="st"> </span>zn <span class="op">+</span><span class="st"> </span>indus <span class="op">+</span><span class="st"> </span>chas <span class="op">+</span><span class="st"> </span>nox <span class="op">+</span><span class="st"> </span>rm <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb12-3" title="3"><span class="st">    </span>age <span class="op">+</span><span class="st"> </span>dis <span class="op">+</span><span class="st"> </span>rad <span class="op">+</span><span class="st"> </span>tax <span class="op">+</span><span class="st"> </span>ptratio <span class="op">+</span><span class="st"> </span>blacks <span class="op">+</span><span class="st"> </span>lstat</a>
-<a class="sourceLine" id="cb12-4" title="4">HedStata &lt;-<span class="st"> </span><span class="kw">plm</span>(form, Hedonic, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">index =</span> <span class="st">&quot;townid&quot;</span>, </a>
-<a class="sourceLine" id="cb12-5" title="5">                <span class="dt">random.models =</span> <span class="kw">c</span>(<span class="st">&quot;within&quot;</span>, <span class="st">&quot;between&quot;</span>))</a>
-<a class="sourceLine" id="cb12-6" title="6">HedEviews &lt;-<span class="st"> </span><span class="kw">plm</span>(form, Hedonic, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">index =</span> <span class="st">&quot;townid&quot;</span>, </a>
-<a class="sourceLine" id="cb12-7" title="7">                 <span class="dt">random.models =</span> <span class="kw">c</span>(<span class="st">&quot;within&quot;</span>, <span class="st">&quot;Between&quot;</span>))</a>
-<a class="sourceLine" id="cb12-8" title="8">HedEviewsWH &lt;-<span class="st"> </span><span class="kw">update</span>(HedEviews, <span class="dt">random.models =</span> <span class="st">&quot;pooling&quot;</span>)</a>
-<a class="sourceLine" id="cb12-9" title="9"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">EViews =</span> HedEviews, <span class="dt">Stata =</span> HedStata, <span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>HedEviewsWH), </a>
-<a class="sourceLine" id="cb12-10" title="10">          <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">single.row =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2"></a>form &lt;-<span class="st"> </span>mv <span class="op">~</span><span class="st"> </span>crim <span class="op">+</span><span class="st"> </span>zn <span class="op">+</span><span class="st"> </span>indus <span class="op">+</span><span class="st"> </span>chas <span class="op">+</span><span class="st"> </span>nox <span class="op">+</span><span class="st"> </span>rm <span class="op">+</span><span class="st"> </span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="st">    </span>age <span class="op">+</span><span class="st"> </span>dis <span class="op">+</span><span class="st"> </span>rad <span class="op">+</span><span class="st"> </span>tax <span class="op">+</span><span class="st"> </span>ptratio <span class="op">+</span><span class="st"> </span>blacks <span class="op">+</span><span class="st"> </span>lstat</span>
+<span id="cb12-4"><a href="#cb12-4"></a>HedStata &lt;-<span class="st"> </span><span class="kw">plm</span>(form, Hedonic, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">index =</span> <span class="st">&quot;townid&quot;</span>, </span>
+<span id="cb12-5"><a href="#cb12-5"></a>                <span class="dt">random.models =</span> <span class="kw">c</span>(<span class="st">&quot;within&quot;</span>, <span class="st">&quot;between&quot;</span>))</span>
+<span id="cb12-6"><a href="#cb12-6"></a>HedEviews &lt;-<span class="st"> </span><span class="kw">plm</span>(form, Hedonic, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">index =</span> <span class="st">&quot;townid&quot;</span>, </span>
+<span id="cb12-7"><a href="#cb12-7"></a>                 <span class="dt">random.models =</span> <span class="kw">c</span>(<span class="st">&quot;within&quot;</span>, <span class="st">&quot;Between&quot;</span>))</span>
+<span id="cb12-8"><a href="#cb12-8"></a>HedEviewsWH &lt;-<span class="st"> </span><span class="kw">update</span>(HedEviews, <span class="dt">random.models =</span> <span class="st">&quot;pooling&quot;</span>)</span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">EViews =</span> HedEviews, <span class="dt">Stata =</span> HedStata, <span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>HedEviewsWH), </span>
+<span id="cb12-10"><a href="#cb12-10"></a>          <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">single.row =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
 <pre><code>## 
 ## ======================================================================================
 ##              EViews                   Stata                    Wallace-Hussain        
@@ -548,17 +559,17 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 </ul>
 <p>The various possible values of the <code>inst.method</code> argument are not relevant for fixed effect IV models as there is only one method for this type of IV models but many for random effect IV models.</p>
 <p>The instrumental variable estimators are illustrated in the following example from <span class="citation">Baltagi (2005)</span>, p. 120/ <span class="citation">Baltagi (2013)</span>, p. 137.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Crime&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb14-2" title="2">crbalt &lt;-<span class="st"> </span><span class="kw">plm</span>(lcrmrte <span class="op">~</span><span class="st"> </span>lprbarr <span class="op">+</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>lprbconv <span class="op">+</span><span class="st"> </span>lprbpris <span class="op">+</span><span class="st"> </span>lavgsen <span class="op">+</span></a>
-<a class="sourceLine" id="cb14-3" title="3"><span class="st">              </span>ldensity <span class="op">+</span><span class="st"> </span>lwcon <span class="op">+</span><span class="st"> </span>lwtuc <span class="op">+</span><span class="st"> </span>lwtrd <span class="op">+</span><span class="st"> </span>lwfir <span class="op">+</span><span class="st"> </span>lwser <span class="op">+</span><span class="st"> </span>lwmfg <span class="op">+</span><span class="st"> </span>lwfed <span class="op">+</span></a>
-<a class="sourceLine" id="cb14-4" title="4"><span class="st">              </span>lwsta <span class="op">+</span><span class="st"> </span>lwloc <span class="op">+</span><span class="st"> </span>lpctymle <span class="op">+</span><span class="st"> </span>lpctmin <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span><span class="kw">factor</span>(year)</a>
-<a class="sourceLine" id="cb14-5" title="5">              <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span>lprbarr <span class="op">-</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>ltaxpc <span class="op">+</span><span class="st"> </span>lmix,</a>
-<a class="sourceLine" id="cb14-6" title="6">              <span class="dt">data =</span> Crime, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>)</a>
-<a class="sourceLine" id="cb14-7" title="7">crbvk &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">inst.method =</span> <span class="st">&quot;bvk&quot;</span>)</a>
-<a class="sourceLine" id="cb14-8" title="8">crwth &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</a>
-<a class="sourceLine" id="cb14-9" title="9"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">FE2SLS =</span> crwth, <span class="dt">EC2SLS =</span> crbalt, <span class="dt">G2SLS =</span> crbvk), </a>
-<a class="sourceLine" id="cb14-10" title="10">          <span class="dt">single.row =</span> <span class="ot">TRUE</span>, <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">omit.coef =</span> <span class="st">&quot;(region)|(year)&quot;</span>,</a>
-<a class="sourceLine" id="cb14-11" title="11">          <span class="dt">reorder.coef =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">16</span>, <span class="dv">19</span>, <span class="dv">18</span>, <span class="dv">17</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">data</span>(<span class="st">&quot;Crime&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2"></a>crbalt &lt;-<span class="st"> </span><span class="kw">plm</span>(lcrmrte <span class="op">~</span><span class="st"> </span>lprbarr <span class="op">+</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>lprbconv <span class="op">+</span><span class="st"> </span>lprbpris <span class="op">+</span><span class="st"> </span>lavgsen <span class="op">+</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="st">              </span>ldensity <span class="op">+</span><span class="st"> </span>lwcon <span class="op">+</span><span class="st"> </span>lwtuc <span class="op">+</span><span class="st"> </span>lwtrd <span class="op">+</span><span class="st"> </span>lwfir <span class="op">+</span><span class="st"> </span>lwser <span class="op">+</span><span class="st"> </span>lwmfg <span class="op">+</span><span class="st"> </span>lwfed <span class="op">+</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="st">              </span>lwsta <span class="op">+</span><span class="st"> </span>lwloc <span class="op">+</span><span class="st"> </span>lpctymle <span class="op">+</span><span class="st"> </span>lpctmin <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span><span class="kw">factor</span>(year)</span>
+<span id="cb14-5"><a href="#cb14-5"></a>              <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span>lprbarr <span class="op">-</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>ltaxpc <span class="op">+</span><span class="st"> </span>lmix,</span>
+<span id="cb14-6"><a href="#cb14-6"></a>              <span class="dt">data =</span> Crime, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>)</span>
+<span id="cb14-7"><a href="#cb14-7"></a>crbvk &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">inst.method =</span> <span class="st">&quot;bvk&quot;</span>)</span>
+<span id="cb14-8"><a href="#cb14-8"></a>crwth &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">FE2SLS =</span> crwth, <span class="dt">EC2SLS =</span> crbalt, <span class="dt">G2SLS =</span> crbvk), </span>
+<span id="cb14-10"><a href="#cb14-10"></a>          <span class="dt">single.row =</span> <span class="ot">TRUE</span>, <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">omit.coef =</span> <span class="st">&quot;(region)|(year)&quot;</span>,</span>
+<span id="cb14-11"><a href="#cb14-11"></a>          <span class="dt">reorder.coef =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">16</span>, <span class="dv">19</span>, <span class="dv">18</span>, <span class="dv">17</span>))</span></code></pre></div>
 <pre><code>## 
 ## ==================================================================================
 ##              FE2SLS               EC2SLS                   G2SLS                  
@@ -591,19 +602,19 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## ==================================================================================
 ## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
 <p>The Hausman-Taylor model (<span class="citation">Hausman and Taylor (1981)</span>) may be estimated with the <code>plm</code> function by setting argument <code>random.method = &quot;ht&quot;</code>. The following example is from <span class="citation">Baltagi (2005)</span>, p. 130 and <span class="citation">Baltagi (2013)</span>, p. 146.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb16-2" title="2">ht &lt;-<span class="st"> </span><span class="kw">plm</span>(lwage <span class="op">~</span><span class="st"> </span>wks <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb16-3" title="3"><span class="st">            </span>bluecol <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">+</span><span class="st"> </span>ed <span class="op">|</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb16-4" title="4"><span class="st">            </span>bluecol <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">|</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb16-5" title="5"><span class="st">            </span>wks <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span>union, </a>
-<a class="sourceLine" id="cb16-6" title="6">          <span class="dt">data =</span> Wages, <span class="dt">index =</span> <span class="dv">595</span>, </a>
-<a class="sourceLine" id="cb16-7" title="7">          <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, </a>
-<a class="sourceLine" id="cb16-8" title="8">          <span class="dt">random.method =</span> <span class="st">&quot;ht&quot;</span>)</a>
-<a class="sourceLine" id="cb16-9" title="9"></a>
-<a class="sourceLine" id="cb16-10" title="10">am &lt;-<span class="st"> </span><span class="kw">update</span>(ht, <span class="dt">inst.method =</span> <span class="st">&quot;am&quot;</span>)</a>
-<a class="sourceLine" id="cb16-11" title="11">  </a>
-<a class="sourceLine" id="cb16-12" title="12"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Hausman-Taylor&quot;</span> =<span class="st"> </span>ht, <span class="st">&quot;Amemiya-MaCurdy&quot;</span> =<span class="st"> </span>am), </a>
-<a class="sourceLine" id="cb16-13" title="13">          <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">single.row =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb16-2"><a href="#cb16-2"></a>ht &lt;-<span class="st"> </span><span class="kw">plm</span>(lwage <span class="op">~</span><span class="st"> </span>wks <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="st">            </span>bluecol <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">+</span><span class="st"> </span>ed <span class="op">|</span><span class="st"> </span></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="st">            </span>bluecol <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">|</span><span class="st"> </span></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="st">            </span>wks <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span>union, </span>
+<span id="cb16-6"><a href="#cb16-6"></a>          <span class="dt">data =</span> Wages, <span class="dt">index =</span> <span class="dv">595</span>, </span>
+<span id="cb16-7"><a href="#cb16-7"></a>          <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, </span>
+<span id="cb16-8"><a href="#cb16-8"></a>          <span class="dt">random.method =</span> <span class="st">&quot;ht&quot;</span>)</span>
+<span id="cb16-9"><a href="#cb16-9"></a></span>
+<span id="cb16-10"><a href="#cb16-10"></a>am &lt;-<span class="st"> </span><span class="kw">update</span>(ht, <span class="dt">inst.method =</span> <span class="st">&quot;am&quot;</span>)</span>
+<span id="cb16-11"><a href="#cb16-11"></a>  </span>
+<span id="cb16-12"><a href="#cb16-12"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Hausman-Taylor&quot;</span> =<span class="st"> </span>ht, <span class="st">&quot;Amemiya-MaCurdy&quot;</span> =<span class="st"> </span>am), </span>
+<span id="cb16-13"><a href="#cb16-13"></a>          <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">single.row =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===============================================================
 ##              Hausman-Taylor            Amemiya-MaCurdy         
@@ -633,12 +644,12 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <div id="nested-error-component-model" class="section level1">
 <h1>Nested error component model</h1>
 <p><span class="citation">Baltagi, Song, and Jung (2001)</span></p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</a>
-<a class="sourceLine" id="cb18-2" title="2">swar &lt;-<span class="st"> </span><span class="kw">plm</span>(form &lt;-<span class="st"> </span><span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(hwy) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(water) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(util) <span class="op">+</span><span class="st"> </span>unemp, </a>
-<a class="sourceLine" id="cb18-3" title="3">            Produc, <span class="dt">index =</span> <span class="kw">c</span>(<span class="st">&quot;state&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;region&quot;</span>), <span class="dt">effect =</span> <span class="st">&quot;nested&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</a>
-<a class="sourceLine" id="cb18-4" title="4">walhus &lt;-<span class="st"> </span><span class="kw">update</span>(swar, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>)</a>
-<a class="sourceLine" id="cb18-5" title="5">amem &lt;-<span class="st"> </span><span class="kw">update</span>(swar, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</a>
-<a class="sourceLine" id="cb18-6" title="6"><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>swar, <span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>walhus, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>amem), <span class="dt">digits =</span> <span class="dv">5</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb18-2"><a href="#cb18-2"></a>swar &lt;-<span class="st"> </span><span class="kw">plm</span>(form &lt;-<span class="st"> </span><span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(hwy) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(water) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(util) <span class="op">+</span><span class="st"> </span>unemp, </span>
+<span id="cb18-3"><a href="#cb18-3"></a>            Produc, <span class="dt">index =</span> <span class="kw">c</span>(<span class="st">&quot;state&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;region&quot;</span>), <span class="dt">effect =</span> <span class="st">&quot;nested&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4"></a>walhus &lt;-<span class="st"> </span><span class="kw">update</span>(swar, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>)</span>
+<span id="cb18-5"><a href="#cb18-5"></a>amem &lt;-<span class="st"> </span><span class="kw">update</span>(swar, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</span>
+<span id="cb18-6"><a href="#cb18-6"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>swar, <span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>walhus, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>amem), <span class="dt">digits =</span> <span class="dv">5</span>)</span></code></pre></div>
 <pre><code>## 
 ## ==========================================================
 ##              Swamy-Arora    Wallace-Hussain  Amemiya      
@@ -668,8 +679,8 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
 </div>
 <div id="bibliography" class="section level1 unnumbered">
-<h1>Bibliography</h1>
-<div id="refs" class="references">
+<h1 class="unnumbered">Bibliography</h1>
+<div id="refs" class="references hanging-indent">
 <div id="ref-AMEM:71">
 <p>Amemiya, T. 1971. “The Estimation of the Variances in a Variance–Components Model.” <em>International Economic Review</em> 12: 1–13.</p>
 </div>
@@ -680,40 +691,40 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <p>Balestra, P., and J. Varadharajan–Krishnakumar. 1987. “Full Information Estimations of a System of Simultaneous Equations with Error Components.” <em>Econometric Theory</em> 3: 223–46.</p>
 </div>
 <div id="ref-BALT:09">
-<p>Baltagi, B.H. 2009. <em>A Companion to Econometric Analysis of Panel Data</em>. John Wiley; Sons ltd.</p>
+<p>Baltagi, B. H. 2009. <em>A Companion to Econometric Analysis of Panel Data</em>. John Wiley; Sons ltd.</p>
 </div>
 <div id="ref-BALT:13">
 <p>———. 2013. <em>Econometric Analysis of Panel Data</em>. 5th ed. John Wiley; Sons ltd.</p>
 </div>
 <div id="ref-BALT:81">
-<p>Baltagi, B.H. 1981. “Simultaneous Equations with Error Components.” <em>Journal of Econometrics</em> 17: 21–49.</p>
+<p>Baltagi, B. H. 1981. “Simultaneous Equations with Error Components.” <em>Journal of Econometrics</em> 17: 21–49.</p>
 </div>
 <div id="ref-BALT:2005">
 <p>———. 2005. <em>Econometric Analysis of Panel Data</em>. 3rd ed. John Wiley; Sons ltd.</p>
 </div>
 <div id="ref-BALT:CHAN:94">
-<p>Baltagi, B.H., and Y.J. Chang. 1994. “Incomplete Panels: A Comparative Study of Alternative Estimators for the Unbalanced One-Way Error Component Regression Model.” <em>Journal of Econometrics</em> 62: 67–89.</p>
+<p>Baltagi, B. H., and Y. J. Chang. 1994. “Incomplete Panels: A Comparative Study of Alternative Estimators for the Unbalanced One-Way Error Component Regression Model.” <em>Journal of Econometrics</em> 62: 67–89.</p>
 </div>
 <div id="ref-BALT:SONG:JUNG:01">
-<p>Baltagi, B.H., S.H. Song, and B.C. Jung. 2001. “The Unbalanced Nested Error Component Regression Model.” <em>Journal of Econometrics</em> 101: 357–81.</p>
+<p>Baltagi, B. H., S. H. Song, and B. C. Jung. 2001. “The Unbalanced Nested Error Component Regression Model.” <em>Journal of Econometrics</em> 101: 357–81.</p>
 </div>
 <div id="ref-BREU:MIZO:SCHM:89">
 <p>Breusch, Trevor S, Grayham E Mizon, and Peter Schmidt. 1989. “Efficient Estimation Using Panel Data.” <em>Econometrica</em> 57 (3): 695–700.</p>
 </div>
 <div id="ref-COTT:2017">
-<p>Cottrell, A. 2017. “Random Effects Estimators for Unbalanced Panel Data: A Monte Carlo Analysis.” <em>Gretl Working Papers</em>, no. 4. <a href="https://EconPapers.repec.org/RePEc:anc:wgretl:4" class="uri">https://EconPapers.repec.org/RePEc:anc:wgretl:4</a>.</p>
+<p>Cottrell, A. 2017. “Random Effects Estimators for Unbalanced Panel Data: A Monte Carlo Analysis.” <em>Gretl Working Papers</em>, no. 4. <a href="https://EconPapers.repec.org/RePEc:anc:wgretl:4">https://EconPapers.repec.org/RePEc:anc:wgretl:4</a>.</p>
 </div>
 <div id="ref-HAUS:TAYL:81">
-<p>Hausman, J.A., and W.E. Taylor. 1981. “Panel Data and Unobservable Individual Effects.” <em>Econometrica</em> 49: 1377–98.</p>
+<p>Hausman, J. A., and W. E. Taylor. 1981. “Panel Data and Unobservable Individual Effects.” <em>Econometrica</em> 49: 1377–98.</p>
 </div>
 <div id="ref-NERLO:71">
 <p>Nerlove, M. 1971. “Further Evidence on the Estimation of Dynamic Economic Relations from a Time–Series of Cross–Sections.” <em>Econometrica</em> 39: 359–82.</p>
 </div>
 <div id="ref-SWAM:AROR:72">
-<p>Swamy, P.A.V.B., and S.S Arora. 1972. “The Exact Finite Sample Properties of the Estimators of Coefficients in the Error Components Regression Models.” <em>Econometrica</em> 40: 261–75.</p>
+<p>Swamy, P. A. V. B., and S. S Arora. 1972. “The Exact Finite Sample Properties of the Estimators of Coefficients in the Error Components Regression Models.” <em>Econometrica</em> 40: 261–75.</p>
 </div>
 <div id="ref-WALL:HUSS:69">
-<p>Wallace, T.D., and A. Hussain. 1969. “The Use of Error Components Models in Combining Cross Section with Time Series Data.” <em>Econometrica</em> 37 (1): 55–72.</p>
+<p>Wallace, T. D., and A. Hussain. 1969. “The Use of Error Components Models in Combining Cross Section with Time Series Data.” <em>Econometrica</em> 37 (1): 55–72.</p>
 </div>
 </div>
 </div>
