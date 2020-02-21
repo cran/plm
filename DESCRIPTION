@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.2-1
-Date: 2019-09-07
+Version: 2.2-2
+Date: 2020-02-20
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
@@ -15,7 +15,7 @@ Depends: R (>= 3.1.0)
 Imports: MASS, bdsmatrix, zoo, nlme, sandwich, lattice, lmtest, maxLik,
         Rdpack, Formula, stats
 Suggests: AER, car, pcse, clusterSEs, clubSandwich, pglm, spdep, splm,
-        statmod, Ecdat, pder, stargazer, texreg, foreign, knitr,
+        statmod, urca, Ecdat, pder, stargazer, texreg, foreign, knitr,
         rmarkdown, bookdown
 Description: A set of estimators and tests for panel data
              econometrics, as described in Baltagi (2013) Econometric Analysis of Panel Data, ISBN-13:978-1-118-67232-7,
@@ -25,7 +25,7 @@ License: GPL (>= 2)
 VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm,
         https://r-forge.r-project.org/projects/plm/
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 RdMacros: Rdpack
 Encoding: UTF-8
 Author: Yves Croissant [aut, cre],
@@ -37,15 +37,11 @@ Author: Yves Croissant [aut, cre],
   Arne Henningsen [ctb],
   Liviu Andronic [ctb],
   Nina Schoenfelder [ctb]
-Maintainer: ORPHANED
+Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
 Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 892
-Repository/R-Forge/DateTimeStamp: 2019-09-06 04:42:37
-Date/Publication: 2020-02-16 18:29:07 UTC
+Repository/R-Forge/Revision: 913
+Repository/R-Forge/DateTimeStamp: 2020-02-21 02:51:12
+Date/Publication: 2020-02-21 13:40:08 UTC
 NeedsCompilation: no
-Packaged: 2020-02-16 16:53:44 UTC; ripley
-X-CRAN-Original-Maintainer: Yves Croissant
-        <yves.croissant@univ-reunion.fr>
-X-CRAN-Comment: Orphaned and corrected on 2020-02-16 as there was no
-        response to repeated requests.
+Packaged: 2020-02-21 03:30:28 UTC; rforge

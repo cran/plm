@@ -4,8 +4,14 @@
 \alias{cipstest}
 \title{Cross-sectionally Augmented IPS Test for Unit Roots in Panel Models}
 \usage{
-cipstest(x, lags = 2, type = c("trend", "drift", "none"),
-  model = c("cmg", "mg", "dmg"), truncated = FALSE, ...)
+cipstest(
+  x,
+  lags = 2,
+  type = c("trend", "drift", "none"),
+  model = c("cmg", "mg", "dmg"),
+  truncated = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class \code{"pseries"},}
@@ -19,7 +25,8 @@ cipstest(x, lags = 2, type = c("trend", "drift", "none"),
 \item{truncated}{logical specifying whether to calculate the
 truncated version of the test,}
 
-\item{\dots}{further arguments passed to \code{critvals}.}
+\item{\dots}{further arguments passed to \code{critvals.cips}
+(non-exported function).}
 }
 \value{
 An object of class \code{"htest"}.
@@ -36,9 +43,6 @@ against cross-sectional dependence, provided that the default
 \code{type="cmg"} is calculated. Else one can obtain the standard
 (\code{model="mg"}) or cross-sectionally demeaned (\code{model="dmg"})
 versions of the IPS test.
-
-% TODO: maybe be more verbose here? write about type arg which corresponds
-% cases III, II, I in Pesaran (2007) etc.
 }
 \examples{
 

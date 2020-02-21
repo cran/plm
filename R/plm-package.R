@@ -73,12 +73,16 @@ NULL
 #' 
 #' The main functions to estimate models are:
 #'
-#' - `plm` : panel data estimators using `lm` on transformed data,
-#' -`pgmm` generalized method of moments (GMM) estimation for panel
+#' - `plm`: panel data estimators using `lm` on transformed data,
+#' - `pvcm`: variable coefficients models
+#' - `pgmm`: generalized method of moments (GMM) estimation for panel
 #' data,
-#' - `pvcm` variable coefficients models
-#' - `pmg` mean groups (MG), demeaned MG and common correlated effects
-#' (CCEMG) estimators.
+#' - `pggls`: estimation of general feasible generalized least squares models,
+#' - `pmg`: mean groups (MG), demeaned MG and common correlated effects
+#' (CCEMG) estimators,
+#' - `pcce`: estimators for common correlated effects mean groups (CCEMG) and
+#' pooled (CCEP) for panel data with common factors,
+#' - `pldv`: panel estimators for limited dependent variables.
 #'
 #' Next to the model estimation functions, the package offers several
 #' functions for statistical tests related to panel data/models.
@@ -388,7 +392,8 @@ NULL
 #' 
 #'  website accompanying the paper with various variants of the
 #' Grunfeld data:
-#' \url{http://statmath.wu-wien.ac.at/~zeileis/grunfeld/}.
+#' \url{https://eeecon.uibk.ac.at/~zeileis/grunfeld/}.
+# \url{http://statmath.wu-wien.ac.at/~zeileis/grunfeld/}.
 #' 
 #' @source Online complements to Baltagi (2001):
 #' 
@@ -520,14 +525,14 @@ NULL
 #' \item{year}{year}
 #' \item{school}{years of schooling}
 #' \item{exper}{years of experience (computed as `age-6-school`)}
-#' \item{union}{wage set by collective bargaining ?}
+#' \item{union}{wage set by collective bargaining?}
 #' \item{ethn}{a factor with levels `black, hisp, other`}
 #' \item{married}{married?}
-#' \item{health}{health problem ?}
+#' \item{health}{health problem?}
 #' \item{wage}{log of hourly wage}
 #' \item{industry}{a factor with 12 levels}
 #' \item{occupation}{a factor with 9 levels}
-#' \item{residence}{a factor with levels `rural area, north east, northern central, south`}
+#' \item{residence}{a factor with levels `rural_area, north_east, northern_central, south`}
 #' }
 #' 
 #' @references

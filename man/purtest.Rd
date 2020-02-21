@@ -7,10 +7,21 @@
 \alias{print.summary.purtest}
 \title{Unit root tests for panel data}
 \usage{
-purtest(object, data = NULL, index = NULL, test = c("levinlin",
-  "ips", "madwu", "Pm", "invnormal", "logit", "hadri"), exo = c("none",
-  "intercept", "trend"), lags = c("SIC", "AIC", "Hall"), pmax = 10,
-  Hcons = TRUE, q = NULL, dfcor = FALSE, fixedT = TRUE, ...)
+purtest(
+  object,
+  data = NULL,
+  index = NULL,
+  test = c("levinlin", "ips", "madwu", "Pm", "invnormal", "logit", "hadri"),
+  exo = c("none", "intercept", "trend"),
+  lags = c("SIC", "AIC", "Hall"),
+  pmax = 10,
+  Hcons = TRUE,
+  q = NULL,
+  dfcor = FALSE,
+  fixedT = TRUE,
+  ips.stat = NULL,
+  ...
+)
 
 \method{print}{purtest}(x, ...)
 
@@ -20,12 +31,11 @@ purtest(object, data = NULL, index = NULL, test = c("levinlin",
 }
 \arguments{
 \item{object, x}{Either a \code{"data.frame"} or a matrix containing the
-time series, a \code{"pseries"} object, a formula, or the name of a
-column of a \code{"data.frame"}, or a \code{"pdata.frame"} on which the
-test has to be computed; a \code{"purtest"} object for the print and
-summary methods,}
+time series (individuals as columns), a \code{"pseries"} object, a formula;
+a \code{"purtest"} object for the print and summary methods,}
 
-\item{data}{a \code{"data.frame"} or a \code{"pdata.frame"} object,}
+\item{data}{a \code{"data.frame"} or a \code{"pdata.frame"} object (required for
+formula interface, see Details and Examples),}
 
 \item{index}{the indexes,}
 
@@ -46,50 +56,55 @@ individual intercepts and trends (\code{"trend"}), but see Details,}
 Dickey-Fuller regressions: either an integer (the number of
 lags for all time series), a vector of integers (one for each
 time series), or a character string for an automatic
-computation of the number of lags, based on either the AIC
+computation of the number of lags, based on the AIC
 (\code{"AIC"}), the SIC (\code{"SIC"}), or on the method by
-\insertCite{HALL:94;textual}{plm} (\code{"Hall"}),}
+\insertCite{HALL:94;textual}{plm} (\code{"Hall"}); argument is irrelevant
+for \code{test = "hadri"},}
 
-\item{pmax}{maximum number of lags,}
+\item{pmax}{maximum number of lags (irrelevant for \code{test = "hadri"}),}
 
 \item{Hcons}{logical, only relevant for \code{test = "hadri"},
 indicating whether the heteroskedasticity-consistent test of
 \insertCite{HADR:00;textual}{plm} should be computed,}
 
-\item{q}{the bandwidth for the estimation of the long-run variance,}
+\item{q}{the bandwidth for the estimation of the long-run variance
+(only relevant for \code{test = "levinlin"}, the default (`q = NULL``)
+gives the value as suggested by the authors as round(3.21 * T^(1/3))),}
 
 \item{dfcor}{logical, indicating whether the standard deviation of
 the regressions is to be computed using a degrees-of-freedom
 correction,}
 
-\item{fixedT}{logical, indicating whether the different ADF
+\item{fixedT}{logical, indicating whether the individual ADF
 regressions are to be computed using the same number of
-observations,}
+observations (irrelevant for \code{test = "hadri"}),}
 
-\item{\dots}{further arguments.}
+\item{ips.stat}{\code{NULL} or character of length 1 to request a specific
+IPS statistic, one of \code{"Wtbar"} (also default if \code{ips.stat = NULL}),
+\code{"Ztbar"}, \code{"tbar"},}
+
+\item{\dots}{further arguments (can set argument 'p.approx' to be passed on
+to non-exported function 'padf' to either "MacKinnon1994" or "MacKinnon1996"
+to force a specific method for p-value approximation, the latter only being
+possible if package 'urca' is installed).}
 }
 \value{
-An object of class \code{"purtest"}: a list with the elements
+For purtest: An object of class \code{"purtest"}: a list with the elements
 \code{"statistic"} (a \code{"htest"} object), \code{"call"}, \code{"args"},
 \code{"idres"} (containing results from the individual regressions),
 and \code{"adjval"} (containing the simulated means and variances
-needed to compute the statistic).
+needed to compute the statistic), \code{"sigma2"} short-run and long-run
+variance (for \code{"test = levinlin"}, otherwise NULL).
 }
 \description{
 \code{purtest} implements several testing procedures that have been proposed
 to test unit root hypotheses with panel data.
 }
 \details{
-% TODO: in general, write more about the various tests
-% TODO: mention which test is suitable for unbalanced panels (once the data pre-processing in
-% purtest() is fixed to handle unbalanced data)
-% TODO: mention which statistic of IPS (2003) we output: Ztbar or Wtbar? (it is not t-bar, the
-% mean of t statistics)
-
 All these tests except \code{"hadri"} are based on the estimation of
 augmented Dickey-Fuller (ADF) regressions for each time series. A
 statistic is then computed using the t-statistics associated with
-the lagged variable.  The Hadri residual-based LM statistic is the
+the lagged variable. The Hadri residual-based LM statistic is the
 cross-sectional average of the individual KPSS statistics
 \insertCite{KWIA:PHIL:SCHM:SHIN:92}{plm}, standardized by their
 asymptotic mean and standard deviation.
@@ -107,10 +122,22 @@ ADF regressions per individual are available:
 }
 
 The individual p-values for the Fisher-type tests are approximated
-as described in \insertCite{MACK:94;textual}{plm}.
+as described in \insertCite{MACK:96;textual}{plm} if the package 'urca'
+(\insertCite{PFAFF:08;textual}{plm}) is available, otherwise as described in
+\insertCite{MACK:94;textual}{plm}.
 
-The kind of test to be computed can be specified in several ways,
-depending on how the data is handed over to the function:
+For the test statistic tbar of the test of Im/Pesaran/Shin (2003)
+(\verb{ips.stat = "tbar}), no p-value is given but 1\%, 5\%, and 10\% critical
+values are interpolated from paper's tabulated values via inverse distance
+weighting (printed and contained in the returned value's element
+statistic$ips.tbar.crit).
+
+Hadri's test, the test of Levin/Lin/Chu, and the tbar statistic of
+Im/Pesaran/Shin are not applicable to unbalanced panels; the tbar statistic
+is not applicable when \code{lags > 0} is given.
+
+The exogeneous instruments of the tests (where applicable) can be specified
+in several ways, depending on how the data is handed over to the function:
 \itemize{
 \item For the \code{formula}/\code{data} interface (if \code{data} is a \code{data.frame},
 an additional \code{index} argument should be specified); the formula
@@ -129,7 +156,7 @@ information can be extracted/displayed (see also Value).
 \examples{
 
 data("Grunfeld", package = "plm")
-y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
+y <- data.frame(split(Grunfeld$inv, Grunfeld$firm)) # individuals in columns
 
 purtest(y, pmax = 4, exo = "intercept", test = "madwu")
 

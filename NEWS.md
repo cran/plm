@@ -1,14 +1,37 @@
+# plm 2.2-1
+* purtest:
+   * tests now support unbalanced panel data, where applicable.
+   * gained argument 'ips.stat' to select statistic for IPS test,
+     default is "Wtbar" (as before), added "Ztbar" and "tbar".
+   * if package 'urca' is available, p-values used in individual (augmented)
+     Dicker-Fuller regressions are (for applicable tests) based on
+     MacKinnon (1996) instead of MacKinnon (1994) yielding better p-value
+     approximations for tau distribution (via urca::punitroot).
+   * return value's element idres contains p-values of individual
+     ADF-regressions (p.trho) and p-values printed in summary (where applicable).
+   * for Levin/Lin/Chu test, object and summary contain short-run and
+     long-run variance.
+   * for Hadri's test, summary is now applicable.
+     
+* index.pindex: fixed bug when individual index variable is called "group".
+
+* Minors:
+   * print.fixef: respects / forwards arguments supplied to generic print method.
+   * DESCRIPTION/Dependencies: package 'urca' added to "Suggests".
+   * Grunfeld data doc: URL for overview of various Grunfeld data sets updated to
+     https://eeecon.uibk.ac.at/~zeileis/grunfeld/. 
+
 # plm 2.2-0
-* methods for plm.list where not exported, they are now
-* lagt is changed so that it can deal with time factors for which
-  cannot be coerced to numeric (ex "1950-54", "1955-59", ...)
-* cortab was not exported, it is now 
-* pvcm failed for random effect models when there is some NA coefs for
-  some individual level ols regressions, fixed
+* methods for plm.list where not exported, now exported.
+* lagt is changed so that it can deal with time factors which
+  cannot be coerced to numeric (ex "1950-54", "1955-59", ...).
+* cortab was not exported, now exported.
+* pvcm failed for random effect models when there are some NA coefs for
+  some individual level OLS regressions, fixed.
 
 # plm 2.1-0
-* problems with vignettes (all the text in italics fixed)
-* in test_Estimators, L256, tolerance lowered to 1E-04
+* problems with vignettes fixed (full text was in italics).
+* in test_Estimators, L256, tolerance lowered to 1E-04.
 
 # plm 2.0-2
 * vcovXX.pcce functions exported again (export was lost in plm 2.0-0).
@@ -20,8 +43,8 @@
 
 * Minor update: tests updated to pacify CRAN's testing procedure with
   OpenBLAS.
-* bug fix in model.frame.pdata.frame : dot previously set to
-  "separate" now set to "previous".
+* bug fix in model.frame.pdata.frame: dot previously set to "separate" now set
+  to "previous".
 
 # plm 2.0-0
 
@@ -159,16 +182,16 @@
 * purtest:
   * for test = 
     * "madwu": Maddala-Wu test statistic used to be computed using p-values from 
-                  the normal distribution, fixed now, by using approximated p-values
-                  for the tau distribution described by MacKinnon (1994).
+               the normal distribution, fixed now, by using approximated p-values
+               for the tau distribution described by MacKinnon (1994).
     * "hadri": * fixed p-value (now based on one-sided test).
-                * fixed statistic in non-heteroskedasticity case (Hcons = FALSE).
-                * degrees of freedom correction implemented (set dfcor = TRUE).
+               * fixed statistic in non-heteroskedasticity case (Hcons = FALSE).
+               * degrees of freedom correction implemented (set dfcor = TRUE).
     * "ips", "levinlin": p-values fixed (now one-sided to the left).
-  * new tests: Choi (2001) modified P ("Pm"), inverse normal ("invnormal"),
-                   logit ("logit").
+    * new tests: Choi (2001) modified P ("Pm"), inverse normal ("invnormal"),
+      logit ("logit").
     * cosmetic: when argument 'lags' is not specified by user, the returned
-        object does not contain all three possible values in args\$lags anymore.
+      object does not contain all three possible values in args\$lags anymore.
 * cipstest: for the truncated version of the test, the constants used in the
               calculation were mixed up for type = "none" and "trend". 
 * pldv: new function to compute fixed and random effects models for truncated 

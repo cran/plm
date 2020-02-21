@@ -1,6 +1,6 @@
 
-R Under development (unstable) (2020-02-16 r77809) -- "Unsuffered Consequences"
-Copyright (C) 2020 The R Foundation for Statistical Computing
+R version 3.6.2 (2019-12-12) -- "Dark and Stormy Night"
+Copyright (C) 2019 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -410,10 +410,10 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 > data("Grunfeld", package = "plm")
 > gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 > fixef(gi)
-          1           2           3           4           5           6 
- -70.296717  101.905814 -235.571841  -27.809295 -114.616813  -23.161295 
-          7           8           9          10 
- -66.553474  -57.545657  -87.222272   -6.567844 
+        1         2         3         4         5         6         7         8 
+ -70.2967  101.9058 -235.5718  -27.8093 -114.6168  -23.1613  -66.5535  -57.5457 
+        9        10 
+ -87.2223   -6.5678 
 > summary(fixef(gi))
     Estimate Std. Error t-value  Pr(>|t|)    
 1   -70.2967    49.7080 -1.4142   0.15896    
@@ -452,12 +452,12 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 > gi_tw <- plm(inv ~ value + capital, data = Grunfeld,
 +           model = "within", effect = "twoways")
 > fixef(gi_tw, effect = "time")
-      1935       1936       1937       1938       1939       1940       1941 
- -32.83632  -52.03372  -73.52633  -72.06272 -102.30660  -77.07140  -51.64078 
-      1942       1943       1944       1945       1946       1947       1948 
- -53.97611  -75.81394  -75.93509  -88.51936  -64.00560  -72.22856  -76.55283 
-      1949       1950       1951       1952       1953       1954 
--106.33142 -108.73243  -95.31723  -97.46866 -100.55428 -126.36254 
+    1935     1936     1937     1938     1939     1940     1941     1942 
+ -32.836  -52.034  -73.526  -72.063 -102.307  -77.071  -51.641  -53.976 
+    1943     1944     1945     1946     1947     1948     1949     1950 
+ -75.814  -75.935  -88.519  -64.006  -72.229  -76.553 -106.331 -108.732 
+    1951     1952     1953     1954 
+ -95.317  -97.469 -100.554 -126.363 
 > 
 > # with supplied variance-covariance matrix as matrix, function,
 > # and function with additional arguments
@@ -6848,7 +6848,6 @@ alternative hypothesis: AR(1) errors sub random effects
 > 
 > data("Produc", package = "plm")
 > ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
-> ## IGNORE_RDIFF_BEGIN
 > summary(ccepmod)
 Common Correlated Effects Pooled model
 
@@ -6899,10 +6898,8 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
-> ## IGNORE_RDIFF_END
 > 
 > ccemgmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="mg")
-> ## IGNORE_RDIFF_BEGIN
 > summary(ccemgmod)
 Common Correlated Effects Mean Groups model
 
@@ -6927,7 +6924,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.056978
 HPY R-squared: 0.99312
-> ## IGNORE_RDIFF_END
+> 
 > 
 > 
 > 
@@ -8850,7 +8847,7 @@ Wald test for time dummies: chisq(7) = 14.71138 (p-value = 0.039882)
 > 
 > 
 > ## not meaningful, just to demonstrate usage
-> ## H0: 'value' Granger causes 'inv' for all invididuals
+> ## H0: 'value' does not Granger cause 'inv' for all invididuals
 > 
 > data("Grunfeld", package = "plm")
 > pgrangertest(inv ~ value, data = Grunfeld)
@@ -12253,14 +12250,14 @@ gamma    nu
 > 
 > 
 > data("Grunfeld", package = "plm")
-> y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
+> y <- data.frame(split(Grunfeld$inv, Grunfeld$firm)) # individuals in columns
 > 
 > purtest(y, pmax = 4, exo = "intercept", test = "madwu")
 
 	Maddala-Wu Unit-Root Test (ex. var.: Individual Intercepts)
 
 data:  y
-chisq = 14.719, df = 20, p-value = 0.7922
+chisq = 14.719, df = 20, p-value = 0.7923
 alternative hypothesis: stationarity
 
 > 
@@ -12270,7 +12267,7 @@ alternative hypothesis: stationarity
 	Maddala-Wu Unit-Root Test (ex. var.: Individual Intercepts)
 
 data:  inv ~ 1
-chisq = 14.719, df = 20, p-value = 0.7922
+chisq = 14.719, df = 20, p-value = 0.7923
 alternative hypothesis: stationarity
 
 > 
@@ -12727,6 +12724,7 @@ alternative hypothesis: unobserved effect
  3.0305218  2.9219323  2.3839785  1.3038537  0.2722306 -1.0413612 -1.9688282 
         91         92 
 -2.3758022  0.5637823 
+> 
 > 
 > 
 > 
@@ -13367,7 +13365,6 @@ Note: Coefficient covariance matrix supplied.
 > ## Robust inference for CCE models
 > data("Produc", package = "plm")
 > ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
-> ## IGNORE_RDIFF_BEGIN
 > summary(ccepmod, vcov = vcovHC)
 Common Correlated Effects Pooled model
 
@@ -13394,7 +13391,6 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
-> ## IGNORE_RDIFF_END
 > 
 > ## Robust inference for GMM models
 > data("EmplUK", package="plm")
@@ -13637,8 +13633,6 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > ### ** Examples
 > 
 > 
-> # TODO: two-way unbalanced case, once fixef() produces results that
-> # are compatible estimate within model (unbalanced data)
 > data("Hedonic", package = "plm")
 > mod_fe <- plm(mv ~ age + crim, data = Hedonic, index = "townid")
 > overallint <- within_intercept(mod_fe)
@@ -13675,7 +13669,7 @@ attr(,"se")
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  25.754 0.563 26.522 0.004 0.001 
+Time elapsed:  10.097 0.276 10.385 0.001 0.004 
 > grDevices::dev.off()
 null device 
           1 

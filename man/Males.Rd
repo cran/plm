@@ -10,14 +10,14 @@
 \item{year}{year}
 \item{school}{years of schooling}
 \item{exper}{years of experience (computed as \code{age-6-school})}
-\item{union}{wage set by collective bargaining ?}
-\item{ethn}{a factor with levels \code{black, hisp, other}}
+\item{union}{wage set by collective bargaining?}
+\item{ethn}{a factor with levels \verb{black, hisp, other}}
 \item{married}{married?}
-\item{health}{health problem ?}
+\item{health}{health problem?}
 \item{wage}{log of hourly wage}
 \item{industry}{a factor with 12 levels}
 \item{occupation}{a factor with 9 levels}
-\item{residence}{a factor with levels \code{rural area, north east, northern central, south}}
+\item{residence}{a factor with levels \verb{rural_area, north_east, northern_central, south}}
 }}
 \source{
 Journal of Applied Econometrics data archive
