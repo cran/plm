@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.2-2
-Date: 2020-02-20
+Version: 2.2-3
+Date: 2020-02-25
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
@@ -28,6 +28,8 @@ URL: https://cran.r-project.org/package=plm,
 RoxygenNote: 7.0.2
 RdMacros: Rdpack
 Encoding: UTF-8
+NeedsCompilation: no
+Packaged: 2020-02-28 11:33:28 UTC; yves
 Author: Yves Croissant [aut, cre],
   Giovanni Millo [aut],
   Kevin Tappe [aut],
@@ -39,9 +41,4 @@ Author: Yves Croissant [aut, cre],
   Nina Schoenfelder [ctb]
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
-Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 913
-Repository/R-Forge/DateTimeStamp: 2020-02-21 02:51:12
-Date/Publication: 2020-02-21 13:40:08 UTC
-NeedsCompilation: no
-Packaged: 2020-02-21 03:30:28 UTC; rforge
+Date/Publication: 2020-02-28 22:50:02 UTC

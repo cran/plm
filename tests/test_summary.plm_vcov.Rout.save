@@ -1,0 +1,171 @@
+
+R version 3.6.2 (2019-12-12) -- "Dark and Stormy Night"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### Test of summary.plm with user specified vcov (arg 'vcov' as matrix and as function)
+> 
+> options(scipen = 999)
+> 
+> library(plm)
+> data("Grunfeld", package = "plm")
+> gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
+> 
+> sum_obj      <- summary(gi)
+> sum_obj_mat  <- summary(gi, vcov = vcovHC(gi))            # arg 'vcov' is matrix
+> mat <- vcovHC(gi)
+> sum_obj_mat2 <- summary(gi, vcov = mat)                   # arg 'vcov' is matrix
+> sum_obj_fun  <- summary(gi, vcov = vcovHC)                # arg 'vcov' is function
+> sum_obj_fun2 <- summary(gi, vcov = function(x) vcovHC(x, method="white2")) # arg 'vcov' is function with args
+> 
+> if (identical(sum_obj,      sum_obj_mat)) stop("summary.plm objects with and without robust vcov must be non-identical")
+> if (!identical(sum_obj_mat$coefficients, sum_obj_fun$coefficients))
++   stop("summary.plm object's coefs, SE, t stat and p-values for vcov = matrix and for vcov = function not identical")
+> # Note: objects with vcov = matrix and vcov = function are non-identical, because attr(object$rvcov, "name") differs
+> 
+> # Visualise output with various rvcov names
+> print(sum_obj)      # without furnished vcov
+Oneway (individual) effect Within Model
+
+Call:
+plm(formula = inv ~ value + capital, data = Grunfeld, model = "within")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+      Min.    1st Qu.     Median    3rd Qu.       Max. 
+-184.00857  -17.64316    0.56337   19.19222  250.70974 
+
+Coefficients:
+        Estimate Std. Error t-value              Pr(>|t|)    
+value   0.110124   0.011857  9.2879 < 0.00000000000000022 ***
+capital 0.310065   0.017355 17.8666 < 0.00000000000000022 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    2244400
+Residual Sum of Squares: 523480
+R-Squared:      0.76676
+Adj. R-Squared: 0.75311
+F-statistic: 309.014 on 2 and 188 DF, p-value: < 0.000000000000000222
+> print(sum_obj_mat)  # vcov = matrix prints short info that a furnished vcov is used
+Oneway (individual) effect Within Model
+
+Note: Coefficient variance-covariance matrix supplied: vcovHC(gi)
+
+Call:
+plm(formula = inv ~ value + capital, data = Grunfeld, model = "within")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+      Min.    1st Qu.     Median    3rd Qu.       Max. 
+-184.00857  -17.64316    0.56337   19.19222  250.70974 
+
+Coefficients:
+        Estimate Std. Error t-value           Pr(>|t|)    
+value   0.110124   0.014342  7.6783 0.0000000000008566 ***
+capital 0.310065   0.049793  6.2271 0.0000000030326985 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    2244400
+Residual Sum of Squares: 523480
+R-Squared:      0.76676
+Adj. R-Squared: 0.75311
+F-statistic: 31.7744 on 2 and 9 DF, p-value: 0.000083417
+> print(sum_obj_mat2) # vcov = matrix prints short info that a furnished vcov is used
+Oneway (individual) effect Within Model
+
+Note: Coefficient variance-covariance matrix supplied: mat
+
+Call:
+plm(formula = inv ~ value + capital, data = Grunfeld, model = "within")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+      Min.    1st Qu.     Median    3rd Qu.       Max. 
+-184.00857  -17.64316    0.56337   19.19222  250.70974 
+
+Coefficients:
+        Estimate Std. Error t-value           Pr(>|t|)    
+value   0.110124   0.014342  7.6783 0.0000000000008566 ***
+capital 0.310065   0.049793  6.2271 0.0000000030326985 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    2244400
+Residual Sum of Squares: 523480
+R-Squared:      0.76676
+Adj. R-Squared: 0.75311
+F-statistic: 31.7744 on 2 and 9 DF, p-value: 0.000083417
+> print(sum_obj_fun)  # vcov = function prints additional info about the vcov function used
+Oneway (individual) effect Within Model
+
+Note: Coefficient variance-covariance matrix supplied: vcovHC
+
+Call:
+plm(formula = inv ~ value + capital, data = Grunfeld, model = "within")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+      Min.    1st Qu.     Median    3rd Qu.       Max. 
+-184.00857  -17.64316    0.56337   19.19222  250.70974 
+
+Coefficients:
+        Estimate Std. Error t-value           Pr(>|t|)    
+value   0.110124   0.014342  7.6783 0.0000000000008566 ***
+capital 0.310065   0.049793  6.2271 0.0000000030326985 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    2244400
+Residual Sum of Squares: 523480
+R-Squared:      0.76676
+Adj. R-Squared: 0.75311
+F-statistic: 31.7744 on 2 and 9 DF, p-value: 0.000083417
+> print(sum_obj_fun2) # vcov = function with args prints additional info about the vcov function used
+Oneway (individual) effect Within Model
+
+Note: Coefficient variance-covariance matrix supplied: function(x) vcovHC(x, method = "white2")
+
+Call:
+plm(formula = inv ~ value + capital, data = Grunfeld, model = "within")
+
+Balanced Panel: n = 10, T = 20, N = 200
+
+Residuals:
+      Min.    1st Qu.     Median    3rd Qu.       Max. 
+-184.00857  -17.64316    0.56337   19.19222  250.70974 
+
+Coefficients:
+        Estimate Std. Error t-value              Pr(>|t|)    
+value   0.110124   0.018925  5.8191          0.0000000251 ***
+capital 0.310065   0.027787 11.1585 < 0.00000000000000022 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    2244400
+Residual Sum of Squares: 523480
+R-Squared:      0.76676
+Adj. R-Squared: 0.75311
+F-statistic: 117.915 on 2 and 9 DF, p-value: 0.00000035011
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.686   0.047   0.731 
