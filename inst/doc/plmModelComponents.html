@@ -1,60 +1,115 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2020-02-28" />
+<meta name="date" content="2020-08-28" />
 
 <title>Model components for fitted models with plm</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
 
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
 
 </style>
 <script>
@@ -81,7 +136,187 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
 
 
 
@@ -95,14 +330,14 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Model components for fitted models with plm</h1>
 <h4 class="author">Yves Croissant</h4>
-<h4 class="date">2020-02-28</h4>
+<h4 class="date">2020-08-28</h4>
 
 
 
-<p>plm tries to follow as close as possible the way models are fitted using <code>lm</code>. This relies on the following steps, using the <code>formula</code>-<code>data</code> :</p>
+<p>plm tries to follow as close as possible the way models are fitted using <code>lm</code>. This relies on the following steps, using the <code>formula</code>-<code>data</code>:</p>
 <ul>
 <li>compute internally the <code>model.frame</code> by getting the relevant arguments (<code>formula</code>, <code>data</code>, <code>subset</code>, <code>weights</code>, <code>na.action</code> and <code>offset</code>) and the supplementary argument,</li>
-<li>extract from the <code>model.frame</code> the response (with <code>model.response</code>), the model matrix (with <code>model.matrix</code>),</li>
+<li>extract from the <code>model.frame</code> the response (with <code>model.response</code>) and the model matrix (with <code>model.matrix</code>),</li>
 <li>call the estimation function <code>plm.fit</code> with <code>X</code> and <code>y</code> as arguments.</li>
 </ul>
 <p>with some modifications.</p>
@@ -111,37 +346,37 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p><code>model.frame</code> is then called, but with the <code>data</code> argument in the first position (a <code>pdata.frame</code> object) and the <code>formula</code> in the second position. This unusual order of the arguments enables to use a specific <code>model.frame.pdata.frame</code> method defined in <code>plm</code>.</p>
 <p>As for the <code>model.frame.formula</code> method, a <code>data.frame</code> is returned, with a <code>terms</code> attribute.</p>
 <p>Next, the <code>X</code> matrix is extracted using <code>model.matrix</code>. The usual way to do so is to feed the function with to arguments, a <code>formula</code> or a <code>terms</code> object and a <code>data.frame</code> created with <code>model.frame</code>. <code>lm</code> use something like <code>model.matrix(terms(mf), mf)</code> where <code>mf</code> is a <code>data.frame</code> created with a <code>model.frame</code>. Therefore, <code>model.matrix</code> needs actually one argument and not two and we therefore wrote a <code>model.matrix.pdata.frame</code> which does the job ; the method first check that the argument has a <code>term</code> attribute, extract the <code>terms</code> (actually the <code>formula</code>) and then compute the <code>model.matrix</code>.</p>
-<p>The response <code>y</code> is usually extracted using <code>model.response</code>, with a <code>data.frame</code> created with <code>model.frame</code> as first argument, but it is not generic. We therefore create a generic called <code>pmodel.response</code> and provide a <code>pmodel.response.pdata.frame</code> method. We illustrate these features using a simplified (in terms of covariates) example with the <code>SeatBelt</code> data set :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)
-<span class="kw">data</span>(<span class="st">&quot;SeatBelt&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;pder&quot;</span>)
-SeatBelt<span class="op">$</span>occfat &lt;-<span class="st"> </span><span class="kw">with</span>(SeatBelt, <span class="kw">log</span>(farsocc <span class="op">/</span><span class="st"> </span>(vmtrural <span class="op">+</span><span class="st"> </span>vmturban)))
-pSB &lt;-<span class="st"> </span><span class="kw">pdata.frame</span>(SeatBelt)</code></pre></div>
-<p>We start with an OLS (<code>pooling</code>) specification.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formols &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin)
-mfols &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formols)
-Xols &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfols)
-y &lt;-<span class="st"> </span><span class="kw">pmodel.response</span>(mfols)
-<span class="kw">coef</span>(<span class="kw">lm.fit</span>(Xols, y))</code></pre></div>
+<p>The response <code>y</code> is usually extracted using <code>model.response</code>, with a <code>data.frame</code> created with <code>model.frame</code> as first argument, but it is not generic. We therefore create a generic called <code>pmodel.response</code> and provide a <code>pmodel.response.pdata.frame</code> method. We illustrate these features using a simplified (in terms of covariates) example with the <code>SeatBelt</code> data set:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;SeatBelt&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;pder&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>SeatBelt<span class="op">$</span>occfat &lt;-<span class="st"> </span><span class="kw">with</span>(SeatBelt, <span class="kw">log</span>(farsocc <span class="op">/</span><span class="st"> </span>(vmtrural <span class="op">+</span><span class="st"> </span>vmturban)))</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>pSB &lt;-<span class="st"> </span><span class="kw">pdata.frame</span>(SeatBelt)</span></code></pre></div>
+<p>We start with an OLS (<code>pooling</code>) specification:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>formols &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>mfols &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formols)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>Xols &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfols)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>y &lt;-<span class="st"> </span><span class="kw">pmodel.response</span>(mfols)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">coef</span>(<span class="kw">lm.fit</span>(Xols, y))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.4193570     0.1657293    -1.1583712</code></pre>
-<p>which is equivalent with :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coef</span>(<span class="kw">plm</span>(formols, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</code></pre></div>
+<p>which is equivalent to:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">coef</span>(<span class="kw">plm</span>(formols, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.4193570     0.1657293    -1.1583712</code></pre>
-<p>Next we use an instrumental variables specification. <code>usage</code> is endogenous and instrumented by three variables indicating the law context : <code>ds</code>, <code>dp</code> and <code>dsp</code>.</p>
-<p>The model is described using a two-parts formula, the first part of the RHS describing the covariates and the second part the instruments. The following two formulations can be used :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formiv1 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp
-formiv2 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</code></pre></div>
-<p>The second formulation has two advantages :</p>
+<p>Next we use an instrumental variables specification. <code>usage</code> is endogenous and instrumented by three variables indicating the law context: <code>ds</code>, <code>dp</code> and <code>dsp</code>.</p>
+<p>The model is described using a two-parts formula, the first part of the RHS describing the covariates and the second part the instruments. The following two formulations can be used:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>formiv1 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>formiv2 &lt;-<span class="st"> </span>occfat <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(percapin) <span class="op">|</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span><span class="kw">log</span>(usage) <span class="op">+</span><span class="st"> </span>ds <span class="op">+</span><span class="st"> </span>dp <span class="op">+</span><span class="st"> </span>dsp</span></code></pre></div>
+<p>The second formulation has two advantages:</p>
 <ul>
 <li>in the common case when a lot of covariates are instruments, these covariates don’t need to be indicated in the second RHS part of the formula,</li>
 <li>the endogenous variables clearly appear as they are proceeded by a <code>-</code> sign in the second RHS part of the formula.</li>
 </ul>
-<p>The formula is coerced to a <code>Formula</code>, using the <code>Formula</code> package. <code>model.matrix.pdata.frame</code> then internally calls the <code>model.matrix.Formula</code> in order to extract the covariates and instruments model matrices :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mfSB1 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv1)
-X1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">1</span>)
-W1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">2</span>)
-<span class="kw">head</span>(X1, <span class="dv">3</span>) ; <span class="kw">head</span>(W1, <span class="dv">3</span>)</code></pre></div>
+<p>The formula is coerced to a <code>Formula</code>, using the <code>Formula</code> package. <code>model.matrix.pdata.frame</code> then internally calls <code>model.matrix.Formula</code> in order to extract the covariates and instruments model matrices:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>mfSB1 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv1)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>X1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">1</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>W1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <span class="dt">rhs =</span> <span class="dv">2</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="kw">head</span>(X1, <span class="dv">3</span>) ; <span class="kw">head</span>(W1, <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -0.7985077      9.955748
 ## 9            1 -0.4155154      9.975622
@@ -150,14 +385,14 @@ W1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <sp
 ## 8            1      9.955748  0  0   0
 ## 9            1      9.975622  1  0   0
 ## 10           1     10.002110  1  0   0</code></pre>
-<p>For the second (and preferred formulation), the <code>dot</code> argument should be set and is passed to the <code>Formula</code> methods. <code>.</code> has actually two meanings :</p>
+<p>For the second (and preferred formulation), the <code>dot</code> argument should be set and is passed to the <code>Formula</code> methods. <code>.</code> has actually two meanings:</p>
 <ul>
-<li>all the available covariates,</li>
+<li>all available covariates,</li>
 <li>the previous covariates used while updating a formula.</li>
 </ul>
-<p>which correspond respectively to <code>dot = &quot;seperate&quot;</code> (the default) and <code>dot = &quot;previous&quot;</code>. See the difference between :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;Formula&quot;</span>)
-<span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt), <span class="dv">3</span>)</code></pre></div>
+<p>which correspond respectively to <code>dot = &quot;seperate&quot;</code> (the default) and <code>dot = &quot;previous&quot;</code>. See the difference between the following two examples:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">library</span>(<span class="st">&quot;Formula&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt), <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##       occfat log(usage) log(percapin) state year farsocc farsnocc usage
 ## 8  -3.788976 -0.7985077      9.955748    AK 1990      90        8  0.45
 ## 9  -3.904837 -0.4155154      9.975622    AK 1991      81       20  0.66
@@ -174,17 +409,17 @@ W1 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB1, <sp
 ## 8   0  0   0
 ## 9   1  0   0
 ## 10  1  0   0</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt, <span class="dt">dot =</span> <span class="st">&quot;previous&quot;</span>), <span class="dv">3</span>)</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">head</span>(<span class="kw">model.frame</span>(<span class="kw">Formula</span>(formiv2), SeatBelt, <span class="dt">dot =</span> <span class="st">&quot;previous&quot;</span>), <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##       occfat log(usage) log(percapin) ds dp dsp
 ## 8  -3.788976 -0.7985077      9.955748  0  0   0
 ## 9  -3.904837 -0.4155154      9.975622  1  0   0
 ## 10 -3.699611 -0.4155154     10.002110  1  0   0</code></pre>
 <p>In the first case, all the covariates are returned by <code>model.frame</code> as the <code>.</code> is understood by default as “everything”.</p>
 <p>In <code>plm</code>, the <code>dot</code> argument is internally set to <code>previous</code> so that the end-user doesn’t have to worry about these subtleties.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mfSB2 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv2)
-X2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">1</span>)
-W2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">2</span>)
-<span class="kw">head</span>(X2, <span class="dv">3</span>) ; <span class="kw">head</span>(W2, <span class="dv">3</span>)</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>mfSB2 &lt;-<span class="st"> </span><span class="kw">model.frame</span>(pSB, formiv2)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>X2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">1</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>W2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <span class="dt">rhs =</span> <span class="dv">2</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a><span class="kw">head</span>(X2, <span class="dv">3</span>) ; <span class="kw">head</span>(W2, <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -0.7985077      9.955748
 ## 9            1 -0.4155154      9.975622
@@ -193,23 +428,23 @@ W2 &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(mfSB2, <sp
 ## 8            1      9.955748  0  0   0
 ## 9            1      9.975622  1  0   0
 ## 10           1     10.002110  1  0   0</code></pre>
-<p>The iv estimator can then be obtained as a 2SLS estimator : first regress the covariates on the instruments and get the fitted values :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">HX1 &lt;-<span class="st"> </span><span class="kw">lm.fit</span>(W1, X1)<span class="op">$</span>fitted.values
-<span class="kw">head</span>(HX1, <span class="dv">3</span>)</code></pre></div>
+<p>The IV estimator can then be obtained as a 2SLS estimator: first regress the covariates on the instruments and get the fitted values:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>HX1 &lt;-<span class="st"> </span><span class="kw">lm.fit</span>(W1, X1)<span class="op">$</span>fitted.values</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="kw">head</span>(HX1, <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -1.0224257      9.955748
 ## 9            1 -0.5435055      9.975622
 ## 10           1 -0.5213364     10.002110</code></pre>
-<p>Next regress the response on these fitted values :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coef</span>(<span class="kw">lm.fit</span>(HX1, y))</code></pre></div>
+<p>Next regress the response on these fitted values:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="kw">coef</span>(<span class="kw">lm.fit</span>(HX1, y))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
-<p>Or using the <code>formula</code>-<code>data</code> interface with the <code>ivreg</code> function :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coef</span>(AER<span class="op">::</span><span class="kw">ivreg</span>(formiv1, <span class="dt">data =</span> SeatBelt))</code></pre></div>
+<p>Or using the <code>formula</code>-<code>data</code> interface with the <code>ivreg</code> function:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a><span class="kw">coef</span>(AER<span class="op">::</span><span class="kw">ivreg</span>(formiv1, <span class="dt">data =</span> SeatBelt))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
-<p>or <code>plm</code> :</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coef</span>(<span class="kw">plm</span>(formiv1, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</code></pre></div>
+<p>or <code>plm</code>:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true"></a><span class="kw">coef</span>(<span class="kw">plm</span>(formiv1, SeatBelt, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 

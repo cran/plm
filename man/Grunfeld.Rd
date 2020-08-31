@@ -4,19 +4,21 @@
 \name{Grunfeld}
 \alias{Grunfeld}
 \title{Grunfeld's Investment Data}
-\format{A data frame containing :
+\format{
+A data frame containing :
 \describe{
 \item{firm}{observation}
 \item{year}{date}
 \item{inv}{gross Investment}
 \item{value}{value of the firm}
-\item{capital}{stock of plant and equipment} }}
+\item{capital}{stock of plant and equipment} }
+}
 \source{
 Online complements to Baltagi (2001):
 
-\url{http://www.wiley.com/legacy/wileychi/baltagi/}
+\url{https://www.wiley.com/legacy/wileychi/baltagi/}
 
-\url{http://www.wiley.com/legacy/wileychi/baltagi/supp/Grunfeld.fil}
+\url{https://www.wiley.com/legacy/wileychi/baltagi/supp/Grunfeld.fil}
 
 Online complements to Baltagi (2013):
 

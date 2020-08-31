@@ -1,7 +1,7 @@
 
-R version 3.6.2 (2019-12-12) -- "Dark and Stormy Night"
-Copyright (C) 2019 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -20,6 +20,7 @@ Type 'q()' to quit R.
 > pkgname <- "plm"
 > source(file.path(R.home("share"), "R", "examples-header.R"))
 > options(warn = 1)
+> options(pager = "console")
 > library('plm')
 > 
 > base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
@@ -79,7 +80,8 @@ Type 'q()' to quit R.
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: aneweytest
-> ### Title: Chamberlain estimator and test for fixed effects
+> ### Title: Angrist and Newey's version of Chamberlain test for fixed
+> ###   effects
 > ### Aliases: aneweytest
 > ### Keywords: htest
 > 
@@ -93,6 +95,7 @@ Type 'q()' to quit R.
 
 data:  log(goutput) ~ log(seed) + log(totlabor) + log(size)
 chisq = 141.89, df = 87, p-value = 0.0001851
+alternative hypothesis: within specification does not apply
 
 > 
 > 
@@ -162,12 +165,12 @@ alternative hypothesis: Stationarity
 > # linear dependence present in the FE transformed model matrix
 > modmat_FE <- model.matrix(mf, model = "within")
 > detect.lindep(modmat_FE)
-[1] "Suspiscious column number(s): 2, 3"
-[1] "Suspiscious column name(s):   fact1, fact2"
+[1] "Suspicious column number(s): 2, 3"
+[1] "Suspicious column name(s):   fact1, fact2"
 > mod_FE <- plm(form, data = Cigar.p, model = "within")
 > detect.lindep(mod_FE) 
-[1] "Suspiscious column number(s): 2, 3"
-[1] "Suspiscious column name(s):   fact1, fact2"
+[1] "Suspicious column number(s): 2, 3"
+[1] "Suspicious column name(s):   fact1, fact2"
 > alias(mod_FE) # => fact1 == -1*fact2
 Model :
 [1] "price ~ 0 + cpi + fact1 + fact2"
@@ -275,12 +278,12 @@ Model :
 > # (demeaning per individual)
 > modmat_FE <- model.matrix(mf, model="within")
 > detect.lindep(modmat_FE)
-[1] "Suspiscious column number(s): 3, 4"
-[1] "Suspiscious column name(s):   CEOtenure, CEOage"
+[1] "Suspicious column number(s): 3, 4"
+[1] "Suspicious column name(s):   CEOtenure, CEOage"
 > mod_FE <- plm(form, data = Grunfeld, model = "within")
 > detect.lindep(mod_FE)
-[1] "Suspiscious column number(s): 3, 4"
-[1] "Suspiscious column name(s):   CEOtenure, CEOage"
+[1] "Suspicious column number(s): 3, 4"
+[1] "Suspicious column name(s):   CEOtenure, CEOage"
 > alias(mod_FE)
 Model :
 [1] "inv ~ value + capital + CEOtenure + CEOage"
@@ -402,6 +405,7 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 > ### Name: fixef.plm
 > ### Title: Extract the Fixed Effects
 > ### Aliases: fixef.plm print.fixef summary.fixef print.summary.fixef
+> ###   fixef.pggls
 > ### Keywords: regression
 > 
 > ### ** Examples
@@ -427,7 +431,7 @@ theta: 0.9464 (id) 0.8104 (time) 0.8084 (total)
 9   -87.2223    12.8919 -6.7657 1.635e-10 ***
 10   -6.5678    11.8269 -0.5553   0.57933    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > summary(fixef(gi))[ , c("Estimate", "Pr(>|t|)")] # only estimates and p-values
       Estimate     Pr(>|t|)
 1   -70.296717 1.589588e-01
@@ -477,7 +481,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 9   -87.2223    21.5669 -4.0443 7.654e-05 ***
 10   -6.5678    11.8616 -0.5537 0.5804368    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > # calc. fitted values of oneway within model:
 > fixefs <- fixef(gi)[index(gi, which = "id")]
@@ -6460,7 +6464,7 @@ attr(,"index")
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: mtest
-> ### Title: Arellano-Bond test of Serial Correlation
+> ### Title: Arellano-Bond Test of Serial Correlation
 > ### Aliases: mtest
 > ### Keywords: htest
 > 
@@ -6473,17 +6477,19 @@ attr(,"index")
 +            data = EmplUK, effect = "twoways", model = "twosteps")
 > mtest(ar, order = 1)
 
-	Autocorrelation test of degree 1
+	Arellano-Bond autocorrelation test of degree 1
 
 data:  log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital),  ...
 normal = -2.9998, p-value = 0.002702
+alternative hypothesis: autocorrelation present
 
 > mtest(ar, order = 2, vcov = vcovHC)
 
-	Autocorrelation test of degree 2
+	Arellano-Bond autocorrelation test of degree 2
 
 data:  log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital),  ...
 normal = -0.36744, p-value = 0.7133
+alternative hypothesis: autocorrelation present
 
 > 
 > 
@@ -6869,7 +6875,7 @@ log(pc)    0.0363922  0.0368432  0.9878    0.3233
 log(emp)   0.8209632  0.1390202  5.9054 3.519e-09 ***
 unemp     -0.0020925  0.0014973 -1.3976    0.1622    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
@@ -6895,7 +6901,7 @@ log(pc)    0.0363922  0.0322477  1.1285    0.2591
 log(emp)   0.8209632  0.1104438  7.4333 1.059e-13 ***
 unemp     -0.0020925  0.0013959 -1.4990    0.1339    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
@@ -6923,7 +6929,7 @@ log(pc)    0.0335784  0.0423362  0.7931   0.42770
 log(emp)   0.6258659  0.1071719  5.8398 5.225e-09 ***
 unemp     -0.0031178  0.0014389 -2.1668   0.03025 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.056978
 HPY R-squared: 0.99312
@@ -8658,7 +8664,7 @@ log(pc)    0.17151298  0.01807934  9.4867 < 2.2e-16 ***
 log(emp)   0.84449144  0.02042362 41.3488 < 2.2e-16 ***
 unemp     -0.00357102  0.00047319 -7.5468 4.462e-14 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 1.1623
 Multiple R-squared: 0.99863
@@ -8686,7 +8692,7 @@ log(pc)      0.21643137  0.01539471 14.0588 < 2.2e-16 ***
 log(emp)     0.71293894  0.01863632 38.2553 < 2.2e-16 ***
 unemp       -0.00447265  0.00045214 -9.8921 < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 7.5587
 Multiple R-squared: 0.99111
@@ -8714,7 +8720,7 @@ log(pc)     -0.03100727  0.01248722  -2.4831  0.01302 *
 log(emp)     0.87411813  0.02077388  42.0777  < 2e-16 ***
 unemp       -0.00483240  0.00040668 -11.8825  < 2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.33459
 Multiple R-squared: 0.99961
@@ -8769,7 +8775,7 @@ log(capital)            0.292723   0.039463   7.4177 1.191e-13 ***
 lag(log(output), 0:1)0  0.609775   0.108524   5.6188 1.923e-08 ***
 lag(log(output), 0:1)1 -0.446373   0.124815  -3.5763 0.0003485 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
 Autocorrelation test (1): normal = -2.427829 (p-value = 0.01519)
@@ -8808,7 +8814,7 @@ lag(log(wage), 0:1)1     0.482620   0.136887  3.5257 0.0004224 ***
 lag(log(capital), 0:1)0  0.483930   0.053867  8.9838 < 2.2e-16 ***
 lag(log(capital), 0:1)1 -0.424393   0.058479 -7.2572 3.952e-13 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Sargan test: chisq(100) = 118.763 (p-value = 0.097096)
 Autocorrelation test (1): normal = -4.808434 (p-value = 1.5212e-06)
@@ -8957,7 +8963,7 @@ sexfemale   -1.3092e-01  1.2666e-01 -1.0337   0.30129
 blackyes    -2.8575e-01  1.5570e-01 -1.8352   0.06647 .  
 ed           1.3794e-01  2.1248e-02  6.4919 8.474e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4163.6
@@ -9012,7 +9018,7 @@ sexfemale   -1.3201e-01  1.2660e-01 -1.0427   0.29709
 blackyes    -2.8590e-01  1.5549e-01 -1.8388   0.06595 .  
 ed           1.3720e-01  2.0570e-02  6.6703 2.553e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4160.3
@@ -9150,6 +9156,7 @@ log(size).6     -0.355043589 0.04222026 -8.4093186  4.123995e-17
 
 data:  log(goutput) ~ log(seed) + log(totlabor) + log(size)
 chisq = 113.72, df = 87, p-value = 0.02882
+alternative hypothesis: within specification does not apply
 
 > 
 > 
@@ -9192,7 +9199,7 @@ log(pc)    0.29200693  0.02511967 11.6246 < 2.2e-16 ***
 log(emp)   0.76815947  0.03009174 25.5273 < 2.2e-16 ***
 unemp     -0.00529774  0.00098873 -5.3582 1.114e-07 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    18.941
 Residual Sum of Squares: 1.1112
@@ -9263,7 +9270,7 @@ log(pc)    0.29200693  0.02511967 11.6246 < 2.2e-16 ***
 log(emp)   0.76815947  0.03009174 25.5273 < 2.2e-16 ***
 unemp     -0.00529774  0.00098873 -5.3582 1.114e-07 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    18.941
 Residual Sum of Squares: 1.1112
@@ -9310,7 +9317,7 @@ Coefficients:
 value   0.117716   0.013751  8.5604 6.653e-15 ***
 capital 0.357916   0.022719 15.7540 < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9337,7 +9344,7 @@ Coefficients:
 value   0.117716   0.009712  12.121 < 2.2e-16 ***
 capital 0.357916   0.042931   8.337 2.552e-14 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9364,7 +9371,7 @@ Coefficients:
 value   0.117716   0.009712  12.121 < 2.2e-16 ***
 capital 0.357916   0.042931   8.337 2.552e-14 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9391,7 +9398,7 @@ Coefficients:
 value    0.11772    0.01881  6.2582 3.095e-09 ***
 capital  0.35792    0.03178 11.2622 < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    1615600
 Residual Sum of Squares: 452150
@@ -9439,13 +9446,13 @@ log(water)   0.07645327  0.01385767  5.5170 3.448e-08 ***
 log(util)   -0.09437398  0.01677289 -5.6266 1.838e-08 ***
 unemp       -0.00616304  0.00090331 -6.8227 8.933e-12 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    43.035
 Residual Sum of Squares: 1.1245
 R-Squared:      0.97387
 Adj. R-Squared: 0.97368
-Chisq: 30152 on 6 DF, p-value: < 2.22e-16
+Chisq: 20213.5 on 6 DF, p-value: < 2.22e-16
 > summary(plm(form, data = pProduc, model = "random", effect = "nested",
 +             random.method = "walhus"))
 Nested effects Random Effect Model 
@@ -9481,13 +9488,13 @@ log(water)   0.07639159  0.01386702  5.5089 3.611e-08 ***
 log(util)   -0.09523031  0.01677247 -5.6778 1.365e-08 ***
 unemp       -0.00614840  0.00090786 -6.7724 1.267e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    40.423
 Residual Sum of Squares: 1.1195
 R-Squared:      0.97231
 Adj. R-Squared: 0.9721
-Chisq: 28403.2 on 6 DF, p-value: < 2.22e-16
+Chisq: 19579.7 on 6 DF, p-value: < 2.22e-16
 > 
 > ## Hausman-Taylor estimator and Amemiya-MaCurdy estimator
 > ## replicate Baltagi (2005, 2013), table 7.4
@@ -9539,7 +9546,7 @@ sexfemale   -1.3092e-01  1.2666e-01 -1.0337   0.30129
 blackyes    -2.8575e-01  1.5570e-01 -1.8352   0.06647 .  
 ed           1.3794e-01  2.1248e-02  6.4919 8.474e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4163.6
@@ -9594,7 +9601,7 @@ sexfemale   -1.3201e-01  1.2660e-01 -1.0427   0.29709
 blackyes    -2.8590e-01  1.5549e-01 -1.8388   0.06595 .  
 ed           1.3720e-01  2.0570e-02  6.6703 2.553e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    243.04
 Residual Sum of Squares: 4160.3
@@ -9734,7 +9741,7 @@ log(pc)      0.2182539  0.0500862  4.3576 1.315e-05 ***
 log(emp)     0.9334776  0.0750072 12.4452 < 2.2e-16 ***
 unemp       -0.0037216  0.0016427 -2.2655   0.02348 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.33009
 Multiple R-squared: 0.99961
@@ -9763,7 +9770,7 @@ log(pc)      0.1607882  0.0591334  2.7191  0.006546 **
 log(emp)     0.8425585  0.0704896 11.9529 < 2.2e-16 ***
 unemp       -0.0050181  0.0020770 -2.4160  0.015693 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.23666
 Multiple R-squared: 0.99972
@@ -9797,7 +9804,7 @@ log(pc).bar   -0.0033198  0.1576547 -0.0211  0.983200
 log(emp).bar  -0.6978359  0.2432887 -2.8683  0.004126 ** 
 unemp.bar      0.0025544  0.0031848  0.8021  0.422505    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.056978
 Multiple R-squared: 0.99993
@@ -12367,7 +12374,7 @@ log(util)   -0.0149021  0.0988643 -0.1507  0.88019
 log(emp)     0.9190594  0.1044486  8.7992  < 2e-16 ***
 unemp       -0.0047055  0.0020673 -2.2761  0.02284 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Estimated variance of the coefficients:
             (Intercept)    log(pc)   log(hwy) log(water)  log(util)   log(emp)
@@ -12410,7 +12417,7 @@ Chisq: 434.623 on 6 DF, p-value: < 2.22e-16
 > 
 > ### Name: pwaldtest
 > ### Title: Wald-style Chi-square Test and F Test
-> ### Aliases: pwaldtest pwaldtest.plm pwaldtest.pvcm
+> ### Aliases: pwaldtest pwaldtest.plm pwaldtest.pvcm pwaldtest.pgmm
 > ### Keywords: htest
 > 
 > ### ** Examples
@@ -12421,41 +12428,47 @@ Chisq: 434.623 on 6 DF, p-value: < 2.22e-16
 > mod_re <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
 > pwaldtest(mod_fe, test = "F")
 
-	F test
+	F test for joint significance
 
 data:  inv ~ value + capital
 F = 309.01, df1 = 2, df2 = 188, p-value < 2.2e-16
+alternative hypothesis: at least one coefficient is not null
 
 > pwaldtest(mod_re, test = "Chisq")
 
-	Wald test
+	Wald test for foint significance
 
 data:  inv ~ value + capital
 Chisq = 657.67, df = 2, p-value < 2.2e-16
+alternative hypothesis: at least one coefficient is not null
 
 > 
 > # with robust vcov (matrix, function)
 > pwaldtest(mod_fe, vcov = vcovHC(mod_fe))
 
-	Wald test (robust), vcov: vcovHC(mod_fe)
+	Wald test for joint significance (robust), vcov: vcovHC(mod_fe)
 
 data:  inv ~ value + capital
 Chisq = 63.549, df = 2, p-value = 1.587e-14
+alternative hypothesis: at least one coefficient is not null
 
 > pwaldtest(mod_fe, vcov = function(x) vcovHC(x, type = "HC3"))
 
-	Wald test (robust), vcov: function(x) vcovHC(x, type = "HC3")
+	Wald test for joint significance (robust), vcov: function(x) vcovHC(x,
+	type = "HC3")
 
 data:  inv ~ value + capital
 Chisq = 45.836, df = 2, p-value = 1.114e-10
+alternative hypothesis: at least one coefficient is not null
 
 > 
 > pwaldtest(mod_fe, vcov = vcovHC(mod_fe), df2adj = FALSE) # w/o df2 adjustment
 
-	Wald test (robust), vcov: vcovHC(mod_fe)
+	Wald test for joint significance (robust), vcov: vcovHC(mod_fe)
 
 data:  inv ~ value + capital
 Chisq = 63.549, df = 2, p-value = 1.587e-14
+alternative hypothesis: at least one coefficient is not null
 
 > 
 > # example without attribute "cluster" in the vcov
@@ -12463,10 +12476,11 @@ Chisq = 63.549, df = 2, p-value = 1.587e-14
 > attr(vcov_mat, "cluster") <- NULL  # remove attribute
 > pwaldtest(mod_fe, vcov = vcov_mat) # no df2 adjustment performed
 
-	Wald test (robust), vcov: vcov_mat
+	Wald test for joint significance (robust), vcov: vcov_mat
 
 data:  inv ~ value + capital
 Chisq = 63.549, df = 2, p-value = 1.587e-14
+alternative hypothesis: at least one coefficient is not null
 
 > 
 > 
@@ -12758,6 +12772,7 @@ alternative hypothesis: unobserved effect
 
 data:  log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + lag(log(capital),  ...
 chisq = 31.381, df = 25, p-value = 0.1767
+alternative hypothesis: overidentifying restrictions not valid
 
 > 
 > 
@@ -12801,7 +12816,7 @@ log(pc)    0.29200693  0.02511967 11.6246 < 2.2e-16 ***
 log(emp)   0.76815947  0.03009174 25.5273 < 2.2e-16 ***
 unemp     -0.00529774  0.00098873 -5.3582 1.114e-07 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    18.941
 Residual Sum of Squares: 1.1112
@@ -12834,7 +12849,7 @@ Coefficients:
 value   0.110124   0.014342  7.6783 8.566e-13 ***
 capital 0.310065   0.049793  6.2271 3.033e-09 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12861,7 +12876,7 @@ Coefficients:
 value   0.110124   0.014342  7.6783 8.566e-13 ***
 capital 0.310065   0.049793  6.2271 3.033e-09 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12888,7 +12903,7 @@ Coefficients:
 value   0.110124   0.018925  5.8191  2.51e-08 ***
 capital 0.310065   0.027787 11.1585 < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12922,7 +12937,7 @@ Coefficients:
       Estimate Std. Error t-value  Pr(>|t|)    
 value 0.110124   0.011857  9.2879 < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Total Sum of Squares:    2244400
 Residual Sum of Squares: 523480
@@ -12950,9 +12965,9 @@ F-statistic: 309.014 on 2 and 188 DF, p-value: < 2.22e-16
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: ‘zoo’
+Attaching package: 'zoo'
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -12972,7 +12987,7 @@ log(pc)      0.31054843  0.01980475 15.6805 < 2.2e-16 ***
 log(emp)     0.72967053  0.02492022 29.2803 < 2.2e-16 ***
 unemp       -0.00617247  0.00090728 -6.8033 1.986e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## robust significance test, cluster by group
 > ## (robust vs. serial correlation), default arguments
@@ -12987,7 +13002,7 @@ log(pc)      0.3105484  0.0427824  7.2588 9.153e-13 ***
 log(emp)     0.7296705  0.0497995 14.6522 < 2.2e-16 ***
 unemp       -0.0061725  0.0017190 -3.5908 0.0003495 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovBK(x, type="HC1"))
@@ -13001,7 +13016,7 @@ log(pc)      0.3105484  0.0429141  7.2365 1.068e-12 ***
 log(emp)     0.7296705  0.0499528 14.6072 < 2.2e-16 ***
 unemp       -0.0061725  0.0017242 -3.5798 0.0003643 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem, cluster by time period
 > ## (robust vs. cross-sectional correlation)
@@ -13017,7 +13032,7 @@ log(pc)      0.3105484  0.0458243  6.7769 2.360e-11 ***
 log(emp)     0.7296705  0.0562371 12.9749 < 2.2e-16 ***
 unemp       -0.0061725  0.0018531 -3.3309 0.0009049 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a matrix argument
 > coeftest(zz, vcov.=vcovBK(zz, type="HC1"))
@@ -13031,7 +13046,7 @@ log(pc)      0.3105484  0.0429141  7.2365 1.068e-12 ***
 log(emp)     0.7296705  0.0499528 14.6072 < 2.2e-16 ***
 unemp       -0.0061725  0.0017242 -3.5798 0.0003643 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovBK)
@@ -13043,7 +13058,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 411.05  < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovBK)
 Linear hypothesis test
@@ -13065,8 +13080,8 @@ Note: Coefficient covariance matrix supplied.
 > 
 > cleanEx()
 
-detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
-  ‘package:zoo’
+detaching 'package:car', 'package:carData', 'package:lmtest',
+  'package:zoo'
 
 > nameEx("vcovDC")
 > ### * vcovDC
@@ -13084,9 +13099,9 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: ‘zoo’
+Attaching package: 'zoo'
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -13106,7 +13121,7 @@ log(pc)      0.3091902  0.0102720 30.1003 < 2.2e-16 ***
 log(emp)     0.5939349  0.0137475 43.2032 < 2.2e-16 ***
 unemp       -0.0067330  0.0014164 -4.7537 2.363e-06 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## DC robust significance test, default
 > coeftest(zz, vcov.=vcovDC)
@@ -13120,7 +13135,7 @@ log(pc)      0.309190   0.044957  6.8774 1.217e-11 ***
 log(emp)     0.593935   0.070203  8.4603 < 2.2e-16 ***
 unemp       -0.006733   0.003330 -2.0219   0.04351 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovDC(x, type="HC1", maxlag=4))
@@ -13134,7 +13149,7 @@ log(pc)      0.3091902  0.0450955  6.8563 1.400e-11 ***
 log(emp)     0.5939349  0.0704186  8.4343 < 2.2e-16 ***
 unemp       -0.0067330  0.0033403 -2.0157   0.04416 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovDC)
@@ -13146,7 +13161,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 109.61  < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovDC)
 Linear hypothesis test
@@ -13168,8 +13183,8 @@ Note: Coefficient covariance matrix supplied.
 > 
 > cleanEx()
 
-detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
-  ‘package:zoo’
+detaching 'package:car', 'package:carData', 'package:lmtest',
+  'package:zoo'
 
 > nameEx("vcovG")
 > ### * vcovG
@@ -13208,9 +13223,9 @@ attr(,"cluster")
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: ‘zoo’
+Attaching package: 'zoo'
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -13229,7 +13244,7 @@ log(pc)      0.3091902  0.0462297  6.6881 4.209e-11 ***
 log(emp)     0.5939349  0.0686061  8.6572 < 2.2e-16 ***
 unemp       -0.0067330  0.0030904 -2.1787   0.02964 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > 
 > 
@@ -13237,7 +13252,7 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 > 
 > cleanEx()
 
-detaching ‘package:lmtest’, ‘package:zoo’
+detaching 'package:lmtest', 'package:zoo'
 
 > nameEx("vcovHC.plm")
 > ### * vcovHC.plm
@@ -13255,9 +13270,9 @@ detaching ‘package:lmtest’, ‘package:zoo’
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: ‘zoo’
+Attaching package: 'zoo'
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -13278,7 +13293,7 @@ log(pc)      0.31054843  0.01980475 15.6805 < 2.2e-16 ***
 log(emp)     0.72967053  0.02492022 29.2803 < 2.2e-16 ***
 unemp       -0.00617247  0.00090728 -6.8033 1.986e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## robust significance test, cluster by group
 > ## (robust vs. serial correlation)
@@ -13293,7 +13308,7 @@ log(pc)      0.3105484  0.0435922  7.1239 2.317e-12 ***
 log(emp)     0.7296705  0.0699680 10.4286 < 2.2e-16 ***
 unemp       -0.0061725  0.0023326 -2.6461  0.008299 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovHC(x, method="arellano", type="HC1"))
@@ -13307,7 +13322,7 @@ log(pc)      0.3105484  0.0437264  7.1021 2.689e-12 ***
 log(emp)     0.7296705  0.0701833 10.3966 < 2.2e-16 ***
 unemp       -0.0061725  0.0023398 -2.6380  0.008499 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem, cluster by time period
 > ## (robust vs. cross-sectional correlation)
@@ -13323,7 +13338,7 @@ log(pc)      0.3105484  0.0437264  7.1021 2.689e-12 ***
 log(emp)     0.7296705  0.0701833 10.3966 < 2.2e-16 ***
 unemp       -0.0061725  0.0023398 -2.6380  0.008499 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a matrix argument
 > coeftest(zz, vcov.=vcovHC(zz, method="arellano", type="HC1"))
@@ -13337,7 +13352,7 @@ log(pc)      0.3105484  0.0437264  7.1021 2.689e-12 ***
 log(emp)     0.7296705  0.0701833 10.3966 < 2.2e-16 ***
 unemp       -0.0061725  0.0023398 -2.6380  0.008499 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovHC)
@@ -13349,7 +13364,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 404.16  < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovHC)
 Linear hypothesis test
@@ -13392,7 +13407,7 @@ log(pc)    0.0363922  0.0322477  1.1285    0.2591
 log(emp)   0.8209632  0.1104438  7.4333 1.059e-13 ***
 unemp     -0.0020925  0.0013959 -1.4990    0.1339    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Total Sum of Squares: 849.81
 Residual Sum of Squares: 0.11927
 HPY R-squared: 0.99077
@@ -13407,18 +13422,19 @@ HPY R-squared: 0.99077
 > rv <- vcovHC(ar)
 > mtest(ar, order = 2, vcov = rv)
 
-	Autocorrelation test of degree 2
+	Arellano-Bond autocorrelation test of degree 2
 
 data:  log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) + log(capital) +  ...
 normal = -0.1165, p-value = 0.9073
+alternative hypothesis: autocorrelation present
 
 > 
 > 
 > 
 > cleanEx()
 
-detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
-  ‘package:zoo’
+detaching 'package:car', 'package:carData', 'package:lmtest',
+  'package:zoo'
 
 > nameEx("vcovNW")
 > ### * vcovNW
@@ -13436,9 +13452,9 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: ‘zoo’
+Attaching package: 'zoo'
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -13458,7 +13474,7 @@ log(pc)      0.3091902  0.0102720 30.1003 < 2.2e-16 ***
 log(emp)     0.5939349  0.0137475 43.2032 < 2.2e-16 ***
 unemp       -0.0067330  0.0014164 -4.7537 2.363e-06 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## NW robust significance test, default
 > coeftest(zz, vcov.=vcovNW)
@@ -13472,7 +13488,7 @@ log(pc)      0.3091902  0.0206394 14.9806 < 2.2e-16 ***
 log(emp)     0.5939349  0.0316213 18.7827 < 2.2e-16 ***
 unemp       -0.0067330  0.0020247 -3.3254 0.0009225 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovNW(x, type="HC1", maxlag=4))
@@ -13486,7 +13502,7 @@ log(pc)      0.3091902  0.0256858 12.0374 < 2.2e-16 ***
 log(emp)     0.5939349  0.0388977 15.2691 < 2.2e-16 ***
 unemp       -0.0067330  0.0023634 -2.8488  0.004499 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovNW)
@@ -13498,7 +13514,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                         
 2    813 -2 480.18  < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovNW)
 Linear hypothesis test
@@ -13520,8 +13536,8 @@ Note: Coefficient covariance matrix supplied.
 > 
 > cleanEx()
 
-detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
-  ‘package:zoo’
+detaching 'package:car', 'package:carData', 'package:lmtest',
+  'package:zoo'
 
 > nameEx("vcovSCC")
 > ### * vcovSCC
@@ -13539,9 +13555,9 @@ detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
 > library(lmtest)
 Loading required package: zoo
 
-Attaching package: ‘zoo’
+Attaching package: 'zoo'
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     as.Date, as.Date.numeric
 
@@ -13561,7 +13577,7 @@ log(pc)      0.3091902  0.0102720 30.1003 < 2.2e-16 ***
 log(emp)     0.5939349  0.0137475 43.2032 < 2.2e-16 ***
 unemp       -0.0067330  0.0014164 -4.7537 2.363e-06 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## SCC robust significance test, default
 > coeftest(zz, vcov.=vcovSCC)
@@ -13575,7 +13591,7 @@ log(pc)      0.3091902  0.0076442 40.4479 < 2.2e-16 ***
 log(emp)     0.5939349  0.0387024 15.3462 < 2.2e-16 ***
 unemp       -0.0067330  0.0025389 -2.6520  0.008159 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## idem with parameters, pass vcov as a function argument
 > coeftest(zz, vcov.=function(x) vcovSCC(x, type="HC1", maxlag=4))
@@ -13589,7 +13605,7 @@ log(pc)      0.3091902  0.0069837 44.2731 < 2.2e-16 ***
 log(emp)     0.5939349  0.0454539 13.0668 < 2.2e-16 ***
 unemp       -0.0067330  0.0029520 -2.2808  0.022817 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > ## joint restriction test
 > waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovSCC)
@@ -13601,7 +13617,7 @@ Model 2: log(gsp) ~ log(pcap) + log(pc)
 1    811                        
 2    813 -2   531  < 2.2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > ## test of hyp.: 2*log(pc)=log(emp)
 > linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovSCC)
 Linear hypothesis test
@@ -13623,8 +13639,8 @@ Note: Coefficient covariance matrix supplied.
 > 
 > cleanEx()
 
-detaching ‘package:car’, ‘package:carData’, ‘package:lmtest’,
-  ‘package:zoo’
+detaching 'package:car', 'package:carData', 'package:lmtest',
+  'package:zoo'
 
 > nameEx("within_intercept")
 > ### * within_intercept
@@ -13675,7 +13691,7 @@ attr(,"se")
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  13.448 0.309 13.805 0.001 0.004 
+Time elapsed:  27.23 1.34 32.78 NA NA 
 > grDevices::dev.off()
 null device 
           1 

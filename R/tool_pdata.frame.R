@@ -697,7 +697,7 @@ as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, kee
 #' This function checks if an object qualifies as a pseries
 #' 
 #' A `"pseries"` is a wrapper around a "basic class" (numeric, factor,
-#' logical, or character).
+#' logical, character, or complex).
 #' 
 #' To qualify as a pseries, an object needs to have the following
 #' features:

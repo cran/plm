@@ -4,7 +4,8 @@
 \name{Snmesp}
 \alias{Snmesp}
 \title{Employment and Wages in Spain}
-\format{A data frame containing:
+\format{
+A data frame containing:
 
 \describe{
 \item{firm}{firm index}
@@ -14,11 +15,12 @@
 \item{y}{log of real output}
 \item{i}{log of intermediate inputs}
 \item{k}{log of real capital stock}
-\item{f}{real cash flow} }}
+\item{f}{real cash flow} }
+}
 \source{
 Journal of Business Economics and Statistics data archive:
 
-\url{http://amstat.tandfonline.com/loi/ubes20/}.
+\url{https://amstat.tandfonline.com/loi/ubes20/}.
 }
 \description{
 A panel of 738 observations from 1983 to 1990

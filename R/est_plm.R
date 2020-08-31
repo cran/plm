@@ -507,7 +507,7 @@ plm.fit <- function(data, model, effect, random.method,
                        residuals    = resid(result),
                        weights      = w,
                        df.residual  = df,
-                       formula      = formula,  #fForm
+                       formula      = formula,
                        model        = data)
         if (is.null(model.weights(data))) result$weights <- NULL
         if (model == "random") result$ercomp <- estec
@@ -536,7 +536,7 @@ plm.fit <- function(data, model, effect, random.method,
             as.numeric(model.matrix(data, rhs = 1, model = "pooling") %*% gamma)
         result <- list(coefficients = gamma,
                        vcov         = solve(XPX),
-                       formula      = formula, #fForm
+                       formula      = formula,
                        model        = data,
                        ercomp       = estec,
                        df.residual  = nrow(X) - ncol(X),
@@ -559,6 +559,7 @@ tss <- function(x, ...){
 }
 
 tss.default <- function(x){
+  # always gives centered TSS (= demeaned TSS)
   var(x) * (length(x) - 1)
 }
 
@@ -602,26 +603,85 @@ tss.plm <- function(x, model = NULL){
 #' 
 r.squared <- function(object, model = NULL,
                       type = c("cor", "rss", "ess"), dfcor = FALSE){
+  ## TODO: doees not handle non-intercept models correctly
+  ##       see below r.squared_no_intercept
+  if (is.null(model)) model <- describe(object, "model")
+  effect <- describe(object, "effect")
+  type <- match.arg(type)
+  if (type == "cor"){
+    y <- pmodel.response(object, model = model, effect = effect)
+    haty <- fitted(object, model = model, effect = effect)
+    R2 <- cor(y, haty)^2
+  }
+  if (type == "rss"){
+    R2 <- 1 - deviance(object, model = model) / tss(object, model = model)
+  }
+  if (type == "ess"){
+    haty <- fitted(object, model = model)
+    mhaty <- mean(haty)
+    ess <- as.numeric(crossprod((haty - mhaty)))
+    R2 <- ess / tss(object, model = model)
+  }
+  ### adj. R2 Still wrong for models without intercept, e.g. pooling models
+  # (but could be correct for within models, see comment below in function r.squared_no_intercept)
+  if (dfcor) R2 <- 1 - (1 - R2) * (length(resid(object)) - 1) / df.residual(object)
+  R2
+}
+
+## first try at r.squared adapted to be suitable for non-intercept models
+r.squared_no_intercept <- function(object, model = NULL,
+                      type = c("rss", "ess", "cor"), dfcor = FALSE){
     if (is.null(model)) model <- describe(object, "model")
     effect <- describe(object, "effect")
     type <- match.arg(type)
-    if (type == "cor"){
-        y <- pmodel.response(object, model = model, effect = effect)
-        haty <- fitted(object, model = model, effect = effect)
-        R2 <- cor(y, haty)^2
-    }
+    ## TODO: check what is sane for IV and what for within
+    has.int <- if (model != "within") has.intercept(object)[1] else FALSE # [1] as has.intercept returns > 1 boolean for IV models # TODO: to check if this is sane
+    
     if (type == "rss"){
-        R2 <- 1 - deviance(object, model = model) / tss(object, model = model)
+      # approach: 1 - RSS / TSS
+      R2 <- if (has.int) {
+        1 - deviance(object, model = model) / tss(object, model = model)  
+      } else {
+        # use non-centered (=non-demeaned) TSS
+        1 - deviance(object, model = model) / as.numeric(crossprod(pmodel.response(object, model = model)))
+      }
     }
+        
     if (type == "ess"){
-        haty <- fitted(object, model = model)
+      # approach: ESS / TSS
+      haty <- fitted(object, model = model)
+      R2 <- if(has.int) {
         mhaty <- mean(haty)
-        ess <- as.numeric(crossprod((haty - mhaty)))
-        R2 <- ess / tss(object, model = model)
+        ess <- as.numeric(crossprod(haty - mhaty))
+        tss <- tss(object, model = model)
+        ess / tss
+      }
+      else {
+        # use non-centered (=non-demeaned) ESS and non-centered TSS
+        ess <- as.numeric(crossprod(haty))
+        tss <- as.numeric(crossprod(pmodel.response(object, model = model)))
+        ess / tss
+      }
     }
-    # Kevin Tappe 2015-10-19, the computation of the adjusted R2 was wrong
-    if (dfcor) R2 <- 1 - (1 - R2) * (length(resid(object)) - 1) / df.residual(object)
-    R2
+    
+    if (type == "cor"){
+      # approach: squared-correlation(dependent variable, predicted value), only for models with intercept
+      if(!has.int) warning("for models without intercept, type = \"cor\" may not be sane") # TODO: tbd if warning is good
+      
+      # TODO: Check should this be for "cor" the original variable? This makes a differnce for (at least) RE models!
+      #       and on the fitted values which are not given by fitted() for RE models
+#      y <- pmodel.response(object, model = model, effect = effect)
+#      haty <- fitted(object, model = model, effect = effect)
+      y <- pmodel.response(object, model = "pooling")
+      haty <- fitted_exp.plm(object)
+      R2 <- cor(y, haty)^2
+    }
+    
+    # this takes care of the intercept
+    # Still unclear, how the adjustment for within models should look like, i.e. subtract 1 for intercept or not
+    if (dfcor) R2 <- 1 - (1 - R2) * (length(resid(object)) - has.int) / df.residual(object)
+    
+    return(R2)
 }
 
 

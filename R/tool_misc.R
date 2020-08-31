@@ -306,9 +306,12 @@ pres <- function(x) {  # pres.panelmodel
 #' punbalancedness(Produc, index = c("state", "year", "region"))
 #' punbalancedness(Produc, index = c("state", "year")) 
 #' 
+#' @rdname punbalancedness
+#' @export
 punbalancedness <- function(x, ...) {
   UseMethod("punbalancedness")
 }
+
 
 punbalancedness.default <- function(x, ...) {
 
@@ -374,11 +377,14 @@ myvar <- function(x){
   x.na <- is.na(x)
   if(anyNA(x.na)) x <- x[!x.na]
   n <- length(x)
-  
-  z <- switch(as.character(n),
-              "0" = NA,
-              "1" = 0,
-              ifelse(!(is.factor(x) || is.character(x)), var(x), !all(duplicated(x)[-1L]))) # [var() on factors is deprecated as of R 3.2.3]
+
+  if(n <= 1L) {
+    if(n == 0L) z <- NA
+    if(n == 1L) z <- 0
+  } else {
+    z <- if(!(is.factor(x) || is.character(x))) var(x)
+         else !all(duplicated(x)[-1L])
+  }
   z
 }
 
@@ -455,7 +461,7 @@ pvar.default <- function(x, id, time, ...){
   id.variation   <- rep(TRUE, len)
   time.variation_anyNA <- rep(FALSE, len)
   id.variation_anyNA   <- rep(FALSE, len)
-  lid <- split(x, id)
+  lid <- split(x, id)   # these split() functions seem particularly slow
   ltime <- split(x, time)
   if (is.list(x)){
     if (len == 1){
@@ -578,3 +584,34 @@ print.pvar <- function(x, ...){
     if (length(var_anyNA)!=0) cat(paste("all NA in ind. dimension for at least one time period:", paste(var_anyNA,collapse=" "),"\n"))
   }
 }
+
+## Non-exported internal function for subsetting of pseries. Can be used
+## internally. 
+## Currently we do not have "proper" subsetting function for pseries
+## ([.pseries) which applies in any case (but see the sketch to be tested in
+##  tool_pdata.frame.R)
+subset_pseries <- function(x, ...) {
+
+ ## use '...' instead of only one specific argument, because subsetting for
+ ## factors can have argument 'drop', e.g., x[i, drop=TRUE] see ?Extract.factor
+  index <- attr(x, "index")
+  if (is.null(index)) warning("pseries object with is.null(index(pseries)) == TRUE encountered, trying to continue anyway...")
+  if (!is.index(index)) stop(paste0("pseries object has illegal index with class(index) == ", paste0(class(index), collapse = ", ")))
+  names_orig <- names(x)
+  x <- remove_pseries_features(x)
+  result <- x[...]
+
+  # subset index / identify rows to keep in the index:
+  keep_rownr <- seq_along(names_orig)  # full length row numbers original pseries
+  names(keep_rownr) <- names_orig
+  keep_rownr <- keep_rownr[names(result)] # row numbers to keep after subsetting
+  index <- index[keep_rownr, ]
+
+  # drop unused levels (like in subsetting of pdata.frames)
+  index <- droplevels(index)
+
+  result <- add_pseries_features(result, index)
+  return(result)
+}
+
+

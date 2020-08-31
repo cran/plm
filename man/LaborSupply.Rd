@@ -4,7 +4,8 @@
 \name{LaborSupply}
 \alias{LaborSupply}
 \title{Wages and Hours Worked}
-\format{A data frame containing :
+\format{
+A data frame containing :
 \describe{
 \item{lnhr}{log of annual hours worked}
 \item{lnwg}{log of hourly wage}
@@ -13,12 +14,13 @@
 \item{disab}{bad health}
 \item{id}{id}
 \item{year}{year}
-}}
+}
+}
 \source{
 Online complements to Ziliak (1997).
 
 Journal of Business Economics and Statistics web site:
-\url{http://amstat.tandfonline.com/loi/ubes20/}.
+\url{https://amstat.tandfonline.com/loi/ubes20/}.
 }
 \description{
 A panel of 532 observations from 1979 to 1988

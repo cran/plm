@@ -1,7 +1,7 @@
 
-R version 3.6.2 (2019-12-12) -- "Dark and Stormy Night"
-Copyright (C) 2019 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -19,6 +19,7 @@ Type 'q()' to quit R.
 > data("Grunfeld", package = "plm")
 > 
 > 
+> ## IGNORE_RDIFF_BEGIN
 > 
 > # corner case make one - id NA and rest non varying 
 > # non-variation was detected prior to rev. 206
@@ -156,6 +157,8 @@ no individual variation: x
 > # pvar(jtrain.p[ , c(20:26)])
 > # print(pvar(jtrain.p[ , c(20:26)]))
 > 
+> ## IGNORE_RDIFF_END
+> 
 > proc.time()
    user  system elapsed 
-  0.849   0.024   0.861 
+   0.81    0.14    0.92 

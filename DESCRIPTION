@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.2-3
-Date: 2020-02-25
+Version: 2.2-4
+Date: 2020-08-28
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
@@ -14,9 +14,9 @@ Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"
 Depends: R (>= 3.1.0)
 Imports: MASS, bdsmatrix, zoo, nlme, sandwich, lattice, lmtest, maxLik,
         Rdpack, Formula, stats
-Suggests: AER, car, pcse, clusterSEs, clubSandwich, pglm, spdep, splm,
-        statmod, urca, Ecdat, pder, stargazer, texreg, foreign, knitr,
-        rmarkdown, bookdown
+Suggests: AER, car, pcse, clusterSEs, pglm, spdep, splm, statmod, urca,
+        Ecdat, pder, stargazer, texreg, foreign, knitr, rmarkdown,
+        bookdown
 Description: A set of estimators and tests for panel data
              econometrics, as described in Baltagi (2013) Econometric Analysis of Panel Data, ISBN-13:978-1-118-67232-7,
 	     Hsiao (2014) Analysis of Panel Data  <doi:10.1017/CBO9781139839327> and
@@ -25,11 +25,9 @@ License: GPL (>= 2)
 VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm,
         https://r-forge.r-project.org/projects/plm/
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 RdMacros: Rdpack
 Encoding: UTF-8
-NeedsCompilation: no
-Packaged: 2020-02-28 11:33:28 UTC; yves
 Author: Yves Croissant [aut, cre],
   Giovanni Millo [aut],
   Kevin Tappe [aut],
@@ -41,4 +39,9 @@ Author: Yves Croissant [aut, cre],
   Nina Schoenfelder [ctb]
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
-Date/Publication: 2020-02-28 22:50:02 UTC
+Repository/R-Forge/Project: plm
+Repository/R-Forge/Revision: 956
+Repository/R-Forge/DateTimeStamp: 2020-08-28 08:15:20
+Date/Publication: 2020-08-31 06:20:03 UTC
+NeedsCompilation: no
+Packaged: 2020-08-28 08:30:46 UTC; rforge

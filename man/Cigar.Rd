@@ -4,7 +4,8 @@
 \name{Cigar}
 \alias{Cigar}
 \title{Cigarette Consumption}
-\format{A data frame containing :
+\format{
+A data frame containing :
 \describe{
 \item{state}{state abbreviation}
 \item{year}{the year}
@@ -15,11 +16,12 @@
 \item{ndi}{per capita disposable income}
 \item{sales}{cigarette sales in packs per capita}
 \item{pimin}{minimum price in adjoining states per pack of cigarettes}
-}}
+}
+}
 \source{
 Online complements to Baltagi (2001):
 
-\url{http://www.wiley.com/legacy/wileychi/baltagi/}
+\url{https://www.wiley.com/legacy/wileychi/baltagi/}
 
 Online complements to Baltagi (2013):
 

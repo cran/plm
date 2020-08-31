@@ -611,8 +611,9 @@ pFtest.plm <- function(x, z, ...){
 }
 
 ############## pwaldtest() ############################################
-# pwaldtest is used in summary.plm, summary.pht to compute the F statistic, but can be used 
-# as a stand-alone test of joint significance of all slopes
+# pwaldtest is used in summary.plm, summary.pht, summary.pgmm to compute the
+# Chi-square or F statistic, but can be used as a stand-alone test of
+# joint significance of all slopes
 #
 # Short intro (but see associated help file)
 # arg 'vcov' non-NULL => the robust tests are carried out
@@ -622,48 +623,18 @@ pFtest.plm <- function(x, z, ...){
 # Chi-sq test for IV models as in Wooldridge (1990), A note on the Lagrange multiplier and F-statistics for two stage least
 #                                                    squares regressions, Economics Letters 34: 151-155.
 
-# trans_clubSandwich_vcov: helper function for pwaldtest()
-# translate vcov object from package clubSandwich so it is suitable for summary.plm, plm's pwaldtest.
-# Attribute "cluster" in clubSandwich's vcov objects contains the cluster variable itself.
-# plm's vcov object also has attribute "cluster" but it contains a character as
-# information about the cluster dimension (either "group" or "time")
-#
-# inputs:
-#   * CSvcov: a vcov as returned by clubSandwich's vcovCR function [class c("vcovCR", "clubSandwich")]
-#   * index: the index belonging to a plm object/model
-# return value:
-#   * modified CSvcov (substituted attribute "cluster" with suitable character or NULL)
-
-trans_clubSandwich_vcov <- function(CSvcov, index) {
-  clustervar <- attr(CSvcov, "cluster")
-  if (!is.null(clustervar)) {
-      if (isTRUE(all.equal(index[[1]], clustervar))) {
-        attr(CSvcov, "cluster") <- "group"
-        return(CSvcov)
-      }
-      if (isTRUE(all.equal(index[[2]], clustervar))) {
-        attr(CSvcov, "cluster") <- "time"
-        return(CSvcov)
-      } else {
-        attr(CSvcov, "cluster") <- NULL
-        return(CSvcov)
-      }
-  }
-  warning("no attribute \"cluster\" found in supplied vcov object")
-  return(CSvcov)
-}
-
 #' Wald-style Chi-square Test and F Test
 #' 
 #' Wald-style Chi-square test and F test of slope coefficients being
 #' zero jointly, including robust versions of the tests.
 #' 
 #' 
-#' `pwaldtest` can be used stand--alone with a plm object or a pvcm
-#' object (for the latter only the 'random' type is valid and no
-#' further arguments are processed). It is also used in
+#' `pwaldtest` can be used stand--alone with a plm object, a pvcm object,
+#' and a pgmm object (for pvcm objects only the 'random' type is valid and no
+#' further arguments are processed; for pgmm objects only arguments `param`
+#' and `vcov` are valid). It is also used in
 #' [summary.plm()] to produce the F statistic and the Chi-square
-#' statistic for the joint test of coefficients.
+#' statistic for the joint test of coefficients and in [summary.pgmm()].
 #' 
 #' `pwaldtest` performs the test if the slope coefficients of a panel
 #' regression are jointly zero. It does not perform general purpose
@@ -678,8 +649,8 @@ trans_clubSandwich_vcov <- function(CSvcov, index) {
 #' supplying argument (`.df2`)), the adjustment of the second degrees
 #' of freedom parameter is performed by default. The second degrees of
 #' freedom parameter is adjusted to be the number of unique elements
-#' of the cluster variable - 1, e. g. the number of individuals -
-#' 1. For the degrees of freedom adjustment of the F test in general,
+#' of the cluster variable - 1, e. g., the number of individuals minus 1.
+#' For the degrees of freedom adjustment of the F test in general,
 #' see e. g. \insertCite{CAME:MILL:15;textual}{plm}, section VII;
 #' \insertCite{ANDR:GOLS:SCMI:13}{plm}, pp. 126, footnote 4.
 #' 
@@ -697,7 +668,7 @@ trans_clubSandwich_vcov <- function(CSvcov, index) {
 #' 
 #' @aliases pwaldtest
 #' @param x an estimated model of which the coefficients should be
-#'     tested (usually of class `"plm"`/`"pvcm"`),
+#'     tested (usually of class `"plm"`/`"pvcm"`/`"pgmm"`)`,
 #' @param test a character, indicating the test to be performed, may
 #'     be either `"Chisq"` or `"F"` for the Wald-style
 #'     Chi-square test or F test, respectively,
@@ -717,8 +688,12 @@ trans_clubSandwich_vcov <- function(CSvcov, index) {
 #'     used),
 #' @param .df2 a numeric, used if one wants to overwrite the second
 #'     degrees of freedom parameter for the F test (usually not used),
+#' @param param (for pgmm method only): select the parameters to be tested:
+#'     `"coef"`, `"time"`, or `"all"``.
 #' @param \dots further arguments (currently none).
-#' @return An object of class `"htest"`.
+#' @return An object of class `"htest"`, except for pvcm's within model for which
+#'         a data.frame with results of the Wald chi-square tests and F tests per
+#'         regression is returned.
 #' @export
 #' @author Yves Croissant (initial implementation) and Kevin Tappe
 #'     (extensions: vcov argument and F test's df2 adjustment)
@@ -769,8 +744,8 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
                 length(coef(x)),
                 length(coef(x)) - has.intercept(x))
   df2 <- df.residual(x)
-  tss <- tss(x)
-  ssr <- deviance(x)
+#  tss <- tss(x)        # not good for models without intercept
+#  ssr <- deviance(x)   # -- " --
   vcov_arg <- vcov
   int <- "(Intercept)"
   coefs_wo_int <- coef(x)[!(names(coef(x)) %in% int)]
@@ -826,73 +801,48 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
   if (!missing(.df2)) df2 <- .df2
   
   if (test == "Chisq"){
-    # perform "normal" chisq test
+    # perform non-robust chisq test
     if (is.null(vcov_arg)) {
-      stat <- if(length(formula(x))[2] > 1) {
-        # IV case: cannot take usual TSS-SSR-way to calc. stat
-        as.numeric(crossprod(solve(vcov(x)[names(coefs_wo_int), names(coefs_wo_int)], coefs_wo_int), coefs_wo_int))
-      } else {
-        # non IV
-        (tss-ssr)/(ssr/df2)
-      }
-      
+      stat <- as.numeric(crossprod(solve(vcov(x)[names(coefs_wo_int), names(coefs_wo_int)], coefs_wo_int), coefs_wo_int))
+#     stat < - (tss-ssr)/(ssr/df2) # does not produce correct results for unbalanced RE models and (un)balanced IV models
       names(stat) <- "Chisq"
       pval <- pchisq(stat, df = df1, lower.tail = FALSE)
       parameter <- c(df = df1)
-      method <- "Wald test"
+      method <- "Wald test for foint significance"
     } else {
       # perform robust chisq test
-      
-      # alternative:
-      # use package car for statistic:
-      # Note: has.intercept() returns TRUE for FE models, so do not use it here...
-      # return_car_lH <- car::linearHypothesis(x,
-      #                                        names(coef(x))[if ("(Intercept)" %in% names(coef(x))) -1 else TRUE],
-      #                                        test="Chisq",
-      #                                        vcov. = rvcov_orig)
-      # stat_car <- return_car_lH[["Chisq"]][2] # extract statistic
-      
       stat <- as.numeric(crossprod(solve(rvcov, coefs_wo_int), coefs_wo_int))
       names(stat) <- "Chisq"
       pval <- pchisq(stat, df = df1, lower.tail = FALSE)
       parameter <- c(df = df1)
-      method <- paste0("Wald test (robust)", rvcov_name)
+      method <- paste0("Wald test for joint significance (robust)", rvcov_name)
     }
   }
   if (test == "F"){
     if(length(formula(x))[2] > 1) stop("test = \"F\" not sensible for IV models")
     if (is.null(vcov_arg)) {
       # perform "normal" F test
-      stat <- (tss-ssr)/ssr*df2/df1
+      stat <- as.numeric(crossprod(solve(vcov(x)[names(coefs_wo_int), names(coefs_wo_int)], coefs_wo_int), coefs_wo_int)) / df1
+#      stat <- (tss-ssr)/ssr*df2/df1 # does not produce correct results for unbalanced RE models
       names(stat) <- "F"
       pval <- pf(stat, df1 = df1, df2 = df2, lower.tail = FALSE)
       parameter <- c(df1 = df1, df2 = df2)
-      method <- "F test"
+      method <- "F test for joint significance"
     } else {
       # perform robust F test
-      
-      # alternative:
-      # use package car for statistic:
-      # Note: has.intercept() returns TRUE for FE models, so do not use it here...
-      # Note: car::linearHypothesis does not adjust df2 for clustering
-      # return_car_lH <- car::linearHypothesis(x,
-      #                                        names(coef(x))[if ("(Intercept)" %in% names(coef(x))) -1 else TRUE],
-      #                                        test="F",
-      #                                        vcov. = rvcov_orig)
-      # stat_car <- return_car_lH[["F"]][2] # extract statistic
-      
       stat <- as.numeric(crossprod(solve(rvcov, coefs_wo_int), coefs_wo_int) / df1)
       names(stat) <- "F"
       pval <- pf(stat, df1 = df1, df2 = df2, lower.tail = FALSE)
       parameter <- c(df1 = df1, df2 = df2) # Dfs
-      method  <- paste0("F test (robust)", rvcov_name)
+      method  <- paste0("F test for joint significance (robust)", rvcov_name)
     }
   }
   res <- list(data.name = data.name(x),
               statistic = stat,
               parameter = parameter,
               p.value   = pval,
-              method    = method
+              method    = method,
+              alternative = "at least one coefficient is not null"
   )
   class(res) <- "htest"
   return(res)
@@ -902,29 +852,153 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
 #' @export
 pwaldtest.pvcm <- function(x, ...) {
   model <- describe(x, "model")
-  if(!model == "random") stop("pwaldtest.pvcm only applicable to 'random' pvcm objects")
+  effect <- describe(x, "effect")
   
+  if(model == "within") {
+    # for the within case, simply return a data.frame with all test results
+    # of single estimations (per individual or per time period)
+    
+    ii <- switch(effect, "individual" = 1, "time" = 2)
+    residl <- split(x$residuals, index(x)[[ii]])
+    
+    # vcocs and coefficients w/o intercept
+    coefs.no.int <- !names(x$coefficients) %in% "(Intercept)"
+    vcovl <- lapply(x$vcov, function(x) x[coefs.no.int, coefs.no.int])
+    coefl <- as.list(data.frame(t(x$coefficients[ , coefs.no.int])))
+    
+    
+    df1 <- ncol(x$coefficients[ , coefs.no.int]) # is same df1 for all models (as all models estimate the same coefs)
+    df2 <- lengths(residl) - ncol(x$coefficients) # (any intercept is subtracted)
+    
+    statChisqs <- mapply(FUN = function(v, c) as.numeric(crossprod(solve(v, c), c)),
+                     vcovl, coefl)
+    statFs <- statChisqs / df1
+    
+    
+    
+    pstatChisqs <- pchisq(statChisqs, df = df1, lower.tail = FALSE)
+    pstatFs <- pf(statFs, df1 = df1, df2 = df2, lower.tail = FALSE)
+    
+    stats.pvcm.within <- as.data.frame(cbind("Chisq"    = statChisqs,
+                                             "p(chisq)" = pstatChisqs,
+                                             "F"        = statFs,
+                                             "p(F)"     = pstatFs,
+                                             "df1"      = rep(df1, length(residl)),
+                                             "df2"      = df2))
+    # early return
+    return(stats.pvcm.within)
+  }
+  
+  ## case: model == "random"
   coefs_wo_int <- x$coefficients[setdiff(names(x$coefficients), "(Intercept)")]
   stat <- as.numeric(crossprod(solve(vcov(x)[names(coefs_wo_int), names(coefs_wo_int)], coefs_wo_int), coefs_wo_int))
   names(stat) <- "Chisq"
   df1 <- length(coefs_wo_int)
   pval <- pchisq(stat, df = df1, lower.tail = FALSE)
   parameter <- c(df = df1)
-  method <- "Wald test"
+  method <- "Wald test for joint significance"
   
   res <- list(data.name = data.name(x),
               statistic = stat,
               parameter = parameter,
               p.value   = pval,
-              method    = method
+              method    = method,
+              alternative = "at least one coefficient is not null"
   )
   class(res) <- "htest"
   return(res)
 }
 
+
+#' @rdname pwaldtest
+#' @export
+pwaldtest.pgmm <- function(x, param = c("coef", "time", "all"), vcov = NULL, ...) {
+  param <- match.arg(param)
+  vcov_supplied <- !is.null(vcov)
+  myvcov <- vcov
+  if (is.null(vcov)) vv <- vcov(x)
+  else if (is.function(vcov)) vv <- myvcov(x)
+  else vv <- myvcov
+  model <- describe(x, "model")
+  effect <- describe(x, "effect")
+  if (param == "time" && effect == "individual") stop("no time dummies in this model")
+  transformation <- describe(x, "transformation")
+  if (model == "onestep") coefficients <- x$coefficients
+  else coefficients <- x$coefficients[[2]]
+  Ktot <- length(coefficients)
+  Kt <- length(x$args$namest)
+  
+  switch(param,
+         "time" = {
+           start <- Ktot - Kt + ifelse(transformation == "ld", 2, 1)
+           end <- Ktot
+         },
+         "coef" = {
+           start <- 1
+           end <- if (effect == "twoways") Ktot - Kt else Ktot
+         },
+         "all" = {
+           start <- 1
+           end <- Ktot
+         })
+  coef <- coefficients[start:end]
+  vv <- vv[start:end, start:end]
+  stat <- as.numeric(crossprod(coef, crossprod(solve(vv), coef)))
+  names(stat) <- "chisq"
+  parameter <- length(coef)
+  names(parameter) <- "df"
+  pval <- pchisq(stat, df = parameter, lower.tail = FALSE)
+  method <- "Wald test for joint significance"
+  if (vcov_supplied) {
+    rvcov_name <- paste0(", vcov: ", paste0(deparse(substitute(vcov))))
+    method <- paste0(method, " (robust)", rvcov_name)
+  }
+  wald.pgmm <- list(statistic = stat,
+                    p.value   = pval,
+                    parameter = parameter,
+                    method    = method,
+                    alternative = "at least one coefficient is not null",
+                    data.name = data.name(x))
+  class(wald.pgmm) <- "htest"
+  return(wald.pgmm)
+}
+
 pwaldtest.default <- function(x, ...) {
   pwaldtest.plm(x, ...)
 }
+
+
+# trans_clubSandwich_vcov: helper function for pwaldtest()
+# translate vcov object from package clubSandwich so it is suitable for summary.plm, plm's pwaldtest.
+# Attribute "cluster" in clubSandwich's vcov objects contains the cluster variable itself.
+# plm's vcov object also has attribute "cluster" but it contains a character as
+# information about the cluster dimension (either "group" or "time")
+#
+# inputs:
+#   * CSvcov: a vcov as returned by clubSandwich's vcovCR function [class c("vcovCR", "clubSandwich")]
+#   * index: the index belonging to a plm object/model
+# return value:
+#   * modified CSvcov (substituted attribute "cluster" with suitable character or NULL)
+trans_clubSandwich_vcov <- function(CSvcov, index) {
+  clustervar <- attr(CSvcov, "cluster")
+  if (!is.null(clustervar)) {
+    if (isTRUE(all.equal(index[[1]], clustervar))) {
+      attr(CSvcov, "cluster") <- "group"
+      return(CSvcov)
+    }
+    if (isTRUE(all.equal(index[[2]], clustervar))) {
+      attr(CSvcov, "cluster") <- "time"
+      return(CSvcov)
+    } else {
+      attr(CSvcov, "cluster") <- NULL
+      return(CSvcov)
+    }
+  }
+  warning("no attribute \"cluster\" found in supplied vcov object")
+  return(CSvcov)
+}
+
+
 
 #' Test of Poolability
 #' 

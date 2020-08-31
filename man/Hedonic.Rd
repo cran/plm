@@ -4,7 +4,8 @@
 \name{Hedonic}
 \alias{Hedonic}
 \title{Hedonic Prices of Census Tracts in the Boston Area}
-\format{A dataframe containing:
+\format{
+A dataframe containing:
 \describe{
 \item{mv}{median value of owner--occupied homes}
 \item{crim}{crime rate}
@@ -20,11 +21,12 @@
 \item{ptratio}{pupil/teacher ratio}
 \item{blacks}{proportion of blacks in the population}
 \item{lstat}{proportion of population that is lower status}
-\item{townid}{town identifier} }}
+\item{townid}{town identifier} }
+}
 \source{
 Online complements to Baltagi (2001):
 
-\url{http://www.wiley.com/legacy/wileychi/baltagi/}
+\url{https://www.wiley.com/legacy/wileychi/baltagi/}
 
 Online complements to Baltagi (2013):
 
