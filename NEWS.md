@@ -1,3 +1,8 @@
+# plm 2.2-5
+
+* Removed duplicated entries in REFERENCES.bib (dependency Rdpack 2.0 warned).
+
+
 # plm 2.2-4
 
 * ptransform (internal function): check balancedness before pseries index is
@@ -43,7 +48,7 @@
      
 * index.pindex: fixed bug when individual index variable is called "group".
 
-## Minor items:
+### Minor items:
    * print.fixef: respects / forwards arguments supplied to generic print method.
    * DESCRIPTION/Dependencies: package 'urca' added to "Suggests".
    * Grunfeld data doc: URL for overview of various Grunfeld data sets updated to
