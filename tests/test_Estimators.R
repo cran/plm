@@ -59,15 +59,14 @@ plm_grunfeld_fe_unbal         <- plm(inv ~ value + capital, data=Grunfeld_unbal,
 plm_grunfeld_re_walhus_unbal  <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="walhus")
 plm_grunfeld_re_amemiya_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="amemiya")
 plm_grunfeld_re_swar_unbal    <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="swar")
-## not implemented
-# plm_grunfeld_re_nerlove_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="nerlove")
+plm_grunfeld_re_nerlove_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="nerlove")
 
 summary(plm_grunfeld_be_unbal        )
 summary(plm_grunfeld_fe_unbal        )
 summary(plm_grunfeld_re_walhus_unbal )
 summary(plm_grunfeld_re_swar_unbal   )
 summary(plm_grunfeld_re_amemiya_unbal)
-# summary(plm_grunfeld_re_nerlove_unbal) # not implemented
+summary(plm_grunfeld_re_nerlove_unbal)
 
 #### oneway time unbalanced
 plm_grunfeld_be_time_unbal         <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="between", effect = "time")
@@ -75,15 +74,14 @@ plm_grunfeld_fe_time_unbal         <- plm(inv ~ value + capital, data=Grunfeld_u
 plm_grunfeld_re_walhus_time_unbal  <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="walhus",  effect = "time")
 plm_grunfeld_re_amemiya_time_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="amemiya", effect = "time")
 plm_grunfeld_re_swar_time_unbal    <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="swar",    effect = "time")
-## not implemented:
-# plm_grunfeld_re_nerlove_time_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="nerlove", effect = "time")
+plm_grunfeld_re_nerlove_time_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="nerlove", effect = "time")
 
 summary(plm_grunfeld_be_time_unbal        )
 summary(plm_grunfeld_fe_time_unbal        )
 summary(plm_grunfeld_re_walhus_time_unbal )
 summary(plm_grunfeld_re_swar_time_unbal   )
 summary(plm_grunfeld_re_amemiya_time_unbal)
-# summary(plm_grunfeld_re_nerlove_time_unbal) # not implemented
+summary(plm_grunfeld_re_nerlove_time_unbal)
 
 
 
@@ -119,8 +117,7 @@ plm_grunfeld_fe_tw_unbal         <- plm(inv ~ value + capital, data=Grunfeld_unb
 plm_grunfeld_re_walhus_tw_unbal  <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="walhus",  effect = "twoways")
 plm_grunfeld_re_amemiya_tw_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="amemiya", effect = "twoways")
 plm_grunfeld_re_swar_tw_unbal    <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="swar",    effect = "twoways")
-## not implemented:
-# plm_grunfeld_re_nerlove_tw_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="nerlove", effect = "twoways")
+plm_grunfeld_re_nerlove_tw_unbal <- plm(inv ~ value + capital, data=Grunfeld_unbal, model="random", random.method="nerlove", effect = "twoways")
 
 ## IGNORE_RDIFF_BEGIN
 summary(plm_grunfeld_pooled_tw_unbal    )
@@ -128,7 +125,7 @@ summary(plm_grunfeld_fe_tw_unbal        )
 summary(plm_grunfeld_re_walhus_tw_unbal )
 summary(plm_grunfeld_re_amemiya_tw_unbal)
 summary(plm_grunfeld_re_swar_tw_unbal   )
-# summary(plm_grunfeld_re_nerlove_tw_unbal) # not implemented
+summary(plm_grunfeld_re_nerlove_tw_unbal)
 ## IGNORE_RDIFF_END
 
 ### "amemiya" and "swar" have the same idiosyncratic variance (both based on the within variance)
@@ -250,8 +247,8 @@ summary(plm(form2, data = pHedonic2, model = "random"))
 # in a different way - coefficients need to match
 data("Produc", package = "plm")
 form <- log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp
-pccemgmod <- pcce(form, data = Produc, model="mg")
-pmgccemgmod <- pmg(form, data = Produc, model="cmg")
+pccemgmod   <- pcce(form, data = Produc, model = "mg")
+pmgccemgmod <- pmg (form, data = Produc, model = "cmg")
 common <- intersect(names(pccemgmod[["coefficients"]]), names(pmgccemgmod[["coefficients"]]))
 coef_pccemgmod   <- round(pccemgmod[["coefficients"]][common],   digits = 7)
 coef_pmgccemgmod <- round(pmgccemgmod[["coefficients"]][common], digits = 7)
@@ -259,8 +256,16 @@ stopifnot(all.equal(coef_pccemgmod, coef_pmgccemgmod, tolerance = 1E-04))
 ## IGNORE_RDIFF_BEGIN
 print(summary(pccemgmod))
 print(summary(pmgccemgmod))
-##IGNORE_RDIFF_END
 
+
+# run and output tests for pcce/pmg with model = 'p'/'mg'/'dmg'
+print(summary(pcce(form, data = Produc, model = "p")))
+print(summary(pmg (form, data = Produc, model = "mg")))
+print(summary(pmg (form, data = Produc, model = "dmg")))
+print(summary(pmg (form, data = Produc, model = "cmg", trend = TRUE)))
+print(summary(pmg (form, data = Produc, model = "mg",  trend = TRUE)))
+print(summary(pmg (form, data = Produc, model = "dmg", trend = TRUE)))
+##IGNORE_RDIFF_END
 
 ## further run tests without intercept
 plm(inv ~ 0 + value + capital + year, data = Grunfeld, model = "between")

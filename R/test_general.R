@@ -41,7 +41,7 @@ data.name <- function(x){
 #' @param index an optional vector of index variables,
 #' @param vcov an optional covariance function,
 #' @param \dots further arguments to be passed on. For the formula method,
-#' place argument `effect` here to compare e.g. twoway models
+#' place argument `effect` here to compare, e.g., twoway models
 #' (`effect = "twoways"`) Note: Argument `effect` is not respected in
 #' the panelmodel method.
 #' @return An object of class `"htest"`.
@@ -237,13 +237,13 @@ phtest.panelmodel <- function(x, x2, ...){
     # Tests with between model do not extend to two-ways case -> give error
     # There are, however, some equiv. tests with the individual/time between 
     # model, but let's not support them (see Kang (1985), Baltagi (2013), Sec. 4.3.7)
-    if (   (modx  == "between" | modx2 == "between")
-        && (effx == "twoways" | effx2 == "twoways")) stop("tests with between model in twoways case not supported")
+    if (   (modx  == "between" || modx2 == "between")
+        && (effx == "twoways" || effx2 == "twoways")) stop("tests with between model in twoways case not supported")
     
     # in case of one-way within vs. between (m3 in Baltagi (2013), pp. 77, 81)
     # the variances need to be added (not subtracted like in the other cases)
-    if (  (modx  == "within" && modx2 == "between")
-        | (modx2 == "within" && modx  == "between")) {
+    if (   (modx  == "within" && modx2 == "between")
+        || (modx2 == "within" && modx  == "between")) {
       dvcov <- vcov.wi[coef.h, coef.h] + vcov.re[coef.h, coef.h]
     }
   #### END cater for equivalent tests with between model
@@ -414,7 +414,7 @@ plmtest.plm <- function(x,
   res <- resid(x)
   
   ### calc of parts of test statistic ##
-  # calc. is done w/o using matrix calculation, see e.g. Baltagi/Li (1990), p. 106
+  # calc. is done w/o using matrix calculation, see, e.g., Baltagi/Li (1990), p. 106
   A1 <- as.numeric(crossprod(tapply(res, id, sum)) / sum(res ^ 2) - 1)   # == A1 <- sum(tapply(res,id,sum)^2)/sum(res^2) - 1
   A2 <- as.numeric(crossprod(tapply(res, time, sum)) / sum(res ^ 2) - 1) # == A2 <- sum(tapply(res,time,sum)^2)/sum(res^2) - 1
   
@@ -752,7 +752,7 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
   
   # sanity check
   if (df2adj == TRUE && (is.null(vcov_arg) || test != "F")) {
-    stop("df2adj == TRUE sensible only for robust F test, i.e. test == \"F\" and !is.null(vcov) and missing(.df2)")
+    stop("df2adj == TRUE sensible only for robust F test, i.e., test == \"F\" and !is.null(vcov) and missing(.df2)")
   }
   
   # if robust test: prepare robust vcov
@@ -767,7 +767,7 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
       attr(rvcov, which = "cluster") <- attr(rvcov_orig, which = "cluster") # restore dropped 'cluster' attribute
     }
     # if robust F test: by default, do finite-sample adjustment for df2
-    if (df2adj == TRUE & test == "F") {
+    if (df2adj == TRUE && test == "F") {
       # determine the variable that the clustering is done on by
       # attribute "cluster" in the vcov (matrix object)
       # if only one member in cluster: fall back to original df2
@@ -808,7 +808,7 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
       names(stat) <- "Chisq"
       pval <- pchisq(stat, df = df1, lower.tail = FALSE)
       parameter <- c(df = df1)
-      method <- "Wald test for foint significance"
+      method <- "Wald test for joint significance"
     } else {
       # perform robust chisq test
       stat <- as.numeric(crossprod(solve(rvcov, coefs_wo_int), coefs_wo_int))
@@ -833,7 +833,7 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
       stat <- as.numeric(crossprod(solve(rvcov, coefs_wo_int), coefs_wo_int) / df1)
       names(stat) <- "F"
       pval <- pf(stat, df1 = df1, df2 = df2, lower.tail = FALSE)
-      parameter <- c(df1 = df1, df2 = df2) # Dfs
+      parameter <- c(df1 = df1, df2 = df2)
       method  <- paste0("F test for joint significance (robust)", rvcov_name)
     }
   }
@@ -861,11 +861,10 @@ pwaldtest.pvcm <- function(x, ...) {
     ii <- switch(effect, "individual" = 1, "time" = 2)
     residl <- split(x$residuals, index(x)[[ii]])
     
-    # vcocs and coefficients w/o intercept
+    # vcovs and coefficients w/o intercept
     coefs.no.int <- !names(x$coefficients) %in% "(Intercept)"
     vcovl <- lapply(x$vcov, function(x) x[coefs.no.int, coefs.no.int])
     coefl <- as.list(data.frame(t(x$coefficients[ , coefs.no.int])))
-    
     
     df1 <- ncol(x$coefficients[ , coefs.no.int]) # is same df1 for all models (as all models estimate the same coefs)
     df2 <- lengths(residl) - ncol(x$coefficients) # (any intercept is subtracted)
@@ -873,8 +872,6 @@ pwaldtest.pvcm <- function(x, ...) {
     statChisqs <- mapply(FUN = function(v, c) as.numeric(crossprod(solve(v, c), c)),
                      vcovl, coefl)
     statFs <- statChisqs / df1
-    
-    
     
     pstatChisqs <- pchisq(statChisqs, df = df1, lower.tail = FALSE)
     pstatFs <- pf(statFs, df1 = df1, df2 = df2, lower.tail = FALSE)

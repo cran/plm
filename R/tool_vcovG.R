@@ -19,7 +19,7 @@
 #' \insertCite{CRIB:04;textual}{plm} \insertCite{@see @ZEIL:04}{plm}).
 #' 
 #' The main use of `vcovSCC` is to be an argument to other functions,
-#' e.g.  for Wald--type testing: argument `vcov.` to `coeftest()`,
+#' e.g.,for Wald--type testing: argument `vcov.` to `coeftest()`,
 #' argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
@@ -62,7 +62,6 @@
 #' @examples
 #' 
 #' library(lmtest)
-#' library(car)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="pooling")
 #' ## standard coefficient significance test
@@ -73,9 +72,11 @@
 #' coeftest(zz, vcov.=function(x) vcovSCC(x, type="HC1", maxlag=4))
 #' ## joint restriction test
 #' waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovSCC)
+#' \dontrun{
 #' ## test of hyp.: 2*log(pc)=log(emp)
+#' library(car)
 #' linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovSCC)
-#' 
+#' }
 vcovSCC <- function(x, ...){
   UseMethod("vcovSCC")
 }
@@ -100,7 +101,7 @@ vcovSCC <- function(x, ...){
 #' \insertCite{CRIB:04;textual}{plm} \insertCite{@see @ZEIL:04}{plm}.
 #' 
 #' The main use of `vcovNW` is to be an argument to other functions,
-#' e.g.  for Wald--type testing: argument `vcov.` to `coeftest()`,
+#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
 #' argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
@@ -138,7 +139,6 @@ vcovSCC <- function(x, ...){
 #' @examples
 #' 
 #' library(lmtest)
-#' library(car)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="pooling")
 #' ## standard coefficient significance test
@@ -149,9 +149,11 @@ vcovSCC <- function(x, ...){
 #' coeftest(zz, vcov.=function(x) vcovNW(x, type="HC1", maxlag=4))
 #' ## joint restriction test
 #' waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovNW)
+#' \dontrun{
 #' ## test of hyp.: 2*log(pc)=log(emp)
+#' library(car)
 #' linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovNW)
-#' 
+#' }
 vcovNW <- function(x, ...){
   UseMethod("vcovNW")
 }
@@ -178,7 +180,7 @@ vcovNW <- function(x, ...){
 #' \insertCite{CRIB:04;textual}{plm} \insertCite{@see @ZEIL:04}{plm}.
 #' 
 #' The main use of `vcovDC` is to be an argument to other functions,
-#' e.g.  for Wald-type testing: argument `vcov.` to `coeftest()`,
+#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
 #' argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
@@ -213,7 +215,6 @@ vcovNW <- function(x, ...){
 #' @examples
 #' 
 #' library(lmtest)
-#' library(car)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="pooling")
 #' ## standard coefficient significance test
@@ -224,9 +225,11 @@ vcovNW <- function(x, ...){
 #' coeftest(zz, vcov.=function(x) vcovDC(x, type="HC1", maxlag=4))
 #' ## joint restriction test
 #' waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovDC)
+#' \dontrun{
 #' ## test of hyp.: 2*log(pc)=log(emp)
+#' library(car)
 #' linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovDC)
-#' 
+#' }
 vcovDC <- function(x, ...){
   UseMethod("vcovDC")
 }
@@ -305,11 +308,10 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     # stopping control for weighted regressions
     if (!is.null(x$weights)) stop("vcovXX functions not implemented for weighted panel regressions")
   
-
     type <- match.arg(type)
     model <- describe(x, "model")
     if (!model %in% c("random", "within", "pooling", "fd")) {
-        stop("Model has to be either random, within, pooling or fd model")
+        stop("Model has to be either \"random\", \"within\", \"pooling\", or \"fd\" model")
     }
 
   ## extract demeaned data
@@ -321,7 +323,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     if (!is.null(x$aliased) && any(x$aliased, na.rm = TRUE)) demX <- demX[, !x$aliased, drop = FALSE]
 
     ## control: IV or not (two- or one-part formula)
-    if(length(formula(x))[2] > 1) {
+    if(length(formula(x))[2L] > 1) {
         demZ <- model.matrix(x, model = model, rhs = 2, cstcovar.rm = "all")
         ## substitute (transformed) X with projection of X on Z
         ## any linear dependence in Z (demZ) is appropriately taken care of by lm.fit()
@@ -331,7 +333,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     pdim <- pdim(x)
     nT <- pdim$nT$N
     Ti <- pdim$Tint$Ti
-    k <- dim(demX)[[2]]
+    k <- dim(demX)[[2L]]
     n0 <- pdim$nT$n
     t0 <- pdim$nT$T
 
@@ -345,33 +347,40 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## (see the theoretical comments in pvcovHC)
 
     ## diaghat function for matrices
-    dhat <- function(x) {tx <- t(x)
-                         diag(crossprod(tx, solve(crossprod(x), tx)))}
+
+# old:
+#    dhat <- function(x) {tx <- t(x)
+#                         diag(crossprod(tx, solve(crossprod(x), tx)))}
+    
+    dhat <- function(x) {
+      res <-  rowSums(crossprod(t(x), solve(crossprod(x))) * x) # == diag(crossprod(tx, solve(crossprod(x), tx)))
+      return(res)
+    }
 
     ## this is computationally heavy, do only if needed
-    switch(match.arg(type), HC0 = {diaghat <- NULL},
-                            sss = {diaghat <- NULL},
-                            HC1 = {diaghat <- NULL},
-                            HC2 = {diaghat <- try(dhat(demX), silent = TRUE)},
-                            HC3 = {diaghat <- try(dhat(demX), silent = TRUE)},
-                            HC4 = {diaghat <- try(dhat(demX), silent = TRUE)})
+    switch(match.arg(type), "HC0" = {diaghat <- NULL},
+                            "sss" = {diaghat <- NULL},
+                            "HC1" = {diaghat <- NULL},
+                            "HC2" = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            "HC3" = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            "HC4" = {diaghat <- try(dhat(demX), silent = TRUE)})
     df <- nT - k
     switch(match.arg(type), 
-           HC0 = {
+           "HC0" = {
             omega <- function(residuals, diaghat, df, g) residuals
-        }, sss = {
+        }, "sss" = {
             omega <- function(residuals, diaghat, df, g) residuals *
                                 sqrt(g/(g-1)*((nT-1)/(nT-k)))
-        }, HC1 = {
+        }, "HC1" = {
             omega <- function(residuals, diaghat, df, g) residuals *
                                 sqrt(length(residuals)/df)
-        }, HC2 = {
+        }, "HC2" = {
             omega <- function(residuals, diaghat, df, g) residuals /
                                 sqrt(1 - diaghat)
-        }, HC3 = {
+        }, "HC3" = {
             omega <- function(residuals, diaghat, df, g) residuals /
                                 (1 - diaghat)
-        }, HC4 = {
+        }, "HC4" = {
             omega <- function(residuals, diaghat, df, g) {
                 residuals/sqrt(1 - diaghat)^
                  pmin(4, length(residuals) *
@@ -386,67 +395,69 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     } else {
       ## outer for clustering/arellano, diag(diag(inner)) for white
       switch(match.arg(inner), 
-         cluster={
-          E <- function(u, v) outer(u, v)
-      }, white={
-          E <- function(u, v) { # was simply: diag(diag(outer(u,v)))
-              # but unfortunately we have to manage unbalanced panels
-              # in the case l!=0 (the residual vectors are different)
-              # by producing a "pseudo-diagonal" with all those obs.
-              # common to both vectors
- 
-              if(isTRUE(all.equal(names(u), names(v)))) {
-                  ## ..then keep it simple! (halves time on EmplUK ex.)
-                  n <- length(u)
-                  euv <- diag(u*v, n)
-              } else {
-                  ## calculate outer product
-                  efull <- outer(u, v)
-                  ## make matrix of zeros with same dims and names
-                  eres <- array(0, dim = dim(efull))
-                  dimnames(eres) <- dimnames(efull)
-                  ## populate "pseudo-diagonal" with values from efull
-                  for(i in 1:length(names(u))) {
-                      for(j in 1:length(names(v))) {
-                          if(names(u)[i] == names(v)[j]) {
-                              eres[i,j] <- efull[i,j]
-                          }
-                      }
-                  }
-                  euv <- eres
-              }
-              return(euv)
-          }
-      }, diagavg={
-          E <- function(u,v) {
-              ## this is the averaged version for 'white2'
-              if(isTRUE(all.equal(names(u), names(v)))) {
-                  ## ..then keep it simple
-                  n <- length(u)
-                  euv <- diag(x = sum(u*v)/n, n)
-              } else {
-                  ## do just as for 'white' and then average nonzeros:
-                  ## calculate outer product
-                  efull <- outer(u,v)
-                  ## make matrix of zeros with same dims and names
-                  eres <- array(0, dim = dim(efull))
-                  dimnames(eres) <- dimnames(efull)
-                  ## populate "pseudo-diagonal" with values from efull
-                  for(i in 1:length(names(u))) {
-                      for(j in 1:length(names(v))) {
-                          if(names(u)[i] == names(v)[j]) {
-                              eres[i,j] <- efull[i,j]
-                          }
-                      }
-                  }
-                  euv <- eres
-                  ## substitute nonzeros with average thereof
-                  euv[euv != 0] <- mean(euv[euv != 0])
-              }
-              return(euv)
-          }
-      })
-  } ## END: Definition module for E(u,v)
+         "cluster" = {
+            E <- function(u, v) outer(u, v)
+          },
+          "white" = {
+            E <- function(u, v) { # was simply: diag(diag(outer(u,v)))
+                # but unfortunately we have to manage unbalanced panels
+                # in the case l!=0 (the residual vectors are different)
+                # by producing a "pseudo-diagonal" with all those obs.
+                # common to both vectors
+   
+                if(isTRUE(all.equal(names(u), names(v)))) {
+                    ## ..then keep it simple! (halves time on EmplUK ex.)
+                    n <- length(u)
+                    euv <- diag(u*v, n)
+                } else {
+                    ## calculate outer product
+                    efull <- outer(u, v)
+                    ## make matrix of zeros with same dims and names
+                    eres <- array(0, dim = dim(efull))
+                    dimnames(eres) <- dimnames(efull)
+                    ## populate "pseudo-diagonal" with values from efull
+                    for(i in 1:length(names(u))) {
+                        for(j in 1:length(names(v))) {
+                            if(names(u)[i] == names(v)[j]) {
+                                eres[i, j] <- efull[i, j]
+                            }
+                        }
+                    }
+                    euv <- eres
+                }
+                return(euv)
+            }
+          },
+          "diagavg" = {
+            E <- function(u,v) {
+                ## this is the averaged version for 'white2'
+                if(isTRUE(all.equal(names(u), names(v)))) {
+                    ## ..then keep it simple
+                    n <- length(u)
+                    euv <- diag(x = sum(u*v)/n, n)
+                } else {
+                    ## do just as for 'white' and then average nonzeros:
+                    ## calculate outer product
+                    efull <- outer(u,v)
+                    ## make matrix of zeros with same dims and names
+                    eres <- array(0, dim = dim(efull))
+                    dimnames(eres) <- dimnames(efull)
+                    ## populate "pseudo-diagonal" with values from efull
+                    for(i in 1:length(names(u))) {
+                        for(j in 1:length(names(v))) {
+                            if(names(u)[i] == names(v)[j]) {
+                                eres[i, j] <- efull[i, j]
+                            }
+                        }
+                    }
+                    euv <- eres
+                    ## substitute nonzeros with average thereof
+                    euv[euv != 0] <- mean(euv[euv != 0])
+                }
+                return(euv)
+            }
+          })
+    } ## END: Definition module for E(u,v)
  
 
     ## try passing: function (a or b) or matrix (unconditional) to vcovG
@@ -454,34 +465,34 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## robustifying against either serial or xs intragroup dependence:
   ## if 'group' then keep current indexing, if 'time' then swap i<->t
   ## so that residuals get 'clustered' by time period instead of by
-  ## group (i.e. the vcov estimator is robust vs. xsectional dependence)
+  ## group (i.e., the vcov estimator is robust vs. xsectional dependence)
 
   ## extract indices
-    groupind <- as.numeric(attr(x$model, "index")[,1])
-    timeind  <- as.numeric(attr(x$model, "index")[,2])
+    groupind <- as.numeric(attr(x$model, "index")[ , 1L])
+    timeind  <- as.numeric(attr(x$model, "index")[ , 2L])
 
   ## adjust for 'fd' model (losing first time period)
     if(model == "fd") {
       groupi <- as.numeric(groupind)
       ## make vector =1 on first obs in each group, 0 elsewhere
       selector <- groupi - c(0, groupi[-length(groupi)])
-      selector[1] <- 1 # the first must always be 1
+      selector[1L] <- 1 # the first must always be 1
       ## eliminate first obs in time for each group
       groupind <- groupind[!selector]
       timeind <- timeind[!selector]
-      nT <- nT-n0
-      Ti <- Ti-1
-      t0 <- t0-1
+      nT <- nT - n0
+      Ti <- Ti - 1
+      t0 <- t0 - 1
     }
 
   ## set grouping indexes
     switch(match.arg(cluster),
-            group = {
+            "group" = {
               n <- n0
               t <- t0
               relevant.ind <- groupind
               lab <- timeind}, 
-            time = {
+            "time" = {
               n <- t0
               t <- n0
               relevant.ind <- timeind
@@ -503,10 +514,10 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## know who the grouping index 'g' is
 
   ## set number of clusters for Stata-like small sample correction
-  ## (if clustering, i.e. inner="cluster", then G is the cardinality of
+  ## (if clustering, i.e., inner="cluster", then G is the cardinality of
   ## the grouping index; if inner="white" it is simply the sample size)
     ## find some more elegant solution for this!
-    ## (perhaps if white then sss->HC1 but check...)
+    ## (perhaps if white then sss -> HC1 but check...)
   G <- if(match.arg(inner) == "cluster") n else nT
   uhat <- omega(uhat, diaghat, df, G)
 
@@ -530,7 +541,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
       ul <- uhat[tind[[(i-l)]]]
       names(ul) <- tlab[[(i-l)]]
       ## calculate V_yy
-      Sl[, , i-l] <- crossprod(X, E(u, ul)) %*% Xl
+      Sl[ , , i-l] <- crossprod(X, E(u, ul)) %*% Xl
     }
     
     ## in order to sum on available observations two things can be done:
@@ -551,11 +562,11 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     ## bread by standard method
     pane <- solve(crossprod(demX))
-
     ## sandwich
-    mycov <- pane %*% salame %*% pane
+    mycov <-  tcrossprod(crossprod(t(pane), salame), t(pane)) # == pane %*% salame %*% pane
     
-    # save information about cluster variable in matrix (needed for e.g. robust F test)
+    # save information about cluster variable in matrix (needed for e.g.,
+    # robust F test)
     attr(mycov, which = "cluster") <- match.arg(cluster)
     return(mycov)
 }
@@ -596,7 +607,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 # elaborate why different result for FE models (intercept)
 #' 
 #' The main use of `vcovHC` is to be an argument to other functions,
-#' e.g.  for Wald--type testing: argument `vcov.` to `coeftest()`,
+#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
 #' argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
@@ -608,6 +619,9 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' \insertCite{WIND:05;textual}{plm}, is also provided.
 #' 
 #' @name vcovHC.plm
+#' @aliases vcovHC
+#' @importFrom sandwich vcovHC
+#' @export vcovHC
 #' @param x an object of class `"plm"` which should be the result of a
 #'     random effects or a within model or a model of class `"pgmm"`
 #'     or an object of class `"pcce"`,
@@ -620,7 +634,6 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #'     the asymptotic covariance matrix of coefficients.
 #' @note The function `pvcovHC` is deprecated. Use `vcovHC` for the
 #'     same functionality.
-#' @export
 #' @author Giovanni Millo & Yves Croissant
 #' @seealso [sandwich::vcovHC()] from the \CRANpkg{sandwich}
 #'     package for weighting schemes (`type` argument).
@@ -651,7 +664,6 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' @examples
 #' 
 #' library(lmtest)
-#' library(car)
 #' data("Produc", package = "plm")
 #' zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
 #'           data = Produc, model = "random")
@@ -670,9 +682,11 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' coeftest(zz, vcov.=vcovHC(zz, method="arellano", type="HC1"))
 #' ## joint restriction test
 #' waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovHC)
+#' \dontrun{
 #' ## test of hyp.: 2*log(pc)=log(emp)
+#' library(car)
 #' linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovHC)
-#' 
+#' }
 #' ## Robust inference for CCE models
 #' data("Produc", package = "plm")
 #' ccepmod <- pcce(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model="p")
@@ -699,9 +713,9 @@ vcovHC.plm <- function(x, method=c("arellano", "white1", "white2"),
 
     ## translate arguments
     inner <- switch(match.arg(method),
-                    arellano = "cluster",
-                    white1 = "white",
-                    white2 = "diagavg")
+                    "arellano" = "cluster",
+                    "white1"   = "white",
+                    "white2"   = "diagavg")
 
     return(vcovG(x, type=type, cluster=cluster,
                         l=0, inner=inner, ...))
@@ -735,7 +749,8 @@ vcovDC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     res <- Vcx + Vct - Vw
     
-    # save information about cluster variable in matrix (needed for e.g. robust F test)
+    # save information about cluster variable in matrix (needed for e.g.,
+    # robust F test)
     attr(res, which = "cluster") <- "group-time"
     return(res)
 }
@@ -815,7 +830,7 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 # % elaborate why different result for FE models (intercept)
 #' 
 #' The main use of `vcovBK` is to be an argument to other functions,
-#' e.g.  for Wald--type testing: argument `vcov.` to `coeftest()`,
+#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
 #' argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
@@ -853,7 +868,6 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' @examples
 #' 
 #' library(lmtest)
-#' library(car)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="random")
 #' ## standard coefficient significance test
@@ -871,9 +885,11 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' coeftest(zz, vcov.=vcovBK(zz, type="HC1"))
 #' ## joint restriction test
 #' waldtest(zz, update(zz, .~.-log(emp)-unemp), vcov=vcovBK)
+#' \dontrun{
 #' ## test of hyp.: 2*log(pc)=log(emp)
+#' library(car)
 #' linearHypothesis(zz, "2*log(pc)=log(emp)", vcov.=vcovBK)
-#' 
+#' }
 vcovBK <- function(x, ...) {
     UseMethod("vcovBK")
 }
@@ -930,7 +946,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     type <- match.arg(type)
     model <- describe(x, "model")
     if (!model %in% c("random", "within", "pooling", "fd")) {
-        stop("Model has to be either random, within, pooling or fd model")
+        stop("Model has to be either \"random\", \"within\", \"pooling\", or \"fd\" model")
     }
     
   ## extract demeaned data
@@ -942,7 +958,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     if (!is.null(x$aliased) && any(x$aliased, na.rm = TRUE)) demX <- demX[, !x$aliased, drop = FALSE]
     
     ## control: IV or not (two- or one-part formula)
-    if(length(formula(x))[2] > 1) {
+    if(length(formula(x))[2L] > 1) {
         demZ <- model.matrix(x, model = model, rhs = 2, cstcovar.rm = "all")
         ## substitute (transformed) X with projection of X on Z
         ## any linear dependence in Z (demZ) is appropriately taken care of by lm.fit()
@@ -952,7 +968,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     pdim <- pdim(x)
     nT <- pdim$nT$N
     Ti <- pdim$Tint$Ti
-    k <- dim(demX)[[2]]
+    k <- dim(demX)[[2L]]
     n0 <- pdim$nT$n 
     t0 <- pdim$nT$T
     
@@ -962,29 +978,29 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## robustifying against either serial or xs intragroup dependence:
   ## if 'group' then keep current indexing, if 'time' then swap i<->t
   ## so that residuals get 'clustered' by time period instead of by
-  ## group (i.e. the vcov estimator is robust vs. xsectional dependence)
+  ## group (i.e., the vcov estimator is robust vs. xsectional dependence)
 
   ## extract indices
-    groupind <- as.numeric(attr(x$model, "index")[,1])
-    timeind  <- as.numeric(attr(x$model, "index")[,2])
+    groupind <- as.numeric(attr(x$model, "index")[ , 1L])
+    timeind  <- as.numeric(attr(x$model, "index")[ , 2L])
 
   ## Achim's fix for 'fd' model (losing first time period)
     if(model == "fd") {
       groupind <- groupind[timeind > 1]
       timeind <- timeind[timeind > 1]
-      nT <- nT-n0
-      Ti <- Ti-1
-      t0 <- t0-1
+      nT <- nT - n0
+      Ti <- Ti - 1
+      t0 <- t0 - 1
     }
 
   ## set grouping indexes
     switch(match.arg(cluster),
-            group = {
+            "group" = {
               n <- n0 # this is needed only for 'pcse'
               t <- t0 # this is needed only for 'pcse'
               relevant.ind <- groupind
               lab <- timeind },
-            time = {
+            "time" = {
               n <- t0 # this is needed only for 'pcse'
               t <- n0 # this is needed only for 'pcse'
               relevant.ind <- timeind
@@ -1006,29 +1022,37 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## (see the theoretical comments in pvcovHC)
 
     ## diaghat function for matrices
-    dhat <- function(x) {tx <- t(x)
-                         diag(crossprod(tx, solve(crossprod(x), tx)))}
+    
+    ## old:
+    # dhat <- function(x) {tx <- t(x)
+    #                      diag(crossprod(tx, solve(crossprod(x), tx)))}
+    
+    dhat <- function(x) {
+      res <-  rowSums(crossprod(t(x), solve(crossprod(x))) * x) # == diag(crossprod(tx, solve(crossprod(x), tx)))
+      return(res)
+    }
+    
 
     ## this is computationally heavy, do only if needed
-    switch(match.arg(type), HC0 = {diaghat <- NULL},
-                            HC1 = {diaghat <- NULL},
-                            HC2 = {diaghat <- try(dhat(demX), silent = TRUE)},
-                            HC3 = {diaghat <- try(dhat(demX), silent = TRUE)},
-                            HC4 = {diaghat <- try(dhat(demX), silent = TRUE)})
+    switch(match.arg(type), "HC0" = {diaghat <- NULL},
+                            "HC1" = {diaghat <- NULL},
+                            "HC2" = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            "HC3" = {diaghat <- try(dhat(demX), silent = TRUE)},
+                            "HC4" = {diaghat <- try(dhat(demX), silent = TRUE)})
     df <- nT - k
     switch(match.arg(type), 
-           HC0 = {
+           "HC0" = {
             omega <- function(residuals, diaghat, df) residuals
-        }, HC1 = {
+        }, "HC1" = {
             omega <- function(residuals, diaghat, df) residuals *
                                 sqrt(length(residuals)/df)
-        }, HC2 = {
+        }, "HC2" = {
             omega <- function(residuals, diaghat, df) residuals /
                                 sqrt(1 - diaghat)
-        }, HC3 = {
+        }, "HC3" = {
             omega <- function(residuals, diaghat, df) residuals /
                                 (1 - diaghat)
-        }, HC4 = {
+        }, "HC4" = {
             omega <- function(residuals, diaghat, df) residuals/sqrt(1 -
                 diaghat)^pmin(4, length(residuals) * diaghat/as.integer(round(sum(diaghat),
                 digits = 0)))
@@ -1071,7 +1095,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     }
 
     ## average over all omega blocks, removing NAs (apply preserving
-    ## *two* dimensions, i.e. over the third) to get the unconditional
+    ## *two* dimensions, i.e., over the third) to get the unconditional
     ## covariance matrix of errors for a group (viz. time period):
     OmegaT <- apply(tres, 1:2, mean, na.rm = TRUE)
 
@@ -1088,7 +1112,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     ## for every group, take relevant positions
     tpos <- unlabs %in% grouplabs
     OmegaTi <- OmegaT[tpos, tpos, drop = FALSE]
-    salame[,,i] <- crossprod(xi, OmegaTi) %*% xi
+    salame[ , , i] <- crossprod(xi, OmegaTi) %*% xi
   }
 
   ## meat
@@ -1098,9 +1122,10 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
   pane <- solve(crossprod(demX))
 
   ## sandwich
-  mycov <- pane %*% salame %*% pane
+  mycov <- tcrossprod(crossprod(t(pane), salame), t(pane)) # == pane %*% salame %*% pane pane %*% salame %*% pane
   
-  # save information about cluster variable in matrix (needed for e.g. robust F test)
+  # save information about cluster variable in matrix (needed for e.g.,
+  # robust F test)
   attr(mycov, which = "cluster") <- match.arg(cluster)
   return(mycov)
 }
@@ -1141,46 +1166,46 @@ vcovSCC.pcce <- vcovSCC.plm
 #' @rdname vcovHC.plm
 #' @importFrom MASS ginv
 #' @export
-vcovHC.pgmm <- function(x, ...){
+vcovHC.pgmm <- function(x, ...) {
   model <- describe(x, "model")
   transformation <- describe(x, "transformation")
   A1 <- x$A1
   A2 <- x$A2
 
-  if (transformation=="ld"){
+  if(transformation == "ld") {
 ##     yX <- lapply(x$model,function(x) rbind(diff(x),x))
 ##     residuals <-lapply(x$residuals,function(x) c(diff(x),x))
     yX <- x$model
     residuals <- x$residuals
   }
-  else{
+  else {
     yX <- x$model
     residuals <- x$residuals
   }    
   minevA2 <- min(abs(Re(eigen(A2)$values)))
   eps <- 1E-9
-  if (minevA2 < eps){
+  if(minevA2 < eps){
     SA2 <- ginv(A2)
     warning("a general inverse is used")
   }
   else SA2 <- solve(A2)
   
-  if (model=="twosteps"){
-    coef1s <- x$coefficients[[1]]
-    res1s <- lapply(yX, function(x) x[,1] - crossprod(t(x[, -1, drop=FALSE]), coef1s))
-    K <- ncol(yX[[1]])
+  if(model == "twosteps") {
+    coef1s <- x$coefficients[[1L]]
+    res1s <- lapply(yX, function(x) x[ , 1L] - crossprod(t(x[ , -1L, drop = FALSE]), coef1s))
+    K <- ncol(yX[[1L]])
     D <- c()
     WX <- Reduce("+",
-                 mapply(function(x, y) crossprod(x, y[,-1, drop=FALSE]), x$W, yX, SIMPLIFY = FALSE))
+                 mapply(function(x, y) crossprod(x, y[ , -1L, drop = FALSE]), x$W, yX, SIMPLIFY = FALSE))
     We <- Reduce("+", mapply(function(x, y) crossprod(x, y), x$W, residuals, SIMPLIFY = FALSE))
     B1 <- solve(t(WX) %*% A1 %*% WX)
     B2 <- vcov(x)
 
     vcov1s <- B1 %*% (t(WX) %*% A1 %*% SA2 %*% A1 %*% WX) %*% B1
-    for (k in 2:K){
+    for (k in 2:K) {
       exk <- mapply(
                     function(x,y){
-                      z <- crossprod(t(x[,k, drop=FALSE]),t(y))
+                      z <- crossprod(t(x[ , k, drop = FALSE]), t(y))
                       - z - t(z)
                     },
                     yX, res1s, SIMPLIFY = FALSE)
@@ -1194,10 +1219,10 @@ vcovHC.pgmm <- function(x, ...){
     }
     vcovr <- B2 + crossprod(t(D), B2) + t(crossprod(t(D), B2)) + D %*% vcov1s %*% t(D)
   }
-  else{
-    res1s <- lapply(yX, function(z) z[,1] - crossprod(t(z[, -1, drop=FALSE]), x$coefficients))
-    K <- ncol(yX[[1]])
-    WX <- Reduce("+", mapply(function(z, y) crossprod(z[,-1, drop=FALSE], y), yX, x$W, SIMPLIFY = FALSE))
+  else {
+    res1s <- lapply(yX, function(z) z[ , 1L] - crossprod(t(z[ , -1L, drop = FALSE]), x$coefficients))
+    K <- ncol(yX[[1L]])
+    WX <- Reduce("+", mapply(function(z, y) crossprod(z[ , -1L, drop = FALSE], y), yX, x$W, SIMPLIFY = FALSE))
     B1 <- vcov(x)
     vcovr <- B1 %*% (WX %*% A1 %*% SA2 %*% A1 %*% t(WX)) %*% B1
   }

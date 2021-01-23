@@ -1,0 +1,204 @@
+library(plm)
+data("Grunfeld", package = "plm")
+Grunfeld_unbalanced <- Grunfeld[1:199, ]
+
+plm_tw   <-  plm(inv ~     value + capital              , data = Grunfeld           , effect = "twoways")
+plm_tw_u <-  plm(inv ~     value + capital              , data = Grunfeld_unbalanced, effect = "twoways")
+
+plm_ow_id   <-  plm(inv ~     value + capital              , data = Grunfeld           , effect = "individual")
+plm_ow_u_id <-  plm(inv ~     value + capital              , data = Grunfeld_unbalanced, effect = "individual")
+plm_ow_ti   <-  plm(inv ~     value + capital              , data = Grunfeld           , effect = "time")
+plm_ow_u_ti <-  plm(inv ~     value + capital              , data = Grunfeld_unbalanced, effect = "time")
+
+
+# lm_tw       <- lm(inv ~ 0 + value + capital + factor(firm) + factor(year), data = Grunfeld)
+# lm_tw_int   <- lm(inv ~     value + capital + factor(firm) + factor(year), data = Grunfeld)
+# lm_tw_u     <- lm(inv ~ 0 + value + capital + factor(firm) + factor(year), data = Grunfeld_unbalanced)
+# lm_tw_u_int <- lm(inv ~     value + capital + factor(firm) + factor(year), data = Grunfeld_unbalanced)
+
+#### tw unbalanced ####
+## sum of effects
+plm_tw_u_fixef_tw <- as.numeric(fixef(plm_tw_u, "twoways"))
+
+# manual
+pred_betas <- as.numeric(tcrossprod(coef(plm_tw_u), as.matrix(plm_tw_u$model[ , -1])))
+pred_y <- plm_tw_u$model[ , 1] - plm_tw_u$residuals
+pred_effs_tw <- pred_y - pred_betas
+
+## split in a individual and in a time component 
+plm_tw_u_fixef_id_dfirst <- c(0, as.numeric(fixef(plm_tw_u, "individual", "dfirst")))
+plm_tw_u_fixef_ti_dfirst <- c(0, as.numeric(fixef(plm_tw_u, "time",       "dfirst")))
+
+plm_tw_u_fixef_id_level <- as.numeric(fixef(plm_tw_u, "individual"))
+plm_tw_u_fixef_ti_level <- as.numeric(fixef(plm_tw_u, "time"))
+
+## check the summed up effects and splits
+# effect = "twoways" (= sum) vs. manual
+stopifnot(isTRUE(all.equal(plm_tw_u_fixef_tw,
+													 as.numeric(pred_effs_tw),
+													 check.attributes = FALSE)))
+# sum = id level + time dfirst
+stopifnot(isTRUE(all.equal(plm_tw_u_fixef_tw,
+													 plm_tw_u_fixef_id_level[ index(plm_tw_u)[[1L]]] +
+													 plm_tw_u_fixef_ti_dfirst[index(plm_tw_u)[[2L]]],
+													 check.attributes = FALSE)))
+# sum = id dfirst + time level
+stopifnot(isTRUE(all.equal(plm_tw_u_fixef_tw,
+													 plm_tw_u_fixef_id_dfirst[index(plm_tw_u)[[1L]]] +
+													 plm_tw_u_fixef_ti_level[ index(plm_tw_u)[[2L]]],
+													 check.attributes = FALSE)))
+
+
+### # checks vs. a twoway model implemented via one-way augmented
+plm_tw_u_aug_id <- plm(inv ~ value + capital + factor(year), data = Grunfeld_unbalanced, effect = "individual")
+plm_tw_u_aug_ti <- plm(inv ~ value + capital + factor(firm), data = Grunfeld_unbalanced, effect = "time")
+
+plm_tw_u_aug_id_id <- as.numeric(fixef(plm_tw_u_aug_id, "individual"))
+plm_tw_u_aug_ti_ti <- as.numeric(fixef(plm_tw_u_aug_ti, "time"))
+
+# id level
+stopifnot(isTRUE(all.equal(plm_tw_u_fixef_id_level,
+													 plm_tw_u_aug_id_id,
+													 check.attributes = FALSE)))
+# time level
+stopifnot(isTRUE(all.equal(plm_tw_u_fixef_ti_level,
+													 plm_tw_u_aug_ti_ti,
+													 check.attributes = FALSE)))
+
+
+#### oneway unbalanced ####
+plm_ow_u_fixef_id_level <- as.numeric(fixef(plm_ow_u_id))
+plm_ow_u_fixef_ti_level <- as.numeric(fixef(plm_ow_u_ti))
+
+
+## checks vs. fixest::feols
+# fixest.avail <- if(!requireNamespace("fixest", quietly = TRUE)) FALSE else TRUE
+# if(fixest.avail) {
+# 	 library(fixest) # version 0.8.0
+# 	 
+# 	 # twoways (one level, one dfirst)
+# 	 feols_tw_u <- fixest::feols(inv ~ value + capital | firm + year, data = Grunfeld_unbalanced)
+# 	 stopifnot(isTRUE(all.equal(feols_tw_u$sumFE,       plm_tw_u_fixef_tw,        check.attributes = FALSE))) # sum
+# 	 stopifnot(isTRUE(all.equal(fixef(feols_tw_u)$year, plm_tw_u_fixef_ti_dfirst, check.attributes = FALSE))) # time
+# 	 stopifnot(isTRUE(all.equal(fixef(feols_tw_u)$firm, plm_tw_u_fixef_id_level,  check.attributes = FALSE))) # individual
+# 	 
+# 	 # oneway (levels)
+# 	 feols_ow_u_id <- fixest::feols(inv ~ value + capital | firm, data = Grunfeld_unbalanced)
+# 	 feols_ow_u_ti <- fixest::feols(inv ~ value + capital | year, data = Grunfeld_unbalanced)
+# 	 stopifnot(isTRUE(all.equal(fixef(feols_ow_u_id)$firm, plm_ow_u_fixef_id_level, check.attributes = FALSE))) # individual
+# 	 stopifnot(isTRUE(all.equal(fixef(feols_ow_u_ti)$year, plm_ow_u_fixef_ti_level, check.attributes = FALSE))) # time
+# }
+
+# checks vs. lfe::felm
+# lfe.avail <- if(!requireNamespace("lfe", quietly = TRUE)) FALSE else TRUE
+# if(lfe.avail) {
+# 	library(lfe) # version 2.8-5.1
+# 	
+# 	# twoways (one level, one dfirst)
+# 	# (lfe::felm's default reference is vice verse compared to fixest::feols)
+# 	felm_tw_u <- lfe::felm(inv ~ value + capital | firm + year, data = Grunfeld_unbalanced)
+# 	felm_tw_u_fixef_id <- lfe::getfe(felm_tw_u)[lfe::getfe(felm_tw_u)[["fe"]] == "firm", 1]
+# 	felm_tw_u_fixef_ti <- lfe::getfe(felm_tw_u)[lfe::getfe(felm_tw_u)[["fe"]] == "year", 1]
+# 
+# 	stopifnot(isTRUE(all.equal(felm_tw_u_fixef_id, plm_tw_u_fixef_id_dfirst, check.attributes = FALSE))) # individual
+# 	stopifnot(isTRUE(all.equal(felm_tw_u_fixef_ti, plm_tw_u_fixef_ti_level,  check.attributes = FALSE))) # time
+# 	
+# 	# oneway (levels)
+# 	felm_ow_u_id <- lfe::felm(inv ~ value + capital | firm, data = Grunfeld_unbalanced)
+# 	felm_ow_u_ti <- lfe::felm(inv ~ value + capital | year, data = Grunfeld_unbalanced)
+# 	felm_ow_u_id_fixef_id <- lfe::getfe(felm_ow_u_id)[lfe::getfe(felm_ow_u_id)[["fe"]] == "firm", 1]
+# 	felm_ow_u_ti_fixef_ti <- lfe::getfe(felm_ow_u_ti)[lfe::getfe(felm_ow_u_ti)[["fe"]] == "year", 1]
+# 	stopifnot(isTRUE(all.equal(felm_ow_u_id_fixef_id, plm_ow_u_fixef_id_level, check.attributes = FALSE))) # individual
+# 	stopifnot(isTRUE(all.equal(felm_ow_u_ti_fixef_ti, plm_ow_u_fixef_ti_level, check.attributes = FALSE))) # time
+# }
+
+#### tw balanced ####
+## sum of effects
+plm_tw_fixef_tw <- as.numeric(fixef(plm_tw, "twoways"))
+
+# manual
+bal_pred_betas <- as.numeric(tcrossprod(coef(plm_tw), as.matrix(plm_tw$model[ , -1])))
+bal_pred_y <- plm_tw$model[ , 1] - plm_tw$residuals
+bal_pred_effs_tw <- bal_pred_y - bal_pred_betas
+
+stopifnot(isTRUE(all.equal(as.numeric(bal_pred_effs_tw),
+													 plm_tw_fixef_tw,
+													 check.attributes = FALSE)))
+
+## split in a individual and in a time component 
+plm_tw_fixef_id_dfirst <- c(0, as.numeric(fixef(plm_tw, "individual", "dfirst")))
+plm_tw_fixef_ti_dfirst <- c(0, as.numeric(fixef(plm_tw, "time",       "dfirst")))
+
+plm_tw_fixef_id_level <- as.numeric(fixef(plm_tw, "individual", "level"))
+plm_tw_fixef_ti_level <- as.numeric(fixef(plm_tw, "time",       "level"))
+
+## check the summed up effects and splits
+stopifnot(isTRUE(all.equal(plm_tw_fixef_tw,
+													 plm_tw_fixef_id_level[ index(plm_tw)[[1L]]] +
+													 plm_tw_fixef_ti_dfirst[index(plm_tw)[[2L]]],
+													 check.attributes = FALSE)))
+stopifnot(isTRUE(all.equal(plm_tw_fixef_tw,
+													 plm_tw_fixef_id_dfirst[index(plm_tw)[[1L]]] +
+													 plm_tw_fixef_ti_level[ index(plm_tw)[[2L]]],
+													 check.attributes = FALSE)))
+
+### # checks vs. a twoway model implemented via one-way augmented
+plm_tw_aug_id <- plm(inv ~ value + capital + factor(year), data = Grunfeld, effect = "individual")
+plm_tw_aug_ti <- plm(inv ~ value + capital + factor(firm), data = Grunfeld, effect = "time")
+
+plm_tw_aug_id_id <- as.numeric(fixef(plm_tw_aug_id, "individual"))
+plm_tw_aug_ti_ti <- as.numeric(fixef(plm_tw_aug_ti, "time"))
+
+# id level
+stopifnot(isTRUE(all.equal(plm_tw_fixef_id_level,
+													 plm_tw_aug_id_id,
+													 check.attributes = FALSE)))
+# time level
+stopifnot(isTRUE(all.equal(plm_tw_fixef_ti_level,
+													 plm_tw_aug_ti_ti,
+													 check.attributes = FALSE)))
+
+#### oneway balanced ####
+plm_ow_id_fixef_id_level <- as.numeric(fixef(plm_ow_id))
+plm_ow_ti_fixef_ti_level <- as.numeric(fixef(plm_ow_ti))
+
+
+## checks vs. fixest::feols
+# if(fixest.avail) {
+# 	# twoways (one level, one dfirst)
+# 	feols_tw <- fixest::feols(inv ~ value + capital | firm + year, data = Grunfeld)
+# 	stopifnot(isTRUE(all.equal(feols_tw$sumFE,       plm_tw_fixef_tw,        check.attributes = FALSE))) # sum
+# 	stopifnot(isTRUE(all.equal(fixef(feols_tw)$year, plm_tw_fixef_ti_dfirst, check.attributes = FALSE))) # time
+# 	stopifnot(isTRUE(all.equal(fixef(feols_tw)$firm, plm_tw_fixef_id_level,  check.attributes = FALSE))) # individual
+# 	
+# 	# oneway (levels)
+# 	feols_ow_id <- fixest::feols(inv ~ value + capital | firm, data = Grunfeld)
+# 	feols_ow_ti <- fixest::feols(inv ~ value + capital | year, data = Grunfeld)
+# 	stopifnot(isTRUE(all.equal(fixef(feols_ow_ti)$year, plm_ow_fixef_ti_level, check.attributes = FALSE))) # time
+# 	stopifnot(isTRUE(all.equal(fixef(feols_ow_id)$firm, plm_ow_fixef_id_level,  check.attributes = FALSE))) # individual
+# }
+
+## checks vs. lfe::felm
+# if(lfe.avail) {
+# 	# twoways (one level, one dfirst)
+# 	# (lfe::felm's default reference is vice verse compared to fixest::feols)
+# 	felm_tw   <- lfe::felm(inv ~ value + capital | firm + year, data = Grunfeld)
+# 	felm_tw_fixef_id <- lfe::getfe(felm_tw)[lfe::getfe(felm_tw)[["fe"]] == "firm", 1]
+# 	felm_tw_fixef_ti <- lfe::getfe(felm_tw)[lfe::getfe(felm_tw)[["fe"]] == "year", 1]
+# 
+# 	stopifnot(isTRUE(all.equal(felm_tw_fixef_id, plm_tw_fixef_id_dfirst, check.attributes = FALSE))) # individual
+# 	stopifnot(isTRUE(all.equal(felm_tw_fixef_ti, plm_tw_fixef_ti_level,  check.attributes = FALSE))) # time
+# 	
+# 	# oneway (levels)
+# 	felm_ow_id   <- lfe::felm(inv ~ value + capital | firm, data = Grunfeld)
+# 	felm_ow_ti   <- lfe::felm(inv ~ value + capital | year, data = Grunfeld)
+# 	felm_ow_id_fixef_id <- lfe::getfe(felm_ow_id)[lfe::getfe(felm_ow_id)[["fe"]] == "firm", 1]
+# 	felm_ow_ti_fixef_ti <- lfe::getfe(felm_ow_ti)[lfe::getfe(felm_ow_ti)[["fe"]] == "year", 1]
+# 	
+# 	stopifnot(isTRUE(all.equal(felm_ow_id_fixef_id, plm_ow_id_fixef_id_level, check.attributes = FALSE))) # individual
+# 	stopifnot(isTRUE(all.equal(felm_ow_ti_fixef_ti, plm_ow_ti_fixef_ti_level, check.attributes = FALSE))) # time
+# }
+
+
+
+

@@ -16,7 +16,7 @@
 
   ## In principle, the test can be performed on the results of *any*
   ## panelmodel object. Some issues remain regarding standardization of
-  ## model output: some missing pieces are e.g. the 'model$indexes'
+  ## model output: some missing pieces are, e.g., the 'model$indexes'
   ## in ggls. ''fd'' models are also not compatible because of indexes
   ## keeping the original timespan, while data lose the first period.
 
@@ -28,7 +28,10 @@
 ## substantial optimization for speed, now fast (few seconds) on N=3000
 ## all methods pass on a pseries to pcdres()
 
-
+## make toy example
+#dati <- data.frame(ind=rep(1:7, 4), time=rep(1:4, each=7), x=rnorm(28),
+#                   group=rep(c(1,1,2,2,2,3,3), 4))
+#pdati <- pdata.frame(dati)
 
 #' Tests of cross-section dependence for panel models
 #' 
@@ -78,7 +81,7 @@
 #' the LM test.
 #' 
 #' The test on a `pseries` is the same as a test on a pooled
-#' regression model of that variable on a constant, i.e.
+#' regression model of that variable on a constant, i.e.,
 #' `pcdtest(some_pseries)` is equivalent to `pcdtest(plm(some_var ~ 1,
 #' data = some_pdata.frame, model = "pooling")` and also equivalent to
 #' `pcdtest(some_var ~ 1, data = some_data)`, where `some_var` is
@@ -175,7 +178,7 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
     if (is.null(model) && test == "bcsclm") stop("for test = 'bcsclm', set argument model = 'within'")
     mymod <- if (test != "bcsclm") plm(x, data = data, index = index, model = "pooling", ...)
               else plm(x, data = data, index = index, model = "within", ...)
-    if(is.null(model) & min(pdim(mymod)$Tint$Ti) < length(mymod$coefficients)+1) 
+    if(is.null(model) && min(pdim(mymod)$Tint$Ti) < length(mymod$coefficients)+1) 
       {
         warning("Insufficient number of observations in time to estimate heterogeneous model: using within residuals",
             call. = FALSE)
@@ -236,7 +239,7 @@ pcdtest.panelmodel <- function(x, test = c("cd", "sclm", "bcsclm", "lm", "rho", 
     test <- match.arg(test)
     model <- describe(x, "model")
     effect <- describe(x, "effect")
-    eff <- (effect == "individual" | effect == "twoways")
+    eff <- (effect == "individual" || effect == "twoways")
     if (test == "bcsclm")
       if (model != "within" || !eff) stop("for test = 'bcsclm', model x must be a within individual or twoways model")
   
@@ -409,7 +412,7 @@ pcdres <- function(tres, n, w, form, test) {
    },
    sclm = {
     CDstat        <- sqrt(1/(2*elem.num))*sum((t.ij*rho^2-1)[selector.mat])
-    pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE) # was until rev. 293: pnorm(CDstat, lower.tail=F)
+    pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE)
     names(CDstat) <- "z"
     parm          <- NULL
     testname      <- "Scaled LM test"
@@ -457,7 +460,7 @@ pcdres <- function(tres, n, w, form, test) {
 
 preshape <- function(x, na.rm = TRUE, ...) {
     ## reshapes pseries,
-    ## e.g. of residuals from a panelmodel,
+    ## e.g., of residuals from a panelmodel,
     ## in wide form
     inames <- names(attr(x, "index"))
     mres <- reshape(cbind(as.vector(x), attr(x, "index")),
@@ -465,7 +468,7 @@ preshape <- function(x, na.rm = TRUE, ...) {
                     timevar = inames[2],
                     idvar = inames[1])
     ## drop ind in first column
-    mres <- mres[ , -1]
+    mres <- mres[ , -1, drop = FALSE]
     ## reorder columns (may be scrambled depending on first
     ## available obs in unbalanced panels)
     mres <- mres[ , order(dimnames(mres)[[2]])]
@@ -519,7 +522,7 @@ cortab <- function(x, grouping, groupnames = NULL,
 
     ## make matrices of between-regions correlations
     ## (includes within correlation on diagonal)
-    ## for each pair of regions (nb: no duplicates, e.g. 3.1 but not 1.3)
+    ## for each pair of regions (nb: no duplicates, e.g., 3.1 but not 1.3)
 
     ## make w<1.n>:
     for(h in 1:length(regs)) {
@@ -573,8 +576,5 @@ cortab <- function(x, grouping, groupnames = NULL,
 }
 
 
-## make toy example
-#dati <- data.frame(ind=rep(1:7, 4), time=rep(1:4, each=7), x=rnorm(28),
-#                   group=rep(c(1,1,2,2,2,3,3), 4))
-#pdati <- pdata.frame(dati)
+
 

@@ -2,6 +2,7 @@
 % Please edit documentation in R/tool_ranfixef.R
 \name{ranef.plm}
 \alias{ranef.plm}
+\alias{ranef}
 \title{Extract the Random Effects}
 \usage{
 \method{ranef}{plm}(object, effect = NULL, ...)
@@ -40,21 +41,16 @@ data("Grunfeld", package = "plm")
 m1 <- plm(inv ~ value + capital, data = Grunfeld, model = "random")
 ranef(m1) # individual random effects
 
-# compare to random effects by ML estimation via lmer from package
-# lme4
-\dontrun{
-  library(lme4)
-  m2 <- lmer(inv ~ value + capital + (1 | firm), data = Grunfeld) 
-  cbind("plm" = ranef(m1), "lmer" = unname(ranef(m2)$firm))
-}
+# compare to random effects by ML estimation via lme from package nlme
+library(nlme)
+m2 <- lme(inv ~ value + capital, random = ~1|firm, data = Grunfeld)
+cbind("plm" = ranef(m1), "lme" = unname(ranef(m2)))
 
 # two-ways RE model, calculate individual and time random effects
 data("Cigar", package = "plm")
 tw <- plm(sales ~ pop + price, data = Cigar, model = "random", effect = "twoways")
 ranef(tw)                   # individual random effects
 ranef(tw, effect = "time")  # time random effects
-
-
 
 }
 \seealso{

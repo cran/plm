@@ -24,7 +24,7 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
   
   # Check if package 'urca' is available on local machine. We placed 'urca' 
   # in 'Suggests' rather than 'Imports' so that it is not an absolutely 
-  # required depedency.)
+  # required dependency.)
   ## Procedure for pkg check for pkg in 'Suggests' as recommended in 
   ## Wickham, R packages (http://r-pkgs.had.co.nz/description.html).
   urca <- if (!requireNamespace("urca", quietly = TRUE)) FALSE else TRUE
@@ -533,7 +533,7 @@ longrunvar <- function(x, exo = c("intercept", "none", "trend"), q = NULL){
   
   # q: lag truncation parameter: default (q == NULL) as in LLC, p. 14
   # it can be seen from LLC, table 2, that round() was used to get an
-  # integer from that formula (not, e.g. trunc)
+  # integer from that formula (not, e.g., trunc)
   T <- length(x)
   if (is.null(q)) q <- round(3.21 * T^(1/3))
   dx <- x[2:T] - x[1:(T-1)]

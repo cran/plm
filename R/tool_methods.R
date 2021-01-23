@@ -5,7 +5,7 @@
 # - vcov
 # - fitted
 # - residuals
-# - df.residuals
+# - df.residual
 # - coef
 # - print
 # - update
@@ -87,6 +87,9 @@ print.panelmodel <- function(x, digits = max(3, getOption("digits") - 2),
 #' **Examples**).
 #'
 #' @name nobs.plm
+#' @aliases nobs
+#' @importFrom stats nobs
+#' @export nobs
 #' @param object a `panelmodel` object for which the number of
 #'     total observations is to be extracted,
 #' @param \dots further arguments.
@@ -121,7 +124,7 @@ NULL
 #' @rdname nobs.plm
 #' @export
 nobs.panelmodel <- function(object, ...) {
-  if (inherits(object, "plm") | inherits(object, "panelmodel")) return(length(object$residuals))
+  if (inherits(object, "plm") || inherits(object, "panelmodel")) return(length(object$residuals))
     else stop("Input 'object' needs to be of class 'plm' or 'panelmodel'")
 }
 
@@ -500,7 +503,7 @@ plot.plm <- function(x, dx = 0.2, N = NULL, seed = 1,
 #' @rdname plm
 #' @export
 residuals.plm <- function(object, model = NULL, effect = NULL,  ...){
-    if (is.null(model) & is.null(effect)){
+    if (is.null(model) && is.null(effect)){
         model <- describe(object, "model")
         res <- object$residuals
     }

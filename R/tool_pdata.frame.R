@@ -6,16 +6,16 @@
 ## respectively the data.frame containing the index and the dimensions
 ## of the panel
 
-## pdata.frame : 
+## pdata.frame:
 ## - $<-
 ## - [
-## - $    
+## - $
 ## - [[
 ## - print
 ## - as.list
 ## - as.data.frame
 
-## pseries :
+## pseries:
 ## - print
 ## - as.matrix
 ## - plot
@@ -24,7 +24,7 @@
 ## - print.summary
 ## - is.pseries
 
-## pdim :
+## pdim:
 ## - pdim.default
 ## - pdim.data.frame
 ## - pdim.pdata.frame
@@ -33,16 +33,16 @@
 ## - pdim.pgmm
 ## - print.pdim
  
-## index :
-## - index.pindex    
+## index:
+## - index.pindex
 ## - index.pdata.frame
 ## - index.pseries
 ## - index.panelmodel
 
 fancy.row.names <- function(index, sep = "-") {
-  if (length(index) == 2) {result <- paste(index[[1]], index[[2]], sep = sep)}
+  if (length(index) == 2) {result <- paste(index[[1L]], index[[2L]], sep = sep)}
   # this in the order also used for sorting (group, id, time):
-  if (length(index) == 3) {result <- paste(index[[3]], index[[1]], index[[2]], sep = sep)}
+  if (length(index) == 3) {result <- paste(index[[3L]], index[[1L]], index[[2L]], sep = sep)}
   return(result)
 }
 
@@ -76,8 +76,11 @@ fancy.row.names <- function(index, sep = "-") {
 #' `index` attribute.  A safe way to extract the index attribute is to
 #' use the function [index()] for 'pdata.frames' (and other objects).
 #' 
-#' `as.data.frame` removes the index from the `pdata.frame` and adds
-#' it to each column.
+#' `as.data.frame` removes the index attribute from the `pdata.frame`
+#' and adds it to each column. For its argument `row.names` set to 
+#' `FALSE` row names are an integer series, `TRUE` gives "fancy" row
+#' names; if a character (with length of the resulting data frame),
+#' the row names will be the character's elements.
 #' 
 #' `as.list` behaves by default identical to
 #' [base::as.list.data.frame()] which means it drops the
@@ -97,10 +100,11 @@ fancy.row.names <- function(index, sep = "-") {
 #' @param drop.index logical, indicates whether the indexes are to be
 #'     excluded from the resulting pdata.frame,
 #' @param optional see [as.data.frame()],
-#' @param row.names `NULL` or logical, indicates whether ``fancy'' row
-#'     names (a combination of individual index and time index) are to
+#' @param row.names `NULL` or logical, indicates whether "fancy" row
+#'     names (combination of individual index and time index) are to
 #'     be added to the returned (p)data.frame (`NULL` and `FALSE` have
-#'     the same meaning),
+#'     the same meaning for `pdata.frame`; for
+#'     `as.data.frame.pdata.frame` see Details),
 #' @param stringsAsFactors logical, indicating whether character
 #'     vectors are to be converted to factors,
 #' @param replace.non.finite logical, indicating whether values for
@@ -170,6 +174,11 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
         stop("'index' can be of length 3 at the most (one index variable for individual, time, group)")
     }
     
+    # prune input: x is supposed to be a plain data.frame. Other classes building
+    # on top of R's data frame can inject attributes etc. that confuse functions
+    # in pkg plm.
+    x <- data.frame(x)
+    
     # if requested: coerce character vectors to factors
     if (stringsAsFactors) {
         x.char <- names(x)[sapply(x, is.character)]
@@ -233,7 +242,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     # grouping variable, this should be the third element of the index
     # vector or any "group" named element of this vector
     group.name <- NULL
-    if (! is.null(names(index)) | length(index == 3)){
+    if (! is.null(names(index)) || length(index == 3)){
         if (! is.null(names(index))){
             grouppos <- match("group", names(index))
             if (! is.na(grouppos)){
@@ -261,14 +270,14 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     # if the length of index is 2, the first element is id, the second
     # is time
     if (length(index) == 2){
-        id <- index[1]
-        time <- index[2]
+        id <- index[1L]
+        time <- index[2L]
     }
     # if both id and time are NULL, the names of the index are the first
     # two names of x
-    if (is.null(id) & is.null(time)){
-        id.name <- names(x)[1]
-        time.name <- names(x)[2]
+    if (is.null(id) && is.null(time)){
+        id.name <- names(x)[1L]
+        time.name <- names(x)[2L]
     }
     else{
         id.name <- id
@@ -299,8 +308,8 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
         }
     }
     else{
-        # id.name is not numeric, i.e. individual index is supplied
-        if (!id.name %in% names(x)) stop(paste("variable ",id.name," does not exist (individual index)", sep=""))
+        # id.name is not numeric, i.e., individual index is supplied
+        if (!id.name %in% names(x)) stop(paste("variable ", id.name, " does not exist (individual index)", sep=""))
         
         if (is.factor(x[[id.name]])){
             id <- x[[id.name]] <- x[[id.name]][drop=TRUE] # drops unused levels of factor
@@ -313,7 +322,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
             # if no time index is supplied, add time variable
             # automatically order data by individual index, necessary
             # for the automatic addition of time index to be
-            # succesfull if no time index was supplied
+            # successful if no time index was supplied
             x <- x[order(x[[id.name]]), ]
             Ti <- table(x[[id.name]]) # was: Ti <- table(id)
             n <- length(Ti)
@@ -378,11 +387,11 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     test_doub <- table(index[[1]], index[[2]], useNA = "ifany")
     if (anyNA(colnames(test_doub)) || anyNA(rownames(test_doub)))
         cat(paste0("at least one couple (id-time) has NA in at least one index dimension",
-                   "in resulting pdata.frame\n to find out which, use e.g.",
+                   "in resulting pdata.frame\n to find out which, use e.g., ",
                    "table(index(your_pdataframe), useNA = \"ifany\")\n"))
     if (any(as.vector(test_doub[!is.na(rownames(test_doub)), !is.na(colnames(test_doub))]) > 1))
         warning(paste("duplicate couples (id-time) in resulting pdata.frame\n to find out which,",
-                      "use e.g. table(index(your_pdataframe), useNA = \"ifany\")"))
+                      "use e.g., table(index(your_pdataframe), useNA = \"ifany\")"))
     
     if (row.names) {
         attr(x, "row.names") <- fancy.row.names(index)
@@ -401,7 +410,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
 
 #' @rdname pdata.frame
 #' @export
-"$<-.pdata.frame" <- function(x, name, value){
+"$<-.pdata.frame" <- function(x, name, value) {
   if (inherits(value, "pseries")){
     # remove pseries features before adding value as a column to pdata.frame
     if (length(class(value)) == 1) value <- unclass(value)
@@ -517,12 +526,12 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     }
     
     # delete attribute with old index first:
-    # this preseves the order of the attributes because 
+    # this preserves the order of the attributes because 
     # order of non-standard attributes is scrambled by R's data.frame subsetting with `[.`
     # (need to add new index later anyway)
     attr(x, "index") <- NULL
     
-    # Set class to "data.frame" first to avoid coering which enlarges the (p)data.frame 
+    # Set class to "data.frame" first to avoid coercing which enlarges the (p)data.frame 
     # (probably by as.data.frame.pdata.frame).
     # Coercing is the built-in behaviour for extraction from data.frames by "[." (see ?`[.data.frame`) 
     # and it seems this cannot be avoided; thus we need to make sure, not to have any coercing going on
@@ -545,7 +554,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     
     mydata <- eval(sc_mod)
 
-    if (is.null(dim(mydata))){
+    if (is.null(dim(mydata))) {
       # subsetting returned a vector or a factor or NULL (nothing more is left)
       if (is.null(mydata)) {
         # since R 3.4.0 NULL cannot have attributes, so special case it
@@ -569,7 +578,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
 
 #' @rdname pdata.frame
 #' @export
-"[[.pdata.frame" <- function(x, y){
+"[[.pdata.frame" <- function(x, y) {
   index <- attr(x, "index")
   attr(x, "index") <- NULL
   class(x) <- "data.frame"
@@ -588,13 +597,13 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
 
 #' @rdname pdata.frame
 #' @export
-"$.pdata.frame" <- function(x, y){
+"$.pdata.frame" <- function(x, y) {
     "[[.pdata.frame"(x, paste(as.name(y)))
 }
 
 #' @rdname pdata.frame
 #' @export
-print.pdata.frame <- function(x, ...){
+print.pdata.frame <- function(x, ...) {
   attr(x, "index") <- NULL
   class(x) <- "data.frame"
   # This is a workaround: print.data.frame cannot handle
@@ -618,7 +627,7 @@ print.pdata.frame <- function(x, ...){
 #
 #  By setting argument keep.attributes = TRUE, the attributes of the pdata.frame
 #  are preserved by as.list.pdata.frame: a list of pseries is returned
-#  and lapply can be used as usual, now working on a list of pseries, e.g.
+#  and lapply can be used as usual, now working on a list of pseries, e.g.,
 #    lapply(as.list(pdata.frame[ , your_cols], keep.attributes), lag)
 #  works as expected.
 
@@ -648,38 +657,49 @@ as.list.pdata.frame <- function(x, keep.attributes = FALSE, ...) {
 
 #' @rdname pdata.frame
 #' @export
-as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, keep.attributes = TRUE, ...){
+as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, keep.attributes = TRUE, ...) {
     index <- attr(x, "index")
 
-     if (!keep.attributes) {
-       attr(x, "index") <- NULL
-       class(x) <- "data.frame"
-       rownames(x) <- NULL
-     } else {
-      # make each column a pseries
+    if(!keep.attributes) {
+      attr(x, "index") <- NULL
+      class(x) <- "data.frame"
+      rownames(x) <- NULL
+    } else {
+      # make each column a pseries (w/o names)
       x <- lapply(x,
                   function(z){
-                  #     names(z) <- row.names(x) # it does not seem possible to keep the names in the 'pseries' because the call to data.frame later deletes the names 
+                  #     names(z) <- row.names(x) # it is not possible to keep the names in the 'pseries'/
+                                                 # in columns because the call to data.frame later deletes
+                                                 # the names attribute of columns (definition of data frame)
                     attr(z, "index") <- index
                     class(z) <- base::union("pseries", class(z))
                     return(z)
-                  }
-      )
+                  })
     }
     
-    if (is.null(row.names) || row.names == FALSE) {
-        x <- data.frame(x)
+    if(is.null(row.names)) {
+      # do as base::as.data.frame does for NULL
+      x <- as.data.frame(x, row.names = NULL)
     } else {
-        if (row.names == TRUE) { # set fancy row names
-            x <- data.frame(x)
-            row.names(x) <- fancy.row.names(index)
-            # using row.names(x) <- "something" is safer (does not allow
-            # duplicate row.names) than # attr(x,"row.names") <- "something"
+      if(is.logical(row.names) && row.names == FALSE) {
+        # set row names to integer sequence 1, 2, 3, ...
+        x <- as.data.frame(x)
+        row.names(x) <- NULL
+      }
+      if(is.logical(row.names) && row.names == TRUE) {
+        # set fancy row names
+        x <- as.data.frame(x)
+        row.names(x) <- fancy.row.names(index)
+      }
+      if(is.character(row.names)) {
+        x <- as.data.frame(x)
+        row.names(x) <- row.names
+      }
+      if(!(isTRUE(row.names) || isFALSE(row.names) || is.character(row.names)))
+        stop("argument 'row.names' is none of NULL, FALSE, TRUE, and not a character")
+      # using row.names(x) <- "something" is safer (does not allow
+      # duplicate row.names) than # attr(x,"row.names") <- "something"
     }
-    ## not implemented: if row.names is a character vector, row.names
-    ## could also be passed here to base::data.frame, see
-    ## ?base::data.frame
-    } 
     return(x)
 }
 
@@ -739,7 +759,7 @@ is.pseries <- function(object) {
   if (!inherits(object, "pseries")) res <- FALSE
   # class 'pseries' is always on top of basic class: min 2 classes needed, if 2 classes "pseries" needs to be first entry
   if (!length(class(object)) >= 2L) res <- FALSE
-  if (length(class(object)) == 2L & class(object)[1] != "pseries") res <- FALSE
+  if (length(class(object)) == 2L && class(object)[1] != "pseries") res <- FALSE
   if (!has.index(object)) res <- FALSE
   if (!any(c(is.numeric(object), is.factor(object), is.logical(object), 
              is.character(object), is.complex(object)))) {
@@ -823,13 +843,13 @@ is.pseries <- function(object) {
 #'          model="random", subset = gsp > 5000)
 #' pdim(z)
 #' 
-pdim <- function(x, ...){
+pdim <- function(x, ...) {
   UseMethod("pdim")
 }
 
 #' @rdname pdim
 #' @export
-pdim.default <- function(x, y, ...){
+pdim.default <- function(x, y, ...) {
   if (length(x) != length(y)) stop("The length of the two vectors differs\n")
   x <- x[drop = TRUE] # drop unused factor levels so that table() 
   y <- y[drop = TRUE] # gives only needed combinations
@@ -856,56 +876,56 @@ pdim.default <- function(x, y, ...){
 
 #' @rdname pdim
 #' @export
-pdim.data.frame <- function(x, index = NULL, ...){
+pdim.data.frame <- function(x, index = NULL, ...) {
   x <- pdata.frame(x, index)
   index <- attr(x, "index")
-  id <- index[[1]]
-  time <- index[[2]]
+  id <- index[[1L]]
+  time <- index[[2L]]
   pdim(id,time)
 }
 
 #' @rdname pdim
 #' @export
-pdim.pdata.frame <- function(x,...){
+pdim.pdata.frame <- function(x,...) {
   index <- attr(x, "index")
-  pdim(index[[1]],index[[2]])
+  pdim(index[[1L]], index[[2L]])
 }
 
 #' @rdname pdim
 #' @export
 pdim.pseries <- function(x,...) {
   index <- attr(x, "index")
-  pdim(index[[1]], index[[2]])
+  pdim(index[[1L]], index[[2L]])
 }
 
 #' @rdname pdim
 #' @export
-pdim.panelmodel <- function(x, ...){
+pdim.panelmodel <- function(x, ...) {
   x <- model.frame(x)
   pdim(x)
 }
 
 #' @rdname pdim
 #' @export
-pdim.pgmm <- function(x, ...){
+pdim.pgmm <- function(x, ...) {
 ## pgmm is also class panelmodel, but take advantage of the pdim attribute in it
   attr(x, "pdim")
 }
 
 #' @rdname pdim
 #' @export
-print.pdim <- function(x, ...){
+print.pdim <- function(x, ...) {
   if (x$balanced){
       cat("Balanced Panel: ")
-      cat(paste("n = ",x$nT$n,", ",sep=""))
-      cat(paste("T = ",x$nT$T,", ",sep=""))
-      cat(paste("N = ",x$nT$N,"\n",sep=""))
+      cat(paste("n = ", x$nT$n, ", ", sep=""))
+      cat(paste("T = ", x$nT$T, ", ", sep=""))
+      cat(paste("N = ", x$nT$N, "\n", sep=""))
   }
   else{
       cat("Unbalanced Panel: ")
-      cat(paste("n = ",x$nT$n,", ",sep=""))
-      cat(paste("T = ",min(x$Tint$Ti),"-",max(x$Tint$Ti),", ",sep=""))
-      cat(paste("N = ",x$nT$N,"\n",sep=""))
+      cat(paste("n = ", x$nT$n,", ", sep=""))
+      cat(paste("T = ", min(x$Tint$Ti), "-", max(x$Tint$Ti), ", ", sep=""))
+      cat(paste("N = ", x$nT$N, "\n", sep=""))
   }
 }
 
@@ -933,6 +953,9 @@ print.pdim <- function(x, ...){
 #' frame was constructed with such).)
 #' 
 #' @name index.plm
+#' @aliases index
+#' @importFrom zoo index 
+#' @export index
 #' @param x an object of class `"pindex"`, `"pdata.frame"`,
 #'     `"pseries"` or `"panelmodel"`,
 #' @param which the index(es) to be extracted (see details),
@@ -959,12 +982,13 @@ print.pdim <- function(x, ...){
 #' index(pProduc, 3)
 #' index(pProduc, "region")
 #' index(pProduc, "group")
-#' 
+#'
 NULL
 
 #' @rdname index.plm
 #' @export
-index.pindex <- function(x, which = NULL, ...){
+index.pindex <- function(x, which = NULL, ...) {
+
     if (is.null(which)) {
       # if no specific index is requested, select all index variables
       which <- names(x)
@@ -979,37 +1003,47 @@ index.pindex <- function(x, which = NULL, ...){
     if (is.numeric(which)){
         if (! all(which %in% 1:3))
             stop("if integer, argument 'which' should contain only 1, 2 and/or 3")
-        if (ncol(x) == 2 & 3 %in% which) stop("no grouping variable, only 2 indexes")
+        if (ncol(x) == 2 && 3 %in% which) stop("no grouping variable, only 2 indexes")
         which <- names(x)[which]
     }
     nindex <- names(x)
     gindex <- c("id", "time")
     if (ncol(x) == 3) gindex <- c(gindex, "group")
     if (any(! which %in% c(nindex, gindex))) stop("unknown variable")
-    if ("id"    %in% which) which[which == "id"]    <- names(x)[1]
-    if ("time"  %in% which) which[which == "time"]  <- names(x)[2]
-    if (ncol(x) == 3) if ("group" %in% which) which[which == "group"] <- names(x)[3]
+    if ("id"    %in% which) {
+      which[which == "id"]    <- names(x)[1L]
+      if("id" %in% names(x)[-1L]) warning("an index variable not being the invidiual index is called 'id'. Likely, any results are distorted.") 
+    }
+    if ("time"  %in% which) {
+      which[which == "time"]  <- names(x)[2L]
+      if("time" %in% names(x)[-2L]) warning("an index variable not being the time index is called 'time'. Likely, any results are distorted.") 
+    }
+    if (ncol(x) == 3) if ("group" %in% which) {
+      which[which == "group"] <- names(x)[3L]
+      if("group" %in% names(x)[-3L]) warning("an index variable not being the group index is called 'group'. Likely, any results are distorted.") 
+    }
+    
     result <- x[ , which]
     result
 }
 
 #' @rdname index.plm
 #' @export
-index.pdata.frame <- function(x, which = NULL, ...){
+index.pdata.frame <- function(x, which = NULL, ...) {
   anindex <- attr(x, "index")
   index(x = anindex, which = which)
 }
 
 #' @rdname index.plm
 #' @export
-index.pseries <- function(x, which = NULL, ...){
+index.pseries <- function(x, which = NULL, ...) {
   anindex <- attr(x, "index")
   index(x = anindex, which = which)
 }
   
 #' @rdname index.plm
 #' @export
-index.panelmodel <- function(x, which = NULL, ...){
+index.panelmodel <- function(x, which = NULL, ...) {
   anindex <- attr(x$model, "index")
   index(x = anindex, which = which)
 }

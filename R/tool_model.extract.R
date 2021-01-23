@@ -54,18 +54,18 @@
 #' pGrunfeld <- pdata.frame(Grunfeld)
 #' 
 #' # then make a model frame from a pFormula and a pdata.frame
-#' #pform <- pFormula(inv ~ value + capital)
-#' #mf <- model.frame(pform, data = pGrunfeld)
+##pform <- pFormula(inv ~ value + capital)
+##mf <- model.frame(pform, data = pGrunfeld)
 #' form <- inv ~ value
 #' mf <- model.frame(pGrunfeld, form)
 #' 
 #' # then construct the (transformed) model matrix (design matrix)
 #' # from formula and model frame
-#' #modmat <- model.matrix(pform, data = mf, model = "within")
+##modmat <- model.matrix(pform, data = mf, model = "within")
 #' modmat <- model.matrix(mf, model = "within")
 #' 
 #' ## retrieve model frame and model matrix from an estimated plm object
-#' #fe_model <- plm(pform, data = pGrunfeld, model = "within")
+## #fe_model <- plm(pform, data = pGrunfeld, model = "within")
 #' fe_model <- plm(form, data = pGrunfeld, model = "within")
 #' model.frame(fe_model)
 #' model.matrix(fe_model)
@@ -85,9 +85,9 @@ model.frame.pdata.frame <- function(formula, data = NULL, ...,
     if (is.null(rhs)) rhs <- 1:(length(formula)[2])
     if (is.null(lhs)) lhs <- ifelse(length(formula)[1] > 0, 1, 0)
     index <- attr(pdata, "index")
-    mf <- model.frame(formula, as.data.frame(pdata), ...,
+    mf <- model.frame(formula, as.data.frame(pdata, row.names = FALSE), ..., # NB need row.names = FALSE to ensure mf has integer sequence as row names
                       lhs = lhs, rhs = rhs, dot = dot)
-    index <- index[as.numeric(rownames(mf)), ]
+    index <- index[as.numeric(rownames(mf)), ] # reduce index down to rows left in model frame
     index <- droplevels(index)
     class(index) <- c("pindex", "data.frame")
     structure(mf,
@@ -127,8 +127,6 @@ model.matrix.plm <- function(object, ...){
     }
 }
 
-Mean <- function(x) matrix(.colMeans(x, nrow(x), ncol(x)),
-                           nrow(x), ncol(x), byrow = TRUE)
 
 #' @rdname model.frame.pdata.frame
 #' @export
@@ -161,7 +159,7 @@ model.matrix.pdata.frame <- function(object,
     index <- index(data)
     if (anyNA(index[[1]])) stop("NA in the individual index variable")
     attr(X, "index") <- index
-    if (effect == "twoways" & model %in% c("between", "fd"))
+    if (effect == "twoways" && model %in% c("between", "fd"))
         stop("twoways effect only relevant for within, random and pooling models")
     if (model == "within") X <- Within(X, effect)
     if (model == "Sum") X <- Sum(X, effect)
@@ -175,7 +173,7 @@ model.matrix.pdata.frame <- function(object,
         if (effect %in% c("time", "individual")) X <- X - theta * Between(X, effect)
         if (effect == "nested") X <- X - theta$id * Between(X, "individual") -
                                     theta$gp * Between(X, "group")
-        if (effect == "twoways" & balanced)
+        if (effect == "twoways" && balanced)
             X <- X - theta$id * Between(X, "individual") -
                 theta$time * Between(X, "time") + theta$total * Mean(X)
     }
@@ -249,7 +247,7 @@ model.matrix.pdata.frame <- function(object,
 #' # retrieve (transformed) response directly from model frame
 #' resp_mf <- pmodel.response(mf, model = "within", effect = "individual")
 #' 
-#' # retrieve (transformed) response from a plm object, i.e. an estimated model
+#' # retrieve (transformed) response from a plm object, i.e., an estimated model
 #' fe_model <- plm(form, data = pGrunfeld, model = "within")
 #' pmodel.response(fe_model)
 #' 
@@ -302,14 +300,14 @@ pmodel.response.formula <- function(object, data, ...){
     theta <- dots$theta
     if (is.null(model)) model <- "pooling"
     if (is.null(effect)) effect <- "individual"
-    if (model == "random" & is.null(theta)) stop("the theta argument is mandatory")
+    if (model == "random" && is.null(theta)) stop("the theta argument is mandatory")
     y <- model.response(data)
     ptransform(y, model = model, effect = effect, theta = theta)
 }
 
 ptransform <- function(x, model = NULL, effect = NULL, theta = NULL, ...){
     if (model == "pooling") return(x)
-    if (effect == "twoways" & model %in% c("between", "fd"))
+    if (effect == "twoways" && model %in% c("between", "fd"))
         stop("twoways effect only relevant for within, random and pooling models")
     balanced <- is.pbalanced(x) # need to check this right here as long as x is a pseries
     if (model == "within") x <- Within(x, effect)
@@ -321,7 +319,7 @@ ptransform <- function(x, model = NULL, effect = NULL, theta = NULL, ...){
         if (effect %in% c("time", "individual")) x <- x - theta * Between(x, effect)
         if (effect == "nested") x <- x - theta$id * Between(x, "individual") -
                                     theta$gp * Between(x, "group")
-        if (effect == "twoways" & balanced)
+        if (effect == "twoways" && balanced)
             x <- x - theta$id * Between(x, "individual") -
                 theta$time * Between(x, "time") + theta$total * mean(x)
     }

@@ -227,9 +227,11 @@ pht <- function(formula, data, subset, na.action, model = c("ht", "am", "bms"), 
   mf <- match.call()
   
   if (length(model) == 1 && model == "bmc") {
-    # accept "bmc" (a long-standing typo) for Breusch-Mizon-Schmidt due to backward compatibility
+    # catch "bmc" (a long-standing typo) for Breusch-Mizon-Schmidt due to backward compatibility
+  	# error since 2020-12-31 (R-Forge), was a warning before
+  	# remove catch at some point in the future
     model <- "bms"
-    warning("Use of model = \"bmc\" discouraged, set to \"bms\" for Breusch-Mizon-Schmidt instrumental variable transformation")
+    stop("Use of model = \"bmc\" disallowed, set to \"bms\" for Breusch-Mizon-Schmidt instrumental variable transformation")
   }
   model <- match.arg(model)
   # compute the model.frame using plm with model = NA
@@ -687,7 +689,7 @@ model.matrix.pFormula <- function(object, data,
     index <- index(data)
     if (anyNA(index[[1]])) stop("NA in the individual index variable")
     attr(X, "index") <- index
-    if (effect == "twoways" & model %in% c("between", "fd"))
+    if (effect == "twoways" && model %in% c("between", "fd"))
         stop("twoways effect only relevant for within, random and pooling models")
     if (model == "within") X <- Within(X, effect)
     if (model == "Sum") X <- Sum(X, effect)
@@ -701,7 +703,7 @@ model.matrix.pFormula <- function(object, data,
         if (effect %in% c("time", "individual")) X <- X - theta * Between(X, effect)
         if (effect == "nested") X <- X - theta$id * Between(X, "individual") -
                                     theta$gp * Between(X, "group")
-        if (effect == "twoways" & balanced)
+        if (effect == "twoways" && balanced)
             X <- X - theta$id * Between(X, "individual") -
                 theta$time * Between(X, "time") + theta$total * Mean(X)
     }

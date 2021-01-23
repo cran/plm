@@ -51,68 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
   div.column{display: inline-block; vertical-align: top; width: 50%;}
   div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
   ul.task-list{list-style: none;}
-      pre > code.sourceCode { white-space: pre; position: relative; }
-      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-      pre > code.sourceCode > span:empty { height: 1.2em; }
-      code.sourceCode > span { color: inherit; text-decoration: inherit; }
-      div.sourceCode { margin: 1em 0; }
-      pre.sourceCode { margin: 0; }
-      @media screen {
-      div.sourceCode { overflow: auto; }
-      }
-      @media print {
-      pre > code.sourceCode { white-space: pre-wrap; }
-      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-      }
-      pre.numberSource code
-        { counter-reset: source-line 0; }
-      pre.numberSource code > span
-        { position: relative; left: -4em; counter-increment: source-line; }
-      pre.numberSource code > span > a:first-child::before
-        { content: counter(source-line);
-          position: relative; left: -1em; text-align: right; vertical-align: baseline;
-          border: none; display: inline-block;
-          -webkit-touch-callout: none; -webkit-user-select: none;
-          -khtml-user-select: none; -moz-user-select: none;
-          -ms-user-select: none; user-select: none;
-          padding: 0 4px; width: 4em;
-          color: #aaaaaa;
-        }
-      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-      div.sourceCode
-        {   }
-      @media screen {
-      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-      }
-      code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-      code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-      code span.at { color: #7d9029; } /* Attribute */
-      code span.bn { color: #40a070; } /* BaseN */
-      code span.bu { } /* BuiltIn */
-      code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-      code span.ch { color: #4070a0; } /* Char */
-      code span.cn { color: #880000; } /* Constant */
-      code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-      code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-      code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-      code span.dt { color: #902000; } /* DataType */
-      code span.dv { color: #40a070; } /* DecVal */
-      code span.er { color: #ff0000; font-weight: bold; } /* Error */
-      code span.ex { } /* Extension */
-      code span.fl { color: #40a070; } /* Float */
-      code span.fu { color: #06287e; } /* Function */
-      code span.im { } /* Import */
-      code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-      code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-      code span.op { color: #666666; } /* Operator */
-      code span.ot { color: #007020; } /* Other */
-      code span.pp { color: #bc7a00; } /* Preprocessor */
-      code span.sc { color: #4070a0; } /* SpecialChar */
-      code span.ss { color: #bb6688; } /* SpecialString */
-      code span.st { color: #4070a0; } /* String */
-      code span.va { color: #19177c; } /* Variable */
-      code span.vs { color: #4070a0; } /* VerbatimString */
-      code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
     </style>
 
 
@@ -214,6 +152,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     width: 90%;
   }
 </style>
+
 
 
 <style type="text/css">body {
@@ -460,7 +399,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <!--
 The hypotheses on parameters and error terms (and hence the choice of
 the most appropriate estimator) are usually tested by means of: *pooling*
-tests to check poolability, i.e. the hypothesis that the
+tests to check poolability, i.e., the hypothesis that the
 same coefficients apply across all individuals; and random effects
 tests, comparing the null of spherical residuals with the alternative
 of group (time) specific effects in the error term. If the homogeneity
@@ -475,7 +414,7 @@ screening tests or robust diagnostics are needed.
 -->
 <p>The hypotheses on parameters and error terms (and hence the choice of the most appropriate estimator) are usually tested by means of:</p>
 <ul>
-<li><em>pooling</em> tests to check poolability, i.e. the hypothesis that the same coefficients apply across all individuals,</li>
+<li><em>pooling</em> tests to check poolability, i.e., the hypothesis that the same coefficients apply across all individuals,</li>
 <li>if the homogeneity assumption over the coefficients is established, the next step is to establish the presence of unobserved effects, comparing the null of spherical residuals with the alternative of group (time) specific effects in the error term,</li>
 <li>the choice between fixed and random effects specifications is based on Hausman-type tests, comparing the two estimators under the null of no significant difference: if this is not rejected, the more efficient random effects estimator is chosen,</li>
 <li>even after this step, departures of the error structure from sphericity can further affect inference, so that either screening tests or robust diagnostics are needed.</li>
@@ -509,7 +448,7 @@ moments (GMM) framework.
 <h3>Estimation interface</h3>
 <p><code>plm</code> provides various functions for estimation, among them:</p>
 <ul>
-<li><code>plm</code>: estimation of the basic panel models, <em>i.e.</em> within, between and random effect models. Models are estimated using the <code>lm</code> function to transformed data,</li>
+<li><code>plm</code>: estimation of the basic panel models, <em>i.e.</em>, within, between and random effect models. Models are estimated using the <code>lm</code> function to transformed data,</li>
 <li><code>pvcm</code>: estimation of models with variable coefficients,</li>
 <li><code>pgmm</code>: estimation of generalized method of moments models,</li>
 <li><code>pggls</code>: estimation of general feasible generalized least squares models,</li>
@@ -519,8 +458,8 @@ moments (GMM) framework.
 </ul>
 <p>The interface of these functions is consistent with the <code>lm()</code> function. Namely, their first two arguments are <code>formula</code> and <code>data</code> (which should be a <code>data.frame</code> and is mandatory). Three additional arguments are common to these functions:</p>
 <ul>
-<li><code>index</code>: this argument enables the estimation functions to identify the structure of the data, <em>i.e.</em> the individual and the time period for each observation,</li>
-<li><code>effect</code>: the kind of effects to include in the model, <em>i.e.</em> individual effects, time effects or both<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>,</li>
+<li><code>index</code>: this argument enables the estimation functions to identify the structure of the data, <em>i.e.</em>, the individual and the time period for each observation,</li>
+<li><code>effect</code>: the kind of effects to include in the model, <em>i.e.</em>, individual effects, time effects or both<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>,</li>
 <li><code>model</code>: the kind of model to be estimated, most of the time a model with fixed effects or a model with random effects.</li>
 </ul>
 <p>The results of these four functions are stored in an object which class has the same name of the function. They all inherit from class <code>panelmodel</code>. A <code>panelmodel</code> object contains: <code>coefficients</code>, <code>residuals</code>, <code>fitted.values</code>, <code>vcov</code>, <code>df.residual</code> and <code>call</code> and functions that extract these elements are provided.</p>
@@ -547,7 +486,7 @@ Wooldridge-type serial correlation tests.
   (\#eq:naive)
   \hat{\beta}=(X^\top  \hat{V}^{-1} X)^{-1} (X^\top  \hat{V}^{-1} y)
 \end{equation}\]</span></p>
-<p>Nevertheless, in practice plain computation of <span class="math inline">\(\hat{\beta}\)</span> has long been an intractable problem even for moderate-sized data sets because of the need to invert the <span class="math inline">\(N\times N\)</span> <span class="math inline">\(\hat{V}\)</span> matrix. With the advances in computer power, this is no more so, and it is possible to program the “naive” estimator @ref(eq:naive) in <code>R</code> with standard matrix algebra operators and have it working seamlessly for the standard “guinea pigs”, e.g. the Grunfeld data. Estimation with a couple of thousands of data points also becomes feasible on a modern machine, although excruciatingly slow and definitely not suitable for everyday econometric practice. Memory limits would also be very near because of the storage needs related to the huge <span class="math inline">\(\hat{V}\)</span> matrix. An established solution exists for the random effects model which reduces the problem to an ordinary least squares computation.</p>
+<p>Nevertheless, in practice plain computation of <span class="math inline">\(\hat{\beta}\)</span> has long been an intractable problem even for moderate-sized data sets because of the need to invert the <span class="math inline">\(N\times N\)</span> <span class="math inline">\(\hat{V}\)</span> matrix. With the advances in computer power, this is no more so, and it is possible to program the “naive” estimator @ref(eq:naive) in <code>R</code> with standard matrix algebra operators and have it working seamlessly for the standard “guinea pigs”, e.g., the Grunfeld data. Estimation with a couple of thousands of data points also becomes feasible on a modern machine, although excruciatingly slow and definitely not suitable for everyday econometric practice. Memory limits would also be very near because of the storage needs related to the huge <span class="math inline">\(\hat{V}\)</span> matrix. An established solution exists for the random effects model which reduces the problem to an ordinary least squares computation.</p>
 <div id="the-quasidemeaning-framework" class="section level3">
 <h3>The (quasi–)demeaning framework</h3>
 <p>The estimation methods for the basic models in panel data econometrics, the pooled OLS, random effects and fixed effects (or within) models, can all be described inside the OLS estimation framework. In fact, while pooled OLS simply pools data, the standard way of estimating fixed effects models with, say, group (time) effects entails transforming the data by subtracting the average over time (group) to every variable, which is usually termed <em>time-demeaning</em>. In the random effects case, the various feasible GLS estimators which have been put forth to tackle the issue of serial correlation induced by the group-invariant random effect have been proven to be equivalent (as far as estimation of <span class="math inline">\(\beta\)</span>s is concerned) to OLS on <em>partially demeaned</em> data, where partial demeaning is defined as:</p>
@@ -752,12 +691,10 @@ Wooldridge-type serial correlation tests.
 <p>In case of a two-ways effect model, an additional argument <code>effect</code> is required to extract fixed effects:</p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true"></a>grun.twfe &lt;-<span class="st"> </span><span class="kw">plm</span>(inv<span class="op">~</span>value<span class="op">+</span>capital, <span class="dt">data=</span>Grunfeld, <span class="dt">model=</span><span class="st">&quot;within&quot;</span>, <span class="dt">effect=</span><span class="st">&quot;twoways&quot;</span>)</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true"></a><span class="kw">fixef</span>(grun.twfe, <span class="dt">effect=</span><span class="st">&quot;time&quot;</span>)</span></code></pre></div>
-<pre><code>##     1935     1936     1937     1938     1939     1940     1941     1942 
-##  -32.836  -52.034  -73.526  -72.063 -102.307  -77.071  -51.641  -53.976 
-##     1943     1944     1945     1946     1947     1948     1949     1950 
-##  -75.814  -75.935  -88.519  -64.006  -72.229  -76.553 -106.331 -108.732 
-##     1951     1952     1953     1954 
-##  -95.317  -97.469 -100.554 -126.363</code></pre>
+<pre><code>##    1935    1936    1937    1938    1939    1940    1941    1942    1943    1944 
+##  -86.90 -106.10 -127.59 -126.13 -156.37 -131.14 -105.70 -108.04 -129.88 -130.00 
+##    1945    1946    1947    1948    1949    1950    1951    1952    1953    1954 
+## -142.58 -118.07 -126.29 -130.62 -160.40 -162.80 -149.38 -151.53 -154.62 -180.43</code></pre>
 </div>
 <div id="more-advanced-use-of-plm" class="section level2">
 <h2>More advanced use of plm</h2>
@@ -830,10 +767,7 @@ Wooldridge-type serial correlation tests.
 </div>
 <div id="unbalanced-panels" class="section level3">
 <h3>Unbalanced panels</h3>
-<p>Most of the features of <code>plm</code> are implemented for unbalanced panel models with one notable exception:</p>
-<ul>
-<li>there is no random two-ways effect model for <code>random.method = &quot;nerlove&quot;</code>.</li>
-</ul>
+<p>Estimations by <code>plm</code> support unbalanced panel models.</p>
 <p>The following example is using data used by <span class="citation">Harrison and Rubinfeld (1978)</span> to estimate an hedonic housing prices function. It is reproduced in <span class="citation">Baltagi (2005)</span>, p.174/ <span class="citation">Baltagi (2013)</span>, p.197.</p>
 <div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true"></a>Hed &lt;-<span class="st"> </span><span class="kw">plm</span>(mv<span class="op">~</span>crim<span class="op">+</span>zn<span class="op">+</span>indus<span class="op">+</span>chas<span class="op">+</span>nox<span class="op">+</span>rm<span class="op">+</span>age<span class="op">+</span>dis<span class="op">+</span>rad<span class="op">+</span>tax<span class="op">+</span>ptratio<span class="op">+</span>blacks<span class="op">+</span>lstat,</span>
@@ -1237,7 +1171,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 <p>General FGLS estimators are based on a two-step estimation process: first an OLS model is estimated, then its residuals <span class="math inline">\(\hat{u}_{it}\)</span> are used to estimate an error covariance matrix more general than the random effects one for use in a feasible-GLS analysis. Formally, the estimated error covariance matrix is <span class="math inline">\(\hat{V}=I_n \otimes \hat{\Omega}\)</span>, with <span class="math display">\[\hat{\Omega}=\sum_{i=1}^n \frac{\hat{u}_{it}
   \hat{u}_{it}^\top }{n} \]</span> (see <span class="citation">Wooldridge (2002)</span> 10.4.3 and 10.5.5).</p>
 <p>This framework allows the error covariance structure inside every group (if <code>effect = &quot;individual&quot;</code>) of observations to be fully unrestricted and is therefore robust against any type of intragroup heteroskedasticity and serial correlation. This structure, by converse, is assumed identical across groups and thus general FGLS is inefficient under groupwise heteroskedasticity. Cross-sectional correlation is excluded a priori.</p>
-<p>Moreover, the number of variance parameters to be estimated with <span class="math inline">\(N=n\times T\)</span> data points is <span class="math inline">\(T(T+1)/2\)</span>, which makes these estimators particularly suited for situations where <span class="math inline">\(n&gt;&gt;T\)</span>, as e.g. in labour or household income surveys, while problematic for “long” panels, where <span class="math inline">\(\hat{V}\)</span> tends to become singular and standard errors therefore become biased downwards.</p>
+<p>Moreover, the number of variance parameters to be estimated with <span class="math inline">\(N=n\times T\)</span> data points is <span class="math inline">\(T(T+1)/2\)</span>, which makes these estimators particularly suited for situations where <span class="math inline">\(n&gt;&gt;T\)</span>, as e.g., in labour or household income surveys, while problematic for “long” panels, where <span class="math inline">\(\hat{V}\)</span> tends to become singular and standard errors therefore become biased downwards.</p>
 <p>In a pooled time series context (<code>effect = &quot;time&quot;</code>), symmetrically, this estimator is able to account for arbitrary cross-sectional correlation, provided that the latter is time-invariant (see <span class="citation">Greene (2003)</span> 13.9.1–2, pp. 321–2). In this case serial correlation has to be assumed away and the estimator is consistent with respect to the time dimension, keeping <span class="math inline">\(n\)</span> fixed.</p>
 <p>The function <code>pggls</code> estimates general FGLS models, with either fixed or “random” effects<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>.</p>
 <p>The “random effect” general FGLS is estimated by:</p>
@@ -1340,7 +1274,7 @@ Z_i &amp; 0   &amp; 0      &amp;  ... &amp; 0  \\
 </div>
 <div id="serialcor" class="section level2">
 <h2>Tests of serial correlation</h2>
-<p>A model with individual effects has composite errors that are serially correlated by definition. The presence of the time-invariant error component<a href="#fn9" class="footnote-ref" id="fnref9"><sup>9</sup></a> gives rise to serial correlation which does not die out over time, thus standard tests applied on pooled data always end up rejecting the null of spherical residuals<a href="#fn10" class="footnote-ref" id="fnref10"><sup>10</sup></a>. There may also be serial correlation of the “usual” kind in the idiosyncratic error terms, e.g. as an AR(1) process. By “testing for serial correlation” we mean testing for this latter kind of dependence.</p>
+<p>A model with individual effects has composite errors that are serially correlated by definition. The presence of the time-invariant error component<a href="#fn9" class="footnote-ref" id="fnref9"><sup>9</sup></a> gives rise to serial correlation which does not die out over time, thus standard tests applied on pooled data always end up rejecting the null of spherical residuals<a href="#fn10" class="footnote-ref" id="fnref10"><sup>10</sup></a>. There may also be serial correlation of the “usual” kind in the idiosyncratic error terms, e.g., as an AR(1) process. By “testing for serial correlation” we mean testing for this latter kind of dependence.</p>
 <p>For these reasons, the subjects of testing for individual error components and for serially correlated idiosyncratic errors are closely related. In particular, simple (<em>marginal</em>) tests for one direction of departure from the hypothesis of spherical errors usually have power against the other one: in case it is present, they are substantially biased towards rejection. <em>Joint</em> tests are correctly sized and have power against both directions, but usually do not give any information about which one actually caused rejection. <em>Conditional</em> tests for serial correlation that take into account the error components are correctly sized under presence of both departures from sphericity and have power only against the alternative of interest. While most powerful if correctly specified, the latter, based on the likelihood framework, are crucially dependent on normality and homoskedasticity of the errors.</p>
 <p>In <code>plm</code> we provide a number of joint, marginal and conditional ML-based tests, plus some semiparametric alternatives which are robust vs. heteroskedasticity and free from distributional assumptions.</p>
 <div id="unobserved-effects-test" class="section level3">
@@ -1620,7 +1554,7 @@ z = \frac{\sqrt{n}\left(\bar{t}- E(\bar{t})\right)}{\sqrt{V(\bar{t})}}
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <p>else one may do the covariance computation inside the call to <code>coeftest</code>, thus passing on a matrix:</p>
 <div class="sourceCode" id="cb100"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true"></a><span class="kw">coeftest</span>(re, <span class="kw">vcovHC</span>(re, <span class="dt">method=</span><span class="st">&quot;white2&quot;</span>, <span class="dt">type=</span><span class="st">&quot;HC3&quot;</span>), <span class="dt">df =</span> <span class="ot">Inf</span>)</span></code></pre></div>
-<p>For some tests, e.g. for multiple model comparisons by <code>waldtest</code>, one should always provide a function<a href="#fn23" class="footnote-ref" id="fnref23"><sup>23</sup></a>. In this case, optional parameters are provided as shown below (see also <span class="citation">Zeileis (2004)</span>, p. 12):</p>
+<p>For some tests, e.g., for multiple model comparisons by <code>waldtest</code>, one should always provide a function<a href="#fn23" class="footnote-ref" id="fnref23"><sup>23</sup></a>. In this case, optional parameters are provided as shown below (see also <span class="citation">Zeileis (2004)</span>, p. 12):</p>
 <div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true"></a><span class="kw">waldtest</span>(re, <span class="kw">update</span>(re,.<span class="op">~</span>.<span class="op">-</span>capital),</span>
 <span id="cb101-2"><a href="#cb101-2" aria-hidden="true"></a>         <span class="dt">vcov=</span><span class="cf">function</span>(x) <span class="kw">vcovHC</span>(x, <span class="dt">method=</span><span class="st">&quot;white2&quot;</span>, <span class="dt">type=</span><span class="st">&quot;HC3&quot;</span>))</span></code></pre></div>
 <pre><code>## Wald test
@@ -2033,7 +1967,7 @@ diagnostics, which is another subject for future work.
 <div class="footnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Comprehensive treatments are to be found in many econometrics textbooks, e.g. <span class="citation">Baltagi (2005)</span>, <span class="citation">Baltagi (2013)</span> or <span class="citation">Wooldridge (2002)</span>, <span class="citation">Wooldridge (2010)</span>: the reader is referred to these, especially to the first 9 chapters of <span class="citation">Baltagi (2005)</span>, <span class="citation">Baltagi (2013)</span>.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn1"><p>Comprehensive treatments are to be found in many econometrics textbooks, e.g., <span class="citation">Baltagi (2005)</span>, <span class="citation">Baltagi (2013)</span> or <span class="citation">Wooldridge (2002)</span>, <span class="citation">Wooldridge (2010)</span>: the reader is referred to these, especially to the first 9 chapters of <span class="citation">Baltagi (2005)</span>, <span class="citation">Baltagi (2013)</span>.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
 <li id="fn2"><p>For the sake of exposition we are considering only the individual effects case here. There may also be time effects, which is a symmetric case, or both of them, so that the error has three components: <span class="math inline">\(u_{it}=\mu_{i}+\lambda_{t}+\epsilon_{it}\)</span>.<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
 <li id="fn3"><p>Although in most models the individual and time effects cases are symmetric, there are exceptions: estimating the <em>first-difference</em> model on time effects is meaningless because cross-sections do not generally have a natural ordering, so trying <code>effect = &quot;time&quot;</code> stops with an error message as does <code>effect = &quot;twoways&quot;</code> which is not defined for first-difference models.<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
 <li id="fn4"><p>See packages <code>lmtest</code> (<span class="citation">Hothorn et al. (2015)</span>) and <code>car</code> (<span class="citation">Fox (2016)</span>).<a href="#fnref4" class="footnote-back">↩︎</a></p></li>

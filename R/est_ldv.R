@@ -45,7 +45,7 @@ pldv <- function(formula, data, subset, weights, na.action,
 ## and re-export it via NAMESPACE as plm::maxLik with a minimal documentation 
 ## pointing to the original documentation.
 ## This way, we can keep the flexibility of eval() ## [evalutate in parent frame] 
-## and can lessen the dependency burden by palacing pkg maxLik in 'Imports'
+## and can lessen the dependency burden by placing pkg maxLik in 'Imports'
 ## rather than 'Depends' in DESCRIPTION.
   
     # use the plm interface to compute the model.frame
@@ -117,7 +117,7 @@ pldv <- function(formula, data, subset, weights, na.action,
             bdx <- as.numeric(X %*% param)
             lnl <- - psi(ytm1, yt, bdx)
             selobs <- (bdx > - ytm1 & bdx < yt)
-            if (objfun == "lsq" & sample == "cens"){
+            if (objfun == "lsq" && sample == "cens"){
                 attr(lnl, "gradient") <- -
                     ( (ytm1 > - bdx & yt > bdx) * (- 2 * (yt - ytm1 - bdx)) +
                       (ytm1 > - bdx & yt < bdx) * (  2 * ytm1) +
@@ -128,7 +128,7 @@ pldv <- function(formula, data, subset, weights, na.action,
         }
         maxl[c("logLik", "start")] <- list(BO, start)
         result <- eval(maxl, parent.frame())
-        if (objfun == "lsq" & sample == "cens"){
+        if (objfun == "lsq" && sample == "cens"){
             bdx <- as.numeric(X %*% coef(result))
             V4 <- yt ^ 2 * (bdx <= - ytm1) + ytm1 ^ 2 * (yt <= bdx) +
                 (yt - ytm1 - bdx) ^ 2 * (bdx > - ytm1 & bdx < yt)
@@ -162,7 +162,7 @@ pldv <- function(formula, data, subset, weights, na.action,
         
           # The following is the only instance of statmod::gauss.quad, so check for 
           # the package's availability. (We placed 'statmod' in 'Suggests' rather
-          # than 'Imports' so that it is not an absolutely required depedency.)
+          # than 'Imports' so that it is not an absolutely required dependency.)
           ## Procedure for pkg check for pkg in 'Suggests' as recommended in 
           ## Wickham, R packages (http://r-pkgs.had.co.nz/description.html).
           if (!requireNamespace("statmod", quietly = TRUE)) {
@@ -337,7 +337,7 @@ lnl.tobit <- function(param, y, X, id, lower = 0, upper = +Inf, model = "pooling
         lnPn <- lapply(1:R, function(i) rn$weights[i] * exp(lnPnr[[i]]))
         lnPn <- log(Reduce("+", lnPn)) - 0.5 * log(pi)
         lnL <- sum(lnPn)
-        if (compute.gradient | compute.hessian){
+        if (compute.gradient || compute.hessian){
             glnPnr <- lapply(1:R, function(i) g(i = i))
             pwn <- lapply(1:R, function(i) exp(lnPnr[[i]] - lnPn))
             pwnt <- lapply(1:R, function(i) pwn[[i]][as.character(id)])

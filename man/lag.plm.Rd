@@ -2,7 +2,9 @@
 % Please edit documentation in R/tool_transformations.R
 \name{lag.plm}
 \alias{lag.plm}
+\alias{lag}
 \alias{lead}
+\alias{diff}
 \alias{lag.pseries}
 \alias{lead.pseries}
 \alias{diff.pseries}
@@ -67,7 +69,7 @@ result in a meaningful integer).
 \itemize{
 \item \verb{shift = "row": }Methods perform the shifting operation based
 solely on the "physical position" of the observations,
-i.e. neighbouring rows are shifted per individual. The value in the
+i.e., neighbouring rows are shifted per individual. The value in the
 time index is not relevant in this case.
 }
 

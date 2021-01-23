@@ -32,7 +32,7 @@ mylm <- function(y, X, W = NULL){
     # warning("Coefficient(s) '", paste((names.X)[na.coef], collapse = ", "), 
     #"' could not be estimated and is (are) dropped.")
       X <- X[, ! na.coef, drop = FALSE]
-      if (dim(X)[2] == 0L) stop(paste("estimation not possible: all coefficients",
+      if (dim(X)[2L] == 0L) stop(paste("estimation not possible: all coefficients",
                                       "omitted from estimation due to aliasing"))
       if (is.null(W)) result <- lm(y ~ X - 1)
       else result <- twosls(y, X, W)
@@ -52,8 +52,8 @@ mylm <- function(y, X, W = NULL){
 
 # some elements not listed here...: "assign", "contrast",
 # etc... \item{na.action}{if relevant, information about handling of
-# NAs by the % model.frame function,} % NB: na.action is currently not
-# included as it is not supported
+# NAs by the  model.frame function,}
+# NB: na.action is currently not included as it is not supported
 
 
 #' Panel Data Estimators
@@ -102,9 +102,9 @@ mylm <- function(y, X, W = NULL){
 #' - `"bms"` for \insertCite{BREU:MIZO:SCHM:89;textual}{plm}.
 #' 
 #' The Hausman--Taylor estimator \insertCite{HAUS:TAYL:81}{plm} is
-#' computed with arguments `random.method = "ht"`, `model =
-#' "random"`, `inst.method = "baltagi"` (the other way with only
-#' `model = "ht"` is deprecated).
+#' computed with arguments `random.method = "ht"`, `model = "random"`,
+#' `inst.method = "baltagi"` (the other way with only `model = "ht"`
+#' is deprecated).
 #' 
 #' @aliases plm
 #' @param formula a symbolic description for the model to be
@@ -122,16 +122,14 @@ mylm <- function(y, X, W = NULL){
 #'     `"between"`, `"random"` `"fd"`, or `"ht"`,
 #' @param random.method method of estimation for the variance
 #'     components in the random effects model, one of `"swar"`
-#'     (default), `"amemiya"`, `"walhus"`, or
-#'     `"nerlove"`,
+#'     (default), `"amemiya"`, `"walhus"`, or `"nerlove"`,
 #' @param random.models an alternative to the previous argument, the
 #'     models used to compute the variance components estimations are
 #'     indicated,
 #' @param random.dfcor a numeric vector of length 2 indicating which
 #'     degree of freedom should be used,
 #' @param inst.method the instrumental variable transformation: one of
-#'     `"bvk"`, `"baltagi"`, `"am"`, or `"bms"`
-#'     (see also Details),
+#'     `"bvk"`, `"baltagi"`, `"am"`, or `"bms"` (see also Details),
 #' @param index the indexes,
 #' @param restrict.matrix a matrix which defines linear restrictions
 #'     on the coefficients,
@@ -302,7 +300,7 @@ plm <- function(formula, data, subset, weights, na.action,
     if (is.list(formula)){
         # if the first argument is a list (of formulas), then call plmlist and exit
         plmlist <- match.call(expand.dots = FALSE)
-        plmlist[[1]] <- as.name("plm.list")
+        plmlist[[1L]] <- as.name("plm.list")
         # eval in nframe and not the usual parent.frame(), relevant?
         nframe <- length(sys.calls())
         plmlist <- eval(plmlist, sys.frame(which = nframe))
@@ -333,11 +331,12 @@ plm <- function(formula, data, subset, weights, na.action,
     
     # Deprecated section
     
-    # accept "bmc" (a long-standing typo) for Breusch-Mizon-Schmidt
-    # due to backward compatibility
     if (length(inst.method) == 1 && inst.method == "bmc") {
+      # catch "bmc" (a long-standing typo) for Breusch-Mizon-Schmidt
+      # error since 2020-12-31 (R-Forge), was a warning before
+      # remove catch at some point in the future
       inst.method <- "bms"
-        warning(paste("Use of inst.method = \"bmc\" discouraged, set to \"bms\"",
+        stop(paste("Use of inst.method = \"bmc\" disallowed, set to \"bms\"",
                       "for Breusch-Mizon-Schmidt instrumental variable transformation"))
     }
     inst.method <- match.arg(inst.method)
@@ -347,8 +346,8 @@ plm <- function(formula, data, subset, weights, na.action,
     if (! is.na(model) && model == "ht"){
         ht <- match.call(expand.dots = FALSE)
         m <- match(c("formula", "data", "subset", "na.action", "index"), names(ht), 0)
-        ht <- ht[c(1, m)]
-        ht[[1]] <- as.name("pht")
+        ht <- ht[c(1L, m)]
+        ht[[1L]] <- as.name("pht")
         ht <- eval(ht, parent.frame())
         return(ht)
     }
@@ -361,7 +360,7 @@ plm <- function(formula, data, subset, weights, na.action,
     if (! inherits(formula, "Formula")) formula <- as.Formula(formula)
 
     # in case of 2-part formula, check whether the second part should
-    # be updated, e.g. y ~ x1 + x2 + x3 | . - x2 + z becomes 
+    # be updated, e.g., y ~ x1 + x2 + x3 | . - x2 + z becomes 
     # y ~ x1 + x2 + x3 | x1 + x3 + z
     # use length(formula)[2] because the length is now a vector of length 2
 #    if (length(formula)[2] == 2) formula <- expand.formula(formula)
@@ -369,10 +368,10 @@ plm <- function(formula, data, subset, weights, na.action,
     cl <- match.call()
     mf <- match.call(expand.dots = FALSE)
     m <- match(c("data", "formula", "subset", "weights", "na.action"), names(mf), 0)
-    mf <- mf[c(1, m)]
+    mf <- mf[c(1L, m)]
     names(mf)[2:3] <- c("formula", "data")
     mf$drop.unused.levels <- TRUE
-    mf[[1]] <- as.name("model.frame")
+    mf[[1L]] <- as.name("model.frame")
     # use the pFormula and pdata.frame which were created if necessary (and not
     # the original formula / data)
     mf$formula <- data
@@ -409,17 +408,17 @@ plm <- function(formula, data, subset, weights, na.action,
 plm.fit <- function(data, model, effect, random.method, 
                     random.models, random.dfcor, inst.method){
     formula <- attr(data, "formula")
-    # check for 0 cases like in stats::lm.fit (e.g. due to NA dropping) 
+    # check for 0 cases like in stats::lm.fit (e.g., due to NA dropping) 
     if (nrow(data) == 0L) stop("0 (non-NA) cases")
 
     # if a random effect model is estimated, compute the error components
     if (model == "random"){
         is.balanced <- is.pbalanced(data)
         estec <- ercomp(data, effect, method = random.method,
-                        models = random.models, dfcor = random.dfcor)        
+                        models = random.models, dfcor = random.dfcor)
         sigma2 <- estec$sigma2
         theta <- estec$theta
-        if (length(formula)[2] == 2 && effect == "twoways")
+        if (length(formula)[2L] == 2 && effect == "twoways")
             stop(paste("Instrumental variable random effect estimation",
                        "not implemented for two-ways panels"))
     }
@@ -427,7 +426,7 @@ plm.fit <- function(data, model, effect, random.method,
 
     # For all models except the unbalanced twoways random model, the
     # estimator is obtained as a linear regression on transformed data
-    if (! (model == "random" & effect == "twoways" && ! is.balanced)){
+    if (! (model == "random" && effect == "twoways" && ! is.balanced)){
         # extract the model.matrix and the model.response actually, this can be
         # done by providing model.matrix and pmodel.response's methods
         # to pdata.frames
@@ -447,9 +446,9 @@ plm.fit <- function(data, model, effect, random.method,
         
         # extract the matrix of instruments if necessary (means here that we
         # have a multi-parts formula)
-        if (length(formula)[2] > 1){
+        if (length(formula)[2L] > 1){
             if(!is.null(model.weights(data)) || any(w != 1)) stop("argument 'weights' not yet implemented for instrumental variable models")
-            if (length(formula)[2] == 2){
+            if (length(formula)[2L] == 2){
                 W <- model.matrix(data, rhs = 2,
                                   model = model, effect = effect,
                                   theta = theta, cstcovar.rm = "all")
@@ -470,7 +469,7 @@ plm.fit <- function(data, model, effect, random.method,
                 if (inst.method %in% c("am", "bms")) 
                     StarW1 <- starX(formula, data, rhs = 2, model = "within",
                                     effect = effect)
-                if (length(formula)[2] == 3){
+                if (length(formula)[2L] == 3){
                     W2 <- model.matrix(data, rhs = 3, model = "within",
                                            effect = effect, theta = theta, cstcovar.rm = "all")
                     if (inst.method == "bms")
@@ -518,7 +517,7 @@ plm.fit <- function(data, model, effect, random.method,
         TS <- pdim$nT$T
         theta <- estec$theta$id
         phi2mu <- estec$sigma2["time"] / estec$sigma2["idios"]
-        Dmu <- model.matrix( ~ factor(index(data)[[2]]) - 1)
+        Dmu <- model.matrix( ~ factor(index(data)[[2L]]) - 1)
         attr(Dmu, "index") <- index(data)
         Dmu <- Dmu - theta * Between(Dmu, "individual")
         X <- model.matrix(data, rhs = 1, model = "random", 
@@ -526,9 +525,10 @@ plm.fit <- function(data, model, effect, random.method,
         y <- pmodel.response(data, model = "random", 
                              effect = "individual", theta = theta)
         P <- solve(diag(TS) + phi2mu * crossprod(Dmu))
-        XPX <- crossprod(X)    - phi2mu * crossprod(X, Dmu) %*% P %*% crossprod(Dmu, X)
-        XPy <- crossprod(X, y) - phi2mu * crossprod(X, Dmu) %*% P %*% crossprod(Dmu, y)
-        gamma <- solve(XPX, XPy)[, , drop = TRUE]
+        phi2mu.CPXDmu.P <- phi2mu * crossprod(X, Dmu) %*% P
+        XPX <- crossprod(X)    - phi2mu.CPXDmu.P %*% crossprod(Dmu, X)
+        XPy <- crossprod(X, y) - phi2mu.CPXDmu.P %*% crossprod(Dmu, y)
+        gamma <- solve(XPX, XPy)[ , , drop = TRUE]
 
         # residuals 'e' are not the residuals of a quasi-demeaned
         # model but of the 'outer' model
@@ -603,7 +603,7 @@ tss.plm <- function(x, model = NULL){
 #' 
 r.squared <- function(object, model = NULL,
                       type = c("cor", "rss", "ess"), dfcor = FALSE){
-  ## TODO: doees not handle non-intercept models correctly
+  ## TODO: does not handle non-intercept models correctly
   ##       see below r.squared_no_intercept
   if (is.null(model)) model <- describe(object, "model")
   effect <- describe(object, "effect")
@@ -622,7 +622,7 @@ r.squared <- function(object, model = NULL,
     ess <- as.numeric(crossprod((haty - mhaty)))
     R2 <- ess / tss(object, model = model)
   }
-  ### adj. R2 Still wrong for models without intercept, e.g. pooling models
+  ### adj. R2 Still wrong for models without intercept, e.g., pooling models
   # (but could be correct for within models, see comment below in function r.squared_no_intercept)
   if (dfcor) R2 <- 1 - (1 - R2) * (length(resid(object)) - 1) / df.residual(object)
   R2
@@ -635,14 +635,14 @@ r.squared_no_intercept <- function(object, model = NULL,
     effect <- describe(object, "effect")
     type <- match.arg(type)
     ## TODO: check what is sane for IV and what for within
-    has.int <- if (model != "within") has.intercept(object)[1] else FALSE # [1] as has.intercept returns > 1 boolean for IV models # TODO: to check if this is sane
+    has.int <- if (model != "within") has.intercept(object)[1L] else FALSE # [1L] as has.intercept returns > 1 boolean for IV models # TODO: to check if this is sane
     
     if (type == "rss"){
       # approach: 1 - RSS / TSS
       R2 <- if (has.int) {
         1 - deviance(object, model = model) / tss(object, model = model)  
       } else {
-        # use non-centered (=non-demeaned) TSS
+        # use non-centered (= non-demeaned) TSS
         1 - deviance(object, model = model) / as.numeric(crossprod(pmodel.response(object, model = model)))
       }
     }
@@ -668,7 +668,7 @@ r.squared_no_intercept <- function(object, model = NULL,
       # approach: squared-correlation(dependent variable, predicted value), only for models with intercept
       if(!has.int) warning("for models without intercept, type = \"cor\" may not be sane") # TODO: tbd if warning is good
       
-      # TODO: Check should this be for "cor" the original variable? This makes a differnce for (at least) RE models!
+      # TODO: Check should this be for "cor" the original variable? This makes a difference for (at least) RE models!
       #       and on the fitted values which are not given by fitted() for RE models
 #      y <- pmodel.response(object, model = model, effect = effect)
 #      haty <- fitted(object, model = model, effect = effect)
@@ -678,7 +678,8 @@ r.squared_no_intercept <- function(object, model = NULL,
     }
     
     # this takes care of the intercept
-    # Still unclear, how the adjustment for within models should look like, i.e. subtract 1 for intercept or not
+    # Still unclear, how the adjustment for within models should look like,
+    # i.e., subtract 1 for intercept or not
     if (dfcor) R2 <- 1 - (1 - R2) * (length(resid(object)) - has.int) / df.residual(object)
     
     return(R2)
@@ -693,15 +694,17 @@ describe <- function(x,
   what <- match.arg(what)
   cl <- x$args
   switch(what,
-         "model"          = ifelse(!is.null(cl$model), cl$model, "within"),
-         "effect"         = ifelse(!is.null(cl$effect), cl$effect, "individual"),
+         "model"          = ifelse(!is.null(cl$model),
+                                   cl$model, "within"),
+         "effect"         = ifelse(!is.null(cl$effect),
+                                   cl$effect, "individual"),
          "random.method"  = ifelse(!is.null(cl$random.method),
-                                 cl$random.method, "swar"),
+                                   cl$random.method, "swar"),
          "inst.method"    = ifelse(!is.null(cl$inst.method),
-                                 cl$inst.method, "bvk"),
+                                   cl$inst.method, "bvk"),
          "transformation" = ifelse(!is.null(cl$transformation),
-                                 cl$transformation, "d"),
-         "ht.method"      = ifelse(!is.null(cl$ht.method), cl$ht.method, "ht")
+                                   cl$transformation, "d"),
+         "ht.method"      = ifelse(!is.null(cl$ht.method),
+                                   cl$ht.method, "ht")
          )
 }
-

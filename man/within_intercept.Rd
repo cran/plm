@@ -7,7 +7,7 @@
 \usage{
 within_intercept(object, ...)
 
-\method{within_intercept}{plm}(object, vcov = NULL, ...)
+\method{within_intercept}{plm}(object, vcov = NULL, return.model = FALSE, ...)
 }
 \arguments{
 \item{object}{object of class \code{plm} which must be a within
@@ -17,16 +17,22 @@ model (fixed effects model),}
 
 \item{vcov}{if not \code{NULL} (default), a function to calculate a
 user defined variance--covariance matrix (function for robust
-vcov),}
+vcov), only used if \code{return.model = FALSE},}
+
+\item{return.model}{a logical to indicate whether only the overall intercept
+(\code{FALSE} is default) or a full model object (\code{TRUE}) is to be returned,}
 }
 \value{
-A named \code{numeric} of length one: The overall intercept
-for the estimated within model along attribute "se" which
-contains the standard error for the intercept.
+Depending on argument \code{return.model}:  If \code{FALSE} (default), a named
+\code{numeric} of length one: The overall intercept for the estimated within model
+along attribute "se" which contains the standard error for the intercept.
+If \code{return.model = TRUE}, the full model object, a within model with the
+overall intercept (NB: the model identifies itself as a pooling model, e.g.,
+in summary()).
 }
 \description{
 This function gives an overall intercept for within models and its
-accompanying standard error
+accompanying standard error or an within model with the overall intercept
 }
 \details{
 The (somewhat artificial) intercept for within models (fixed
@@ -34,7 +40,7 @@ effects models) was made popular by Stata of StataCorp
 \insertCite{@see @GOUL:13}{plm}, EViews of IHS, and gretl
 \insertCite{@gretl p. 160-161, example 18.1}{plm}, see for
 treatment in the literature,
-e.g. \insertCite{GREE:12;textual}{plm}, Ch. 11.4.4, p. 364. It can
+e.g., \insertCite{GREE:12;textual}{plm}, Ch. 11.4.4, p. 364. It can
 be considered an overall intercept in the within model framework
 and is the weighted mean of fixed effects (see \strong{Examples} for the
 relationship).
@@ -48,13 +54,15 @@ intercept for twoway fixed effect models.
 Users can set argument \code{vcov} to a function to calculate a
 specific (robust) variance--covariance matrix and get the
 respective (robust) standard error for the overall intercept,
-e.g. the function \code{\link[=vcovHC]{vcovHC()}}, see examples for
+e.g., the function \code{\link[=vcovHC]{vcovHC()}}, see examples for
 usage. Note: The argument \code{vcov} must be a function, not a
 matrix, because the model to calculate the overall intercept for
 the within model is different from the within model itself.
+
+If argument \code{return.model = TRUE} is set, the full model object is returned,
+while in the default case only the intercept is returned.
 }
 \examples{
-
 data("Hedonic", package = "plm")
 mod_fe <- plm(mv ~ age + crim, data = Hedonic, index = "townid")
 overallint <- within_intercept(mod_fe)
@@ -62,20 +70,33 @@ attr(overallint, "se") # standard error
 
 # overall intercept is the weighted mean of fixed effects in the
 # one-way case
-weighted.mean(fixef(mod_fe), as.numeric(table(index(mod_fe)[[1]])))
+weighted.mean(fixef(mod_fe), pdim(mod_fe)$Tint$Ti)
 
-# relationship of type="dmean", "level" and within_intercept in the
-# one-way case
+### relationship of type="dmean", "level" and within_intercept
+## one-way balanced case
 data("Grunfeld", package = "plm")
 gi <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 fx_level <- fixef(gi, type = "level")
 fx_dmean <- fixef(gi, type = "dmean")
 overallint <- within_intercept(gi)
 all.equal(overallint + fx_dmean, fx_level, check.attributes = FALSE) # TRUE
+## two-ways unbalanced case
+gtw_u <- plm(inv ~ value + capital, data = Grunfeld[-200, ], effect = "twoways")
+int_tw_u <- within_intercept(gtw_u)
+fx_dmean_tw_i_u <- fixef(gtw_u, type = "dmean", effect = "individual")[index(gtw_u)[[1L]]]
+fx_dmean_tw_t_u <- fixef(gtw_u, type = "dmean", effect = "time")[index(gtw_u)[[2L]]]
+fx_level_tw_u <- as.numeric(fixef(gtw_u, "twoways", "level"))
+fx_level_tw_u2 <- int_tw_u + fx_dmean_tw_i_u + fx_dmean_tw_t_u
+all.equal(fx_level_tw_u, fx_level_tw_u2, check.attributes = FALSE) # TRUE
 
-# overall intercept with robust standard error
+## overall intercept with robust standard error
 within_intercept(gi, vcov = function(x) vcovHC(x, method="arellano", type="HC0"))
 
+## have a model returned
+mod_fe_int <- within_intercept(gi, return.model = TRUE)
+summary(mod_fe_int)
+# replicates Stata's robust standard errors
+summary(mod_fe_int, vcvov = function(x) vcovHC(x, type = "sss")) 
 }
 \references{
 \insertAllCited{}

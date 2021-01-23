@@ -1,3 +1,83 @@
+# plm 2.4-0
+
+### Speed up:
+Significant speed improvement (optional, for the time being): A significant
+speed-up of the package is available by a newly introduced **option** called
+plm.fast such that panel model estimations and others run faster. Set option
+'plm.fast' to 'TRUE' by `options("plm.fast" = TRUE)` for speed up, switch off by 
+`options("plm.fast" = FALSE)` (switched off speed up is current default).
+To have it always switched on, put `options("plm.fast" = TRUE)` in your 
+.Rprofile file. See documentation `?plm.fast` for more information and a
+benchmarked example.
+
+Technically, the speed gains are achieved by weaving in the fast data
+transformation functions provided in Sebastian Krantz' package 'collapse',
+which needs to be installed ('Suggests' dependency).
+
+Basic functions benefiting from speed-up are currently (used heavily in, e.g.,
+plm()): Between, between, Sum, Within.
+
+### Features:
+* within_intercept: gains argument 'return.model' (default is FALSE and the
+  functions works as previously). If set to TRUE, a full model object is
+  returned which is the input's within model with an intercept (see
+  documentation for more details).
+* fixef: gained new argument value 'effect = "twoways"' to extract the
+  sum of individual and time effect (for two-way models).
+* plm/ercomp: random effect model estimation with Nerlove's method extended to
+  unbalanced panels by weighting of the fixed effects (Cottrell (2017)).
+* Sum: is now exported.
+
+### Fixes:
+* fixef: calculation for two-way models fixed; type = "dmean" for unbalanced
+  models fixed (by using weighted.mean()).
+* between.default: keeps original sequence of elements' occurrence (before,
+  compressed output was sorted by the factor's *level* order).
+* Between.matrix and (internal) Tapply.matrix: ellipsis (three dots) is passed on,
+  allowing for, e.g., na.rm = TRUE (like already possible for between.matrix etc.).
+* Within.pseries/matrix: now handle na.rm argument in ellipsis.
+* index: gives warning if argument 'which' contains "confusing" values.
+  "confusing": an index variable called by user 'id', 'time', or 'group' if it
+  does not refer to the respective index (e.g., time index variable is called 'id'
+  in the user's data frame).
+* pdata.frame: input 'x' is always pruned by data.frame(x) as a clean data frame
+  is needed.
+* Access to documentation with a generic defined in another package fixed
+  (such as lag, diff, nobs, ...), so that the help systems offers to access the
+  plm-specific documentation (regression introduced when pkg plm 2.0-0 adopted
+  roxygen2 for documentation).
+* ercomp: (cosmetic) if one of theta\$id, theta\$time is 0 => theta\$total must be 
+  0 and is set to 0 (before, for some data and platforms, theta$total could be a
+  very small positive or negative number, due to limited computational precision).
+  This leads to nicer printing for summary outputs as well.
+* plm: fix error when fed with a data frame with one (or more) column(s) having
+  a 'names' attribute (data frames do not have names attribute for columns!),
+  stemming from, e.g., a conversion from a tibble.
+* as.data.frame.pdata.frame: clarify argument 'row.names' a bit: FALSE will give
+  an integer sequence as row names, TRUE "fancy" row names, and (new) a character
+  will gives row names set to the character's elements (character's length is
+  required to match the number of rows).
+* DESCRIPTION file: added line BugReports pointing to a GitHub repository which is
+  currently only used for GitHub's issue tracker feature (https://github.com/ycroissant/plm/issues).
+
+### Internals:
+* Between.\*, between.\*, and Within.\* methods: now use ave() instead of tapply().
+* between.matrix and Sum.matrix allow for non-character 'effect' argument in
+  non-index case.
+* pmg, pcce, cipstest: now use the general Between()/Within() functions of the
+  package (instead of "own" between/within transformation implemented inside the
+  respective function).
+* ercomp: now faster by saving and re-using intermediate results.
+* dhat (non-exported function used in vcovXX/vcovG with type = "HC2" to "HC4"):
+  now faster as diagonal of the quadratic form is calculated more efficiently.
+* pht(., model ="bmc") and plm(., inst.method = "bmc") now error informatively
+  (previously gave warnings) as "bms" is to be used for Breusch-Mizon-Schmidt IV
+  transformation.
+
+### Dependencies:
+ * Added package 'collapse' to 'Suggests'.
+
+
 # plm 2.2-5
 
 * Removed duplicated entries in REFERENCES.bib (dependency Rdpack 2.0 warned).
@@ -6,7 +86,7 @@
 # plm 2.2-4
 
 * ptransform (internal function): check balancedness before pseries index is
-  removed (fixes some spurious bug, e.g. when package tibble is used).
+  removed (fixes some spurious bug, e.g., when package tibble is used).
 * exported/registered again in NAMESPACE after export/registration lost in plm 2.0-0:
   fixef.pggls, Math.pseries, Ops.pseries, Complex.pseries and deprecated
   methods/function formula.dynformula, print.dynformula, pvcovHC.
@@ -23,8 +103,11 @@
   further processing. A warning is issued in case of NA removal.
 * mtest, sargan, pwaldtest, piest, aneweytest: added for each a string for
   alternative hypothesis.
-* Dependencies: removed package 'clubSandwich' from 'Suggests' as it was
-  removed from CRAN (archived).
+  
+### Dependencies:
+* Removed package 'clubSandwich' from 'Suggests' as it was removed from CRAN
+  (archived) [the package was re-added to CRAN at a later point in time but
+  not made a 'Suggests' dependency for plm again].
 
 # plm 2.2-3
 
@@ -56,7 +139,7 @@
 
 # plm 2.2-0
 
-* methods for plm.list were not exported, now exported.
+* Methods for plm.list were not exported, now exported.
 * lagt is changed so that it can deal with time factors which
   cannot be coerced to numeric (ex "1950-54", "1955-59", ...).
 * cortab was not exported, now exported.
@@ -65,21 +148,21 @@
 
 # plm 2.1-0
 
-* problems with vignettes fixed (full text was in italics).
-* in test file 'test_Estimators.R', L256, tolerance lowered to 1E-04.
+* Problems with vignettes fixed (full text was in italics).
+* In test file 'test_Estimators.R', L256, tolerance lowered to 1E-04.
 
 # plm 2.0-2
 
 * vcovXX.pcce functions exported again (export was lost in plm 2.0-0).
 * summary.pcce gained argument 'vcov', summary.pcce object carries robust vcov
   in element 'rvcov'.
-* vignettes switched from bookdown::html_document2 to html_vignette.
+* Vignettes switched from bookdown::html_document2 to html_vignette.
 
 # plm 2.0-1
 
 * Minor update: tests updated to pacify CRAN's testing procedure with
   OpenBLAS.
-* bug fix in model.frame.pdata.frame: dot previously set to "separate" now set
+* Bug fix in model.frame.pdata.frame: dot previously set to "separate" now set
   to "previous".
 
 # plm 2.0-0
@@ -90,11 +173,11 @@
     with a terms attribute). 'formula' as an argument in model.matrix
     was unnecessary as the formula can be retrieved from the
     pdata.frame.
-* A thrid vignette was added describing the plm model components
+* A third vignette was added describing the plm model components
     (plmModelComponents.Rmd).
 * plm: the informative error message about the deprecated argument
     'instruments' is removed and this argument is no longer supported.
-* man pages and NAMESPACE file are now generated using roxygen2.
+* Man pages and NAMESPACE file are now generated using roxygen2.
 
 # plm 1.7-0
 
@@ -133,7 +216,7 @@
 * groupGenerics now used for 'pseries' objects, implemented as a wrapper 
     for methods in groups 'Math', 'Ops' and 'Complex' (see ?groupGeneric).
     Thus, propagation to a higher or lower data type works correctly when 
-    performed on pseries, e.g. c("pseries", "integer") is propagated
+    performed on pseries, e.g., c("pseries", "integer") is propagated
     to c("pseries", "numeric") if an operation returns a decimal.
 * Vingettes: translated package's original vignette to Rmd format and renamed
     to plmPackage.Rmd; added vignette plmFunction.Rmd for further explanation
@@ -141,8 +224,7 @@
     in plmPackage.Rmd fixed typo in formula for cross-sectional dependence
     scaled LM test.
   
-##  Deprecated/renamed:
-
+### Deprecated/renamed:
 * pht, plm(., model = "ht"/"am"/"bms"): both uses deprecated, better use instead
     plm(., model="random", random.method ="ht", inst.method="baltagi"/"am"/"bms")
     to estimate Hausman-Taylor-type models.
@@ -154,7 +236,7 @@
 * detect.lindep: previously named detect_lin_dep; renamed for consistency in
     function naming (back-compatible solution implemented).
   
-##  Minor items:
+### Minor items:
 
 * pvar: added method for pseries.
 * pgrangertest: better detection of infeasibility if a series is too short.
@@ -187,7 +269,9 @@
 * pwaldtest: in all cases, htest object's 'statistic' element is a numeric
     (was 1x1 matrix for some cases).
 * Data set 'Crime' extended with pre-computed log values as in original data.  
-* Dependencies: added to 'Suggests': knitr, rmarkdown, bookdown.
+
+### Dependencies:
+* Added to 'Suggests': knitr, rmarkdown, bookdown.
 
 
 # plm 1.6-6
@@ -220,9 +304,10 @@
     * "madwu": Maddala-Wu test statistic used to be computed using p-values from 
                the normal distribution, fixed now, by using approximated p-values
                for the tau distribution described by MacKinnon (1994).
-    * "hadri": * fixed p-value (now based on one-sided test).
-               * fixed statistic in non-heteroskedasticity case (Hcons = FALSE).
-               * degrees of freedom correction implemented (set dfcor = TRUE).
+    * "hadri": 
+      * fixed p-value (now based on one-sided test).
+      * fixed statistic in non-heteroskedasticity case (Hcons = FALSE).
+      * degrees of freedom correction implemented (set dfcor = TRUE).
     * "ips", "levinlin": p-values fixed (now one-sided to the left).
     * new tests: Choi (2001) modified P ("Pm"), inverse normal ("invnormal"),
       logit ("logit").
@@ -293,7 +378,8 @@
 * print.summary.plm: prints information about dropped coefficients due to singularities
                        (mimics print.summary.lm).
 * cosmetic: some print functions now have better aligned whitespacing.
-* Dependencies:
+
+### Dependencies:
   * R version >= 3.1.0 required now.
   * 'Imports': maxLik added, function maxLik::maxLik is re-exported by
     plm.
@@ -483,9 +569,9 @@
 * new function as.list.pdata.frame: Default behaviour is to act
       identical to as.list.data.frame (some code relies on this, do
       not change!).  By setting arg 'keep.attributes = TRUE', one gets
-      a list of pseries and can operate (e.g. 'lapply') over this list
+      a list of pseries and can operate (e.g., 'lapply') over this list
       as one would expect for operations on the columns of a
-      pdata.frame, e.g. to lag over more than one column and get a
+      pdata.frame, e.g., to lag over more than one column and get a
       list of lagged columns back, use: lapply(as.list(pdataframe[ ,
       your_cols], keep.attributes = TRUE), lag).
 
@@ -569,7 +655,7 @@
   * Ftest later renamed to pwaldtest (in version 1.6-3).
 * (internal) vcovXX functions: furnished vcovs gain attribute
                                  "cluster" which give info about
-                                 clustering, e.g. "group" or "time".
+                                 clustering, e.g., "group" or "time".
 * fixef: gains new argument '.vcov'.
 
 
@@ -597,11 +683,11 @@
 
 # plm 1.5-14
 
-* mylm: added commented (i.e. inactive) warning about dropped coefficients in estimation.
-* fitted.plm: added commented (i.e. inactive) warning in about dropped coefficients in
+* mylm: added commented (i.e., inactive) warning about dropped coefficients in estimation.
+* fitted.plm: added commented (i.e., inactive) warning in about dropped coefficients in
     estimated model compared to specified model.matrix.
 * added testfile tests/test_fitted.plm.R (some of those test currently do not run
-    (commented, i.e. inactive)).
+    (commented, i.e., inactive)).
 * pmodel.response.pFormula: make sure supplied formula is a pFormula before we continue
     (coerce to pFormula), fixes "bugs" (rather unexpected, but documented behaviour) like:
       pmodel.response.pFormula(regular_formula, data = dat, model = "pooling")
@@ -610,9 +696,9 @@
 * some testfiles: fixed wired encodings.
 * lag.pseries: modified to handle negative lags (=leading values).
 * lead.pseries: added function as a wrapper for lag.pseries(x, k = -1) for convenience,
-    i.e. lag(x, k = -1) == lead(x, k = 1).
+    i.e., lag(x, k = -1) == lead(x, k = 1).
 * diff.pseries: prevented negative lags as input to avoid confusion.
-* doc for pseries functions are made available under their name, e.g. ?lag now displays helpfile for
+* doc for pseries functions are made available under their name, e.g., ?lag now displays helpfile for
     lag.pseries in the help overview (besides e.g. stats::lag).
 * pdim.default: make error message "duplicate couples (time-id)" printed as proper error message
     (removed cat() around the message in stop(), was printed as regular string on screen before).
@@ -661,7 +747,7 @@
  
 * plm(): original row names of input data are preserved in plm_object\$model,
     so functions like pmodel.response(), model.frame(), model.matrix(), residuals()
-    return the original row.names (and thus fancy rownames if those were to be computed by
+    return the original row names (and thus fancy row names if those were to be computed by
     pdata.frame)
 
 * as.data.frame.pdata.frame(): respects 'row.names' argument.
@@ -883,7 +969,7 @@
 * 'subset' and 'na.action' are added to the list of arguments of pgmm and oldpgmm.
 
 * lag.pseries is now able to deal with vector arguments for lags, 
-    e.g. lag(x, c(1,3)).
+    e.g., lag(x, c(1,3)).
 
 * suml(x) is replaced by Reduce("+", x).
 
