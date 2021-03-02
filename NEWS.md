@@ -1,9 +1,26 @@
+# plm 2.4-1
+
+ * lag: fix export of generic for lag (lost in 2.4-0; the panel-specific lag
+   method was executed anyway if base R's lag() encountered a pseries).
+ * model.frame.pdata.frame: errors informatively if any index dimension has
+   NA values.
+ * pdata.frame: warns if NA in index dimension is encountered (before, only
+   a plain message was printed).
+ * Between/between/Sum/Within: Methods which rely on the index attribute
+   (\*.pseries and partly \*.matrix) now error informatively if NA in any index
+   dimension is encountered.
+ * Vignettes: file names renamed to contain numbering so that the Vignettes are
+   sorted on CRAN's plm page in an order better suited for new package users.
+ * checkNA.index: new non-exported helper function to check for NA in index 
+   of a pdata.frame or pseries (all dimensions or a specific one).
+
+
 # plm 2.4-0
 
 ### Speed up:
 Significant speed improvement (optional, for the time being): A significant
 speed-up of the package is available by a newly introduced **option** called
-plm.fast such that panel model estimations and others run faster. Set option
+'plm.fast' such that panel model estimations and others run faster. Set option
 'plm.fast' to 'TRUE' by `options("plm.fast" = TRUE)` for speed up, switch off by 
 `options("plm.fast" = FALSE)` (switched off speed up is current default).
 To have it always switched on, put `options("plm.fast" = TRUE)` in your 
@@ -27,6 +44,8 @@ plm()): Between, between, Sum, Within.
 * plm/ercomp: random effect model estimation with Nerlove's method extended to
   unbalanced panels by weighting of the fixed effects (Cottrell (2017)).
 * Sum: is now exported.
+* DESCRIPTION file: added line BugReports pointing to a GitHub repository which is
+  currently only used for GitHub's issue tracker feature (https://github.com/ycroissant/plm/issues).
 
 ### Fixes:
 * fixef: calculation for two-way models fixed; type = "dmean" for unbalanced
@@ -57,8 +76,6 @@ plm()): Between, between, Sum, Within.
   an integer sequence as row names, TRUE "fancy" row names, and (new) a character
   will gives row names set to the character's elements (character's length is
   required to match the number of rows).
-* DESCRIPTION file: added line BugReports pointing to a GitHub repository which is
-  currently only used for GitHub's issue tracker feature (https://github.com/ycroissant/plm/issues).
 
 ### Internals:
 * Between.\*, between.\*, and Within.\* methods: now use ave() instead of tapply().
@@ -133,9 +150,12 @@ plm()): Between, between, Sum, Within.
 
 ### Minor items:
    * print.fixef: respects / forwards arguments supplied to generic print method.
-   * DESCRIPTION/Dependencies: package 'urca' added to "Suggests".
    * Grunfeld data doc: URL for overview of various Grunfeld data sets updated to
      https://eeecon.uibk.ac.at/~zeileis/grunfeld/. 
+
+### Dependencies:
+   * Package 'urca' added to "Suggests".
+
 
 # plm 2.2-0
 
@@ -557,9 +577,9 @@ plm()): Between, between, Sum, Within.
   * fixed: special case of indexing by [i] (missing j) which erroneously returned rows instead of columns.
 * pdata.frame's warnings:
   * if duplicate couples or NA values in the index variables are found
-         while creating a pdata.frame, the warning now gives users a
-         hint how to find those (table(index(your_pdataframe), useNA =
-         "ifany").
+    while creating a pdata.frame, the warning now gives users a
+    hint how to find those (table(index(your_pdataframe), useNA =
+    "ifany").
   * printed is now "id-time" (was: "time-id") to be consistent with
     order of index variables.
 

@@ -174,10 +174,10 @@ plot.pseries <- function(x, plot = c("lattice", "superposed"),
     nx <- as.numeric(x)
     ind <- attr(x, "index")[[1L]]
     tind <- attr(x, "index")[[2L]] # possibly as.numeric():
-                                  # activates autom. tick
-                                  # but loses time labels
+                                   # activates autom. tick
+                                   # but loses time labels
 
-    xdata <- data.frame(nx=nx, ind=ind, tind=tind)
+    xdata <- data.frame(nx = nx, ind = ind, tind = tind)
     
     switch(match.arg(plot),
            "lattice" = {
@@ -197,8 +197,8 @@ plot.pseries <- function(x, plot = c("lattice", "superposed"),
                axis(1, at = as.numeric(unique(tind)),
                     labels = unique(tind))
                
-                   ## determine lwd and transparency level as a function
-                   ## of n
+               ## determine lwd and transparency level as a function
+               ## of n
                if(transparency) {
                    alpha <- 5 / length(unind)
                    col <- heat.colors(1, alpha = alpha)
@@ -212,28 +212,26 @@ plot.pseries <- function(x, plot = c("lattice", "superposed"),
                    tindi <- tind[ind == unind[i]]
                    lines(x = tindi, y = scalefun(nxi),
                          col = col, lwd = lwd, ...)
-               }               
-           })    
+               }
+           }) 
 }
 
 #' @rdname pseries
 #' @export
 summary.pseries <- function(object, ...) {
     if(!inherits(object, c("factor", "logical", "character"))) {
-        id <- attr(object, "index")[[1L]]
+        id   <- attr(object, "index")[[1L]]
         time <- attr(object, "index")[[2L]]
-        xm <- mean(object, na.rm = TRUE)
-        Bid <-  Between(object, na.rm = TRUE)
-        Btime <-  Between(object, effect = "time", na.rm = TRUE)
+        Bid   <- Between(object, na.rm = TRUE)
+        Btime <- Between(object, effect = "time", na.rm = TRUE)
         ## res <- structure(c(total = sumsq(object),
         ##                    between_id = sumsq(Bid),
         ##                    between_time = sumsq(Btime)), 
         ##                  class = c("summary.pseries", "numeric"))
-        res <- structure(c(total =        sum( (na.omit(object) - mean(object, na.rm = TRUE)) ^ 2),
-                           between_id =   sum( (na.omit(Bid)    - mean(Bid,    na.rm = TRUE)) ^ 2),
+        res <- structure(c(total        = sum( (na.omit(object) - mean(object, na.rm = TRUE)) ^ 2),
+                           between_id   = sum( (na.omit(Bid)    - mean(Bid,    na.rm = TRUE)) ^ 2),
                            between_time = sum( (na.omit(Btime)  - mean(Btime,  na.rm = TRUE)) ^ 2)), 
-                           class = c("summary.pseries", "numeric"))
-        
+                          class = c("summary.pseries", "numeric"))
     } else {
         class(object) <- setdiff(class(object), c("pseries"))
         res <- summary(object, ...)
@@ -301,30 +299,32 @@ myave.default <- function(x, effect, func, ...) {
 
 Tapply.pseries <- function(x, effect = c("individual", "time", "group"), func, ...){
     effect <- match.arg(effect)
-    index <- attr(x, "index")
+    xindex <- attr(x, "index")
+    checkNA.index(xindex) # index may not contain any NA
     effect <- switch(effect,
-                     "individual"= index[[1L]],
-                     "time"      = index[[2L]],
-                     "group"     = index[[3L]]
+                     "individual"= xindex[[1L]],
+                     "time"      = xindex[[2L]],
+                     "group"     = xindex[[3L]]
                      )
     x <- as.numeric(x)
     z <- Tapply.default(x, effect, func, ...)
-    attr(z, "index") <- index
+    attr(z, "index") <- xindex
     class(z) <- c("pseries", class(z))
     return(z)
 }
 
 myave.pseries <- function(x, effect = c("individual", "time", "group"), func, ...) {
   effect <- match.arg(effect)
-  index <- attr(x, "index")
+  xindex <- attr(x, "index")
+  checkNA.index(xindex) # index may not contain any NA
   eff.fac <- switch(effect,
-                   "individual"= index[[1L]],
-                   "time"      = index[[2L]],
-                   "group"     = index[[3L]]
+                   "individual"= xindex[[1L]],
+                   "time"      = xindex[[2L]],
+                   "group"     = xindex[[3L]]
   )
   x <- as.numeric(x)
   z <- myave.default(x, eff.fac, func, ...)
-  attr(z, "index") <- index
+  attr(z, "index") <- xindex
   class(z) <- c("pseries", class(z))
   return(z)
 }
@@ -371,6 +371,7 @@ Sum.default <- function(x, effect, ...) {
 Sum.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
     effect <- match.arg(effect)
     #   Tapply(x, effect, sum, ...)
+    # myave.pseries takes are of checking the index for NAs
     return(myave(x, effect, sum, ...))
 }
 
@@ -391,6 +392,7 @@ Sum.matrix <- function(x, effect, ...) {
                      "group"      = 3L,
                      stop("unknown value of argument 'effect'"))
     xindex <- attr(x, "index")
+    checkNA.index(xindex) # index may not contain any NA
     xindex[ , eff.no]
   }
   return(myave(x, eff.fac, sum, ...))
@@ -416,6 +418,7 @@ Between.default <- function(x, effect, ...) {
 Between.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
     effect <- match.arg(effect)
     #   Tapply(x, effect = effect, mean, ...)
+    # myave.pseries takes are of checking the index for NAs
     return(myave(x, effect = effect, mean, ...))
 }
 
@@ -436,6 +439,7 @@ Between.matrix <- function(x, effect, ...) {
                      "group"      = 3L,
                      stop("unknown value of argument 'effect'"))
     xindex <- attr(x, "index")
+    checkNA.index(xindex) # index may not contain any NA
     xindex[ , eff.no]
   }
   return(myave.matrix(x, eff.fac, mean, ...))
@@ -466,11 +470,12 @@ between.default <- function(x, effect, ...) {
 #' @export
 between.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
     effect <- match.arg(effect)
-    index <- attr(x, "index")
+    xindex <- attr(x, "index")
+    checkNA.index(xindex) # index may not contain any NA
     eff.fac <- switch(effect,
-                     "individual" = index[[1L]],
-                     "time"       = index[[2L]],
-                     "group"      = index[[3L]],
+                     "individual" = xindex[[1L]],
+                     "time"       = xindex[[2L]],
+                     "group"      = xindex[[3L]],
                      )
     res <- between.default(x, effect = eff.fac, ...)
     return(res)
@@ -493,6 +498,7 @@ between.matrix <- function(x, effect, ...) {
                      "group"      = 3L,
                      stop("unknown value of argument 'effect'"))
     xindex <- attr(x, "index")
+    checkNA.index(xindex) # index may not contain any NA
     xindex[ , eff.no]
   }
   res <- apply(x, 2, FUN = function(x) ave(x, eff.fac, FUN = function(y) mean(y, ...)))
@@ -522,14 +528,16 @@ Within.default <- function(x, effect, ...) {
 #' @export
 Within.pseries <- function(x, effect = c("individual", "time", "group", "twoways"), ...) {
     effect <- match.arg(effect)
+    xindex <- index(x)
+    checkNA.index(xindex) # index may not contain any NA
     if(effect != "twoways") result <- x - Between(x, effect, ...)
     else {
         if(is.pbalanced(x)) result <- x - Between(x, "individual", ...) - Between(x, "time") + mean(x, ...)
         else {
-            time <- index(x)[[2]]
+            time <- xindex[[2L]]
             Dmu <- model.matrix(~ time - 1)
-            attr(Dmu, "index") <- index(x)
-            W1 <- Within(x, "individual", ...)
+            attr(Dmu, "index") <- xindex
+            W1   <- Within(x,   "individual", ...)
             WDmu <- Within(Dmu, "individual", ...)
             W2 <- fitted(lm.fit(WDmu, x))
             result <- W1 - W2
@@ -555,16 +563,16 @@ Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
         if(effect %in% c("individual", "time", "group")) result <- x - Between(x, effect, ...)
         if(effect == "twoways") {
             xindex <- attr(x, "index")
+            checkNA.index(xindex) # index may not contain any NA
             if(is.pbalanced(xindex)) {
                 result <- x - Between(x, "individual", ...) - Between(x, "time", ...) +
                     matrix(colMeans(x, ...), nrow = nrow(x), ncol = ncol(x), byrow = TRUE)
             }
             else { # unbalanced twoways
-                time <- index(xindex, "time")
-                id <- index(xindex, "individual")
+                time <- xindex[[2L]]
                 Dmu <- model.matrix(~ time - 1)
                 attr(Dmu, "index") <- xindex
-                W1 <- Within(x, "individual", rm.null = FALSE, ...)
+                W1   <- Within(x,   "individual", rm.null = FALSE, ...)
                 WDmu <- Within(Dmu, "individual", ...)
                 W2 <- fitted(lm.fit(WDmu, x))
                 result <- W1 - W2
@@ -581,13 +589,12 @@ Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
 #
 # The "t" and "r" methods are not exported (by intention).
 #
-
 # The "t" methods perform shifting while taking the time period into
 # account (they "look" at the value in the time dimension).
-
+#
 # The "r" methods perform shifting row-wise (without taking the value
 # in the time dimension into account).
-
+#
 # Generic needed only for lead (lag and diff generics are already included in base R)
 
 
@@ -702,7 +709,8 @@ lead <- function(x, k = 1, ...) {
 }
 
 #' @rdname lag.plm
-#' @export
+#' @exportS3Method
+#' @export lag
 lag.pseries <- function(x, k = 1, shift = c("time", "row"), ...) {
   shift <- match.arg(shift)
   res <- if(shift == "time") lagt.pseries(x = x, k = k, ...) else lagr.pseries(x = x, k = k, ...)
@@ -718,7 +726,7 @@ lead.pseries <- function(x, k = 1, shift = c("time", "row"), ...) {
 }
 
 #' @rdname lag.plm
-#' @export
+#' @exportS3Method
 diff.pseries <- function(x, lag = 1, shift = c("time", "row"), ...) {
   shift <- match.arg(shift)
   res <- if(shift == "time") difft.pseries(x = x, lag = lag, ...) else diffr.pseries(x = x, lag = lag, ...)

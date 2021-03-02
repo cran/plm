@@ -55,19 +55,22 @@ fancy.row.names <- function(index, sep = "-") {
 #' attribute that describes its individual and time dimensions.
 #' 
 #' The `index` argument indicates the dimensions of the panel. It can
-#' be: \itemize{ \item a vector of two character strings which
-#' contains the names of the individual and of the time indexes, \item
+#' be: \itemize{
+#' \item a vector of two character strings which
+#' contains the names of the individual and of the time indexes,
+#' \item
 #' a character string which is the name of the individual index
 #' variable. In this case, the time index is created automatically and
 #' a new variable called "time" is added, assuming consecutive and
-#' ascending time periods in the order of the original data, \item an
-#' integer, the number of individuals. In this case, the data need to
-#' be a balanced panel and be organized as a stacked time series
+#' ascending time periods in the order of the original data,
+#' \item an integer, the number of individuals. In this case, the data
+#' need to be a balanced panel and be organized as a stacked time series
 #' (successive blocks of individuals, each block being a time series
 #' for the respective individual) assuming consecutive and ascending
 #' time periods in the order of the original data. Two new variables
 #' are added: "id" and "time" which contain the individual and the
-#' time indexes.  }
+#' time indexes.
+#' }
 #' 
 #' The `"[["` and `"$"` extract a series from the `pdata.frame`.  The
 #' `"index"` attribute is then added to the series and a class
@@ -238,7 +241,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
       x <- x[, !cst.check]
     }
   
-    # sanity check for 'index' argument. First check the presence of a
+    # sanity check for 'index' argument. First, check the presence of a
     # grouping variable, this should be the third element of the index
     # vector or any "group" named element of this vector
     group.name <- NULL
@@ -381,17 +384,30 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     index <- x[, posindex]
     if (drop.index) {
         x <- x[ , -posindex, drop = FALSE]
-        if (ncol(x) == 0L) cat("after dropping of index variables, the pdata.frame contains 0 columns")
+        if (ncol(x) == 0L) warning("after dropping of index variables, the pdata.frame contains 0 columns")
     }
     
-    test_doub <- table(index[[1]], index[[2]], useNA = "ifany")
-    if (anyNA(colnames(test_doub)) || anyNA(rownames(test_doub)))
-        cat(paste0("at least one couple (id-time) has NA in at least one index dimension",
-                   "in resulting pdata.frame\n to find out which, use e.g., ",
-                   "table(index(your_pdataframe), useNA = \"ifany\")\n"))
-    if (any(as.vector(test_doub[!is.na(rownames(test_doub)), !is.na(colnames(test_doub))]) > 1))
-        warning(paste("duplicate couples (id-time) in resulting pdata.frame\n to find out which,",
-                      "use e.g., table(index(your_pdataframe), useNA = \"ifany\")"))
+    ### warn if duplicate couples
+    test_doub <- table(index[[1L]], index[[2L]], useNA = "ifany")
+    if (any(as.vector(test_doub[!is.na(rownames(test_doub)), !is.na(colnames(test_doub))]) > 1L))
+      warning(paste("duplicate couples (id-time) in resulting pdata.frame\n to find out which,",
+                    "use, e.g., table(index(your_pdataframe), useNA = \"ifany\")"))
+    
+    ### warn if NAs in index as likely not sane
+    if (anyNA(index[[1L]]) || anyNA(index[[2L]]) || (if(ncol(index) == 3L) anyNA(index[[3L]]) else FALSE))
+        warning(paste0("at least one NA in at least one index dimension ",
+                       "in resulting pdata.frame\n to find out which, use, e.g., ",
+                       "table(index(your_pdataframe), useNA = \"ifany\")\n"))
+    
+    ### Could also remove rows with NA in any index' dimension
+    # drop.rows <- is.na(index[[1L]]) | is.na(index[[2L]])
+    # if(ncol(index) == 3L) drop.rows <- drop.rows | is.na(index[[3L]])
+    # if((no.drop.rows <- sum(drop.rows)) > 0L) {
+    #   x <- x[!drop.rows, ]
+    #   index <- index[!drop.rows, ]
+    #   txt.drop.rows <- paste0(no.drop.rows, " row(s) dropped in resulting pdata.frame due to NA(s) in at least one index dimension")
+    #   warning(txt.drop.rows)
+    # }
     
     if (row.names) {
         attr(x, "row.names") <- fancy.row.names(index)
@@ -465,6 +481,35 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
 #   result <- add_pseries_features(result, index)
 #   return(result)
 # }
+
+## Non-exported internal function for subsetting of pseries. Can be used
+## internally. 
+## Currently we do not have "proper" subsetting function for pseries
+## ([.pseries) which applies in any case (but see the sketch to be tested in
+##  tool_pdata.frame.R)
+subset_pseries <- function(x, ...) {
+  
+  ## use '...' instead of only one specific argument, because subsetting for
+  ## factors can have argument 'drop', e.g., x[i, drop=TRUE] see ?Extract.factor
+  index <- attr(x, "index")
+  if (is.null(index)) warning("pseries object with is.null(index(pseries)) == TRUE encountered, trying to continue anyway...")
+  if (!is.index(index)) stop(paste0("pseries object has illegal index with class(index) == ", paste0(class(index), collapse = ", ")))
+  names_orig <- names(x)
+  x <- remove_pseries_features(x)
+  result <- x[...]
+  
+  # subset index / identify rows to keep in the index:
+  keep_rownr <- seq_along(names_orig)  # full length row numbers original pseries
+  names(keep_rownr) <- names_orig
+  keep_rownr <- keep_rownr[names(result)] # row numbers to keep after subsetting
+  index <- index[keep_rownr, ]
+  
+  # drop unused levels (like in subsetting of pdata.frames)
+  index <- droplevels(index)
+  
+  result <- add_pseries_features(result, index)
+  return(result)
+}
 
 
 #' @rdname pdata.frame
@@ -1046,4 +1091,62 @@ index.pseries <- function(x, which = NULL, ...) {
 index.panelmodel <- function(x, which = NULL, ...) {
   anindex <- attr(x$model, "index")
   index(x = anindex, which = which)
+}
+
+
+is.index <- function(index) {
+  # not exported, helper function
+  # checks if the index is an index in the sense of package plm
+  res <- if (all(class(index) == c("pindex", "data.frame"))) TRUE else FALSE
+  return(res)
+}
+
+has.index <- function(object) {
+  # not exported, helper function
+  # checks if an object has an index in sense of package plm
+  # (esp. to distinguish from zoo::index() which always returns an index)
+  index <- attr(object, "index")
+  return(is.index(index))
+}
+
+checkNA.index <- function(index, which = "all", error = TRUE) {
+  # not exported, helper function
+  # check if any NA in indexes (all or specific dimension)
+  
+  feedback <- if(error) stop else warning
+  
+  if(which == "all") {
+    if(anyNA(index[[1L]])) feedback("NA in the individual index variable")
+    if(anyNA(index[[2L]])) feedback("NA in the time index variable")
+    if(ncol(index) == 3L) { if(anyNA(index[[3L]])) feedback("NA in the group index variable") }
+  }
+  if(which == 1L) {
+    if(anyNA(index[[1L]])) feedback("NA in the individual index variable")
+  }
+  if(which == 2L) {
+    if(anyNA(index[[2L]])) feedback("NA in the time index variable")
+  }
+  if(which == 3L) {
+    if(anyNA(index[[3L]])) feedback("NA in the group index variable")
+  }
+}
+
+# pos.index:
+# not exported, helper function
+#
+# determines column numbers of the index variables in a pdata.frame
+# returns named numeric of length 2 or 3 with column numbers of the index variables
+# (1: individual index, 2: time index, if available 3: group index), 
+# names are the names of the index variables
+#
+# returns c(NA, NA) / c(NA, NA, NA) if the index variables are not a column in the pdata.frame
+# (e.g., for pdata.frames created with drop.index = TRUE).
+# Cannot detect index variables if their columns names were changed after creation of the pdata.frame
+
+pos.index <- function(x, ...) {
+  index <- attr(x, "index")
+  index_names <- names(index)
+  index_pos <- match(index_names, names(x))
+  names(index_pos) <- index_names
+  return(index_pos)
 }

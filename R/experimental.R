@@ -70,40 +70,7 @@ fitted_exp.plm <- function(x, ...) { #### experimental, non-exported function
   return(y - res)
 }
 
-is.index <- function(index) {
-    # not exported, helper function
-    # checks if the index is an index in the sense of package plm
-    res <- if (all(class(index) == c("pindex", "data.frame"))) TRUE else FALSE
-    return(res)
-}
 
-has.index <- function(object) {
-  # not exported, helper function
-  # checks if an object has an index in sense of package plm
-  # (esp. to distinguish from zoo::index() which always returns an index)
-  index <- attr(object, "index")
-  return(is.index(index))
-}
-
-# pos.index:
-# not exported, helper function
-#
-# determines column numbers of the index variables in a pdata.frame
-# returns named numeric of length 2 or 3 with column numbers of the index variables
-# (1: individual index, 2: time index, if available 3: group index), 
-# names are the names of the index variables
-#
-# returns c(NA, NA) / c(NA, NA, NA) if the index variables are not a column in the pdata.frame
-# (e.g., for pdata.frames created with drop.index = TRUE).
-# Cannot detect index variables if their columns names were changed after creation of the pdata.frame
-
-pos.index <- function(x, ...) {
-  index <- attr(x, "index")
-  index_names <- names(index)
-  index_pos <- match(index_names, names(x))
-  names(index_pos) <- index_names
-  return(index_pos)
-}
 
 # check_propagation_correct_class: helper function
 # Function checks if the class and storage mode (type) of an object match 
