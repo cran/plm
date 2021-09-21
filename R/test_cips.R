@@ -23,34 +23,36 @@
 #' Cross-sectionally augmented Im, Pesaran and Shin (IPS) test for
 #' unit roots in panel models.
 #' 
-#' This cross-sectionally augmented version of the IPS unit root test
-#' (H0: the `pseries` has a unit root) is a so-called
-#' second-generation panel unit root test: it is in fact robust
-#' against cross-sectional dependence, provided that the default
-#' `type="cmg"` is calculated. Else one can obtain the standard
+#' Pesaran's \insertCite{pes07}{plm} cross-sectionally augmented version of 
+#' the IPS unit root test \insertCite{IM:PESAR:SHIN:03}{plm} (H0: `pseries` 
+#' has a unit root) is a so-called second-generation panel unit root test: it 
+#' is in fact robust against cross-sectional dependence, provided that the default
+#' `model="cmg"` is calculated. Else one can obtain the standard
 #' (`model="mg"`) or cross-sectionally demeaned (`model="dmg"`)
 #' versions of the IPS test.
 #' 
-# TODO: maybe be more verbose here? write about type arg which corresponds
-# cases III, II, I in Pesaran (2007) etc.
+#' Argument `type` controls how the test is executed:
+#' - `"none"`: no intercept, no trend (Case I in \insertCite{pes07}{plm}),
+#' - `"drift"`: with intercept, no trend (Case II),
+#' - `"trend"` (default): with intercept, with trend (Case III).
 #' 
-#' @aliases cipstest
 #' @param x an object of class `"pseries"`,
-#' @param lags lag order for Dickey-Fuller augmentation,
-#' @param type one of `"trend"`, `"drift"`, `"none"`,
-#' @param model one of `"cmg"`, `"mg"`, `"dmg"`,
-#' @param truncated logical specifying whether to calculate the
-#'     truncated version of the test,
+#' @param lags integer, lag order for Dickey-Fuller augmentation,
+#' @param type one of `"trend"` (default), `"drift"`, `"none"`,
+#' @param model one of `"cmg"` (default), `"mg"`, `"dmg"`,
+#' @param truncated logical, specifying whether to calculate the
+#'     truncated version of the test (default: `FALSE`),
 #' @param \dots further arguments passed to `critvals.cips`
 #' (non-exported function).
 #' @return An object of class `"htest"`.
 #' @author Giovanni Millo
 #' @export
-#' @seealso [purtest()]
+#' @seealso [purtest()], [phansi()]
 #' @references
 #'
-#' \insertRef{pes07}{plm}
+#' \insertAllCited{}
 #' 
+#' @aliases cipstest
 #' @keywords htest
 #' @examples
 #' 
@@ -115,7 +117,7 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
     N <- pdim$nT$N
     ## set index names
     time.names <- pdim$panel.names$time.names
-    id.names <- pdim$panel.names$id.names
+    id.names   <- pdim$panel.names$id.names
     coef.names <- names(coef(pmod))
     ## number of coefficients
     k <- length(coef.names)
@@ -149,17 +151,17 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
   switch(match.arg(model),
          
     "mg" = {
-      ## final data as dataframe, to be subsetted for single TS models
+      ## final data as dataframe, to be subset for single TS models
       ## (if 'trend' fix this variable's name)
       switch(match.arg(type),
         "trend" = {
-          ## make datafr. subtracting intercept and add trend
-          adfdati <- data.frame(cbind(y, X[ , -1L]))
+          ## make datafr. removing intercept and add trend
+          adfdati <- data.frame(cbind(y, X[ , -1L, drop = FALSE]))
           dimnames(adfdati)[[2L]] <- c(clnames, "trend")
           adffm <- update(adffm, . ~ . -as.numeric(tind) + trend)},
         "drift" = {
-          ## make df subtracting intercept
-          adfdati <- data.frame(cbind(y, X[ , -1L]))
+          ## make df removing intercept
+          adfdati <- data.frame(cbind(y, X[ , -1L, drop = FALSE]))
           dimnames(adfdati)[[2L]] <- clnames},
         "none" = {
           ## just make df (intercept isn't there)
@@ -171,37 +173,28 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
       unind <- unique(ind)
       for(i in 1:n) {
         tdati <- adfdati[ind == unind[i], ]
-        tmods[[i]] <- lm(adffm, tdati)
-        }
+        tmods[[i]] <- lm(adffm, tdati, model = FALSE) # TODO: check if my.lm.fit can be used
+        }                              # (with minor modifications to code down below for t-val extraction etc.)
       },
     
     "dmg" = {
-      ## old: between-periods transformation (take means over group for each t)
-         ## be <- function(x, index, na.rm = TRUE) tapply(x, index, mean, na.rm = na.rm)
-         ## Xm <- apply(X, 2 , FUN = be, index = tind)[tind, , drop = FALSE]
-         ## ym <- apply(as.matrix(as.numeric(y)), 2 , FUN = be, index = tind)[tind]
-         # Xm <- Between(X, effect = tind, na.rm = TRUE)
-         # ym <- Between(y, effect = tind, na.rm = TRUE)
-         ## demean
-         # demX <- X - Xm
-         # demy <- y - ym
-      
+      ## demean (via means over group for each t)
       ## we do not care about demeaning the intercept or not as it is
       ## eliminated anyway
       demX <- Within(X, effect = tind, na.rm = TRUE)
       demy <- Within(y, effect = tind, na.rm = TRUE)
 
-      ## final data as dataframe, to be subsetted for single TS models
+      ## final data as dataframe, to be subset for single TS models
       ## (if 'trend' fix this variable's name)
       switch(match.arg(type),
         "trend" = {
-          ## make datafr. subtracting intercept and add trend
-          adfdati <- data.frame(cbind(demy, demX[ , -1L]))
+          ## make datafr. removing intercept and add trend
+          adfdati <- data.frame(cbind(demy, demX[ , -1L, drop = FALSE]))
           dimnames(adfdati)[[2L]] <- c(clnames, "trend")
           adffm <- update(adffm, . ~ . -as.numeric(tind) + trend)},
         "drift" = {
-          ## make df subtracting intercept
-          adfdati <- data.frame(cbind(demy, demX[ , -1L]))
+          ## make df removing intercept
+          adfdati <- data.frame(cbind(demy, demX[ , -1L, drop = FALSE]))
           dimnames(adfdati)[[2L]] <- clnames},
         "none" = {
           ## just make df (intercept isn't there)
@@ -213,7 +206,7 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
       unind <- unique(ind)
       for(i in 1:n) {
         tdati <- adfdati[ind == unind[i], ]
-        tmods[[i]] <- lm(adffm, tdati)
+        tmods[[i]] <- lm(adffm, tdati, model = FALSE)  # TODO: check if my.lm.fit can be used
         }
     },
     
@@ -230,33 +223,30 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
                           deterministic2, sep = ""))
 
       ## between-periods transformation (take means over groups for each t)
-          # be <- function(x, index, na.rm = TRUE) tapply(x, index, mean, na.rm = na.rm)
-          # Xm <- apply(X, 2, FUN = be, index = tind)[tind, , drop = FALSE]
-          # ym <- apply(as.matrix(as.numeric(y)), 2, FUN = be, index = tind)[tind]
       Xm <- Between(X, effect = tind, na.rm = TRUE)
       ym <- Between(y, effect = tind, na.rm = TRUE)
       
-      ## final data as dataframe, to be subsetted for single TS models
+      ## final data as dataframe, to be subset for single TS models
       ## (purge intercepts etc., if 'trend' fix this variable's name)
       switch(match.arg(type),
         "trend" = {
-          augX <- cbind(X[ , -1L], ym, Xm[ , -1L])
-          adfdati <- data.frame(cbind(y, augX))
           ## purge intercept, averaged intercept and averaged trend
-          ## (which is always last col.)
-          adfdati <- adfdati[,-(dim(adfdati)[[2L]])]
+          ## (the latter is always last col. of Xm)
+          augX <- cbind(X[ , -1L, drop = FALSE], ym, Xm[ , -c(1L, dim(Xm)[[2L]]), drop = FALSE])
+          adfdati <- data.frame(cbind(y, augX))
           dimnames(adfdati)[[2L]] <- c(clnames, "trend",
                                       paste(clnames, "bar", sep="."))
           adffm <- update(adffm, . ~ . -as.numeric(tind) + trend)},
         
         "drift" = {
-          augX <- cbind(X[ , -1L], ym, Xm[ , -1L])
+          # remove intercepts
+          augX <- cbind(X[ , -1L, drop = FALSE], ym, Xm[ , -1L, drop = FALSE])
           adfdati <- data.frame(cbind(y, augX))
-          dimnames(adfdati)[[2]] <- c(clnames,
+          dimnames(adfdati)[[2L]] <- c(clnames,
                                       paste(clnames, "bar", sep="."))},
         "none" = {
-          ## no intercepts here
-          augX <- cbind(X,ym,Xm)
+          ## no intercepts here, so none to be removed
+          augX <- cbind(X, ym, Xm)
           adfdati <- data.frame(cbind(y, augX))
           dimnames(adfdati)[[2L]] <- c(clnames,
                                       paste(clnames, "bar", sep="."))
@@ -267,13 +257,13 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
       unind <- unique(ind)
       for(i in 1:n) {
         tdati <- adfdati[ind == unind[i], ]
-        tmods[[i]] <- lm(adffm, tdati)
+        tmods[[i]] <- lm(adffm, tdati, model = FALSE)  # TODO: check if my.lm.fit can be used
         }
   })
 
   
   ## CIPS statistic as an average of the t-stats on the coefficient of 'le'
-  tstats <- vapply(tmods, function(mod) gettvalue(mod, "le"), FUN.VALUE = 0.0)
+  tstats <- vapply(tmods, function(mod) gettvalue(mod, "le"), FUN.VALUE = 0.0, USE.NAMES = FALSE)
   
   if(truncated) {
       ## set bounds, Pesaran (2007), p. 277
@@ -312,13 +302,15 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
 
   parameter <- lags
   names(parameter) <- "lag order"
-  dname <- paste(deparse(substitute(x)))
   names(cipstat) <- "CIPS test"
 
-  RVAL <- list(statistic = cipstat, parameter = parameter,
-               data.name = dname, tmods = tmods,
-               method = "Pesaran's CIPS test for unit roots",
-               alternative = "Stationarity", p.value = pval)
+  RVAL <- list(statistic   = cipstat,
+               parameter   = parameter,
+               data.name   = paste(deparse(substitute(x))),
+               tmods       = tmods,
+               method      = "Pesaran's CIPS test for unit roots",
+               alternative = "Stationarity",
+               p.value     = pval)
   class(RVAL) <- "htest"
   return(RVAL)
 }
@@ -381,10 +373,10 @@ critvals.cips <- function(stat, n, T., type = c("trend", "drift", "none"),
   )
   
   ## make critical values' cube
-  nvals <- array(data = NA_real_, dim = c(8, 8, 3))
-  nvals[ , , 1] <- nvals1
-  nvals[ , , 2] <- nvals5
-  nvals[ , , 3] <- nvals10
+  nvals <- array(data = NA_real_, dim = c(8L, 8L, 3L))
+  nvals[ , , 1L] <- nvals1
+  nvals[ , , 2L] <- nvals5
+  nvals[ , , 3L] <- nvals10
   dimnames(nvals) <- list(rnam, cnam, znam)
   
   ## Intercept only (Case II), Table II(b) in Pesaran (2007), p. 280
@@ -426,10 +418,10 @@ critvals.cips <- function(stat, n, T., type = c("trend", "drift", "none"),
   )
   
   ## make critical values' cube
-  dvals <- array(data = NA_real_, dim = c(8, 8, 3))
-  dvals[ , , 1] <- dvals1
-  dvals[ , , 2] <- dvals5
-  dvals[ , , 3] <- dvals10
+  dvals <- array(data = NA_real_, dim = c(8L, 8L, 3L))
+  dvals[ , , 1L] <- dvals1
+  dvals[ , , 2L] <- dvals5
+  dvals[ , , 3L] <- dvals10
   dimnames(dvals) <- list(rnam, cnam, znam)
   
   ## Intercept and trend (Case III), Table II(c) in Pesaran (2007), p. 281
@@ -471,10 +463,10 @@ critvals.cips <- function(stat, n, T., type = c("trend", "drift", "none"),
   )
   
   ## make critical values' cube
-  tvals <- array(data = NA_real_, dim = c(8, 8, 3))
-  tvals[ , , 1] <- tvals1
-  tvals[ , , 2] <- tvals5
-  tvals[ , , 3] <- tvals10
+  tvals <- array(data = NA_real_, dim = c(8L, 8L, 3L))
+  tvals[ , , 1L] <- tvals1
+  tvals[ , , 2L] <- tvals5
+  tvals[ , , 3L] <- tvals10
   dimnames(tvals) <- list(rnam, cnam, znam)
   
   ## if truncated substitute values according to Tables II(a), II(b), II(c)
@@ -578,10 +570,12 @@ critvals.cips <- function(stat, n, T., type = c("trend", "drift", "none"),
 }
 
 
-## gettvalue: helper function to extract one or more t value(s)
-## (coef/s.e.) for a coefficient from model object useful if one wants
-## to avoid the computation of a whole lot of values with summary()
 gettvalue <- function(x, coefname) {
+  ## non-exported
+  ## helper function to extract one or more t value(s)
+  ## (coef/s.e.) for a coefficient from model object useful if one wants
+  ## to avoid the computation of a whole lot of values with summary()
+  
   # x: model object (usually class plm or lm) coefname: character
   # indicating name(s) of coefficient(s) for which the t value(s) is
   # (are) requested

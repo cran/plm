@@ -1,7 +1,9 @@
 ## ----echo=FALSE,results='hide'------------------------------------------------
-options(prompt= "R> ", useFancyQuotes = FALSE)
+options(prompt= "R> ", useFancyQuotes = FALSE, scipen = 999)
+library("knitr")
+opts_chunk$set(message = FALSE, warning = FALSE)
 
-## ----echo=TRUE,results='hide'-------------------------------------------------
+## ----echo=TRUE, results='hide'------------------------------------------------
 library("plm")
 
 ## -----------------------------------------------------------------------------
@@ -30,18 +32,17 @@ head(Within(E$emp))
 head(between(E$emp), 4)
 head(Between(E$emp), 10)
 
-## -----------------------------------------------------------------------------
-emp ~ wage + capital | lag(wage,1) + capital
-emp ~ wage + capital | . -wage + lag(wage,1)
+## ----results='hide'-----------------------------------------------------------
+emp ~ wage + capital | lag(wage, 1) + capital
+emp ~ wage + capital | . -wage + lag(wage, 1)
 
-## ----fe-----------------------------------------------------------------------
+## ----fe_re--------------------------------------------------------------------
 grun.fe <- plm(inv~value+capital, data = Grunfeld, model = "within")
-
-## ----re-----------------------------------------------------------------------
 grun.re <- plm(inv~value+capital, data = Grunfeld, model = "random")
 
-## -----------------------------------------------------------------------------
+## ----summary_re---------------------------------------------------------------
 summary(grun.re)
+ranef(grun.re)
 
 ## -----------------------------------------------------------------------------
 fixef(grun.fe, type = "dmean")
@@ -51,7 +52,7 @@ summary(fixef(grun.fe, type = "dmean"))
 
 ## -----------------------------------------------------------------------------
 grun.twfe <- plm(inv~value+capital, data=Grunfeld, model="within", effect="twoways")
-fixef(grun.twfe, effect="time")
+fixef(grun.twfe, effect = "time")
 
 ## -----------------------------------------------------------------------------
 grun.amem <- plm(inv~value+capital, data=Grunfeld,
@@ -60,7 +61,7 @@ grun.amem <- plm(inv~value+capital, data=Grunfeld,
 ## -----------------------------------------------------------------------------
 ercomp(inv~value+capital, data=Grunfeld, method = "amemiya", effect = "twoways")
 
-## -----------------------------------------------------------------------------
+## ----2RE-amemiya--------------------------------------------------------------
 grun.tways <- plm(inv~value+capital, data = Grunfeld, effect = "twoways",
                   model = "random", random.method = "amemiya")
 summary(grun.tways)
@@ -74,7 +75,7 @@ summary(Hed)
 ## ----hedonic-punbal-----------------------------------------------------------
 punbalancedness(Hed)
 
-## -----------------------------------------------------------------------------
+## ----G2SLS--------------------------------------------------------------------
 data("Crime", package = "plm")
 cr <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
           ldensity + lwcon + lwtuc + lwtrd + lwfir + lwser + lwmfg + lwfed +
@@ -83,18 +84,13 @@ cr <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
           data = Crime, model = "random")
 summary(cr)
 
-## -----------------------------------------------------------------------------
-## (note: function pht is a deprecated way to estimate this type of model
-## ht <- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+
-##           bluecol+ind+union+sex+black+ed | 
-##           sex+black+bluecol+south+smsa+ind,
-##           data=Wages,index=595)
+## ----hausman-taylor-----------------------------------------------------------
 ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp ^ 2) + 
               bluecol + ind + union + sex + black + ed |
               bluecol + south + smsa + ind + sex + black |
               wks + married + union + exp + I(exp ^ 2), 
           data = Wages, index = 595,
-          random.method = "ht", model = "random", inst.method = "baltagi")
+          model = "random", random.method = "ht", inst.method = "baltagi")
 summary(ht)
 
 ## ----grunfeld.within----------------------------------------------------------
@@ -104,7 +100,7 @@ summary(grun.varr)
 
 ## ----gmm----------------------------------------------------------------------
 emp.gmm <- pgmm(log(emp)~lag(log(emp), 1:2)+lag(log(wage), 0:1)+log(capital)+
-                lag(log(output), 0:1)|lag(log(emp), 2:99),
+                lag(log(output), 0:1) | lag(log(emp), 2:99),
                 data = EmplUK, effect = "twoways", model = "twosteps")
 summary(emp.gmm)
 
@@ -185,21 +181,51 @@ pcdtest(inv~value+capital, data=Grunfeld)
 ## ----pcdtest2-----------------------------------------------------------------
 pcdtest(inv~value+capital, data=Grunfeld, model="within")
 
-## -----------------------------------------------------------------------------
+## ----levinlin-----------------------------------------------------------------
+data("HousePricesUS", package = "pder")
+lprice <- log(pdata.frame(HousePricesUS)$price)
+(lev <- purtest(lprice, test = "levinlin", lags = 2, exo = "trend"))
+summary(lev) ### gives details
+
+## ----ips----------------------------------------------------------------------
+purtest(lprice, test = "ips", lags = 2, exo = "trend")
+
+## ----phansi1------------------------------------------------------------------
+### input is numeric (p-values), replicates Hanck (2013), Table 11 (left side)
+pvals <- c(0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0050,0.0050,0.0050,
+           0.0050,0.0175,0.0175,0.0200,0.0250,0.0400,0.0500,0.0575,0.2375,0.2475)
+countries <- c("Argentina","Sweden","Norway","Mexico","Italy","Finland","France",
+              "Germany","Belgium","U.K.","Brazil","Australia","Netherlands",
+              "Portugal","Canada", "Spain","Denmark","Switzerland","Japan")
+names(pvals) <- countries
+h <- phansi(pvals)
+print(h)
+h$rejected # logical indicating the individuals with rejected individual H0
+
+## ----phansi2, results='hide'--------------------------------------------------
+### input is a (suitable) purtest object / different example
+y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
+obj <- purtest(y, pmax = 4, exo = "intercept", test = "madwu")
+phansi(obj, alpha = 0.06) # test with significance level set to 6 %
+
+## ----vcovHC1------------------------------------------------------------------
+re <- plm(inv~value+capital, data = Grunfeld, model = "random")
+summary(re, vcov = vcovHC) # gives usual summary output but with robust test statistics
+
 library("lmtest")
-re <- plm(inv~value+capital, data=Grunfeld, model="random")
 coeftest(re, vcovHC, df = Inf)
 
-## ----results='hide'-----------------------------------------------------------
+## ----vcovHC2, results='hide'--------------------------------------------------
+summary(re, vcov = vcovHC(re, method="white2", type="HC3"), df = Inf)
 coeftest(re, vcovHC(re, method="white2", type="HC3"), df = Inf)
 
-## ----waldtest-----------------------------------------------------------------
-waldtest(re, update(re,.~.-capital),
+## ----waldtest-vcovHC----------------------------------------------------------
+waldtest(re, update(re, . ~ . -capital),
          vcov=function(x) vcovHC(x, method="white2", type="HC3"))
 
-## -----------------------------------------------------------------------------
+## ----car-vcovHC---------------------------------------------------------------
 library("car")
-linearHypothesis(re, "2*value=capital", vcov.=vcovHC)
+linearHypothesis(re, "2*value=capital", vcov. = vcovHC)
 
 ## ----re2----------------------------------------------------------------------
 library(nlme)

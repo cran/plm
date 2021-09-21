@@ -16,14 +16,14 @@ cipstest(
 \arguments{
 \item{x}{an object of class \code{"pseries"},}
 
-\item{lags}{lag order for Dickey-Fuller augmentation,}
+\item{lags}{integer, lag order for Dickey-Fuller augmentation,}
 
-\item{type}{one of \code{"trend"}, \code{"drift"}, \code{"none"},}
+\item{type}{one of \code{"trend"} (default), \code{"drift"}, \code{"none"},}
 
-\item{model}{one of \code{"cmg"}, \code{"mg"}, \code{"dmg"},}
+\item{model}{one of \code{"cmg"} (default), \code{"mg"}, \code{"dmg"},}
 
-\item{truncated}{logical specifying whether to calculate the
-truncated version of the test,}
+\item{truncated}{logical, specifying whether to calculate the
+truncated version of the test (default: \code{FALSE}),}
 
 \item{\dots}{further arguments passed to \code{critvals.cips}
 (non-exported function).}
@@ -36,13 +36,20 @@ Cross-sectionally augmented Im, Pesaran and Shin (IPS) test for
 unit roots in panel models.
 }
 \details{
-This cross-sectionally augmented version of the IPS unit root test
-(H0: the \code{pseries} has a unit root) is a so-called
-second-generation panel unit root test: it is in fact robust
-against cross-sectional dependence, provided that the default
-\code{type="cmg"} is calculated. Else one can obtain the standard
+Pesaran's \insertCite{pes07}{plm} cross-sectionally augmented version of
+the IPS unit root test \insertCite{IM:PESAR:SHIN:03}{plm} (H0: \code{pseries}
+has a unit root) is a so-called second-generation panel unit root test: it
+is in fact robust against cross-sectional dependence, provided that the default
+\code{model="cmg"} is calculated. Else one can obtain the standard
 (\code{model="mg"}) or cross-sectionally demeaned (\code{model="dmg"})
 versions of the IPS test.
+
+Argument \code{type} controls how the test is executed:
+\itemize{
+\item \code{"none"}: no intercept, no trend (Case I in \insertCite{pes07}{plm}),
+\item \code{"drift"}: with intercept, no trend (Case II),
+\item \code{"trend"} (default): with intercept, with trend (Case III).
+}
 }
 \examples{
 
@@ -53,10 +60,10 @@ cipstest(Produc$gsp, type = "trend")
 
 }
 \references{
-\insertRef{pes07}{plm}
+\insertAllCited{}
 }
 \seealso{
-\code{\link[=purtest]{purtest()}}
+\code{\link[=purtest]{purtest()}}, \code{\link[=phansi]{phansi()}}
 }
 \author{
 Giovanni Millo

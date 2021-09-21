@@ -25,10 +25,11 @@ remove_pseries_features <- function(x) {
 #  if (!is.pseries(x)) warning("removing pseries features now but object was not a proper pseries before")
   
   attr(x, "index") <- NULL
-  x <- check_propagation_correct_class(x)
- # attr(x, "class") <- setdiff(class(x), "pseries") # cannot use this, don't know why
-  class(x) <- setdiff(class(x), "pseries")
-  return(x)
+  # unclass is simpler and faster than previously (up to and incl. rev. 1307) used
+  # combination of check_propagation_correct_class() and class() <- setdiff(class(<.>), "pseries")
+  # unclass handles propagation and keeps names but coerces factor to integer
+  x <- if(!is.factor(x)) unclass(x) else { class(x) <- setdiff(class(x), "pseries"); x }
+  x
 }
 
 add_pseries_features <- function(x, index) {
@@ -70,16 +71,21 @@ Ops.pseries <- function(e1, e2) {
   # some other data types
   add_back_pseries <- if (is.atomic(res) && !is.matrix(res) && !is.pairlist(res)) TRUE else FALSE
   if (add_back_pseries) {
-    if (miss_e2 && e1_pseries) relevant_index <- index_e1
+    if (miss_e2 && e1_pseries)      relevant_index <- index_e1
     if ( e1_pseries && !e2_pseries) relevant_index <- index_e1
     if (!e1_pseries &&  e2_pseries) relevant_index <- index_e2
     if ( e1_pseries &&  e2_pseries) {
       # decide on index for result:
       # if objects vary in length: shorter object is recycled by R
       #  -> must take index of non-recycled object (= longer pseries)
+      #
+      # Also, base R uses the names of the first operand -> additional justification
+      # to assign index_e1 in case of same number of rows
       relevant_index <- if (nrow(index_e1) >= nrow(index_e2)) index_e1 else index_e2
-      if ((nrow(index_e1) == nrow(index_e2)) && !isTRUE(all.equal(index_e1, index_e2)))
-        warning("indexes of pseries have same length but not same content: result was assigned first operand's index")
+      
+      # do not warn anymore (since rev. 1181)
+  #    if ((nrow(index_e1) == nrow(index_e2)) && !isTRUE(all.equal(index_e1, index_e2)))
+  #      warning("indexes of pseries have same length but not same content: result was assigned first operand's index")
     }
     res <- add_pseries_features(res, relevant_index)
   }
@@ -92,7 +98,7 @@ Math.pseries <- function(x, ...) {
 #  print("Math.pseries executed!") # debug output
 
   index <- attr(x, "index")
-  if (inherits(x, "pseries")) x <- remove_pseries_features(x)
+  x <- remove_pseries_features(x)
   
   x <- get(.Generic)(x, ...)
   x <- add_pseries_features(x, index)
@@ -104,7 +110,7 @@ Complex.pseries <- function(z) {
 #  print("Complex.pseries executed!") # debug output
 
   index <- attr(z, "index")
-  if (inherits(z, "pseries")) z <- remove_pseries_features(z)
+  z <- remove_pseries_features(z)
 
   z <- get(.Generic)(z)
   z <- add_pseries_features(z, index)

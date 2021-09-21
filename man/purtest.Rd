@@ -53,7 +53,7 @@ variables (\code{"none"}), individual intercepts (\code{"intercept"}), or
 individual intercepts and trends (\code{"trend"}), but see Details,}
 
 \item{lags}{the number of lags to be used for the augmented
-Dickey-Fuller regressions: either an integer (the number of
+Dickey-Fuller regressions: either a single value integer (the number of
 lags for all time series), a vector of integers (one for each
 time series), or a character string for an automatic
 computation of the number of lags, based on the AIC
@@ -68,7 +68,7 @@ indicating whether the heteroskedasticity-consistent test of
 \insertCite{HADR:00;textual}{plm} should be computed,}
 
 \item{q}{the bandwidth for the estimation of the long-run variance
-(only relevant for \code{test = "levinlin"}, the default (`q = NULL``)
+(only relevant for \code{test = "levinlin"}, the default (\code{q = NULL})
 gives the value as suggested by the authors as round(3.21 * T^(1/3))),}
 
 \item{dfcor}{logical, indicating whether the standard deviation of
@@ -90,12 +90,16 @@ possible if package 'urca' is installed).}
 }
 \value{
 For purtest: An object of class \code{"purtest"}: a list with the elements
-\code{"statistic"} (a \code{"htest"} object), \code{"call"}, \code{"args"},
-\code{"idres"} (containing results from the individual regressions),
-and \code{"adjval"} (containing the simulated means and variances
-needed to compute the statistic, for \code{"test = levinlin"} and \code{"ips"},
-otherwise \code{NULL}), \code{"sigma2"} (short-run and long-run variance for
-\code{"test = levinlin"}, otherwise NULL).
+named:
+\itemize{
+\item \code{"statistic"} (a \code{"htest"} object),
+\item \code{"call"},
+\item \code{"args"},
+\item \code{"idres"} (containing results from the individual regressions),
+\item \code{"adjval"} (containing the simulated means and variances needed to compute
+the statistic, for \code{test = "levinlin"} and \code{"ips"}, otherwise \code{NULL}),
+\item \code{"sigma2"} (short-run and long-run variance for \code{test = "levinlin"}, otherwise NULL).
+}
 }
 \description{
 \code{purtest} implements several testing procedures that have been proposed
@@ -107,31 +111,31 @@ augmented Dickey-Fuller (ADF) regressions for each time series. A
 statistic is then computed using the t-statistics associated with
 the lagged variable. The Hadri residual-based LM statistic is the
 cross-sectional average of the individual KPSS statistics
-\insertCite{KWIA:PHIL:SCHM:SHIN:92}{plm}, standardized by their
+\insertCite{KWIA:PHIL:SCHM:SHIN:92;textual}{plm}, standardized by their
 asymptotic mean and standard deviation.
 
 Several Fisher-type tests that combine p-values from tests based on
 ADF regressions per individual are available:
 \itemize{
 \item \code{"madwu"} is the inverse chi-squared test
-\insertCite{MADDA:WU:99}{plm}, also called P test by
+\insertCite{MADDA:WU:99;textual}{plm}, also called P test by
 \insertCite{CHOI:01;textual}{plm}.
 \item \code{"Pm"} is the modified P test proposed by
 \insertCite{CHOI:01;textual}{plm} for large N,
-\item \code{"invnormal"} is the inverse normal test by \insertCite{CHOI:01}{plm}, and
-\item \code{"logit"} is the logit test by \insertCite{CHOI:01}{plm}.
+\item \code{"invnormal"} is the inverse normal test by \insertCite{CHOI:01;textual}{plm}, and
+\item \code{"logit"} is the logit test by \insertCite{CHOI:01;textual}{plm}.
 }
 
 The individual p-values for the Fisher-type tests are approximated
-as described in \insertCite{MACK:96;textual}{plm} if the package 'urca'
+as described in \insertCite{MACK:96;textual}{plm} if the package \CRANpkg{urca}
 (\insertCite{PFAFF:08;textual}{plm}) is available, otherwise as described in
 \insertCite{MACK:94;textual}{plm}.
 
 For the test statistic tbar of the test of Im/Pesaran/Shin (2003)
-(\verb{ips.stat = "tbar}), no p-value is given but 1\%, 5\%, and 10\% critical
+(\code{ips.stat = "tbar"}), no p-value is given but 1\%, 5\%, and 10\% critical
 values are interpolated from paper's tabulated values via inverse distance
 weighting (printed and contained in the returned value's element
-statistic$ips.tbar.crit).
+\code{statistic$ips.tbar.crit}).
 
 Hadri's test, the test of Levin/Lin/Chu, and the tbar statistic of
 Im/Pesaran/Shin are not applicable to unbalanced panels; the tbar statistic
@@ -161,6 +165,10 @@ y <- data.frame(split(Grunfeld$inv, Grunfeld$firm)) # individuals in columns
 
 purtest(y, pmax = 4, exo = "intercept", test = "madwu")
 
+## same via pseries interface
+pGrunfeld <- pdata.frame(Grunfeld, index = c("firm", "year"))
+purtest(pGrunfeld$inv, pmax = 4, exo = "intercept", test = "madwu")
+
 ## same via formula interface
 purtest(inv ~ 1, data = Grunfeld, index = c("firm", "year"), pmax = 4, test = "madwu")
 
@@ -169,10 +177,9 @@ purtest(inv ~ 1, data = Grunfeld, index = c("firm", "year"), pmax = 4, test = "m
 \insertAllCited{}
 }
 \seealso{
-\code{\link[=cipstest]{cipstest()}}
+\code{\link[=cipstest]{cipstest()}}, \code{\link[=phansi]{phansi()}}
 }
 \author{
-Yves Croissant and for "Pm", "invnormal", and "logit" Kevin
-Tappe
+Yves Croissant and for "Pm", "invnormal", and "logit" Kevin Tappe
 }
 \keyword{htest}

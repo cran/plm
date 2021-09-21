@@ -6,6 +6,9 @@
 \description{
 A significant speed up can be gained by using fast (panel) data transformation
 functions from package \code{collapse}.
+An additional significant speed up for the two-way fixed effects case can be
+achieved if package \code{fixest} or \code{lfe} is installed (package \code{collapse}
+needs to be installed for the fast mode in any case).
 }
 \details{
 By default, this speed up is not enabled.
@@ -26,18 +29,27 @@ Having package \code{collapse} installed is a requirement for the speed up.
 However, this package is currently not a hard dependency for package \code{plm}
 but a 'Suggests' dependency.
 
+Availability of packages \code{fixest} and \code{lfe} is checked for once when
+package plm is attached and the additional speed up for the two-way fixed
+effect case is enabled automatically (\code{fixest} wins over \code{lfe}),
+given one of the packages is detected and \code{options("plm.fast" = TRUE)} is set.
+If so, the packages' fast algorithms to partial out fixed effects are
+used (\code{fixest::demean} (via \code{collapse::fhdwithin}), \code{lfe::demeanlist}).
+Both packages are 'Suggests' dependencies.
+
 Currently, these functions benefit from the speed-up (more functions are
 under investigation):
 \itemize{
 \item between,
 \item Between,
 \item Sum,
-\item Within.
+\item Within,
+\item pseriesfy.
 }
 }
 \examples{
 \dontrun{
-### A benchmark plm without and with speed-up
+### A benchmark of plm without and with speed-up
 library("plm")
 library("collapse")
 library("microbenchmark")
@@ -51,8 +63,8 @@ wlddevsmall$iso3c <- as.character(wlddevsmall$iso3c)
 data <- replicate(100, wlddevsmall, simplify = FALSE)
 rm(wlddevsmall)
 uniquify <- function(x, i) {
-	x$iso3c <- paste0(x$iso3c, i)
-	x
+  x$iso3c <- paste0(x$iso3c, i)
+  x
 }
 data <- unlist2d(Map(uniquify, data, as.list(1:100)), idcols = FALSE)
 data <- pdata.frame(data, index = c("iso3c", "year"))
@@ -60,24 +72,50 @@ pdim(data) # Balanced Panel: n = 21600, T = 59, N = 1274400 // but many NAs
 # data <- na.omit(data)
 # pdim(data) # Unbalanced Panel: n = 13300, T = 1-31, N = 93900
 
-options("plm.fast" = FALSE) # default: fast functions of 'collapse' not in use
-times <- 3 # no. of repetitions for benchmark - this takes quite long!
-bench_res_plm_baseR <- microbenchmark(
-  plm(form, data = data, model = "within"),
-  plm(form, data = data, model = "within", effect = "twoways"),
-  plm(form, data = data, model = "random"),
-  plm(form, data = data, model = "random", effect = "twoways"),
- times = times)
+times <- 1 # no. of repetitions for benchmark - this takes quite long!
 
-options("plm.fast" = TRUE)
-bench_res_plm_collapse <- microbenchmark(
-  plm(form, data = data, model = "within"),
-  plm(form, data = data, model = "within", effect = "twoways"),
-  plm(form, data = data, model = "random"),
-  plm(form, data = data, model = "random", effect = "twoways"),
- times = times)
-print(bench_res_plm_baseR,    unit = "s")
-print(bench_res_plm_collapse, unit = "s")
+onewayFE <- microbenchmark(
+ {options("plm.fast" = FALSE); plm(form, data = data, model = "within")},
+ {options("plm.fast" = TRUE);  plm(form, data = data, model = "within")},
+  times = times, unit = "relative")
+
+summary(onewayFE)
+
+## two-ways FE benchmark requires pkg fixest and lfe
+## (End-users shall only set option plm.fast. Option plm.fast.pkg.FE.tw shall
+##  _not_ be set by the end-user, it is determined automatically when pkg plm
+## is attached; however, it needs to be set explicitly in this example for the
+## benchmark.)
+if(requireNamespace("fixest", quietly = TRUE) &&
+   requireNamespace("lfe", quietly = TRUE)) {
+
+twowayFE <-  microbenchmark(
+ {options("plm.fast" = FALSE);                                    
+    plm(form, data = data, model = "within", effect = "twoways")},
+ {options("plm.fast" = TRUE, "plm.fast.pkg.FE.tw" = "collapse");
+    plm(form, data = data, model = "within", effect = "twoways")},
+ {options("plm.fast" = TRUE, "plm.fast.pkg.FE.tw" = "fixest");
+    plm(form, data = data, model = "within", effect = "twoways")},
+ {options("plm.fast" = TRUE, "plm.fast.pkg.FE.tw" = "lfe");
+    plm(form, data = data, model = "within", effect = "twoways")},
+  times = times, unit = "relative")
+
+summary(twowayFE)
+}
+
+onewayRE <- microbenchmark(
+ {options("plm.fast" = FALSE); plm(form, data = data, model = "random")},
+ {options("plm.fast" = TRUE);  plm(form, data = data, model = "random")},
+  times = times, unit = "relative")
+
+summary(onewayRE)
+
+twowayRE <-  microbenchmark(
+ {options("plm.fast" = FALSE); plm(form, data = data, model = "random", effect = "twoways")},
+ {options("plm.fast" = TRUE);  plm(form, data = data, model = "random", effect = "twoways")},
+  times = times, unit = "relative")
+
+summary(twowayRE)
 }
 }
 \keyword{manip}

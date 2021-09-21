@@ -41,14 +41,14 @@
 #' common factors (CCEMG)
 #' 
 #' `pmg` is a function for the estimation of linear panel models with
-#' heterogeneous coefficients by the Mean Groups estimator. `model =
-#' "mg"` specifies the standard Mean Groups estimator, based on the
+#' heterogeneous coefficients by various Mean Groups estimators. Setting
+#' argument `model = "mg"` specifies the standard Mean Groups estimator, based on the
 #' average of individual time series regressions. If `model = "dmg"`
 #' the data are demeaned cross-sectionally, which is believed to
 #' reduce the influence of common factors (and is akin to what is done
-#' in homogeneous panels when `model = "within"` and `effect =
-#' "time"`). Lastly, if `model = "cmg"` the CCEMG estimator is
-#' employed: this latter is consistent under the hypothesis of
+#' in homogeneous panels when `model = "within"` and `effect = "time"`).
+#' Lastly, if `model = "cmg"` the CCEMG estimator is
+#' employed which is consistent under the hypothesis of
 #' unobserved common factors and idiosyncratic factor loadings; it
 #' works by augmenting the model by cross-sectional averages of the
 #' dependent variable and regressors in order to account for the
@@ -61,13 +61,14 @@
 #' @param data a `data.frame`,
 #' @param subset see [lm()],
 #' @param na.action see [lm()],
-#' @param model one of `c("mg", "cmg", "dmg")`,
+#' @param model one of `"mg"`, `"cmg"`, or `"dmg"`,
 #' @param index the indexes, see [pdata.frame()],
 #' @param trend logical specifying whether an individual-specific
 #'     trend has to be included,
 #' @param digits digits,
 #' @param width the maximum length of the lines in the print output,
 #' @param \dots further arguments.
+#' 
 #' @return An object of class `c("pmg", "panelmodel")` containing:
 #'     \item{coefficients}{the vector of coefficients,}
 #'     \item{residuals}{the vector of residuals,}
@@ -75,11 +76,11 @@
 #'     \item{vcov}{the covariance matrix of the coefficients,}
 #'     \item{df.residual}{degrees of freedom of the residuals,}
 #'     \item{model}{a data.frame containing the variables used for the
-#'     estimation,} \item{call}{the call,} \item{sigma}{always `NULL`,
-#'     `sigma` is here only for compatibility reasons (to allow using
-#'     the same `summary` and `print` methods as `pggls`),}
+#'                  estimation,}
+#'     \item{r.squared}{numeric, the R squared,}
+#'     \item{call}{the call,}
 #'     \item{indcoef}{the matrix of individual coefficients from
-#'     separate time series regressions.}
+#'                    separate time series regressions.}
 #' @export
 #' @author Giovanni Millo
 #' @references
@@ -101,11 +102,10 @@
 #' ## Common Correlated Effects Mean Groups
 #' ccemgmod <- pmg(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, 
 #'                 data = Produc, model = "cmg")
-#' summary(ccemgmod) 
+#' summary(ccemgmod)
 pmg <- function(formula, data, subset, na.action,
                 model = c("mg", "cmg", "dmg"), index = NULL,
-                trend = FALSE, ...)
-{
+                trend = FALSE, ...) {
 
     ## same as pggls but for effect, fixed at "individual" for compatibility
     ## ind for id, tind for time, k for K, coefnam for coef.names
@@ -126,7 +126,7 @@ pmg <- function(formula, data, subset, na.action,
     ## evaluates the call, modified with model = "pooling", inside the
     ## parent frame resulting in the pooling model on formula, data
     plm.model <- eval(plm.model, parent.frame())
-    index <- attr(model.frame(plm.model), "index")
+    index <- unclass(attr(model.frame(plm.model), "index")) # unclass for speed
     ind  <- index[[1L]] ## individual index
     tind <- index[[2L]] ## time index
     ## set dimension variables
@@ -189,13 +189,10 @@ pmg <- function(formula, data, subset, na.action,
     
     "cmg" = {
       ## between-periods transformation (take means over groups for each t)
-         #  be <- function(x, index, na.rm = TRUE) tapply(x, index, mean, na.rm = na.rm)
-         #  Xm <- apply(X, 2, FUN = be, index = tind)[tind, , drop = FALSE]
-         #  ym <- apply(as.matrix(as.numeric(y)), 2, FUN = be, index = tind)[tind]
       Xm <- Between(X, effect = "time", na.rm = TRUE)
       ym <- as.numeric(Between(y, effect = "time", na.rm = TRUE))
       
-      augX <- cbind(X, ym, Xm[ , -1, drop = FALSE])
+      augX <- cbind(X, ym, Xm[ , -1L, drop = FALSE])
 
       ## allow for extended coef vector
       tcoef0 <- matrix(data = NA_real_, nrow = 2*k+kt, ncol = n)
@@ -204,16 +201,14 @@ pmg <- function(formula, data, subset, na.action,
       ## y_it = alpha_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
       unind <- unique(ind)
       for(i in 1:n) {
-        taugX <- augX[ind == unind[i], ]
-        ty <- y[ind == unind[i]]
-
+        taugX <- augX[ind == unind[i], ] # TODO: check if this kind of extractions need drop = FALSE for corner cases
+        ty    <-    y[ind == unind[i]]
         if(trend) taugX <- cbind(taugX, 1:(dim(taugX)[[1L]]))
-
         tfit <- lm.fit(taugX, ty)
         tcoef0[ , i] <- tfit$coefficients
         tres[[i]]    <- tfit$residuals
       }
-      tcoef <- tcoef0[1:k, ]
+      tcoef     <- tcoef0[1:k, ]
       tcoef.bar <- tcoef0[-(1:k), ]
 
       coef.names.bar <- c("y.bar", paste(coef.names[-1L], ".bar", sep=""))
@@ -231,19 +226,9 @@ pmg <- function(formula, data, subset, na.action,
       },
     
     "dmg" = {
-      ## old: between-periods transformation (take means over group for each t)
-         ##  be <- function(x, index, na.rm = TRUE) tapply(x, index, mean, na.rm = na.rm)
-         ##  Xm <- apply(X, 2, FUN = be, index = tind)[tind, , drop = FALSE]
-         ##  ym <- apply(as.matrix(as.numeric(y)), 2, FUN = be, index = tind)[tind]
-          # Xm <- Between(X, effect = "time", na.rm = TRUE)
-          # ym <- as.numeric(Between(y, effect = "time", na.rm = TRUE))
-          ## ...but of course we do not demean the intercept!
-          # Xm[ , 1] <- 0
-          # demX <- X - Xm
-          # demy <- y - ym
-      
+      ##  time-demean
       demX <- Within(X, effect = "time", na.rm = TRUE)
-      demX[ , 1] <- 1 # put back intercept lost by within transformation
+      demX[ , 1L] <- 1 # put back intercept lost by within transformation
       demy <- as.numeric(Within(y, effect = "time", na.rm = TRUE))
       
       ## for each x-sect. i=1..n estimate (over t) a demeaned model
@@ -273,7 +258,7 @@ pmg <- function(formula, data, subset, na.action,
     for (i in 1:n) coefmat[ , , i] <- outer(demcoef[ , i], demcoef[ , i])
     ## summing over the n-dimension of the array we get the
     ## covariance matrix of coefs
-    vcov <- apply(coefmat, 1:2, sum)/(n*(n-1))
+    vcov <- rowSums(coefmat, dims = 2L) / (n*(n-1)) # == apply(coefmat, 1:2, sum) / (n*(n-1)) but rowSums(., dims = 2L)-construct is way faster
 
     ######### na.omit = T in apply was the big problem!!
 
@@ -292,12 +277,16 @@ pmg <- function(formula, data, subset, na.action,
     dimnames(tcoef) <- list(coef.names, id.names)
     pmodel <- attr(plm.model, "pmodel")
     pmodel$model.name <- model.name
-    mgmod <- list(coefficients = coef, residuals = residuals,
-                  fitted.values = fitted.values, vcov = vcov,
-                  df.residual = df.residual, r.squared = r2,
-                  model = model.frame(plm.model), sigma = NULL,
-                  indcoef = tcoef, formula = formula,
-                  call = cl)
+    mgmod <- list(coefficients  = coef,
+                  residuals     = residuals,
+                  fitted.values = fitted.values,
+                  vcov          = vcov,
+                  df.residual   = df.residual,
+                  r.squared     = r2,
+                  model         = model.frame(plm.model),
+                  indcoef       = tcoef,
+                  formula       = formula,
+                  call          = cl)
     mgmod <- structure(mgmod, pdim = pdim, pmodel = pmodel)
     class(mgmod) <- c("pmg", "panelmodel")
     mgmod
@@ -316,7 +305,7 @@ summary.pmg <- function(object, ...){
   object$CoefTable <- CoefTable
   y <- object$model[[1L]]
   object$tss <- tss(y)
-  object$ssr <- sum(residuals(object)^2)
+  object$ssr <- as.numeric(crossprod(residuals(object)))
   object$rsqr <- 1-object$ssr/object$tss
   class(object) <- c("summary.pmg")
   return(object)
@@ -324,7 +313,8 @@ summary.pmg <- function(object, ...){
 
 #' @rdname pmg
 #' @export
-print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2), width = getOption("width"), ...){
+print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2),
+                              width = getOption("width"), ...){
   pmodel <- attr(x, "pmodel")
   pdim <- attr(x, "pdim")
 #  formula <- pmodel$formula
@@ -335,12 +325,12 @@ print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2), width
   cat("\n")
   print(pdim)
   cat("\nResiduals:\n")
-  print(summary(unlist(residuals(x))))
+  print(sumres(x)) # was until rev. 1178: print(summary(unlist(residuals(x))))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
-  cat(paste("Total Sum of Squares: ",    signif(x$tss, digits), "\n", sep=""))
-  cat(paste("Residual Sum of Squares: ", signif(x$ssr, digits), "\n", sep=""))
-  cat(paste("Multiple R-squared: ",      signif(x$rsqr, digits),"\n", sep=""))
+  cat(paste("Total Sum of Squares: ",    signif(x$tss, digits),  "\n", sep=""))
+  cat(paste("Residual Sum of Squares: ", signif(x$ssr, digits),  "\n", sep=""))
+  cat(paste("Multiple R-squared: ",      signif(x$rsqr, digits), "\n", sep=""))
   invisible(x)
 }
 

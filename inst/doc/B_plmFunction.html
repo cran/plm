@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2021-03-02" />
+<meta name="date" content="2021-09-17" />
 
 <title>Estimation of error components models with the plm function</title>
 
@@ -347,26 +347,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Estimation of error components models with the plm function</h1>
 <h4 class="author">Yves Croissant</h4>
-<h4 class="date">2021-03-02</h4>
+<h4 class="date">2021-09-17</h4>
 
 
 
-<p><code>plm</code> is a very versatile function which enable the estimation of a wide range of error component models. Those models can be written as follow :</p>
+<p><code>plm</code> is a very versatile function which enable the estimation of a wide range of error component models. Those models can be written as follows :</p>
 <p><span class="math display">\[
 y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} + \eta_n + \mu_t + \nu_{nt}
 \]</span></p>
-<p>where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes, <span class="math inline">\(y\)</span> the response, <span class="math inline">\(x\)</span> a vector of covariates, <span class="math inline">\(\alpha\)</span> the overall intercept and <span class="math inline">\(\beta\)</span> the vector of parameters of interest that we are willing to estimate. The error term is composed of three elements :</p>
+<p>where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes, <span class="math inline">\(y\)</span> the response, <span class="math inline">\(x\)</span> a vector of covariates, <span class="math inline">\(\alpha\)</span> the overall intercept and <span class="math inline">\(\beta\)</span> the vector of parameters of interest that we are willing to estimate. The error term <span class="math inline">\(\epsilon_{nt}\)</span> is composed of three elements (in the two-way case):</p>
 <ul>
 <li><span class="math inline">\(\eta_n\)</span> is the individual effect,</li>
 <li><span class="math inline">\(\mu_t\)</span> is the time effect,</li>
-<li><span class="math inline">\(\epsilon_{nt}\)</span> is the idiosyncratic error.</li>
+<li><span class="math inline">\(\nu_{nt}\)</span> is the idiosyncratic error.</li>
 </ul>
 <div id="basic-use-of-plm" class="section level1">
 <h1>Basic use of <code>plm</code></h1>
-<p>The first two arguments of <code>plm</code> are, like for most of the estimation functions of <code>R</code> a <code>formula</code> which describes the model to be estimated and a <code>data.frame</code>. <code>subset</code>, <code>weights</code> and <code>na.action</code> are also available and have the same behavior as in the <code>lm</code> function. Three more main arguments can be set :</p>
+<p>The first two arguments of <code>plm</code> are, like for most of the estimation functions of <code>R</code> a <code>formula</code> which describes the model to be estimated and a <code>data.frame</code>. <code>subset</code>, <code>weights</code>, and <code>na.action</code> are also available and have the same behavior as in the <code>lm</code> function. Three more main arguments can be set :</p>
 <ul>
 <li><code>index</code> helps <code>plm</code> to understand the structure of the data : if <code>NULL</code>, the first two columns of the data are assumed to contain the individual or the time index. Otherwise, supply the column names of the individual and time index as a character, e.g., use something like <code>c(&quot;firm&quot;, &quot;year&quot;)</code> or just <code>&quot;firm&quot;</code> if there is no explicit time index.</li>
-<li><code>effect</code> indicates the effects that should be taken into account ; this is one of <code>&quot;individual&quot;</code>, <code>&quot;time&quot;</code> and <code>&quot;twoways&quot;</code>.</li>
+<li><code>effect</code> indicates the effects that should be taken into account ; this is one of <code>&quot;individual&quot;</code>, <code>&quot;time&quot;</code>, and <code>&quot;twoways&quot;</code>.</li>
 <li><code>model</code> indicates the model to be estimated : <code>&quot;pooling&quot;</code> is just the OLS estimation (equivalent to a call to <code>lm</code>), <code>&quot;between&quot;</code> performs the estimation on the individual or time means, <code>&quot;within&quot;</code> on the deviations from the individual or/and time mean, <code>&quot;fd&quot;</code> on the first differences and <code>&quot;random&quot;</code> perform a feasible generalized least squares estimation which takes into account the correlation induced by the presence of individual and/or time effects.</li>
 </ul>
 <p>The estimation of all but the last model is straightforward, as it requires only the estimation by <em>OLS</em> of obvious transformations of the data. The <em>GLS</em> model requires more explanation. In most of the cases, the estimation is obtained by quasi-differencing the data from the individual and/or the time means. The coefficients used to perform this quasi-difference depends on estimators of the variance of the components of the error, namely <span class="math inline">\(\sigma^2_\nu\)</span>, <span class="math inline">\(\sigma^2_\eta\)</span> in case of individual effects and <span class="math inline">\(\sigma^2_\mu\)</span> in case of time effects.</p>
@@ -380,19 +380,19 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 \]</span></p>
 <p>where <span class="math inline">\(B\)</span> and <span class="math inline">\(W\)</span> are respectively the matrices that performs the individual (or time) means and the deviations from these means. Consistent estimators can be obtained by replacing the unknown errors by the residuals of a consistent preliminary estimation and by dropping the expecting value operator. Some degree of freedom correction can also be introduced. <code>plm</code> calls the general function <code>ercomp</code> to estimate the variances. Important arguments to <code>ercomp</code> are:</p>
 <ul>
-<li><code>models</code> indicates which models are estimated in order to calculate the two quadratic forms ; for example <code>c(&quot;within&quot;, &quot;Between&quot;)</code>.</li>
-<li><code>dfcor</code> indicates what kind of degrees of freedom correction is used : if <code>0</code>, the quadratic forms are divided by the number of observations, respectively <span class="math inline">\(N\times T\)</span> and <span class="math inline">\(N\)</span> ; if <code>1</code>, the numerators of the previous expressions are used (<span class="math inline">\(N\times (T-1)\)</span> and <span class="math inline">\(N\)</span>) ; if <code>2</code>, the number of estimated parameters in the preliminary estimate <span class="math inline">\(K\)</span> is deduced. Finally, if <code>3</code>, the unbiased version is computed, which is based on much more complex computations, which relies on the calculus of the trace of different cross-products which depends on the preliminary models used.</li>
-<li><code>method</code> is an alternative to the <code>models</code> argument ; it is one of :
+<li><code>models</code> indicates which models are estimated in order to calculate the two quadratic forms ; for example <code>c(&quot;within&quot;, &quot;Between&quot;)</code>. Note that when only one model is provided in <code>models</code>, this means that the same residuals are used to compute the two quadratic forms.</li>
+<li><code>dfcor</code> indicates what kind of degrees of freedom correction is used : if <code>0</code>, the quadratic forms are divided by the number of observations, respectively <span class="math inline">\(N\times T\)</span> and <span class="math inline">\(N\)</span> ; if <code>1</code>, the numerators of the previous expressions are used (<span class="math inline">\(N\times (T-1)\)</span> and <span class="math inline">\(N\)</span>) ; if <code>2</code>, the number of estimated parameters in the preliminary estimate <span class="math inline">\(K\)</span> is deducted. Finally, if <code>3</code>, the unbiased version is computed, which is based on much more complex computations, which relies on the calculus of the trace of different cross-products which depends on the preliminary models used.</li>
+<li><code>method</code> is an alternative to the <code>models</code> argument; it is one of :
 <ul>
-<li><code>&quot;walhus&quot;</code> - which is equivalent to <code>models = c(&quot;pooling&quot;)</code>, <span class="citation">Wallace and Hussain (1969)</span>,</li>
-<li><code>&quot;swar&quot;</code> - <code>models = c(&quot;within&quot;, &quot;Between&quot;)</code>, <span class="citation">Swamy and Arora (1972)</span>,</li>
-<li><code>&quot;amemiya&quot;</code> - <code>models = c(&quot;within&quot;)</code>, <span class="citation">Amemiya (1971)</span>,</li>
-<li><code>&quot;ht&quot;</code> is an slightly modified version of <code>amemiya</code> ; when there are time-invariant covariates, the <span class="citation">Amemiya (1971)</span> estimator of the individual component of the variance is under-estimated as the time-invariant covariates disappear in the within regression. In this case <span class="citation">Hausman and Taylor (1981)</span> proposed to regress the estimation of the individual effects on the time-invariant covariates and use the residuals in order to estimate the components of the variance,</li>
-<li><code>&quot;nerlove&quot;</code>, which is a specific method which doesn’t fit to the methodology described above (<span class="citation">Nerlove (1971)</span>).</li>
+<li><code>&quot;walhus&quot;</code> (equivalent to setting <code>models = c(&quot;pooling&quot;)</code>), <span class="citation">Wallace and Hussain (1969)</span>,</li>
+<li><code>&quot;swar&quot;</code> (equivalent to <code>models = c(&quot;within&quot;, &quot;Between&quot;)</code>), <span class="citation">Swamy and Arora (1972)</span>,</li>
+<li><code>&quot;amemiya&quot;</code> (equivalent to <code>models = c(&quot;within&quot;)</code>), <span class="citation">Amemiya (1971)</span>,</li>
+<li><code>&quot;nerlove&quot;</code>, which is a specific method which doesn’t fit to the quadratic form methodology described above (<span class="citation">Nerlove (1971)</span>) and uses an within model for the variance estimation as well,</li>
+<li><code>&quot;ht&quot;</code> is an slightly modified version of <code>&quot;amemiya&quot;</code>: when there are time-invariant covariates, the <span class="citation">Amemiya (1971)</span> estimator of the individual component of the variance under-estimates as the time-invariant covariates disappear in the within regression. In this case, <span class="citation">Hausman and Taylor (1981)</span> proposed to regress the estimation of the individual effects on the time-invariant covariates and use the residuals in order to estimate the components of the variance.</li>
 </ul></li>
 </ul>
-<p>Note that when only one model is provided in <code>models</code>, this means that the same residuals are used to compute the two quadratic forms.</p>
-<p>To illustrate the use of <code>plm</code>, we use examples reproduced in <span class="citation">Baltagi (2013)</span>. Table 2.1 on page 21 presents EViews’ results of the estimation on the <code>Grunfeld</code> data set :</p>
+<p>Note that for <code>plm</code>, the arguments are <code>random.models</code>, <code>random.dfcor</code>, and <code>random.method</code> and correspond to arguments <code>models</code>, <code>method</code>, and <code>random.dfcor</code> of function <code>ercomp</code> with the same values as above, respectively.</p>
+<p>To illustrate the use of <code>plm</code>, we use examples reproduced in <span class="citation">Baltagi (2013)</span>, p. 21; <span class="citation">Baltagi (2021)</span>, p. 31, table 2.1 presents EViews’ results of the estimation on the <code>Grunfeld</code> data set :</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(<span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Grunfeld&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>ols &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, Grunfeld, <span class="dt">model =</span> <span class="st">&quot;pooling&quot;</span>)</span>
@@ -428,7 +428,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## idiosyncratic 2784.46   52.77 0.285
 ## individual    6976.18   83.52 0.715
 ## theta: 0.8601</code></pre>
-<p><span class="citation">Baltagi (2013)</span>, p. 27, presents the Stata estimation of the Swamy-Arora estimator ; the Swamy-Arora estimator is the same if <code>random.dfcor</code> is set to <code>3</code> or <code>2</code> (the quadratic forms are divided by <span class="math inline">\(\sum_n T_n - K - N\)</span> and by <span class="math inline">\(N - K - 1\)</span>), so I don’t know what is the behaviour of Stata for the other estimators for which the unbiased estimators differs from the simple one.</p>
+<p><span class="citation">Baltagi (2013)</span>, p. 27; <span class="citation">Baltagi (2021)</span>, p. 31 presents the Stata estimation of the Swamy-Arora estimator ; the Swamy-Arora estimator is the same if <code>random.dfcor</code> is set to <code>3</code> or <code>2</code> (the quadratic forms are divided by <span class="math inline">\(\sum_n T_n - K - N\)</span> and by <span class="math inline">\(N - K - 1\)</span>), so I don’t know what is the behaviour of Stata for the other estimators for which the unbiased estimators differs from the simple one.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>PrSwar &lt;-<span class="st"> </span><span class="kw">plm</span>(<span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pcap) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span>unemp, Produc, </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>           <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</span>
@@ -454,12 +454,12 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## -0.1067230 -0.0245520 -0.0023694  0.0217333  0.1996307 
 ## 
 ## Coefficients:
-##                Estimate  Std. Error z-value  Pr(&gt;|z|)    
-## (Intercept)  2.13541100  0.13346149 16.0002 &lt; 2.2e-16 ***
-## log(pcap)    0.00443859  0.02341732  0.1895    0.8497    
-## log(pc)      0.31054843  0.01980475 15.6805 &lt; 2.2e-16 ***
-## log(emp)     0.72967053  0.02492022 29.2803 &lt; 2.2e-16 ***
-## unemp       -0.00617247  0.00090728 -6.8033 1.023e-11 ***
+##                Estimate  Std. Error z-value              Pr(&gt;|z|)    
+## (Intercept)  2.13541100  0.13346149 16.0002 &lt; 0.00000000000000022 ***
+## log(pcap)    0.00443859  0.02341732  0.1895                0.8497    
+## log(pc)      0.31054843  0.01980475 15.6805 &lt; 0.00000000000000022 ***
+## log(emp)     0.72967053  0.02492022 29.2803 &lt; 0.00000000000000022 ***
+## unemp       -0.00617247  0.00090728 -6.8033      0.00000000001023 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
@@ -467,11 +467,11 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Residual Sum of Squares: 1.1879
 ## R-Squared:      0.95933
 ## Adj. R-Squared: 0.95913
-## Chisq: 19131.1 on 4 DF, p-value: &lt; 2.22e-16</code></pre>
+## Chisq: 19131.1 on 4 DF, p-value: &lt; 0.000000000000000222</code></pre>
 </div>
 <div id="the-twoways-effect-model" class="section level1">
 <h1>The twoways effect model</h1>
-<p>The two-ways effect model is obtained by setting the <code>effect</code> argument to <code>&quot;twoways&quot;</code>. <span class="citation">Baltagi (2013)</span> p. 44-46, presents EViews’ output for the Grunfeld data set.</p>
+<p>The two-ways effect model is obtained by setting the <code>effect</code> argument to <code>&quot;twoways&quot;</code>. <span class="citation">Baltagi (2013)</span> pp. 51-53; <span class="citation">Baltagi (2021)</span>, pp. 61-62, tables 3.1-3.3, presents EViews’ output for the Grunfeld data set.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>Grw &lt;-<span class="st"> </span><span class="kw">plm</span>(inv <span class="op">~</span><span class="st"> </span>value <span class="op">+</span><span class="st"> </span>capital, Grunfeld, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">effect =</span> <span class="st">&quot;twoways&quot;</span>, </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>           <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="dt">random.dfcor =</span> <span class="dv">3</span>)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>Grs &lt;-<span class="st"> </span><span class="kw">update</span>(Grw, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
@@ -497,7 +497,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## ==========================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 <p>The estimated variance of the time component is negative for the Wallace-Hussain as well as the Swamy-Arora models and <code>plm</code> sets it to 0.</p>
-<p><span class="citation">Baltagi (2009)</span> p. 60-62, presents EViews’ output for the <code>Produc</code> data.</p>
+<p><span class="citation">Baltagi (2009)</span> pp. 60-62, presents EViews’ output for the <code>Produc</code> data.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>Prw &lt;-<span class="st"> </span><span class="kw">plm</span>(<span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pcap) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span>unemp, Produc, </span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>           <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>, </span>
@@ -534,9 +534,9 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <p>Two difficulties arise with unbalanced panels :</p>
 <ul>
 <li>There are no obvious denominators for the quadratic forms of the residuals that are used to estimate the components of the variance. The strategy is then to compute the expected value and equate it to the actual quadratic forms. Detailed formula are omitted here, they depend on the preliminary estimator.</li>
-<li>For the one-way effect model, the estimator is still obtained by applying <em>OLS</em> on demeaned data (the individual <strong>and</strong> the time means are now deduced) for the within model and on quasi-demeaned data for the random effects model ; this is not the case for the two-ways effects model.</li>
+<li>For the one-way effect model, the estimator is still obtained by applying <em>OLS</em> on demeaned data (the individual <strong>and</strong> the time means are now deducted) for the within model and on quasi-demeaned data for the random effects model ; this is not the case for the two-ways effects model.</li>
 </ul>
-<p><span class="citation">Baltagi (2013)</span> and <span class="citation">Baltagi (2009)</span> present results of the estimation of the <span class="citation">Swamy and Arora (1972)</span> model with the <code>Hedonic</code> data set. <span class="citation">Baltagi (2013)</span>, p. 174, presents the Stata output and <span class="citation">Baltagi (2009)</span>, p. 211 presents EViews’ output. EViews’ Wallace-Hussain estimator is reported in <span class="citation">Baltagi (2009)</span>, p. 210.</p>
+<p><span class="citation">Baltagi (2021)</span>, <span class="citation">Baltagi (2013)</span>, and <span class="citation">Baltagi (2009)</span> present results of the estimation of the <span class="citation">Swamy and Arora (1972)</span> model with the <code>Hedonic</code> data set. <span class="citation">Baltagi (2013)</span>, p. 195; <span class="citation">Baltagi (2021)</span>, p. 237, table 9.1, presents the Stata output and <span class="citation">Baltagi (2009)</span>, p. 211 presents EViews’ output. EViews’ Wallace-Hussain estimator is reported in <span class="citation">Baltagi (2009)</span>, p. 210.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a>form &lt;-<span class="st"> </span>mv <span class="op">~</span><span class="st"> </span>crim <span class="op">+</span><span class="st"> </span>zn <span class="op">+</span><span class="st"> </span>indus <span class="op">+</span><span class="st"> </span>chas <span class="op">+</span><span class="st"> </span>nox <span class="op">+</span><span class="st"> </span>rm <span class="op">+</span><span class="st"> </span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="st">    </span>age <span class="op">+</span><span class="st"> </span>dis <span class="op">+</span><span class="st"> </span>rad <span class="op">+</span><span class="st"> </span>tax <span class="op">+</span><span class="st"> </span>ptratio <span class="op">+</span><span class="st"> </span>blacks <span class="op">+</span><span class="st"> </span>lstat</span>
@@ -573,7 +573,7 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Num. obs.    506                      506                      506                    
 ## ======================================================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-<p>The difference is due to the fact that Stata uses a between regression on <span class="math inline">\(N\)</span> observations while EViews uses a between regression on <span class="math inline">\(\sum_n T_n\)</span> observations, which are not the same on unbalanced panels. Note the use of between with or without the B capitalized in the <code>random.models</code> argument. <code>plm</code>’s default is to use the between regression with <span class="math inline">\(\sum_n T_n\)</span> observations when setting <code>model = &quot;random&quot;, random.method = &quot;swar&quot;</code>. The default employed is what the original paper for the unbalanced one-way Swamy-Arora estimator defined (in <span class="citation">Baltagi and Chang (1994)</span>, p. 73). A more detailed analysis of Stata’s Swamy-Arora estimation procedure is given by <span class="citation">Cottrell (2017)</span>.</p>
+<p>The difference is due to the fact that Stata uses a between regression on <span class="math inline">\(N\)</span> observations while EViews uses a between regression on <span class="math inline">\(\sum_n T_n\)</span> observations, which are not the same on unbalanced panels. Note the use of between with or without the B capitalized (<code>&quot;Between&quot;</code> and <code>&quot;between&quot;</code>) in the <code>random.models</code> argument. <code>plm</code>’s default is to use the between regression with <span class="math inline">\(\sum_n T_n\)</span> observations when setting <code>model = &quot;random&quot;, random.method = &quot;swar&quot;</code>. The default employed is what the original paper for the unbalanced one-way Swamy-Arora estimator defined (in <span class="citation">Baltagi and Chang (1994)</span>, p. 73). A more detailed analysis of Stata’s Swamy-Arora estimation procedure is given by <span class="citation">Cottrell (2017)</span>.</p>
 </div>
 <div id="instrumental-variable-estimators" class="section level1">
 <h1>Instrumental variable estimators</h1>
@@ -586,12 +586,12 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <p>The instrumental variables estimator used is indicated with the <code>inst.method</code> argument:</p>
 <ul>
 <li><code>&quot;bvk&quot;</code>, from <span class="citation">Balestra and Varadharajan–Krishnakumar (1987)</span>, the default value : in this case, all the instruments are introduced in quasi-differences, using the same transformation as for the response and the covariates,</li>
-<li><code>&quot;baltagi&quot;</code>, from <span class="citation">Baltagi (1981)</span>, the instruments of the second part are introduced twice using the between and the within transformation as those of the third are only introduced with the within transformation,</li>
-<li><code>&quot;am&quot;</code>, from <span class="citation">Amemiya and MaCurdy (1986)</span>, the within transformation of the variables of the second parts for each period are also included as instruments,</li>
-<li><code>&quot;bms&quot;</code>, from <span class="citation">Breusch, Mizon, and Schmidt (1989)</span>, the within transformation of the variable of the second and of the third parts are included as instruments.</li>
+<li><code>&quot;baltagi&quot;</code>, from <span class="citation">Baltagi (1981)</span>, the instruments of the <em>second</em> part are introduced twice by using the between and the within transformation and instruments of the <em>third</em> part are introduced with only the within transformation,</li>
+<li><code>&quot;am&quot;</code>, from <span class="citation">Amemiya and MaCurdy (1986)</span>, in addition to the instrument set of <code>&quot;baltagi&quot;</code>, the within transformation of the variables of the <em>second</em> part for each period are also included as instruments,</li>
+<li><code>&quot;bms&quot;</code>, from <span class="citation">Breusch, Mizon, and Schmidt (1989)</span>, in addition to the instrument set of <code>&quot;baltagi&quot;</code>, the within transformation of the variables of the <em>second</em> and the <em>third</em> part for each period are included as instruments.</li>
 </ul>
 <p>The various possible values of the <code>inst.method</code> argument are not relevant for fixed effect IV models as there is only one method for this type of IV models but many for random effect IV models.</p>
-<p>The instrumental variable estimators are illustrated in the following example from <span class="citation">Baltagi (2005)</span>, p. 120/ <span class="citation">Baltagi (2013)</span>, p. 137.</p>
+<p>The instrumental variable estimators are illustrated in the following example from <span class="citation">Baltagi (2005)</span>, pp. 117/120; <span class="citation">Baltagi (2013)</span>, pp. 133/137; <span class="citation">Baltagi (2021)</span>, pp. 162/165, tables 7.1, 7.3.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Crime&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>crbalt &lt;-<span class="st"> </span><span class="kw">plm</span>(lcrmrte <span class="op">~</span><span class="st"> </span>lprbarr <span class="op">+</span><span class="st"> </span>lpolpc <span class="op">+</span><span class="st"> </span>lprbconv <span class="op">+</span><span class="st"> </span>lprbpris <span class="op">+</span><span class="st"> </span>lavgsen <span class="op">+</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a><span class="st">              </span>ldensity <span class="op">+</span><span class="st"> </span>lwcon <span class="op">+</span><span class="st"> </span>lwtuc <span class="op">+</span><span class="st"> </span>lwtrd <span class="op">+</span><span class="st"> </span>lwfir <span class="op">+</span><span class="st"> </span>lwser <span class="op">+</span><span class="st"> </span>lwmfg <span class="op">+</span><span class="st"> </span>lwfed <span class="op">+</span></span>
@@ -600,41 +600,61 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>              <span class="dt">data =</span> Crime, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>)</span>
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true"></a>crbvk &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">inst.method =</span> <span class="st">&quot;bvk&quot;</span>)</span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true"></a>crwth &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">model =</span> <span class="st">&quot;within&quot;</span>)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">FE2SLS =</span> crwth, <span class="dt">EC2SLS =</span> crbalt, <span class="dt">G2SLS =</span> crbvk), </span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true"></a>          <span class="dt">single.row =</span> <span class="ot">TRUE</span>, <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">omit.coef =</span> <span class="st">&quot;(region)|(year)&quot;</span>,</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true"></a>          <span class="dt">reorder.coef =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">16</span>, <span class="dv">19</span>, <span class="dv">18</span>, <span class="dv">17</span>))</span></code></pre></div>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true"></a>crbe  &lt;-<span class="st"> </span><span class="kw">update</span>(crbalt, <span class="dt">model =</span> <span class="st">&quot;between&quot;</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="dt">FE2SLS =</span> crwth, <span class="dt">BE2SLS =</span> crbe, <span class="dt">EC2SLS =</span> crbalt, <span class="dt">G2SLS =</span> crbvk), </span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true"></a>          <span class="dt">single.row =</span> <span class="ot">FALSE</span>, <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">omit.coef =</span> <span class="st">&quot;(region)|(year)&quot;</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true"></a>          <span class="dt">reorder.coef =</span> <span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">16</span>, <span class="dv">19</span>, <span class="dv">18</span>, <span class="dv">17</span>))</span></code></pre></div>
 <pre><code>## 
-## ==================================================================================
-##              FE2SLS               EC2SLS                   G2SLS                  
-## ----------------------------------------------------------------------------------
-## lprbarr       -0.57551 (0.80218)   -0.41293 (0.09740) ***   -0.41414 (0.22105)    
-## lpolpc         0.65753 (0.84687)    0.43475 (0.08970) ***    0.50495 (0.22778) *  
-## lprbconv      -0.42314 (0.50194)   -0.32289 (0.05355) ***   -0.34325 (0.13246) ** 
-## lprbpris      -0.25026 (0.27946)   -0.18632 (0.04194) ***   -0.19005 (0.07334) ** 
-## lavgsen        0.00910 (0.04899)   -0.01018 (0.02702)       -0.00644 (0.02894)    
-## ldensity       0.13941 (1.02124)    0.42903 (0.05485) ***    0.43434 (0.07115) ***
-## lwcon         -0.02873 (0.05351)   -0.00748 (0.03958)       -0.00430 (0.04142)    
-## lwtuc          0.03913 (0.03086)    0.04545 (0.01979) *      0.04446 (0.02154) *  
-## lwtrd         -0.01775 (0.04531)   -0.00814 (0.04138)       -0.00856 (0.04198)    
-## lwfir         -0.00934 (0.03655)   -0.00364 (0.02892)       -0.00403 (0.02946)    
-## lwser          0.01859 (0.03882)    0.00561 (0.02013)        0.01056 (0.02158)    
-## lwmfg         -0.24317 (0.41955)   -0.20414 (0.08044) *     -0.20180 (0.08394) *  
-## lwfed         -0.45134 (0.52712)   -0.16351 (0.15945)       -0.21346 (0.21510)    
-## lwsta         -0.01875 (0.28082)   -0.05405 (0.10568)       -0.06012 (0.12031)    
-## lwloc          0.26326 (0.31239)    0.16305 (0.11964)        0.18354 (0.13968)    
-## lpctymle       0.35112 (1.01103)   -0.10811 (0.13969)       -0.14587 (0.22681)    
-## smsayes                            -0.22515 (0.11563)       -0.25955 (0.14997)    
-## lpctmin                             0.18904 (0.04150) ***    0.19488 (0.04594) ***
-## (Intercept)                        -0.95380 (1.28397)       -0.45385 (1.70298)    
-## ----------------------------------------------------------------------------------
-## R^2            0.44364              0.59847                  0.59230              
-## Adj. R^2       0.32442              0.58115                  0.57472              
-## Num. obs.    630                  630                      630                    
-## s_idios                             0.14924                  0.14924              
-## s_id                                0.21456                  0.21456              
-## ==================================================================================
+## ===================================================================
+##              FE2SLS      BE2SLS        EC2SLS         G2SLS        
+## -------------------------------------------------------------------
+## lprbarr       -0.57551   -0.50294 *     -0.41293 ***   -0.41414    
+##               (0.80218)  (0.24062)      (0.09740)      (0.22105)   
+## lpolpc         0.65753    0.40844 *      0.43475 ***    0.50495 *  
+##               (0.84687)  (0.19300)      (0.08970)      (0.22778)   
+## lprbconv      -0.42314   -0.52477 ***   -0.32289 ***   -0.34325 ** 
+##               (0.50194)  (0.09995)      (0.05355)      (0.13246)   
+## lprbpris      -0.25026    0.18718       -0.18632 ***   -0.19005 ** 
+##               (0.27946)  (0.31829)      (0.04194)      (0.07334)   
+## lavgsen        0.00910   -0.22723       -0.01018       -0.00644    
+##               (0.04899)  (0.17851)      (0.02702)      (0.02894)   
+## ldensity       0.13941    0.22562 *      0.42903 ***    0.43434 ***
+##               (1.02124)  (0.10247)      (0.05485)      (0.07115)   
+## lwcon         -0.02873    0.31400       -0.00748       -0.00430    
+##               (0.05351)  (0.25910)      (0.03958)      (0.04142)   
+## lwtuc          0.03913   -0.19894        0.04545 *      0.04446 *  
+##               (0.03086)  (0.19712)      (0.01979)      (0.02154)   
+## lwtrd         -0.01775    0.05356       -0.00814       -0.00856    
+##               (0.04531)  (0.29600)      (0.04138)      (0.04198)   
+## lwfir         -0.00934    0.04170       -0.00364       -0.00403    
+##               (0.03655)  (0.30562)      (0.02892)      (0.02946)   
+## lwser          0.01859   -0.13543        0.00561        0.01056    
+##               (0.03882)  (0.17365)      (0.02013)      (0.02158)   
+## lwmfg         -0.24317   -0.04200       -0.20414 *     -0.20180 *  
+##               (0.41955)  (0.15627)      (0.08044)      (0.08394)   
+## lwfed         -0.45134    0.14803       -0.16351       -0.21346    
+##               (0.52712)  (0.32565)      (0.15945)      (0.21510)   
+## lwsta         -0.01875   -0.20309       -0.05405       -0.06012    
+##               (0.28082)  (0.29815)      (0.10568)      (0.12031)   
+## lwloc          0.26326    0.04444        0.16305        0.18354    
+##               (0.31239)  (0.49436)      (0.11964)      (0.13968)   
+## lpctymle       0.35112   -0.09472       -0.10811       -0.14587    
+##               (1.01103)  (0.19180)      (0.13969)      (0.22681)   
+## smsayes                  -0.08050       -0.22515       -0.25955    
+##                          (0.14423)      (0.11563)      (0.14997)   
+## lpctmin                   0.16890 **     0.18904 ***    0.19488 ***
+##                          (0.05270)      (0.04150)      (0.04594)   
+## (Intercept)              -1.97714       -0.95380       -0.45385    
+##                          (4.00081)      (1.28397)      (1.70298)   
+## -------------------------------------------------------------------
+## R^2            0.44364    0.87385        0.59847        0.59230    
+## Adj. R^2       0.32442    0.83729        0.58115        0.57472    
+## Num. obs.    630         90            630            630          
+## s_idios                                  0.14924        0.14924    
+## s_id                                     0.21456        0.21456    
+## ===================================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-<p>The Hausman-Taylor model (<span class="citation">Hausman and Taylor (1981)</span>) may be estimated with the <code>plm</code> function by setting argument <code>random.method = &quot;ht&quot;</code>. The following example is from <span class="citation">Baltagi (2005)</span>, p. 130 and <span class="citation">Baltagi (2013)</span>, p. 146.</p>
+<p>The Hausman-Taylor model (<span class="citation">Hausman and Taylor (1981)</span>) may be estimated with the <code>plm</code> function by setting argument <code>random.method = &quot;ht&quot;</code> and <code>inst.method = &quot;baltagi&quot;</code>. The following example is from <span class="citation">Baltagi (2005)</span>, p. 130; <span class="citation">Baltagi (2013)</span>, pp. 145-7, tables 7.4-7.6; <span class="citation">Baltagi (2021)</span>, pp. 174-6 , tables 7.5-7.7.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>ht &lt;-<span class="st"> </span><span class="kw">plm</span>(lwage <span class="op">~</span><span class="st"> </span>wks <span class="op">+</span><span class="st"> </span>south <span class="op">+</span><span class="st"> </span>smsa <span class="op">+</span><span class="st"> </span>married <span class="op">+</span><span class="st"> </span>exp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(exp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a><span class="st">            </span>bluecol <span class="op">+</span><span class="st"> </span>ind <span class="op">+</span><span class="st"> </span>union <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>black <span class="op">+</span><span class="st"> </span>ed <span class="op">|</span><span class="st"> </span></span>
@@ -644,42 +664,65 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true"></a>          <span class="dt">inst.method =</span> <span class="st">&quot;baltagi&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, </span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true"></a>          <span class="dt">random.method =</span> <span class="st">&quot;ht&quot;</span>)</span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true"></a></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true"></a>am &lt;-<span class="st"> </span><span class="kw">update</span>(ht, <span class="dt">inst.method =</span> <span class="st">&quot;am&quot;</span>)</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true"></a>  </span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Hausman-Taylor&quot;</span> =<span class="st"> </span>ht, <span class="st">&quot;Amemiya-MaCurdy&quot;</span> =<span class="st"> </span>am), </span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true"></a>          <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">single.row =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true"></a>am  &lt;-<span class="st"> </span><span class="kw">update</span>(ht, <span class="dt">inst.method =</span> <span class="st">&quot;am&quot;</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true"></a>bms &lt;-<span class="st"> </span><span class="kw">update</span>(ht, <span class="dt">inst.method =</span> <span class="st">&quot;bms&quot;</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Hausman-Taylor&quot;</span> =<span class="st"> </span>ht, <span class="st">&quot;Amemiya-MaCurdy&quot;</span> =<span class="st"> </span>am,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true"></a>               <span class="st">&quot;Breusch-Mizon-Schmidt&quot;</span> =<span class="st"> </span>bms),</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true"></a>          <span class="dt">digits =</span> <span class="dv">5</span>, <span class="dt">single.row =</span> <span class="ot">FALSE</span>)</span></code></pre></div>
 <pre><code>## 
-## ===============================================================
-##              Hausman-Taylor            Amemiya-MaCurdy         
-## ---------------------------------------------------------------
-## (Intercept)     2.91273 (0.28365) ***     2.92734 (0.27513) ***
-## wks             0.00084 (0.00060)         0.00084 (0.00060)    
-## southyes        0.00744 (0.03196)         0.00728 (0.03194)    
-## smsayes        -0.04183 (0.01896) *      -0.04195 (0.01895) *  
-## marriedyes     -0.02985 (0.01898)        -0.03009 (0.01897)    
-## exp             0.11313 (0.00247) ***     0.11297 (0.00247) ***
-## exp^2          -0.00042 (0.00005) ***    -0.00042 (0.00005) ***
-## bluecolyes     -0.02070 (0.01378)        -0.02085 (0.01377)    
-## ind             0.01360 (0.01524)         0.01363 (0.01523)    
-## unionyes        0.03277 (0.01491) *       0.03248 (0.01489) *  
-## sexfemale      -0.13092 (0.12666)        -0.13201 (0.12660)    
-## blackyes       -0.28575 (0.15570)        -0.28590 (0.15549)    
-## ed              0.13794 (0.02125) ***     0.13720 (0.02057) ***
-## ---------------------------------------------------------------
-## s_idios         0.15180                   0.15180              
-## s_id            0.94180                   0.94180              
-## R^2             0.60945                   0.60948              
-## Adj. R^2        0.60833                   0.60835              
-## Num. obs.    4165                      4165                    
-## ===============================================================
+## ===================================================================
+##              Hausman-Taylor  Amemiya-MaCurdy  Breusch-Mizon-Schmidt
+## -------------------------------------------------------------------
+## (Intercept)     2.91273 ***     2.92734 ***      1.97944 ***       
+##                (0.28365)       (0.27513)        (0.26724)          
+## wks             0.00084         0.00084          0.00080           
+##                (0.00060)       (0.00060)        (0.00060)          
+## southyes        0.00744         0.00728          0.01467           
+##                (0.03196)       (0.03194)        (0.03188)          
+## smsayes        -0.04183 *      -0.04195 *       -0.05204 **        
+##                (0.01896)       (0.01895)        (0.01891)          
+## marriedyes     -0.02985        -0.03009         -0.03926 *         
+##                (0.01898)       (0.01897)        (0.01892)          
+## exp             0.11313 ***     0.11297 ***      0.10867 ***       
+##                (0.00247)       (0.00247)        (0.00246)          
+## exp^2          -0.00042 ***    -0.00042 ***     -0.00049 ***       
+##                (0.00005)       (0.00005)        (0.00005)          
+## bluecolyes     -0.02070        -0.02085         -0.01539           
+##                (0.01378)       (0.01377)        (0.01374)          
+## ind             0.01360         0.01363          0.01902           
+##                (0.01524)       (0.01523)        (0.01520)          
+## unionyes        0.03277 *       0.03248 *        0.03786 *         
+##                (0.01491)       (0.01489)        (0.01486)          
+## sexfemale      -0.13092        -0.13201         -0.18027           
+##                (0.12666)       (0.12660)        (0.12639)          
+## blackyes       -0.28575        -0.28590         -0.15636           
+##                (0.15570)       (0.15549)        (0.15506)          
+## ed              0.13794 ***     0.13720 ***      0.22066 ***       
+##                (0.02125)       (0.02057)        (0.01985)          
+## -------------------------------------------------------------------
+## s_idios         0.15180         0.15180          0.15180           
+## s_id            0.94180         0.94180          0.94180           
+## R^2             0.60945         0.60948          0.60686           
+## Adj. R^2        0.60833         0.60835          0.60572           
+## Num. obs.    4165            4165             4165                 
+## ===================================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 </div>
 <div id="nested-error-component-model" class="section level1">
 <h1>Nested error component model</h1>
-<p>This section shows how the nested error component model as per <span class="citation">Baltagi, Song, and Jung (2001)</span> can be estimated.</p>
+<p>This section shows how the nested error component model as per <span class="citation">Baltagi, Song, and Jung (2001)</span> can be estimated. The model is given by :</p>
+<p><span class="math display">\[
+y_{nt}=\alpha + \beta^\top x_{jnt} + u_{jnt} = \alpha + \beta^\top x_{jnt} + \mu_{j} + \nu_{jn} + \epsilon_{jnt}
+\]</span> where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes and <span class="math inline">\(j\)</span> is the group index in which the individuals are nested. The error <span class="math inline">\(u_{jnt}\)</span> consists of three components :</p>
+<ul>
+<li><span class="math inline">\(\mu_j\)</span> is the group effect,</li>
+<li><span class="math inline">\(\nu_{jn}\)</span> the nested effect of the individual nested in group <span class="math inline">\(j\)</span></li>
+<li><span class="math inline">\(\epsilon_{jnt}\)</span> is the idiosyncratic error.</li>
+</ul>
+<p>In the estimated examples below (replication of <span class="citation">Baltagi, Song, and Jung (2001)</span>, p. 378, table 6; <span class="citation">Baltagi (2021)</span>, p. 248, table 9.1), states are nested within regions. The group index is given in the 3rd position of the <code>index</code> argument to <code>pdata.frame</code> or to <code>plm</code> directly and <code>plm</code>’s argument <code>effect</code> is set to <code>&quot;nested&quot;</code>:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="kw">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>swar &lt;-<span class="st"> </span><span class="kw">plm</span>(form &lt;-<span class="st"> </span><span class="kw">log</span>(gsp) <span class="op">~</span><span class="st"> </span><span class="kw">log</span>(pc) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(emp) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(hwy) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(water) <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(util) <span class="op">+</span><span class="st"> </span>unemp, </span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>            Produc, <span class="dt">index =</span> <span class="kw">c</span>(<span class="st">&quot;state&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;region&quot;</span>), <span class="dt">effect =</span> <span class="st">&quot;nested&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>            Produc, <span class="dt">index =</span> <span class="kw">c</span>(<span class="st">&quot;state&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;region&quot;</span>), <span class="dt">model =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">effect =</span> <span class="st">&quot;nested&quot;</span>, <span class="dt">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>walhus &lt;-<span class="st"> </span><span class="kw">update</span>(swar, <span class="dt">random.method =</span> <span class="st">&quot;walhus&quot;</span>)</span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>amem &lt;-<span class="st"> </span><span class="kw">update</span>(swar, <span class="dt">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</span>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a><span class="kw">screenreg</span>(<span class="kw">list</span>(<span class="st">&quot;Swamy-Arora&quot;</span> =<span class="st"> </span>swar, <span class="st">&quot;Wallace-Hussain&quot;</span> =<span class="st"> </span>walhus, <span class="st">&quot;Amemiya&quot;</span> =<span class="st"> </span>amem), <span class="dt">digits =</span> <span class="dv">5</span>)</span></code></pre></div>
@@ -729,10 +772,13 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <div id="ref-BALT:13">
 <p>———. 2013. <em>Econometric Analysis of Panel Data</em>. 5th ed. John Wiley; Sons ltd.</p>
 </div>
+<div id="ref-BALT:21">
+<p>———. 2021. <em>Econometric Analysis of Panel Data</em>. 6th ed. Springer.</p>
+</div>
 <div id="ref-BALT:81">
 <p>Baltagi, B. H. 1981. “Simultaneous Equations with Error Components.” <em>Journal of Econometrics</em> 17: 21–49.</p>
 </div>
-<div id="ref-BALT:2005">
+<div id="ref-BALT:05">
 <p>———. 2005. <em>Econometric Analysis of Panel Data</em>. 3rd ed. John Wiley; Sons ltd.</p>
 </div>
 <div id="ref-BALT:CHAN:94">

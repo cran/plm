@@ -8,12 +8,12 @@ extract.plm <- function(model, include.rsquared = TRUE, include.adjrs = TRUE,
     include.nobs = TRUE, include.ercomp = TRUE, ...) {
   s <- summary(model, ...)
   coefficient.names <- rownames(coef(s))
-  coefficients <- coef(s)[, 1]
-  standard.errors <- coef(s)[, 2]
-  significance <- coef(s)[, 4]
+  coefficients <- coef(s)[ , 1L]
+  standard.errors <- coef(s)[ , 2L]
+  significance <- coef(s)[ , 4L]
   
-  rs <- s$r.squared[1]
-  adj <- s$r.squared[2]
+  rs <- s$r.squared[1L]
+  adj <- s$r.squared[2L]
   n <- length(model$residuals)
   
   gof <- numeric()
@@ -112,7 +112,7 @@ HedEviewsWH <- update(HedEviews, random.models = "pooling")
 screenreg(list(EViews = HedEviews, Stata = HedStata, "Wallace-Hussain" = HedEviewsWH), 
           digits = 5, single.row = TRUE)
 
-## -----------------------------------------------------------------------------
+## ----IV-----------------------------------------------------------------------
 data("Crime", package = "plm")
 crbalt <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
               ldensity + lwcon + lwtuc + lwtrd + lwfir + lwser + lwmfg + lwfed +
@@ -121,11 +121,12 @@ crbalt <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
               data = Crime, model = "random", inst.method = "baltagi")
 crbvk <- update(crbalt, inst.method = "bvk")
 crwth <- update(crbalt, model = "within")
-screenreg(list(FE2SLS = crwth, EC2SLS = crbalt, G2SLS = crbvk), 
-          single.row = TRUE, digits = 5, omit.coef = "(region)|(year)",
+crbe  <- update(crbalt, model = "between")
+screenreg(list(FE2SLS = crwth, BE2SLS = crbe, EC2SLS = crbalt, G2SLS = crbvk), 
+          single.row = FALSE, digits = 5, omit.coef = "(region)|(year)",
           reorder.coef = c(1:16, 19, 18, 17))
 
-## -----------------------------------------------------------------------------
+## ----IV-HT--------------------------------------------------------------------
 data("Wages", package = "plm")
 ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp^2) + 
             bluecol + ind + union + sex + black + ed | 
@@ -135,15 +136,16 @@ ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp^2) +
           inst.method = "baltagi", model = "random", 
           random.method = "ht")
 
-am <- update(ht, inst.method = "am")
-  
-screenreg(list("Hausman-Taylor" = ht, "Amemiya-MaCurdy" = am), 
-          digits = 5, single.row = TRUE)
+am  <- update(ht, inst.method = "am")
+bms <- update(ht, inst.method = "bms")
+screenreg(list("Hausman-Taylor" = ht, "Amemiya-MaCurdy" = am,
+               "Breusch-Mizon-Schmidt" = bms),
+          digits = 5, single.row = FALSE)
 
-## -----------------------------------------------------------------------------
+## ----nestedRE-----------------------------------------------------------------
 data("Produc", package = "plm")
 swar <- plm(form <- log(gsp) ~ log(pc) + log(emp) + log(hwy) + log(water) + log(util) + unemp, 
-            Produc, index = c("state", "year", "region"), effect = "nested", random.method = "swar")
+            Produc, index = c("state", "year", "region"), model = "random", effect = "nested", random.method = "swar")
 walhus <- update(swar, random.method = "walhus")
 amem <- update(swar, random.method = "amemiya")
 screenreg(list("Swamy-Arora" = swar, "Wallace-Hussain" = walhus, "Amemiya" = amem), digits = 5)

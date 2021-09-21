@@ -117,18 +117,20 @@ NULL
 #' @rdname pseries
 #' @export
 print.pseries <- function(x, ...){
+  x.orig <- x
   attr(x, "index") <- NULL
   attr(x, "class") <- base::setdiff(attr(x, "class"), "pseries")
-  if(length(attr(x, "class")) == 1 && class(x) %in% c("character", "logical", "numeric", "integer", "complex")) {
+  if(length(attr(x, "class")) == 1L && class(x) %in% c("character", "logical", "numeric", "integer", "complex")) {
     attr(x, "class") <- NULL
   }
   print(x, ...)
+  x.orig
 }
 
 #' @rdname pseries
 #' @export
 as.matrix.pseries <- function(x, idbyrow = TRUE, ...){
-    index <- attr(x, "index")
+    index <- unclass(attr(x, "index")) # unclass for speed
     id <- index[[1L]]
     time <- index[[2L]]
     time.names <- levels(time)
@@ -220,8 +222,9 @@ plot.pseries <- function(x, plot = c("lattice", "superposed"),
 #' @export
 summary.pseries <- function(object, ...) {
     if(!inherits(object, c("factor", "logical", "character"))) {
-        id   <- attr(object, "index")[[1L]]
-        time <- attr(object, "index")[[2L]]
+        index <- unclass(attr(object, "index")) # unclass for speed
+        id   <- index[[1L]]
+        time <- index[[2L]]
         Bid   <- Between(object, na.rm = TRUE)
         Btime <- Between(object, effect = "time", na.rm = TRUE)
         ## res <- structure(c(total = sumsq(object),
@@ -244,7 +247,7 @@ summary.pseries <- function(object, ...) {
 #' @export
 plot.summary.pseries <- function(x, ...){
     x <- as.numeric(x)
-    share <- x[-1]/x[1] # vec with length == 2
+    share <- x[-1L]/x[1L] # vec with length == 2
     names(share) <- c("id", "time")
     barplot(share, ...)
 }
@@ -252,18 +255,20 @@ plot.summary.pseries <- function(x, ...){
 #' @rdname pseries
 #' @export
 print.summary.pseries <- function(x, ...){
+    x.orig <- x
     digits <- getOption("digits")
     special_treatment_vars <- c("factor", "logical", "character")
     if(!inherits(x, special_treatment_vars)) {
         x <- as.numeric(x)
-        share <- x[-1]/x[1] # vec with length == 2
+        share <- x[-1L]/x[1L] # vec with length == 2
         names(share) <- c("id", "time")
-        cat(paste("total sum of squares:", signif(x[1], digits = digits),"\n"))
+        cat(paste("total sum of squares:", signif(x[1L], digits = digits),"\n"))
         print.default(share, ...)
     } else {
         class(x) <- setdiff(class(x), c("summary.pseries", special_treatment_vars))
         print(x, ...)
     }
+    invisible(x.orig)
 }
 
 
@@ -299,32 +304,32 @@ myave.default <- function(x, effect, func, ...) {
 
 Tapply.pseries <- function(x, effect = c("individual", "time", "group"), func, ...){
     effect <- match.arg(effect)
-    xindex <- attr(x, "index")
+    xindex <- unclass(attr(x, "index")) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
     effect <- switch(effect,
                      "individual"= xindex[[1L]],
                      "time"      = xindex[[2L]],
                      "group"     = xindex[[3L]]
                      )
-    x <- as.numeric(x)
-    z <- Tapply.default(x, effect, func, ...)
-    attr(z, "index") <- xindex
+    z <- as.numeric(x)
+    z <- Tapply.default(z, effect, func, ...)
+    attr(z, "index") <- attr(x, "index") # insert original index
     class(z) <- c("pseries", class(z))
     return(z)
 }
 
 myave.pseries <- function(x, effect = c("individual", "time", "group"), func, ...) {
   effect <- match.arg(effect)
-  xindex <- attr(x, "index")
+  xindex <- unclass(attr(x, "index")) # unclass for speed
   checkNA.index(xindex) # index may not contain any NA
   eff.fac <- switch(effect,
                    "individual"= xindex[[1L]],
                    "time"      = xindex[[2L]],
                    "group"     = xindex[[3L]]
   )
-  x <- as.numeric(x)
-  z <- myave.default(x, eff.fac, func, ...)
-  attr(z, "index") <- xindex
+  z <- as.numeric(x)
+  z <- myave.default(z, eff.fac, func, ...)
+  attr(z, "index") <- attr(x, "index") # insert original index
   class(z) <- c("pseries", class(z))
   return(z)
 }
@@ -333,7 +338,7 @@ Tapply.matrix <- function(x, effect, func, ...) {
     # argument 'effect' is assumed to be a factor
     na.x <- is.na(x)
     uniqval <- apply(x, 2, tapply, effect, func, ...)
-    result <- uniqval[as.character(effect), , drop = F]
+    result <- uniqval[as.character(effect), , drop = FALSE]
     result[na.x] <- NA_real_
     return(result)
 }
@@ -360,29 +365,38 @@ Sum <- function(x, ...) {
 #' @rdname pseries
 #' @export
 Sum.default <- function(x, effect, ...) {
+# print("Sum.default(.baseR)")
+# browser()
+  
     # argument 'effect' is assumed to be a factor
     if(!is.numeric(x)) stop("The Sum function only applies to numeric vectors")
     #   Tapply(x, effect, sum, ...)
-    return(myave(x, effect, sum, ...))
+    return(myave(x, droplevels(effect), sum, ...))
 }
 
 #' @rdname pseries
 #' @export
 Sum.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
+# print("Sum.pseries(.baseR)")
+# browser()
+  
     effect <- match.arg(effect)
     #   Tapply(x, effect, sum, ...)
-    # myave.pseries takes are of checking the index for NAs
+    # myave.pseries takes care of checking the index for NAs
     return(myave(x, effect, sum, ...))
 }
 
 #' @rdname pseries
 #' @export
 Sum.matrix <- function(x, effect, ...) {
+# print("Sum.matrix(.baseR)")
+# browser()
+  
   # if no index attribute, argument 'effect' is assumed to be a factor
-  eff.fac <- if(is.null(attr(x, "index"))) {
-    effect
+  eff.fac <- if(is.null(xindex <- attr(x, "index"))) {
+    droplevels(effect)
   } else {
-    if(!is.character(effect) && length(effect) > 1)
+    if(!is.character(effect) && length(effect) > 1L)
       stop("for matrices with index attributes, the effect argument must be a character")
     if(! effect %in% c("individual", "time", "group"))
       stop("irrelevant effect for a between transformation")
@@ -391,9 +405,9 @@ Sum.matrix <- function(x, effect, ...) {
                      "time"       = 2L,
                      "group"      = 3L,
                      stop("unknown value of argument 'effect'"))
-    xindex <- attr(x, "index")
+    xindex <- unclass(xindex) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
-    xindex[ , eff.no]
+    xindex[[eff.no]]
   }
   return(myave(x, eff.fac, sum, ...))
 }
@@ -407,29 +421,38 @@ Between <- function(x, ...) {
 #' @rdname pseries
 #' @export
 Between.default <- function(x, effect, ...) {
+# print("Between.default(.baseR)")
+# browser()
+  
     # argument 'effect' is assumed to be a factor
     if(!is.numeric(x)) stop("The Between function only applies to numeric vectors")
     #   Tapply(x, effect, mean, ...)
-    return(myave(x, effect, mean, ...))
+    return(myave(x, droplevels(effect), mean, ...))
 }
 
 #' @rdname pseries
 #' @export
 Between.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
+# print("Between.pseries(.baseR)")
+# browser()
+  
     effect <- match.arg(effect)
     #   Tapply(x, effect = effect, mean, ...)
-    # myave.pseries takes are of checking the index for NAs
+    # myave.pseries takes care of checking the index for NAs
     return(myave(x, effect = effect, mean, ...))
 }
 
 #' @rdname pseries
 #' @export
 Between.matrix <- function(x, effect, ...) {
+# print("Between.matrix(.baseR)")
+# browser()
+  
   # if no index attribute, argument 'effect' is assumed to be a factor
-  eff.fac <- if(is.null(attr(x, "index"))) {
-    effect
+  eff.fac <- if(is.null(xindex <- attr(x, "index"))) {
+    droplevels(effect)
   } else {
-    if(!is.character(effect) && length(effect) > 1)
+    if(!is.character(effect) && length(effect) > 1L)
       stop("for matrices with index attributes, the effect argument must be a character")
     if(! effect %in% c("individual", "time", "group"))
       stop("irrelevant effect for a between transformation")
@@ -438,9 +461,9 @@ Between.matrix <- function(x, effect, ...) {
                      "time"       = 2L,
                      "group"      = 3L,
                      stop("unknown value of argument 'effect'"))
-    xindex <- attr(x, "index")
+    xindex <- unclass(xindex)
     checkNA.index(xindex) # index may not contain any NA
-    xindex[ , eff.no]
+    xindex[[eff.no]]
   }
   return(myave.matrix(x, eff.fac, mean, ...))
 }
@@ -454,23 +477,29 @@ between <- function(x, ...) {
 #' @rdname pseries
 #' @export
 between.default <- function(x, effect, ...) {
+# print("between.default(.baseR)")
+# browser()
+  
     # argument 'effect' is assumed to be a factor
     if(!is.numeric(x)) stop("The between function only applies to numeric vectors")
-    #    res <- tapply(x, effect, mean, ...)
-    ##   res <- res[as.character(effect[!duplicated(effect)])] # restore original order (as tapply's output is sorted by levels factor effect)
-    res <- ave(x, effect, FUN = function(x) mean(x, ...))
-    # reduce down to number of unique elements in effect
-    keep <- !duplicated(effect)
-    res <- res[keep]
-    names(res) <- as.character(effect[keep])
+
+    # use tapply here as tapply's output is sorted by levels factor effect (unlike ave's output)
+    # difference is only relevant for between (small "b") as data is compressed down to # levels
+    res <- tapply(x, droplevels(effect), mean, ...)
+    nms <- attr(res, "dimnames")[[1L]]
+    attr(res, "dimnames") <- attr(res, "dim") <- NULL
+    names(res) <- nms
     return(res)
 }
 
 #' @rdname pseries
 #' @export
 between.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
+# print("between.pseries(.baseR)")
+# browser()
+  
     effect <- match.arg(effect)
-    xindex <- attr(x, "index")
+    xindex <- unclass(attr(x, "index")) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
     eff.fac <- switch(effect,
                      "individual" = xindex[[1L]],
@@ -478,17 +507,22 @@ between.pseries <- function(x, effect = c("individual", "time", "group"), ...) {
                      "group"      = xindex[[3L]],
                      )
     res <- between.default(x, effect = eff.fac, ...)
+    # data compressed by transformation, so pseries features, esp. index, do not make sense
+    res <- remove_pseries_features(res)
     return(res)
 }
 
 #' @rdname pseries
 #' @export
 between.matrix <- function(x, effect, ...) {
+# print("between.matrix(.baseR)")
+# browser()
+  
   # if no index attribute, argument 'effect' is assumed to be a factor
-  eff.fac <- if(is.null(attr(x, "index"))) {
-    effect
+  eff.fac <- if(is.null(xindex <- attr(x, "index"))) {
+    droplevels(effect)
   } else {
-    if(!is.character(effect) && length(effect) > 1)
+    if(!is.character(effect) && length(effect) > 1L)
       stop("for matrices with index attributes, the effect argument must be a character")
     if(! effect %in% c("individual", "time", "group"))
       stop("irrelevant effect for a between transformation")
@@ -497,15 +531,14 @@ between.matrix <- function(x, effect, ...) {
                      "time"       = 2L,
                      "group"      = 3L,
                      stop("unknown value of argument 'effect'"))
-    xindex <- attr(x, "index")
+    xindex <- unclass(xindex) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
-    xindex[ , eff.no]
+    xindex[[eff.no]]
   }
-  res <- apply(x, 2, FUN = function(x) ave(x, eff.fac, FUN = function(y) mean(y, ...)))
-  rownames(res) <- as.character(eff.fac)
-  # compress data down to #elements of index dimension:
-  keep <- !duplicated(eff.fac)
-  res <- res[keep, ]
+
+  # use tapply here as tapply's output is sorted by levels factor effect (unlike ave's output)
+  # difference is only relevant for between (small "b") as data is compressed down to # levels
+  res <- apply(x, 2, tapply, eff.fac, mean, ...)
   return(res)
 }
 
@@ -518,17 +551,26 @@ Within <- function(x, ...) {
 #' @rdname pseries
 #' @export
 Within.default <- function(x, effect, ...) {
+# print("Within.default(.baseR)")
+# browser()
+  
+  # arg 'effect' is assumed to be a factor
+  
   # NB: Contrary to the other Within.* methods, Within.default does not handle
   #     twoways effects
+  # TODO: could add support for twoways by supplying a list containing two factors
     if(!is.numeric(x)) stop("the within function only applies to numeric vectors")
-    return(x - Between(x, effect, ...))
+    return(x - Between(x, droplevels(effect), ...))
 }
 
 #' @rdname pseries
 #' @export
 Within.pseries <- function(x, effect = c("individual", "time", "group", "twoways"), ...) {
+# print("Within.pseries(.baseR)")
+# browser()
+  
     effect <- match.arg(effect)
-    xindex <- index(x)
+    xindex <- unclass(attr(x, "index")) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
     if(effect != "twoways") result <- x - Between(x, effect, ...)
     else {
@@ -536,10 +578,10 @@ Within.pseries <- function(x, effect = c("individual", "time", "group", "twoways
         else {
             time <- xindex[[2L]]
             Dmu <- model.matrix(~ time - 1)
-            attr(Dmu, "index") <- xindex
+            attr(Dmu, "index") <- attr(x, "index") # need original index
             W1   <- Within(x,   "individual", ...)
             WDmu <- Within(Dmu, "individual", ...)
-            W2 <- fitted(lm.fit(WDmu, x))
+            W2 <- lm.fit(WDmu, x)$fitted.values
             result <- W1 - W2
         }
     }
@@ -549,7 +591,11 @@ Within.pseries <- function(x, effect = c("individual", "time", "group", "twoways
 #' @rdname pseries
 #' @export
 Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
-    if(is.null(attr(x, "index"))) {
+# print("Within.matrix(.baseR)")
+# browser()
+  
+    if(is.null(xindex <- unclass(attr(x, "index")))) { # unclass for speed
+      # non-index case
         result <- Within.default(x, effect, ...)
         othervar <- colSums(abs(x)) > sqrt(.Machine$double.eps)
         if(rm.null) {
@@ -560,21 +606,21 @@ Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
         return(result)
     }
     else {
+      # index case
         if(effect %in% c("individual", "time", "group")) result <- x - Between(x, effect, ...)
         if(effect == "twoways") {
-            xindex <- attr(x, "index")
             checkNA.index(xindex) # index may not contain any NA
-            if(is.pbalanced(xindex)) {
+            if(is.pbalanced(xindex[[1L]], xindex[[2L]])) {
                 result <- x - Between(x, "individual", ...) - Between(x, "time", ...) +
                     matrix(colMeans(x, ...), nrow = nrow(x), ncol = ncol(x), byrow = TRUE)
             }
             else { # unbalanced twoways
                 time <- xindex[[2L]]
                 Dmu <- model.matrix(~ time - 1)
-                attr(Dmu, "index") <- xindex
+                attr(Dmu, "index") <- attr(x, "index") # need orig. index here
                 W1   <- Within(x,   "individual", rm.null = FALSE, ...)
                 WDmu <- Within(Dmu, "individual", ...)
-                W2 <- fitted(lm.fit(WDmu, x))
+                W2 <- lm.fit(WDmu, x)$fitted.values
                 result <- W1 - W2
             }
         }
@@ -610,8 +656,8 @@ Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
 #' Argument `shift` controls the shifting of observations to be used
 #' by methods `lag`, `lead`, and `diff`:
 #' 
-#' #' - `shift = "time"` (default): Methods respect the
-#' numerical value in the time dimension of the index.  The time
+#' - `shift = "time"` (default): Methods respect the
+#' numerical value in the time dimension of the index. The time
 #' dimension needs to be interpretable as a sequence t, t+1, t+2,
 #' \ldots{} where t is an integer (from a technical viewpoint,
 #' `as.numeric(as.character(index(your_pdata.frame)[[2]]))` needs to
@@ -635,10 +681,10 @@ Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
 #'     methods (can also be negative).  For the `lag` method, a
 #'     positive (negative) `k` gives lagged (leading) values.  For the
 #'     `lead` method, a positive (negative) `k` gives leading (lagged)
-#'     values, thus, `lag(x, k = -1)` yields the same as `lead(x, k = 1)`.
+#'     values, thus, `lag(x, k = -1L)` yields the same as `lead(x, k = 1L)`.
 #'     If `k` is an integer with length > 1 (`k = c(k1, k2, ...)`), a 
 #'     `matrix` with multiple lagged `pseries` is returned,
-#' @param lag the number of lags for the `diff` method, can also be of
+#' @param lag integer, the number of lags for the `diff` method, can also be of
 #'     length > 1 (see argument `k`) (only non--negative values in
 #'     argument `lag` are allowed for `diff`),
 #' @param shift character, either `"time"` (default) or `"row"`
@@ -676,42 +722,42 @@ Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
 #' 
 #' # compute the first and third lag, and the difference lagged twice
 #' lag(z)
-#' lag(z, 3)
-#' diff(z, 2)
+#' lag(z, 3L)
+#' diff(z, 2L)
 #' 
 #' # compute negative lags (= leading values)
-#' lag(z, -1)
-#' lead(z, 1) # same as line above
-#' identical(lead(z, 1), lag(z, -1)) # TRUE
+#' lag(z, -1L)
+#' lead(z, 1L) # same as line above
+#' identical(lead(z, 1L), lag(z, -1L)) # TRUE
 #'  
 #' # compute more than one lag and diff at once (matrix returned)
-#' lag(z, c(1,2))
-#' diff(z, c(1,2))
+#' lag(z, c(1L,2L))
+#' diff(z, c(1L,2L))
 #' 
 #' ## demonstrate behaviour of shift = "time" vs. shift = "row"
 #' # delete 2nd time period for first individual (1978 is missing (not NA)):
-#' Em_hole <- Em[-2, ]
+#' Em_hole <- Em[-2L, ]
 #' is.pconsecutive(Em_hole) # check: non-consecutive for 1st individual now
 #' 
 #' # original non-consecutive data:
 #' head(Em_hole$emp, 10) 
 #' # for shift = "time", 1-1979 contains the value of former 1-1977 (2 periods lagged):
-#' head(lag(Em_hole$emp, k = 2, shift = "time"), 10)
+#' head(lag(Em_hole$emp, k = 2L, shift = "time"), 10L)
 #' # for shift = "row", 1-1979 contains NA (2 rows lagged (and no entry for 1976):
-#' head(lag(Em_hole$emp, k = 2, shift = "row"), 10)
+#' head(lag(Em_hole$emp, k = 2L, shift = "row"), 10L)
 #' 
 NULL
 
 #' @rdname lag.plm
 #' @export
-lead <- function(x, k = 1, ...) {
+lead <- function(x, k = 1L, ...) {
   UseMethod("lead")
 }
 
 #' @rdname lag.plm
 #' @exportS3Method
 #' @export lag
-lag.pseries <- function(x, k = 1, shift = c("time", "row"), ...) {
+lag.pseries <- function(x, k = 1L, shift = c("time", "row"), ...) {
   shift <- match.arg(shift)
   res <- if(shift == "time") lagt.pseries(x = x, k = k, ...) else lagr.pseries(x = x, k = k, ...)
   return(res)
@@ -719,7 +765,7 @@ lag.pseries <- function(x, k = 1, shift = c("time", "row"), ...) {
 
 #' @rdname lag.plm
 #' @export
-lead.pseries <- function(x, k = 1, shift = c("time", "row"), ...) {
+lead.pseries <- function(x, k = 1L, shift = c("time", "row"), ...) {
   shift <- match.arg(shift)
   res <- if(shift == "time") leadt.pseries(x = x, k = k, ...) else leadr.pseries(x = x, k = k, ...)
   return(res)
@@ -727,15 +773,15 @@ lead.pseries <- function(x, k = 1, shift = c("time", "row"), ...) {
 
 #' @rdname lag.plm
 #' @exportS3Method
-diff.pseries <- function(x, lag = 1, shift = c("time", "row"), ...) {
+diff.pseries <- function(x, lag = 1L, shift = c("time", "row"), ...) {
   shift <- match.arg(shift)
   res <- if(shift == "time") difft.pseries(x = x, lag = lag, ...) else diffr.pseries(x = x, lag = lag, ...)
   return(res)
 }
 
 ## lagt.pseries lagging taking the time variable into account
-lagt.pseries <- function(x, k = 1, ...) {
-  index <- attr(x, "index")
+lagt.pseries <- function(x, k = 1L, ...) {
+  index <- unclass(attr(x, "index")) # unclass for speed
   id <- index[[1L]]
   time <- index[[2L]]
   
@@ -750,24 +796,24 @@ lagt.pseries <- function(x, k = 1, ...) {
 }
 
 ## leadt.pseries(x, k) is a wrapper for lagt.pseries(x, -k)
-leadt.pseries <- function(x, k = 1, ...) {
+leadt.pseries <- function(x, k = 1L, ...) {
   ret <- lagt.pseries(x, k = -k)
   if(length(k) > 1L) colnames(ret) <- k
   return(ret)
 }
 
 ## difft: diff-ing taking the time variable into account
-difft.pseries <- function(x, lag = 1, ...){
+difft.pseries <- function(x, lag = 1L, ...){
   ## copied/adapted from diffr.pseries except lines which use lagt() ("t") instead of lagr() ("r")
   islogi <- is.logical(x)
   if(! (is.numeric(x) || islogi)) stop("diff is only relevant for numeric or logical series")
   
-  non.int <- vapply(lag, function(l) round(l) != l, FUN.VALUE = TRUE)
+  non.int <- vapply(lag, function(l) round(l) != l, FUN.VALUE = TRUE, USE.NAMES = FALSE)
   if(any(non.int)) stop("Lagging value(s) in 'lag' must be whole-numbered (and non-negative)")
   
   # prevent input of negative values, because it will most likely confuse users
   # what difft would do in this case
-  neg <- vapply(lag, function(l) l < 0, FUN.VALUE = TRUE)
+  neg <- vapply(lag, function(l) l < 0L, FUN.VALUE = TRUE, USE.NAMES = FALSE)
   if(any(neg)) stop("diff is only relevant for non-negative values in 'lag'")
   
   lagtx <- lagt.pseries(x, k = lag) # use "time-based" lagging for difft
@@ -789,7 +835,7 @@ difft.pseries <- function(x, lag = 1, ...){
 alagt <- function(x, ak) {
   if(round(ak) != ak) stop("Lagging value 'k' must be whole-numbered (positive, negative or zero)")
   if(ak != 0) {
-    index <- attr(x, "index")
+    index <- unclass(attr(x, "index")) # unclass for speed
     id   <- index[[1L]]
     time <- index[[2L]]
     
@@ -817,11 +863,9 @@ alagt <- function(x, ak) {
     
     list_id_timevar <- split(time, id, drop = TRUE)
     
-    index_lag_ak_all_list <- sapply(X = list_id_timevar, 
-                                    FUN = function(id_timevar) { 
-                                      index_lag_ak <- match(id_timevar - ak, id_timevar, incomparables = NA)
-                                    },
-                                    simplify = FALSE)
+    index_lag_ak_all_list <- sapply(list_id_timevar,
+                                    function(x) match(x - ak, x, incomparables = NA),
+                                    simplify = FALSE, USE.NAMES = FALSE)
     
     # translate block-wise positions to positions in full vector
     index_lag_ak_all <- unlist(index_lag_ak_all_list, use.names = FALSE)
@@ -829,7 +873,7 @@ alagt <- function(x, ak) {
     NApos <- is.na(index_lag_ak_all) # save NA positions for later
     substitute_blockwise <- index_lag_ak_all
     
-    block_lengths <- vapply(index_lag_ak_all_list, length, FUN.VALUE = 1L) # lengths (with an "s") would be more efficient, but requires R >= 3.2
+    block_lengths <- vapply(index_lag_ak_all_list, length, FUN.VALUE = 0.0, USE.NAMES = FALSE)
     
     # not needed but leave here for illustration:
     #    startpos_block <- cumsum(block_lengths) - block_lengths + 1
@@ -851,8 +895,8 @@ alagt <- function(x, ak) {
 
 
 ## lagr: lagging row-wise
-lagr.pseries <- function(x, k = 1, ...) {
-    index <- attr(x, "index")
+lagr.pseries <- function(x, k = 1L, ...) {
+    index <- unclass(attr(x, "index")) # unclass for speed
     id <- index[[1L]]
     time <- index[[2L]]
   
@@ -870,13 +914,12 @@ lagr.pseries <- function(x, k = 1, ...) {
   
     alagr <- function(x, ak){
         if(round(ak) != ak) stop("Lagging value 'k' must be whole-numbered (positive, negative or zero)")
-        if(ak > 0) {
+        if(ak > 0L) {
       
         # NB: this code does row-wise shifting
-
         # delete first ak observations for each unit
-            isNAtime <- c(rep(T, ak), (diff(as.numeric(time), lag = ak) != ak))
-            isNAid   <- c(rep(T, ak), (diff(as.numeric(id),   lag = ak) != 0))
+            isNAtime <- c(rep(TRUE, ak), (diff(as.numeric(time), lag = ak) != ak))
+            isNAid   <- c(rep(TRUE, ak), (diff(as.numeric(id),   lag = ak) != 0L))
             isNA <- (isNAtime | isNAid)
       
             result <- x                                             # copy x first ...
@@ -884,13 +927,13 @@ lagr.pseries <- function(x, k = 1, ...) {
             result[(ak+1):length(result)] <- x[1:(length(x)-ak)]    # ... shift and ...
             result[isNA] <- NA                                      # ... make more NAs in between: this way, we keep: all factor levels, names, classes
       
-        } else if(ak < 0) { # => compute leading values
+        } else if(ak < 0L) { # => compute leading values
       
         # delete last |ak| observations for each unit
             num_time <- as.numeric(time)
             num_id   <- as.numeric(id)
-            isNAtime <- c(c((num_time[1:(length(num_time)+ak)] - num_time[(-ak+1):length(num_time)]) != ak), rep(T, -ak))
-            isNAid   <- c(c((num_id[1:(length(num_id)+ak)]     - num_id[(-ak+1):length(num_id)])     != 0),  rep(T, -ak))
+            isNAtime <- c(c((num_time[1:(length(num_time)+ak)] - num_time[(-ak+1):length(num_time)]) != ak), rep(TRUE, -ak))
+            isNAid   <- c(c((num_id[1:(length(num_id)+ak)]     - num_id[(-ak+1):length(num_id)])     != 0L), rep(TRUE, -ak))
             isNA <- (isNAtime | isNAid)
       
             result <- x                                            # copy x first ...
@@ -917,23 +960,23 @@ lagr.pseries <- function(x, k = 1, ...) {
 
 
 # leadr.pseries(x, k) is a wrapper for lagr.pseries(x, -k)
-leadr.pseries <- function(x, k = 1, ...) {
+leadr.pseries <- function(x, k = 1L, ...) {
     ret <- lagr.pseries(x, k = -k)
     if(length(k) > 1L) colnames(ret) <- k
     return(ret)
 }
 
 ## diffr: lagging row-wise
-diffr.pseries <- function(x, lag = 1, ...){
+diffr.pseries <- function(x, lag = 1L, ...) {
     islogi <- is.logical(x)
     if(! (is.numeric(x) || islogi)) stop("diff is only relevant for numeric or logical series")
     
-    non.int <- vapply(lag, function(l) round(l) != l, FUN.VALUE = TRUE)
+    non.int <- vapply(lag, function(l) round(l) != l, FUN.VALUE = TRUE, USE.NAMES = FALSE)
     if(any(non.int)) stop("Lagging value(s) in 'lag' must be whole-numbered (and non-negative)")
     
     # prevent input of negative values, because it will most likely confuse users
     # what diff would do in this case
-    neg <- vapply(lag, function(l) l < 0, FUN.VALUE = TRUE)
+    neg <- vapply(lag, function(l) l < 0L, FUN.VALUE = TRUE, USE.NAMES = FALSE)
     if(any(neg)) stop("diff is only relevant for non-negative values in 'lag'")
 
     lagrx <- lagr.pseries(x, k = lag)
@@ -959,7 +1002,7 @@ pdiff <- function(x, effect = c("individual", "time"), has.intercept = FALSE){
   # NB: x is assumed to have an index attribute, e.g., a pseries
   #     can check with has.index(x)
     effect <- match.arg(effect)
-    cond <- as.numeric(attr(x, "index")[[1L]])
+    cond <- as.numeric(unclass(attr(x, "index"))[[1L]]) # unclass for speed
     n <- if(is.matrix(x)) nrow(x) else length(x)
     cond <- c(NA, cond[2:n] - cond[1:(n-1)]) # this assumes a certain ordering
     cond[cond != 0] <- NA

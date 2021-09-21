@@ -1,8 +1,3 @@
-data.name <- function(x){
-  data.name <- paste(deparse(x$call$formula))
-  if (length(data.name) > 1) paste(data.name[1], "...")
-  else data.name
-}
 
 #' Hausman Test for Panel Models
 #' 
@@ -87,12 +82,12 @@ phtest <- function(x,...){
 phtest.formula <- function(x, data, model = c("within", "random"),
                             method = c("chisq", "aux"),
                             index = NULL, vcov = NULL, ...) {
-  # NB: No argument 'effect' here, maybe introduce?
+  # TODO: No argument 'effect' here, maybe introduce?
   #     it gets evaluated due to the eval() call for method="chisq"
   #     and since rev. 305 due to extraction from dots (...) in method="aux" as a quick fix
   #    If introduced as argument, change doc accordingly (currently, effect arg is mentioned in ...)
   
-    if (length(model)!=2) stop("two models should be indicated")
+    if (length(model) != 2) stop("two models should be indicated in argument 'model'")
     for (i in 1:2){
         model.name <- model[i]
         if(!(model.name %in% names(model.plm.list))){
@@ -102,18 +97,18 @@ phtest.formula <- function(x, data, model = c("within", "random"),
     switch(match.arg(method),
            chisq={
                cl <- match.call(expand.dots = TRUE)
-               cl$model <- model[1]
-               names(cl)[2] <- "formula"
-               m <- match(plm.arg, names(cl), 0)
-               cl <- cl[c(1,m)]
-               cl[[1]] <- as.name("plm")
+               cl$model <- model[1L]
+               names(cl)[2L] <- "formula"
+               m <- match(plm.arg, names(cl), 0L)
+               cl <- cl[c(1L, m)]
+               cl[[1L]] <- as.name("plm")
                plm.model.1 <- eval(cl, parent.frame())
-               plm.model.2 <- update(plm.model.1, model = model[2])
+               plm.model.2 <- update(plm.model.1, model = model[2L])
                return(phtest(plm.model.1, plm.model.2))
            },
            aux={
                ## some interface checks here
-               if (model[1] != "within") {
+               if (model[1L] != "within") {
                    stop("Please supply 'within' as first model type")
                }
              
@@ -130,12 +125,11 @@ phtest.formula <- function(x, data, model = c("within", "random"),
                # signature for formula interface/test="aux": see if effect is in dots and extract
                   dots <- list(...)
                   # print(dots) # DEBUG printing
-               if (!is.null(dots$effect)) effect <- dots$effect else effect <- NULL
-               # calculatate FE and RE model
+                  effect <- if(!is.null(dots$effect)) dots$effect else NULL
+               # calculate FE and RE model
 
-               fe_mod <- plm(formula = x, data = data, model = model[1], effect = effect)
-
-               re_mod <- plm(formula = x, data = data, model = model[2], effect = effect)
+               fe_mod <- plm(formula = x, data = data, model = model[1L], effect = effect)
+               re_mod <- plm(formula = x, data = data, model = model[2L], effect = effect)
 
                 ## DEBUG printing:
                  # print(effect)
@@ -146,11 +140,11 @@ phtest.formula <- function(x, data, model = c("within", "random"),
                  # print(re_mod)
                reY <- pmodel.response(re_mod)
 #               reX <- model.matrix(re_mod)[ , -1, drop = FALSE] # intercept not needed; drop=F needed to prevent matrix
-#               feX <- model.matrix(fe_mod, cstcovar.rm = TRUE)                      # from degenerating to vector if only one regressor
+#               feX <- model.matrix(fe_mod, cstcovar.rm = TRUE)  # from degenerating to vector if only one regressor
                reX <- model.matrix(re_mod, cstcovar.rm = "intercept")
                feX <- model.matrix(fe_mod, cstcovar.rm = "all")
 
-               dimnames(feX)[[2]] <- paste(dimnames(feX)[[2]], "tilde", sep=".")
+               dimnames(feX)[[2L]] <- paste(dimnames(feX)[[2L]], "tilde", sep=".")
                ## estimated models could have fewer obs (due dropping of NAs) compared to the original data
                ## => match original data and observations used in estimated models
                ## routine adapted from lmtest::bptest
@@ -174,12 +168,12 @@ phtest.formula <- function(x, data, model = c("within", "random"),
                ## construct data set and formula for auxiliary regression
                data <- pdata.frame(cbind(index(data), reY, reX, feX))
                auxfm <- as.formula(paste("reY~",
-                                         paste(dimnames(reX)[[2]],
+                                         paste(dimnames(reX)[[2L]],
                                                collapse="+"), "+",
-                                         paste(dimnames(feX)[[2]],
+                                         paste(dimnames(feX)[[2L]],
                                                collapse="+"), sep=""))
                auxmod <- plm(formula = auxfm, data = data, model = "pooling")
-               nvars <- dim(feX)[[2]]
+               nvars <- dim(feX)[[2L]]
                R <- diag(1, nvars)
                r <- rep(0, nvars) # here just for clarity of illustration
                omega0 <- vcov(auxmod)[(nvars+2):(nvars*2+1),
@@ -221,8 +215,8 @@ phtest.panelmodel <- function(x, x2, ...){
   names.wi <- names(coef.wi)
   names.re <- names(coef.re)
   common_coef_names <- names.re[names.re %in% names.wi]
-  coef.h <- common_coef_names[!(common_coef_names %in% "(Intercept)")] # drop intercept if included (relevant when between model inputed)
-  if(length(coef.h) == 0) stop("no common coefficients in models")
+  coef.h <- common_coef_names[!(common_coef_names %in% "(Intercept)")] # drop intercept if included (relevant when between model input)
+  if(length(coef.h) == 0L) stop("no common coefficients in models")
   dbeta <- coef.wi[coef.h] - coef.re[coef.h]
   df <- length(dbeta)
   dvcov <- vcov.wi[coef.h, coef.h] - vcov.re[coef.h, coef.h]
@@ -254,7 +248,6 @@ phtest.panelmodel <- function(x, x2, ...){
   parameter <- df
   names(parameter) <- "df"
   alternative <- "one model is inconsistent"
-#  null.value <- "both models are consistent"
   
   ## DEBUG printing:
      # print(paste0("mod1: ", describe(x,  "effect")))
@@ -265,7 +258,6 @@ phtest.panelmodel <- function(x, x2, ...){
               parameter    = parameter,
               method       = "Hausman Test",
               data.name    = data.name(x),
- #             null.value  = null.value,
               alternative  = alternative)
   class(res) <- "htest"
   return(res)
@@ -406,17 +398,18 @@ plmtest.plm <- function(x,
   T <- pdim$nT$T
   N_obs <- pdim$nT$N
   balanced <- pdim$balanced
-  index <- attr(model.frame(x), "index")
-  id <- index[[1]]
-  time <- index[[2]]
+  index <- unclass(attr(model.frame(x), "index")) # unclass for speed
+  id <- index[[1L]]
+  time <- index[[2L]]
   T_i <- pdim$Tint$Ti
   N_t <- pdim$Tint$nt
   res <- resid(x)
   
   ### calc of parts of test statistic ##
   # calc. is done w/o using matrix calculation, see, e.g., Baltagi/Li (1990), p. 106
-  A1 <- as.numeric(crossprod(tapply(res, id, sum)) / sum(res ^ 2) - 1)   # == A1 <- sum(tapply(res,id,sum)^2)/sum(res^2) - 1
-  A2 <- as.numeric(crossprod(tapply(res, time, sum)) / sum(res ^ 2) - 1) # == A2 <- sum(tapply(res,time,sum)^2)/sum(res^2) - 1
+  CP.res <- crossprod(res)
+  A1 <- as.numeric(crossprod(tapply(res, id,   sum)) / CP.res - 1) # == A1 <- sum(tapply(res,id,sum)^2)   / sum(res^2) - 1
+  A2 <- as.numeric(crossprod(tapply(res, time, sum)) / CP.res - 1) # == A2 <- sum(tapply(res,time,sum)^2) / sum(res^2) - 1
   
   M11 <- sum(T_i ^ 2)
   M22 <- sum(N_t ^ 2)
@@ -431,7 +424,7 @@ plmtest.plm <- function(x,
     if (!type %in% c("honda", "bp", "kw"))
       stop("type must be one of \"honda\", \"bp\" or \"kw\" for a one way model") # kw oneway coincides with honda
     
-    stat <- ifelse(effect == "individual", LM1, LM2)
+    stat <- if(effect == "individual") LM1 else LM2
     stat <- switch(type,
                      honda = c(normal = stat),
                      bp    = c(chisq  = stat ^ 2),
@@ -480,7 +473,7 @@ plmtest.plm <- function(x,
                             time    = "time effects",
                             twoways = "two-ways effects")
   
-  balanced.type <- ifelse(balanced, "balanced", "unbalanced")
+  balanced.type <- if(balanced) "balanced" else "unbalanced"
   
   method <- paste("Lagrange Multiplier Test - ", method.effect,
                   " (", method.type, ") for ", balanced.type, " panels", sep="")
@@ -516,10 +509,10 @@ plmtest.formula <- function(x, data, ...,
   cl$model <- "pooling" # plmtest is performed on the pooling model...
   cl$effect <- NULL     # ... and pooling model has no argument effect...
   cl$type <- NULL       # ... and no argument type => see below: pass on args effect and type to plmtest.plm()
-  names(cl)[2] <- "formula"
-  m <- match(plm.arg, names(cl), 0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
+  names(cl)[2L] <- "formula"
+  m <- match(plm.arg, names(cl), 0L)
+  cl <- cl[c(1L, m)]
+  cl[[1L]] <- as.name("plm")
   plm.model <- eval(cl, parent.frame())
   plmtest(plm.model, effect = effect, type = type) # pass on args effect and type to plmtest.plm()
 }
@@ -570,10 +563,10 @@ pFtest <- function(x, ...){
 pFtest.formula <- function(x, data, ...){
   cl <- match.call(expand.dots = TRUE)
   cl$model <- "within"
-  names(cl)[2] <- "formula"
-  m <- match(plm.arg,names(cl),0)
-  cl <- cl[c(1,m)]
-  cl[[1]] <- as.name("plm")
+  names(cl)[2L] <- "formula"
+  m <- match(plm.arg,names(cl), 0L)
+  cl <- cl[c(1L, m)]
+  cl[[1L]] <- as.name("plm")
   plm.within <- eval(cl,parent.frame())
   plm.pooling <- update(plm.within, model = "pooling")
   pFtest(plm.within, plm.pooling, ...)
@@ -602,7 +595,7 @@ pFtest.plm <- function(x, z, ...){
   alternative <- "significant effects"
   res <- list(statistic   = stat,
               p.value     = pval,
-              method      = paste("F test for ", effect, " effects",sep=""),
+              method      = paste("F test for ", effect, " effects", sep=""),
               parameter   = parameter,
               data.name   = data.name(x),
               alternative = alternative)
@@ -740,16 +733,15 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
                           df2adj = (test == "F" && !is.null(vcov) && missing(.df2)), .df1, .df2, ...) {
   model <- describe(x, "model")
   test <- match.arg(test)
-  df1 <- ifelse(model == "within",
-                length(coef(x)),
-                length(coef(x)) - has.intercept(x))
+  df1 <- if(model == "within") length(coef(x)) else { length(coef(x)) - has.intercept(x) }
   df2 <- df.residual(x)
 #  tss <- tss(x)        # not good for models without intercept
 #  ssr <- deviance(x)   # -- " --
   vcov_arg <- vcov
   int <- "(Intercept)"
   coefs_wo_int <- coef(x)[!(names(coef(x)) %in% int)]
-  
+  if(!length(coefs_wo_int)) stop(paste("No non-intercept regressors in input model 'x',",
+                                       "cannot perform Wald joint significance test"))
   # sanity check
   if (df2adj == TRUE && (is.null(vcov_arg) || test != "F")) {
     stop("df2adj == TRUE sensible only for robust F test, i.e., test == \"F\" and !is.null(vcov) and missing(.df2)")
@@ -819,7 +811,7 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
     }
   }
   if (test == "F"){
-    if(length(formula(x))[2] > 1) stop("test = \"F\" not sensible for IV models")
+    if(length(formula(x))[2L] > 1L) stop("test = \"F\" not sensible for IV models")
     if (is.null(vcov_arg)) {
       # perform "normal" F test
       stat <- as.numeric(crossprod(solve(vcov(x)[names(coefs_wo_int), names(coefs_wo_int)], coefs_wo_int), coefs_wo_int)) / df1
@@ -853,20 +845,25 @@ pwaldtest.plm <- function(x, test = c("Chisq", "F"), vcov = NULL,
 pwaldtest.pvcm <- function(x, ...) {
   model <- describe(x, "model")
   effect <- describe(x, "effect")
-  
+
+  coefs.no.int <- !names(x$coefficients) %in% "(Intercept)" # logical with non-intercept regressors set to TRUE
+  if(!length(names(x$coefficients)[coefs.no.int])) {
+    # error informatively if only-intercept model (no other regressors)
+    stop(paste("No non-intercept regressors in model(s) of input 'x',",
+               "cannot perform Wald joint significance test(s)"))
+  }
+
   if(model == "within") {
     # for the within case, simply return a data.frame with all test results
     # of single estimations (per individual or per time period)
     
-    ii <- switch(effect, "individual" = 1, "time" = 2)
-    residl <- split(x$residuals, index(x)[[ii]])
+    ii <- switch(effect, "individual" = 1L, "time" = 2L)
+    residl <- split(x$residuals, unclass(index(x))[[ii]])
     
     # vcovs and coefficients w/o intercept
-    coefs.no.int <- !names(x$coefficients) %in% "(Intercept)"
     vcovl <- lapply(x$vcov, function(x) x[coefs.no.int, coefs.no.int])
-    coefl <- as.list(data.frame(t(x$coefficients[ , coefs.no.int])))
-    
-    df1 <- ncol(x$coefficients[ , coefs.no.int]) # is same df1 for all models (as all models estimate the same coefs)
+    coefl <- as.list(data.frame(t(x$coefficients[ , coefs.no.int, drop = FALSE])))
+    df1 <- ncol(x$coefficients[ , coefs.no.int, drop = FALSE]) # ncol is same df1 for all models (as all models estimate the same coefs)
     df2 <- lengths(residl) - ncol(x$coefficients) # (any intercept is subtracted)
     
     statChisqs <- mapply(FUN = function(v, c) as.numeric(crossprod(solve(v, c), c)),
@@ -887,8 +884,8 @@ pwaldtest.pvcm <- function(x, ...) {
   }
   
   ## case: model == "random"
-  coefs_wo_int <- x$coefficients[setdiff(names(x$coefficients), "(Intercept)")]
-  stat <- as.numeric(crossprod(solve(vcov(x)[names(coefs_wo_int), names(coefs_wo_int)], coefs_wo_int), coefs_wo_int))
+  coefs_wo_int <- x$coefficients[coefs.no.int]
+  stat <- as.numeric(crossprod(solve(vcov(x)[coefs.no.int, coefs.no.int], coefs_wo_int), coefs_wo_int))
   names(stat) <- "Chisq"
   df1 <- length(coefs_wo_int)
   pval <- pchisq(stat, df = df1, lower.tail = FALSE)
@@ -916,18 +913,19 @@ pwaldtest.pgmm <- function(x, param = c("coef", "time", "all"), vcov = NULL, ...
   if (is.null(vcov)) vv <- vcov(x)
   else if (is.function(vcov)) vv <- myvcov(x)
   else vv <- myvcov
+
   model <- describe(x, "model")
   effect <- describe(x, "effect")
   if (param == "time" && effect == "individual") stop("no time dummies in this model")
   transformation <- describe(x, "transformation")
   if (model == "onestep") coefficients <- x$coefficients
-  else coefficients <- x$coefficients[[2]]
+  else coefficients <- x$coefficients[[2L]]
   Ktot <- length(coefficients)
   Kt <- length(x$args$namest)
   
   switch(param,
          "time" = {
-           start <- Ktot - Kt + ifelse(transformation == "ld", 2, 1)
+           start <- Ktot - Kt + if(transformation == "ld") 2 else 1
            end <- Ktot
          },
          "coef" = {
@@ -979,11 +977,11 @@ pwaldtest.default <- function(x, ...) {
 trans_clubSandwich_vcov <- function(CSvcov, index) {
   clustervar <- attr(CSvcov, "cluster")
   if (!is.null(clustervar)) {
-    if (isTRUE(all.equal(index[[1]], clustervar))) {
+    if (isTRUE(all.equal(index[[1L]], clustervar))) {
       attr(CSvcov, "cluster") <- "group"
       return(CSvcov)
     }
-    if (isTRUE(all.equal(index[[2]], clustervar))) {
+    if (isTRUE(all.equal(index[[2L]], clustervar))) {
       attr(CSvcov, "cluster") <- "time"
       return(CSvcov)
     } else {
@@ -1040,13 +1038,13 @@ pooltest <- function(x,...){
 #' @export
 pooltest.plm <- function(x, z, ...){
   rss <- deviance(x)
-  uss <- sum(unlist(residuals(z))^2)
+  uss <- as.numeric(crossprod(residuals(z)))
   dlr <- df.residual(x)
   dlu <- df.residual(z)
-  df1 <- dlr-dlu
+  df1 <- dlr - dlu
   df2 <- dlu
   stat <- (rss-uss)/uss*df2/df1
-  pval <- pf(stat, df1, df2, lower.tail = FALSE)
+  pval <- pf(stat, df1 = df1, df2 = df2, lower.tail = FALSE)
   parameter <- c(df1 = df1, df2 = df2)
   names(stat) <- "F"
   res <- list(statistic   = stat,
@@ -1063,17 +1061,17 @@ pooltest.plm <- function(x, z, ...){
 #' @export
 pooltest.formula <- function(x, data, ...){
   cl <- match.call(expand.dots = TRUE)
-  cl[[1]] <- as.name("plm")
-  names(cl)[[2]] <- "formula"
+  cl[[1L]] <- as.name("plm")
+  names(cl)[[2L]] <- "formula"
   if (is.null(cl$effect)) cl$effect <- "individual"
-  plm.model <- eval(cl,parent.frame())
+  plm.model <- eval(cl, parent.frame())
 
-  cl[[1]] <- as.name("pvcm")
-  names(cl)[[2]] <- "formula"
+  cl[[1L]] <- as.name("pvcm")
+  names(cl)[[2L]] <- "formula"
   if (is.null(cl$effect)) cl$effect <- "individual"
   cl$model <- "within"
-  pvcm.model <- eval(cl,parent.frame())
+  pvcm.model <- eval(cl, parent.frame())
   
-  pooltest(plm.model,pvcm.model)
+  pooltest(plm.model, pvcm.model)
 }
 

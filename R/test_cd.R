@@ -40,22 +40,25 @@
 #' 
 #' These tests are originally meant to use the residuals of separate
 #' estimation of one time--series regression for each cross-sectional
-#' unit in order to check for cross--sectional dependence. If a
-#' different model specification (`within`, `random`, \ldots{}) is
-#' assumed consistent, one can resort to its residuals for testing
-#' (which is common, e.g., when the time dimension's length is
-#' insufficient for estimating the heterogeneous model).  If the time
-#' dimension is insufficient and `model=NULL`, the function defaults
+#' unit in order to check for cross--sectional dependence (`model = NULL`).
+#' If a different model specification (`model = "within"`, `"random"`, 
+#' \ldots{}) is assumed consistent, one can resort to its residuals for
+#' testing (which is common, e.g., when the time dimension's length is
+#' insufficient for estimating the heterogeneous model).
+#' 
+#' If the time
+#' dimension is insufficient and `model = NULL`, the function defaults
 #' to estimation of a `within` model and issues a warning. The main
 #' argument of this function may be either a model of class
-#' `panelmodel` or a `formula` and `dataframe`; in the second case,
+#' `panelmodel` or a `formula` and `data frame`; in the second case,
 #' unless `model` is set to `NULL`, all usual parameters relative to
 #' the estimation of a `plm` model may be passed on. The test is
 #' compatible with any consistent `panelmodel` for the data at hand,
-#' with any specification of `effect`. E.g., specifying
-#' `effect="time"` or `effect="twoways"` allows to test for residual
-#' cross-sectional dependence after the introduction of time fixed
-#' effects to account for common shocks.
+#' with any specification of `effect` (except for `test = "bcsclm"` which
+#' requires a within model with either individual or two-ways effect).
+#' E.g., specifying  `effect = "time"` or `effect = "twoways"` allows
+#' to test for residual cross-sectional dependence after the introduction
+#' of time fixed effects to account for common shocks.
 #' 
 #' A **local** version of either test can be computed by supplying a
 #' proximity matrix (elements coercible to `logical`) with argument
@@ -117,8 +120,8 @@
 #'     `as.logical()` is evaluated for neighbouring information (but
 #'     `w` can be symmetric). See also **Details** and
 #'     **Examples**,
-#' @param \dots further arguments to be passed on to `plm`, such as
-#'     `effect` or `random.method`.
+#' @param \dots further arguments to be passed on for model estimation to `plm`,
+#'    such as `effect` or `random.method`.
 #' @return An object of class `"htest"`.
 #' @export
 #' @references
@@ -175,27 +178,46 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
                             w = NULL, ...) {
     #data <- pdata.frame(data, index = index)
     test <- match.arg(test)
-    if (is.null(model) && test == "bcsclm") stop("for test = 'bcsclm', set argument model = 'within'")
-    mymod <- if (test != "bcsclm") plm(x, data = data, index = index, model = "pooling", ...)
-              else plm(x, data = data, index = index, model = "within", ...)
-    if(is.null(model) && min(pdim(mymod)$Tint$Ti) < length(mymod$coefficients)+1) 
-      {
-        warning("Insufficient number of observations in time to estimate heterogeneous model: using within residuals",
+    if(test == "bcsclm" && (is.null(model) || model != "within"))
+      stop("for test = 'bcsclm', set argument model = 'within'")
+
+    # evaluate formula in parent frame
+    cl <- match.call(expand.dots = TRUE)
+    cl$model  <- if(test != "bcsclm") "pooling" else "within"
+      if(test == "bcsclm") {
+        # check args model and effect for test = "bcsclm"
+        if(is.null(cl$effect)) cl$effect <- "individual" # make default within model is individual within
+        eff <- isTRUE(cl$effect == "individual" || cl$effect == "twoways")
+        if(model != "within" || !eff) stop("for test = 'bcsclm', requirement is model = \"within\" and effect = \"individual\" or \"twoways\"")
+      }
+    names(cl)[2L] <- "formula"
+    m <- match(plm.arg, names(cl), 0L)
+    cl <- cl[c(1L, m)]
+    cl[[1L]] <- as.name("plm")
+    mymod <- eval(cl, parent.frame()) # mymod is either "pooling" or "within" (the latter iff for test = "bcsclm")
+    
+    hetero.spec <- if(is.null(model)) TRUE else FALSE
+    
+    if(hetero.spec && min(pdim(mymod)$Tint$Ti) < length(mymod$coefficients)+1) {
+      warning("Insufficient number of observations in time to estimate heterogeneous model: using within residuals",
             call. = FALSE)
-        model <- "within"
+      hetero.spec <- FALSE
+      model <- "within"
     }
     
     ind0 <- attr(model.frame(mymod), "index")
-    tind <- as.numeric(ind0[[2]])
-    ind <- as.numeric(ind0[[1]])
-    if (is.null(model)) {
-        ## estimate individual regressions one by one
+    tind <- as.numeric(ind0[[2L]])
+    ind <- as.numeric(ind0[[1L]])
+    
+    if(hetero.spec) {
+        ## estimate individual normal regressions one by one
+        ## (original heterogeneous specification of Pesaran)
         X <- model.matrix(mymod)
         y <- model.response(model.frame(mymod))
         unind <- unique(ind)
         n <- length(unind)
-        ti.res <- vector("list", n)
-        ind.res <- vector("list", n)
+        ti.res   <- vector("list", n)
+        ind.res  <- vector("list", n)
         tind.res <- vector("list", n)
         for (i in 1:n) {
             tX <- X[ind == unind[i], , drop = FALSE]
@@ -207,21 +229,32 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
             tind.res[[i]] <- tind[ind == unind[i]]
         }
         ## make pseries of (all) residuals
-        resdata <- data.frame(ee = unlist(ti.res),
-                              ind = unlist(ind.res),
-                              tind = unlist(tind.res))
+        resdata <- data.frame(ee   = unlist(ti.res,   use.names = FALSE),
+                              ind  = unlist(ind.res,  use.names = FALSE),
+                              tind = unlist(tind.res, use.names = FALSE))
         pee <- pdata.frame(resdata, index = c("ind", "tind"))
         tres <- pee$ee
-    }
-    else {
-        mymod <- plm(x, data, index = index, model = model, ...)
-        tres <- resid(mymod)
-        unind <- unique(ind)
-        n <- length(unind)
-        t <- min(pdim(mymod)$Tint$Ti)
-        nT <- length(ind)
-        k <- length(mymod$coefficients)
-        }
+    } else {
+      # else case is one of:
+      # a) insufficient number of observations for heterogen. spec. or
+      # b) model specified when function was called (incl. case test = "bcsclm")
+      if(test != "bcsclm") {
+        # Estimate the model specified originally in function call or due to
+        # forced model switch to within model by insufficient number of
+        # observations for heterogen. spec.
+        # (for test = "bcsclm" it is ensured that a within model was already
+        # estimated -> no need to estimate again a within model)
+        cl$model <- model
+        mymod <- eval(cl, parent.frame())
+      }
+      
+      tres <- resid(mymod)
+      unind <- unique(ind)
+      n <- length(unind)
+      t <- min(pdim(mymod)$Tint$Ti)
+      nT <- length(ind)
+      k <- length(mymod$coefficients)
+      }
 
     return(pcdres(tres = tres, n = n, w = w,
                   form = paste(deparse(x)),
@@ -245,8 +278,8 @@ pcdtest.panelmodel <- function(x, test = c("cd", "sclm", "bcsclm", "lm", "rho", 
   
     tres <- resid(x)
     index <- attr(model.frame(x), "index")
-    #tind <- as.numeric(index[[2]])
-    ind <- as.numeric(index[[1]])
+    #tind <- as.numeric(index[[2L]])
+    ind <- as.numeric(index[[1L]])
     unind <- unique(ind)
     n <- length(unind)
     #t <- pdim(x)$Tint$Ti
@@ -272,14 +305,14 @@ pcdtest.pseries <- function(x, test = c("cd", "sclm", "bcsclm", "lm", "rho", "ab
   
     pos.na <- is.na(x)
     if (any(pos.na)) {
-      x <- subset_pseries(x, !pos.na)
+      x <- subset_pseries(x, !pos.na) # TODO: use [.pseries (pseries subsetting) once implemented
       warning("NA values encountered in input and removed")
       if (length(x) == 0L) stop("input is empty after removal of NA values")
     }
   
     ## get indices
-    tind <- as.numeric(attr(x, "index")[[2]])
-    ind <- as.numeric(attr(x, "index")[[1]])
+    tind <- as.numeric(attr(x, "index")[[2L]])
+    ind <- as.numeric(attr(x, "index")[[1L]])
 
     ## det. number of groups and df
     unind <- unique(ind)
@@ -326,8 +359,8 @@ pcdres <- function(tres, n, w, form, test) {
     
     ## find length of intersecting pairs
     ## fast method, times down 200x
-    data.res <- data.frame(time = attr(tres, "index")[[2]],
-                           indiv = attr(tres, "index")[[1]])
+    data.res <- data.frame(time = attr(tres, "index")[[2L]],
+                           indiv = attr(tres, "index")[[1L]])
     ## tabulate which obs in time for each ind are !na
     presence.tab <- table(data.res)
     ## calculate t.ij
@@ -336,9 +369,9 @@ pcdres <- function(tres, n, w, form, test) {
   # input check
   if (!is.null(w)) {
     dims.w <- dim(w)
-    if(dims.w[1] != n || dims.w[2] != n)
+    if(dims.w[1L] != n || dims.w[2L] != n)
       stop(paste0("matrix 'w' describing proximity of individuals has wrong dimensions: ",
-           "should be ", n, " x ", n, " (no. of individuals) but is ", dims.w[1], " x ", dims.w[2]))
+           "should be ", n, " x ", n, " (no. of individuals) but is ", dims.w[1L], " x ", dims.w[2L]))
   }
   
 
@@ -359,7 +392,7 @@ pcdres <- function(tres, n, w, form, test) {
   ## about row-std. matrices)
   selector.mat <- matrix(as.logical(w), ncol = n)
   
-  ## some santiy checks for 'w' (not perfect sanity, but helps)
+  ## some sanity checks for 'w' (not perfect sanity, but helps)
   if (sum(selector.mat[lower.tri(selector.mat, diag = FALSE)]) == 0) {
     stop(paste0("no neighbouring individuals defined in proximity matrix 'w'; ",
                 "only lower triangular part of 'w' (w/o diagonal) is evaluated"))
@@ -418,14 +451,17 @@ pcdres <- function(tres, n, w, form, test) {
     testname      <- "Scaled LM test"
    },
    bcsclm = {
-      CDstat        <- sqrt(1/(2*elem.num))*sum((t.ij*rho^2-1)[selector.mat]) - (n/(2*(max(t.ij)-1))) # Baltagi/Feng/Kao (2012), formula (11) (unbalanced case as sclm + in bias correction as EViews: max(T_ij) instead of T)
+     # Baltagi/Feng/Kao (2012), formula (11)
+     # (unbalanced case as sclm + in bias correction as EViews: max(T_ij) instead of T)
+      CDstat        <- sqrt(1/(2*elem.num))*sum((t.ij*rho^2-1)[selector.mat]) - (n/(2*(max(t.ij)-1)))
       pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE)
       names(CDstat) <- "z"
       parm          <- NULL
       testname      <- "Bias-corrected Scaled LM test"
    },
    cd = {
-    CDstat        <- sqrt(1/elem.num)*sum((sqrt(t.ij)*rho)[selector.mat]) # (Pesaran (2004), formula (31))
+     # (Pesaran (2004), formula (31))
+    CDstat        <- sqrt(1/elem.num)*sum((sqrt(t.ij)*rho)[selector.mat]) 
     pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE)
     names(CDstat) <- "z"
     parm          <- NULL
@@ -465,17 +501,17 @@ preshape <- function(x, na.rm = TRUE, ...) {
     inames <- names(attr(x, "index"))
     mres <- reshape(cbind(as.vector(x), attr(x, "index")),
                     direction = "wide",
-                    timevar = inames[2],
-                    idvar = inames[1])
+                    timevar = inames[2L],
+                    idvar = inames[1L])
     ## drop ind in first column
-    mres <- mres[ , -1, drop = FALSE]
+    mres <- mres[ , -1L, drop = FALSE]
     ## reorder columns (may be scrambled depending on first
     ## available obs in unbalanced panels)
-    mres <- mres[ , order(dimnames(mres)[[2]])]
+    mres <- mres[ , order(dimnames(mres)[[2L]])]
     ## if requested, drop columns (time periods) with NAs
     if(na.rm) {
-        na.cols <- vapply(mres, FUN = anyNA, FUN.VALUE = TRUE)
-        if(sum(na.cols) > 0) mres <- mres[, !na.cols]
+        na.cols <- vapply(mres, FUN = anyNA, FUN.VALUE = TRUE, USE.NAMES = FALSE)
+        if(sum(na.cols) > 0L) mres <- mres[ , !na.cols]
     }
     return(mres)
 }
@@ -491,14 +527,23 @@ preshape <- function(x, na.rm = TRUE, ...) {
 #' @param x an object of class `pseries`
 #' @param grouping grouping variable,
 #' @param groupnames a character vector of group names,
-#' @param value to complete
-#' @param \dots further arguments
-#' @return A matrix
+#' @param value to complete,
+#' @param \dots further arguments.
+#' @return A matrix with average correlation coefficients within a group
+#' (diagonal) and between groups (off-diagonal).
 #' @export
 #' @keywords htest
+#' @examples
+#' 
+#' data("Grunfeld", package = "plm")
+#' pGrunfeld <- pdata.frame(Grunfeld)
+#' grp <- c(rep(1, 100), rep(2, 50), rep(3, 50)) # make 3 groups
+#' cortab(pGrunfeld$value, grouping = grp, groupnames = c("A", "B", "C"))
+#' 
 cortab <- function(x, grouping, groupnames = NULL,
                    value = "statistic", ...) {
-    ## makes table of within and between correlation
+    ## makes matrix containing within (diagonal) and between (off-diagonal)
+    ## correlation
     ## needs a pseries and a groupings vector of **same length**
 
     ## would use a better naming, and also passing a char or factor as
@@ -506,9 +551,9 @@ cortab <- function(x, grouping, groupnames = NULL,
 
     ## x must be a pseries
     if(!inherits(x, "pseries")) stop("First argument must be a pseries")
-    if(length(x) != length(grouping)) stop("Incompatible lengths")
+    if(length(x) != length(grouping)) stop("arguments 'x' and 'grouping' must have same length")
 
-    fullind <- as.numeric(attr(x, "index")[,1])
+    fullind <- as.numeric(attr(x, "index")[ , 1L])
     ids <- unique(fullind)
     n <- length(ids)
     regs <- 1:length(unique(grouping))
@@ -527,15 +572,15 @@ cortab <- function(x, grouping, groupnames = NULL,
     ## make w<1.n>:
     for(h in 1:length(regs)) {
       for(k in 1:h) {
-        statew <- matrix(0, ncol=n, nrow=n)
+        statew <- matrix(0, ncol = n, nrow = n)
         ## make statew for cor. between h and k
         for(i in 1:n) {
           ## get first region (all values equal, so take first one)
-          ireg <- grouping[fullind==ids[i]][1]
-          if(ireg==h) {
+          ireg <- grouping[fullind == ids[i]][1L]
+          if(ireg == h) {
             for(j in 1:n) {
-                jreg <- grouping[fullind==ids[j]][1]
-                if(jreg==k) statew[i,j] <- 1
+                jreg <- grouping[fullind == ids[j]][1L]
+                if(jreg == k) statew[i, j] <- 1
             }
           }
         }
@@ -563,15 +608,15 @@ cortab <- function(x, grouping, groupnames = NULL,
          for(i in 1:length(regs)) {
              for(j in 1:i) {
                  ## take appropriate w matrix
-                 eval(parse(text=paste("myw<-w", i, ".", j, sep="")))
-                 tabg[i,j] <- pcdtest(x, test="rho", w=myw)[[value]]
+                 eval(parse(text = paste("myw<-w", i, ".", j, sep = "")))
+                 tabg[i, j] <- pcdtest(x, test = "rho", w = myw)[[value]]
              }
          }
          dimnames(tabg) <- list(groupnames, groupnames)
          return(tabg)
     }
     regnames <- ""
-    mytab <- tab.g(x, regs=regs, regnames=regnames, test="rho", value=value)
+    mytab <- tab.g(x, regs = regs, regnames = regnames, test = "rho", value = value)
     return(mytab)
 }
 

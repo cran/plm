@@ -153,7 +153,7 @@ fixef.plm <- function(object, effect = NULL,
     type <- match.arg(type)
     if(!is.null(object$call)){
         if(describe(object, "model") != "within")
-      stop("fixef is relevant only for within models")
+          stop("fixef is relevant only for within models")
     }
     formula <- formula(object)
     data <- model.frame(object)
@@ -195,26 +195,25 @@ fixef.plm <- function(object, effect = NULL,
         sefixef <- sqrt(s2 / nother + apply(Xb[, nw, drop = FALSE], 1,
                                             function(x) t(x) %*% vcov %*% x))
       } else {
-        Xb <- t(t(Xb[-1, ]) - Xb[1, ])
+        Xb <- t(t(Xb[-1, ]) - Xb[1L, ])
         sefixef <- sqrt(s2 * (1 / nother[-1] + 1 / nother[1])+
                           apply(Xb[, nw, drop = FALSE], 1,
                                 function(x) t(x) %*% vcov %*% x))
       }
-      fixef <- switch(type,
+      res <- switch(type,
                       "level"  = fixef,
-                      "dfirst" = fixef[2:length(fixef)] - fixef[1],
+                      "dfirst" = fixef[2:length(fixef)] - fixef[1L],
                       "dmean"  = (fixef - weighted.mean(fixef, w = nother)))
       
-      res <- structure(fixef, se = sefixef, class = c("fixef", "numeric"),
+      res <- structure(res, se = sefixef, class = c("fixef", "numeric"),
                 type = type, df.residual = df.residual(object))  
-      return(res)
-    }
-    
-    ## treat separately here:
+    } else {
+    ## case model.effect == "twoways"
     ##  * two-way balanced/unbalanced model for all effects
-    if(model.effect == "twoways") {
-      beta.data <- as.numeric(tcrossprod(coef(object), as.matrix(object$model[ , -1, drop = FALSE])))
-      yhat <- object$model[ , 1] - object$residuals
+
+      beta.data <- as.numeric(tcrossprod(coef(object),
+                                         model.matrix(object, model = "pooling")[ , nw, drop = FALSE]))
+      yhat <- object$model[ , 1L] - object$residuals
       tw.fixef.lvl <- yhat - beta.data # sum of both effects in levels
       
       idx <- switch(effect,
@@ -222,6 +221,8 @@ fixef.plm <- function(object, effect = NULL,
                     "time"       = 2L,
                     "twoways"    = NA_integer_) # needed for weighted.mean below -> leads to no weights
 
+      indexl <- unclass(index(object)) # unclass to list for speed
+      
       if(effect %in% c("individual", "time")) {
         other.eff <- switch(effect,
                             "individual" = "time",
@@ -235,40 +236,32 @@ fixef.plm <- function(object, effect = NULL,
         yb <- pmodel.response(data, model = "between", effect = other.eff)
         other.fixef.lvl <- yb - as.vector(crossprod(t(Xb[ , nw, drop = FALSE]), coef(object)))
         
-        ## other dmean
-        #other.fixef.dmean <- other.fixef.lvl - mean(other.fixef.lvl)
-        #other.fixef.dmean <- other.fixef.dmean[index(object)[[other.idx]]]
-        #tw.fixef.lvl <- tw.fixef.lvl - other.fixef.dmean
-        
-        ## other level
-        # tw.fixef.lvl <- tw.fixef.lvl - other.fixef.lvl[index(object)[[other.idx]]]
-        
         ## other dfirst
         other.fixef.dfirst <- other.fixef.lvl - other.fixef.lvl[1L]
-        tw.fixef.lvl <- tw.fixef.lvl - other.fixef.dfirst[index(object)[[other.idx]]]
+        tw.fixef.lvl <- tw.fixef.lvl - other.fixef.dfirst[indexl[[other.idx]]]
         
-        tw.fixef.lvl <- tw.fixef.lvl[!duplicated(index(object)[[idx]])]
+        tw.fixef.lvl <- tw.fixef.lvl[!duplicated(indexl[[idx]])]
         names(tw.fixef.lvl) <- pdim[["panel.names"]][[idx]]
       } else {
-        # everything already computed, just set names
-        names(tw.fixef.lvl) <- paste0(pdim[["panel.names"]][[1L]][index(object)[[1L]]], "-",
-                                      pdim[["panel.names"]][[2L]][index(object)[[2L]]])
+        # effect = "twoways": everything already computed, just set names
+        names(tw.fixef.lvl) <- paste0(pdim[["panel.names"]][[1L]][indexl[[1L]]], "-",
+                                      pdim[["panel.names"]][[2L]][indexl[[2L]]])
       }
       
-      tw.fixef <- switch(type,
+      res <- switch(type,
                       "level"  = tw.fixef.lvl,
-                      "dfirst" = tw.fixef.lvl[2:length(tw.fixef.lvl)] - tw.fixef.lvl[1],
+                      "dfirst" = tw.fixef.lvl[2:length(tw.fixef.lvl)] - tw.fixef.lvl[1L],
                       "dmean"  = {
                           if(pdim$balanced || effect == "twoways") {
-                            tw.fixef.lvl - mean(tw.fixef.lvl) 
+                            tw.fixef.lvl - mean(tw.fixef.lvl)
                           } else {
                             tw.fixef.lvl - weighted.mean(tw.fixef.lvl, w = pdim$Tint[[idx]])
                           }})
       
-      tw.fixef <- structure(tw.fixef, se = NULL, class = c("fixef", "numeric"),
+      res <- structure(res, se = NULL, class = c("fixef", "numeric"),
                             type = type, df.residual = NULL)
-      return(tw.fixef)
     }
+    res
 }
 
 
@@ -276,10 +269,11 @@ fixef.plm <- function(object, effect = NULL,
 #' @export
 print.fixef <- function(x, digits = max(3, getOption("digits") - 2),
                         width = getOption("width"), ...){
-  
+    x.orig <- x
     # prevent attributes from being printed
     attr(x, "se") <- attr(x, "type") <- attr(x, "class") <- attr(x, "df.residual") <- attr(x, "index") <- NULL
     print.default(x, digits, width, ...)
+    invisible(x.orig)
 }
 
 
@@ -309,8 +303,10 @@ summary.fixef <- function(object, ...) {
 
 #' @rdname fixef.plm
 #' @export
-print.summary.fixef <- function(x, digits = max(3, getOption("digits") - 2), width = getOption("width"), ...){
-    printCoefmat(x, digits = digits)
+print.summary.fixef <- function(x, digits = max(3, getOption("digits") - 2),
+                                width = getOption("width"), ...){
+  printCoefmat(x, digits = digits)
+  invisible(x)
 }
 
 #' @rdname fixef.plm
@@ -384,29 +380,30 @@ ranef.plm <- function(object, effect = NULL, ...) {
   obj.effect <- describe(object, "effect")
   balanced <- is.pbalanced(object)
   
-  if (model != "random") stop("only applicable to random effect models")
+  if(model != "random") stop("only applicable to random effect models")
   # TODO: Are random effects for nested models and IV models calculated the same way?
   #       Be defensive here and error for such models.
-  if (obj.effect == "nested")  stop("nested random effect models are not supported (yet?)")
-  if (length(object$formula)[2] == 2) stop("IV models not supported (yet?)")
+  if(obj.effect == "nested")  stop("nested random effect models are not supported (yet?)")
+  if(length(object$formula)[2L] >= 2L) stop("ranef: IV models not supported (yet?)")
   
-  if (!is.null(effect) && !(effect %in% c("individual", "time"))) 
+  if(!is.null(effect) && !(effect %in% c("individual", "time"))) 
       stop("argument 'effect' must be NULL, \"individual\", or \"time\"")
-  if (obj.effect != "twoways" && !is.null(effect) && effect != obj.effect) 
+  if(obj.effect != "twoways" && !is.null(effect) && effect != obj.effect) 
       stop(paste0("for one-way models, argument \"effect\" must be NULL or match the effect introduced in model estimation"))
 
   # default effect is the model's effect
   # for two-ways RE models: set default to effect = "individual"
-  if (obj.effect == "twoways" && is.null(effect)) effect <- "individual"
-  if (is.null(effect)) effect <- obj.effect
+  if(obj.effect == "twoways" && is.null(effect)) effect <- "individual"
+  if(is.null(effect)) effect <- obj.effect
   
   erc <- ercomp(object)
-  theta <- unlist(erc["theta"]) # extract theta, but depending on model/effect, it is adjusted later
+  # extract theta, but depending on model/effect, it is adjusted/overwritten later
+  theta <- unlist(erc["theta"], use.names = FALSE) 
   
   # res <- object$residuals                # gives residuals of quasi-demeaned model
   res <- residuals_overall_exp.plm(object) # but need RE residuals of overall model
   
-  if (!inherits(res, "pseries")) {
+  if(!inherits(res, "pseries")) {
     # just make sure we have a pseries for the following between() to work
     attr(res, "index") <- index(object$model)
     class(res) <- c("pseries", class(res))
@@ -415,21 +412,21 @@ ranef.plm <- function(object, effect = NULL, ...) {
   # mean_res <- Between(res, effect = effect)  # has length == # observations
   mean_res <- between(res, effect = effect)    # but need length == # individuals
   
-  if (obj.effect == "twoways" && balanced) {
+  if(obj.effect == "twoways" && balanced) {
     theta <- switch(effect,
-                    "individual" = theta[1],
-                    "time"       = theta[2])
+                    "individual" = theta[1L],
+                    "time"       = theta[2L])
   }
-  if (obj.effect == "twoways" && !balanced) {
-    theta <- erc[["theta"]][[ifelse(effect == "individual", "id", "time")]]
+  if(obj.effect == "twoways" && !balanced) {
+    theta <- erc[["theta"]][[if(effect == "individual") "id" else "time"]]
   }
   
-  if (!balanced) {
+  if(!balanced) {
     # in the unbalanced cases, ercomp[["theta"]] is full length (# obs)
     #  -> reduce to per id/time
     select <- switch(effect,
-                     "individual" = !duplicated(index(object$model)[1]),
-                     "time"       = !duplicated(index(object$model)[2]))
+                     "individual" = !duplicated(index(object$model)[1L]),
+                     "time"       = !duplicated(index(object$model)[2L]))
     theta <- theta[select]
   }
   
@@ -496,8 +493,7 @@ ranef.plm <- function(object, effect = NULL, ...) {
 #'  
 #' @export
 #' @author Kevin Tappe
-#' @seealso [fixef()] to extract the fixed effects of a
-#'     within model.
+#' @seealso [fixef()] to extract the fixed effects of a within model.
 #' @references
 #'
 #' \insertAllCited{}
@@ -555,11 +551,11 @@ within_intercept <- function(object, ...) {
 #' @rdname within_intercept
 #' @export
 within_intercept.plm <- function(object, vcov = NULL, return.model = FALSE, ...) {
-  # TODO: check 2-way FE case -> is ok for balanced case
-  if (!inherits(object, "plm")) stop("input 'object' needs to be a \"within\" model estimated by plm()")
+  if(!inherits(object, "plm")) stop("input 'object' needs to be a \"within\" model estimated by plm()")
+  if(length(object$formula)[2L] >= 2L) stop("within_intercept: IV models not supported (yet?)")
   model  <- describe(object, what = "model")
   effect <- describe(object, what = "effect")
-  if (model != "within") stop("input 'object' needs to be a \"within\" model estimated by plm(..., model = \"within\", ...)")
+  if(model != "within") stop("input 'object' needs to be a \"within\" model estimated by plm(..., model = \"within\", ...)")
   
   # vcov must be a function, because the auxiliary model estimated to get the
   # overall intercept next to its standard errors is different from
@@ -575,13 +571,13 @@ within_intercept.plm <- function(object, vcov = NULL, return.model = FALSE, ...)
   # Transformation to get the overall intercept is:
   # demean groupwise and add back grand mean of each variable, then run OLS
   mf      <- model.frame(object)
-  withinY <- pmodel.response(object, cstcovar.rm = "all") # returns the response specific to the 'effect' of the est. FE model object
-  meanY   <- mean(mf[ , 1])          # mean of original data's response
+  withinY <- pmodel.response(object) # returns the response specific to the 'effect' of the est. FE model object
+  meanY   <- mean(mf[ , 1L]) # mean of original data's response
   transY  <- withinY + meanY
   
   withinM <- model.matrix(object) # returns the model.matrix specific to the 'effect' of the est. FE model object
-  M <- model.matrix(mf)
-  M <- M[, colnames(M) %in% colnames(withinM)] # just to be sure: should be same columns
+  M <- model.matrix(mf, cstcovar.rm = "all")
+  M <- M[ , colnames(M) %in% colnames(withinM), drop = FALSE] # just to be sure: should be same columns
   meansM <- colMeans(M)
   transM <- t(t(withinM) + meansM)
   
@@ -591,8 +587,9 @@ within_intercept.plm <- function(object, vcov = NULL, return.model = FALSE, ...)
     # summary(auxreg)
 
   # estimation by plm() - to apply robust vcov function if supplied
+  # NB: this changes variable names slightly (data.frame uses make.names to, e.g., get rid of parentheses in variable names)
   data <- pdata.frame(data.frame(cbind(index, transY, transM)), drop.index = TRUE)
-  form <- as.formula(paste0(names(data)[1], "~", paste(names(data)[-1L], collapse = "+")))
+  form <- as.formula(paste0(names(data)[1L], "~", paste(names(data)[-1L], collapse = "+")))
   auxreg <- plm(form, data = data, model = "pooling")
   
   # degrees of freedom correction due to FE transformation for "normal" vcov [copied over from plm.fit]
@@ -601,7 +598,7 @@ within_intercept.plm <- function(object, vcov = NULL, return.model = FALSE, ...)
                        "individual" = pdim$nT$n,
                        "time"       = pdim$nT$T,
                        "twoways"    = pdim$nT$n + pdim$nT$T - 1L)
-  df <- df.residual(auxreg) - card.fixef  + 1 # just for within_intercept: here we need '+1' to correct for the intercept
+  df <- df.residual(auxreg) - card.fixef  + 1L # just for within_intercept: here we need '+1' to correct for the intercept
   
   vcov_mat <- vcov(auxreg)
   vcov_mat <- vcov_mat * df.residual(auxreg) / df

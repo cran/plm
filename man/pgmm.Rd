@@ -52,7 +52,8 @@ will be accepted in \code{data.frame}),}
 
 \item{model}{one of \code{"onestep"} (the default) or \code{"twosteps"},}
 
-\item{collapse}{if \code{TRUE}, the GMM instruments are collapsed,}
+\item{collapse}{if \code{TRUE}, the GMM instruments are collapsed (default is
+\code{FALSE}),}
 
 \item{lost.ts}{the number of lost time series: if \code{NULL}, this is
 automatically computed. Otherwise, it can be defined by the
@@ -63,7 +64,7 @@ missing, it is set to the first one minus one,}
 
 \item{transformation}{the kind of transformation to apply to the
 model: either \code{"d"} (the default value) for the
-"difference GMM" model or \code{"ld"} for the "system GMM",}
+"difference GMM" model or \code{"ld"} for the "system GMM" model,}
 
 \item{fsm}{the matrix for the one step estimator: one of \code{"I"}
 (identity matrix) or \code{"G"} (\eqn{=D'D} where \eqn{D} is the
@@ -76,35 +77,41 @@ first--difference operator) if \code{transformation="d"}, one of
 
 \item{object, x}{an object of class \code{"pgmm"},}
 
-\item{robust}{if \code{TRUE}, robust inference is performed in the
-summary,}
+\item{robust}{for pgmm's summary method: if \code{TRUE} (default), robust inference
+is performed in the summary,}
 
-\item{time.dummies}{if \code{TRUE}, the estimated coefficients of time
-dummies are present in the table of coefficients,}
+\item{time.dummies}{for pgmm's summary method: if \code{TRUE}, the estimated
+coefficients of time dummies are present in the table of coefficients;
+default is \code{FALSE}, thus time dummies are dropped in summary's coefficient
+table (argument is only meaningful if there are time dummies in the model,
+i.e., only for \code{effect = "twoways"}),}
 
 \item{digits}{digits,}
 
-\item{width}{the maximum length of the lines in the print output,}
+\item{width}{the maximum length of the lines in the print output.}
 }
 \value{
 An object of class \code{c("pgmm","panelmodel")}, which has the
 following elements:
 
 \item{coefficients}{the vector (or the list for fixed effects) of
-coefficients,} \item{residuals}{the vector of residuals,}
+coefficients,}
+\item{residuals}{the list of residuals for each individual,}
 \item{vcov}{the covariance matrix of the coefficients,}
 \item{fitted.values}{the vector of fitted values,}
 \item{df.residual}{degrees of freedom of the residuals,}
 \item{model}{a list containing the variables used for the
 estimation for each individual,}
-\item{W}{a list containing the instruments for each individual (two lists in
-case of "sys--GMM"),}
+\item{W}{a list containing the instruments for each individual (a matrix per
+list element) (two lists in case of system GMM,}
 \item{A1}{the weighting matrix for the one--step estimator,}
 \item{A2}{the weighting matrix for the two--steps estimator,}
 \item{call}{the call.}
 
-It has \code{print}, \code{summary} and \code{print.summary}
-methods.
+In addition, it has attribute \code{"pdim"} which contains the pdim object for
+model.
+
+It has \code{print}, \code{summary} and \code{print.summary} methods.
 }
 \description{
 Generalized method of moments estimation for static or dynamic
@@ -152,7 +159,7 @@ summary(z1, robust = FALSE)
 ## Blundell and Bond (1998) table 4 (cf. DPD for OX p. 12 col. 4)
 z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
            lag(log(capital), 0:1) | lag(log(emp), 2:99) +
-           lag(log(wage), 2:99) + lag(log(capital), 2:99),        
+           lag(log(wage), 2:99) + lag(log(capital), 2:99),
            data = EmplUK, effect = "twoways", model = "onestep", 
            transformation = "ld")
 summary(z2, robust = TRUE)

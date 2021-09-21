@@ -92,18 +92,19 @@
 #' pgrangertest(inv ~ value, data = Grunfeld, order = 2L, test = "Zbar")
 #' 
 #' # varying lag order (last individual lag order 3, others lag order 2)
-#' pgrangertest(inv ~ value, data = Grunfeld, order = c(rep(2L, 9), 3L))
-#' 
+#' (pgrt <- pgrangertest(inv ~ value, data = Grunfeld, order = c(rep(2L, 9), 3L)))
+#' # chisq statistics per individual
+#' pgrt$indgranger
 #' 
 pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), order = 1L, index = NULL) {
   # Implementation of formulae follows Lopez/Weber (2017), the formulas are slightly different
-  # compared to Dumistrescu/Hurlin (2012), because "Note however that T in DH's formulas 
+  # compared to Dumistrescu/Hurlin (2012), because "Note however that T in DH's formulae 
   # must be understood as the number of observations remaining in the estimations, that 
   # is the number of periods minus the number of lags included. In order to be consistent
   # with our notation, we therefore replaced DH's T by T - K in the following formulas of
   # the present paper."
   
-  # y ~ x: to test whether x (panel) Granger causes y
+  # y ~ x: to test whether x (panel-)Granger causes y
   
   test <- match.arg(test)
   if (!inherits(data, "pdata.frame")) data <- pdata.frame(data, index = index)
@@ -113,7 +114,7 @@ pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), orde
   N <- pdim$nT$n
   T. <- pdim$nT$T
   Ti <- pdim$Tint$Ti
-  indi <- index(data)[[1L]]
+  indi <- unclass(index(data))[[1L]]
   indi_con <- is.pconsecutive(data)
   
   # some input checks
@@ -174,11 +175,11 @@ pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), orde
     listdata, order_grangertest, SIMPLIFY = FALSE)
   
   # extract Wald/Chisq-statistics and p-values of individual Granger tests
-  Wi   <- lapply(grangertests_i, function(g) g[["Chisq"]][2L])
-  pWi  <- lapply(grangertests_i, function(g) g[["Pr(>Chisq)"]][[2L]])
-  dfWi <- lapply(grangertests_i, function(g) abs(g[["Df"]][2L]))
+  Wi   <- vapply(grangertests_i, function(g) g[["Chisq"]][2L], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+  pWi  <- vapply(grangertests_i, function(g) g[["Pr(>Chisq)"]][[2L]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+  dfWi <- vapply(grangertests_i, function(g) abs(g[["Df"]][2L]), FUN.VALUE = 0.0, USE.NAMES = FALSE)
   
-  Wbar <- c("Wbar" = mean(unlist(Wi)))
+  Wbar <- c("Wbar" = mean(Wi))
   
   if(test == "Zbar") {
     stat <- c(sqrt(N/(2*order)) * (Wbar - order))
@@ -211,8 +212,8 @@ pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), orde
   }
   
   # make data frame with individual Granger test results and lag order
-  indgranger <- data.frame(indi[!duplicated(indi)], unlist(Wi),
-                           unlist(pWi), unlist(dfWi), 
+  indgranger <- data.frame(indi[!duplicated(indi)],
+                           Wi, pWi, dfWi, 
                            (if(length(order) == 1L) rep(order, N) else order))
   colnames(indgranger) <- c(names(index(data))[1L], "Chisq", "p-value", "df", "lag")
   

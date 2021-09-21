@@ -62,11 +62,11 @@
 #'     \item{vcov}{the covariance matrix of the coefficients,}
 #'     \item{df.residual}{degrees of freedom of the residuals,}
 #'     \item{model}{a data.frame containing the variables used for the
-#'     estimation,} \item{call}{the call,} \item{sigma}{always `NULL`,
-#'     `sigma` is here only for compatibility reasons (to allow using
-#'     the same `summary` and `print` methods as `pggls`),}
+#'     estimation,}
+#'     \item{call}{the call,}
 #'     \item{indcoef}{the matrix of individual coefficients from
-#'     separate time series regressions.}
+#'     separate time series regressions,}
+#'     \item{r.squared}{numeric, the R squared.}
 #' @export
 #' @importFrom MASS ginv
 #' @author Giovanni Millo
@@ -117,7 +117,7 @@ pcce <- function (formula, data, subset, na.action,
   ## evaluates the call, modified with model = "pooling", inside the
   ## parent frame resulting in the pooling model on formula, data
   plm.model <- eval(plm.model, parent.frame())
-  index <- attr(model.frame(plm.model), "index")
+  index <- unclass(attr(model.frame(plm.model), "index")) # unclass for speed
   ind  <- index[[1L]] ## individual index
   tind <- index[[2L]] ## time index
   ## set dimension variables
@@ -178,14 +178,11 @@ pcce <- function (formula, data, subset, na.action,
 
   ## group-invariant part, goes in Hhat
     ## between-periods transformation (take means over groups for each t)
-      #  be <- function(x, index, na.rm = TRUE) tapply(x, index, mean, na.rm = na.rm)
-      #  Xm2 <- apply(X, 2, FUN = be, index = tind)[tind, , drop = FALSE]
-      #  ym2 <- apply(as.matrix(as.numeric(y)), 2, FUN = be, index = tind)[tind]
       Xm <- Between(X, effect = tind, na.rm = TRUE)
       ym <- as.numeric(Between(y, effect = "time", na.rm = TRUE))
 
       if(attr(terms(plm.model), "intercept")) {
-        Hhat <- cbind(ym, Xm, 1)
+        Hhat <- cbind(ym, Xm, 1L)
         } else {
           Hhat <- cbind(ym, Xm)
       }
@@ -227,8 +224,8 @@ pcce <- function (formula, data, subset, na.action,
           tcoef[ , i] <- tb
 
           ## cce (defactored) residuals as M_i(y_i - X_i * bCCEMG_i)
-          tytXtb <- ty - tX %*% tb
-          cceres[[i]] <- tMhat %*% tytXtb
+          tytXtb <- ty - tcrossprod(tX, t(tb))
+          cceres[[i]] <- tcrossprod(tMhat, t(tytXtb))
           ## std. (raw) residuals as y_i - X_i * bCCEMG_i - a_i
           ta <- mean(ty - tX)
           stdres[[i]] <- tytXtb - ta
@@ -239,9 +236,9 @@ pcce <- function (formula, data, subset, na.action,
     ## Some redundancy because this might be moved to model.matrix.pcce
 
     ## initialize
-    tX1 <- X[ind == unind[1], , drop = FALSE]
-    ty1 <- y[ind == unind[1]]
-    tHhat1 <- Hhat[ind == unind[1], , drop = FALSE]
+    tX1 <- X[ind == unind[1L], , drop = FALSE]
+    ty1 <- y[ind == unind[1L]]
+    tHhat1 <- Hhat[ind == unind[1L], , drop = FALSE]
 
     ## if 'trend' then augment the xs-invariant component
     if(trend) tHhat1 <- cbind(tHhat1, 1:(dim(tHhat)[[1L]]))
@@ -257,7 +254,7 @@ pcce <- function (formula, data, subset, na.action,
         tHhat <- Hhat[ind == unind[i], , drop = FALSE]
 
         ## if 'trend' then augment the xs-invariant component
-        if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1]]))
+        if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1L]]))
 
         ## NB tHat, tMhat should be i-invariant
         tMhat <- diag(1, length(ty)) -
@@ -296,13 +293,13 @@ pcce <- function (formula, data, subset, na.action,
             ## assign beta CCEMG
             coef <- coefmg
             for(i in 1:n) Rmat[ , , i] <- outer(demcoef[ , i], demcoef[ , i])
-            vcov <- 1/(n*(n-1)) * apply(Rmat, 1:2, sum)
+            vcov <- 1/(n*(n-1)) * rowSums(Rmat, dims = 2L) # == 1/(n*(n-1)) * apply(Rmat, 1:2, sum), but rowSums(., dims = 2L)-construct is way faster
         },
            
         "p" = {
             ## calc beta_CCEP
-            sXMX <- apply(XMX, 1:2, sum)
-            sXMy <- apply(XMy, 1:2, sum)
+            sXMX <- rowSums(XMX, dims = 2L) # == apply(XMX, 1:2, sum), but rowSums(., dims = 2L)-construct is way faster
+            sXMy <- rowSums(XMy, dims = 2L) # == apply(XMy, 1:2, sum), but rowSums(., dims = 2L)-construct is way faster
             coef <- solve(sXMX, sXMy)
     
             ## calc CCEP covariance:
@@ -312,7 +309,7 @@ pcce <- function (formula, data, subset, na.action,
                 outer(demcoef[ , i], demcoef[ , i]) %*% XMX[ , , i]
             ## summing over the n-dimension of the array we get the
             ## covariance matrix of coefs
-            R.star <- 1/(n-1) * apply(Rmat, 1:2, sum) * 1/(t^2)
+            R.star <- 1/(n-1) * rowSums(Rmat, dims = 2L) * 1/(t^2) # rowSums(Rmat, dims = 2L) faster than == apply(Rmat, 1:2, sum)
     
             Sigmap.star <- solve(psi.star, R.star) %*% solve(psi.star)
             vcov <- Sigmap.star/n
@@ -326,7 +323,7 @@ pcce <- function (formula, data, subset, na.action,
                 tHhat <- Hhat[ind == unind[i], , drop = FALSE]
     
                 ## if 'trend' then augment the xs-invariant component
-                if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1]]))
+                if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1L]]))
     
                 ## NB tHat, tMhat should be i-invariant (but for the
                 ## group size if unbalanced)
@@ -334,8 +331,8 @@ pcce <- function (formula, data, subset, na.action,
                     tHhat %*% solve(crossprod(tHhat), t(tHhat))
     
                 ## cce residuals as M_i(y_i - X_i * bCCEP)
-                tytXcoef <- ty - tX %*% coef
-                cceres[[i]] <- tMhat %*% tytXcoef
+                tytXcoef <- ty - tcrossprod(tX, t(coef))
+                cceres[[i]] <- tcrossprod(tMhat, t(tytXcoef))
                 ## std. (raw) residuals as y_i - X_i * bCCEMG_i - a_i
                 ta <- mean(ty - tX)
                 stdres[[i]] <- tytXcoef - ta
@@ -362,15 +359,14 @@ pcce <- function (formula, data, subset, na.action,
                 sigma2cce.i[[i]] <- crossprod(cceres[[i]])*
                     1/(length(cceres[[i]])-2*k-2)
             }
-            sigma2cce <- 1/n*sum(unlist(sigma2cce.i))
+            sigma2cce <- 1/n*sum(unlist(sigma2cce.i, use.names = FALSE))
         },
            
         "p" = {
-
             ## variance of defactored residuals sigma2ccep as in Holly,
             ## Pesaran and Yamagata, (3.15)
             sigma2cce <- 1/(n*(T.-k-2)-k)*
-                sum(unlist(lapply(cceres, crossprod)))
+                sum(vapply(cceres, crossprod, FUN.VALUE = 0.0, USE.NAMES = FALSE))
             ## is the same as sum(unlist(cceres)^2)
     })
 
@@ -378,9 +374,9 @@ pcce <- function (formula, data, subset, na.action,
     sigma2.i <- vector("list", n)
     for(i in 1:n) {
           ty <- y[ind == unind[i]]
-          sigma2.i[[i]] <- sum((ty-mean(ty))^2)/(length(ty)-1)
+          sigma2.i[[i]] <- as.numeric(crossprod((ty-mean(ty))))/(length(ty)-1)
       }
-    sigma2y <- mean(unlist(sigma2.i))
+    sigma2y <- mean(unlist(sigma2.i, use.names = FALSE))
     r2cce <- 1 - sigma2cce/sigma2y
 
     ## allow outputting different types of residuals
@@ -390,7 +386,7 @@ pcce <- function (formula, data, subset, na.action,
     ## add transformed data (for now a simple list)
     tr.model <- list(y = My, X = MX)
     ## so that if the model is ccepmod,
-    ## > lm(ccepmod$tr.model[["y"]]~ccepmod$tr.model[["X"]]-1)
+    ## > lm(ccepmod$tr.model[["y"]] ~ ccepmod$tr.model[["X"]]-1)
     ## reproduces the model results
 
     ## Final model object:
@@ -405,15 +401,20 @@ pcce <- function (formula, data, subset, na.action,
     dimnames(tcoef) <- list(coef.names, id.names)
     pmodel <- attr(plm.model, "pmodel")
     pmodel$model.name <- model.name
-    pccemod <- list(coefficients = coef, residuals = residuals,
-                  stdres = stdres, tr.model = tr.model,
-                  fitted.values = fitted.values, vcov = vcov,
-                  df.residual = df.residual,
-                  model = model.frame(plm.model), sigma = NULL,
-                  indcoef = tcoef, r.squared = r2cce,
-                  #cceres = as.vector(cceres),
-                  #ccemgres = as.vector(ccemgres),
-                  formula = formula, call = cl)
+    pccemod <- list(coefficients  = coef,
+                    residuals     = residuals,
+                    stdres        = stdres,
+                    tr.model      = tr.model,
+                    fitted.values = fitted.values,
+                    vcov          = vcov,
+                    df.residual   = df.residual,
+                    model         = model.frame(plm.model),
+                    indcoef       = tcoef,
+                    r.squared     = r2cce,
+                    #cceres   = as.vector(cceres),
+                    #ccemgres = as.vector(ccemgres),
+                    formula       = formula,
+                    call          = cl)
     pccemod <- structure(pccemod, pdim = pdim, pmodel = pmodel)
     class(pccemod) <- c("pcce", "panelmodel")
     pccemod
@@ -469,7 +470,7 @@ print.summary.pcce <- function(x, digits = max(3, getOption("digits") - 2), widt
   cat("\n")
   print(pdim)
   cat("\nResiduals:\n")
-  print(summary(unlist(residuals(x))))
+  print(sumres(x)) # was until rev. 1178: print(summary(unlist(residuals(x))))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
   cat(paste("Total Sum of Squares: ",    signif(x$tss,digits), "\n", sep=""))

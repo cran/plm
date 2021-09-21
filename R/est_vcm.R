@@ -6,12 +6,12 @@
 #' effects are introduced, respectively, if `effect = "individual"` 
 #' (default) or `effect = "time"`.
 #' 
-#' Coefficients are assumed to be fixed if `model = "within"` and
-#' random if `model = "random"`. In the first case, a different model
-#' is estimated for each individual (or time period). In the second
-#' case, the \insertCite{SWAM:70;textual}{plm} model is estimated. It
-#' is a generalized least squares model which uses the results of the
-#' previous model.
+#' Coefficients are assumed to be fixed if `model = "within"`, i.e., separate
+#' pooled OLS models are estimated per individual (`effect = "individual"`)
+#' or per time period (`effect = "time"`). Coefficients are assumed to be
+#' random if `model = "random"` and the model by 
+#' \insertCite{SWAM:70;textual}{plm} is estimated. It is a generalized least
+#' squares model which uses the results of the previous model.
 #' 
 #' @aliases pvcm
 #' @param formula a symbolic description for the model to be estimated,
@@ -38,7 +38,7 @@
 #' \item{fitted.values}{the vector of fitted values,}
 #' 
 #' \item{vcov}{the covariance matrix of the coefficients (a list for
-#' fixed effects),}
+#' fixed effects model (`model = "within"`)),}
 #'
 #' \item{df.residual}{degrees of freedom of the residuals,}
 #'
@@ -86,7 +86,7 @@ pvcm <- function(formula, data, subset ,na.action, effect = c("individual", "tim
 
     cl <- match.call(expand.dots = TRUE)
     mf <- match.call()
-    mf[[1]] <- as.name("plm")
+    mf[[1L]] <- as.name("plm")
     mf$model <- NA
     data <- eval(mf, parent.frame())
     result <- switch(model.name,
@@ -100,10 +100,9 @@ pvcm <- function(formula, data, subset ,na.action, effect = c("individual", "tim
 }
 
 pvcm.within <- function(formula, data, effect){
-    
     index <- attr(data, "index")
-    id <- index[[1]]
-    time <- index[[2]]
+    id <- index[[1L]]
+    time <- index[[2L]]
     pdim <- pdim(data)
     
     if (effect == "time"){
@@ -117,7 +116,7 @@ pvcm.within <- function(formula, data, effect){
         card.cond <- pdim$nT$n
     }
     ml <- split(data, cond)
-    nr <- sapply(ml, function(x) dim(x)[1]) > 0
+    nr <- vapply(ml, function(x) dim(x)[1L] > 0, FUN.VALUE = TRUE) # == sapply(ml, function(x) dim(x)[1L]) > 0
     ml <- ml[nr]
     attr(ml, "index") <- index
     ols <- lapply(ml,
@@ -125,20 +124,28 @@ pvcm.within <- function(formula, data, effect){
                       X <- model.matrix(x)
                       if (nrow(X) <= ncol(X)) stop("insufficient number of observations")
                       y <- pmodel.response(x)
-                      r <- lm(y ~ X - 1)
+                      r <- lm(y ~ X - 1, model = FALSE)
                       nc <- colnames(model.frame(r)$X)
                       names(r$coefficients) <- nc
                       r
                   })
+    # extract coefficients:
+    coef <- matrix(unlist(lapply(ols, coef)), nrow = length(ols), byrow = TRUE) # was: as.data.frame(t(sapply(ols, coef)))...
+    dimnames(coef)[1:2] <- list(names(ols), names(coef(ols[[1L]])))             # ... but that code errored with intercept-only model
+    coef <- as.data.frame(coef)
     
-    coef <- as.data.frame(t(sapply(ols, coefficients)))
+    # extract residuals and make pseries:
     residuals <- unlist(lapply(ols, residuals))
     residuals <- add_pseries_features(residuals, index)
+    
+    # extract standard errors:
     vcov <- lapply(ols, vcov)
-    std <- as.data.frame(t(sapply(vcov, function(x) sqrt(diag(x)))))
-    names(coef) <- names(std) <- colnames(coef)
-    ssr <- sum(residuals^2)
-    y <- unlist(lapply(ml, function(x) x[,1]))
+    std <- matrix(unlist(lapply(vcov, function(x) sqrt(diag(x)))), nrow = length(ols), byrow = TRUE) # was: as.data.frame(t(sapply(vcov, function(x) sqrt(diag(x)))))
+    dimnames(std)[1:2] <- list(names(vcov), colnames(vcov[[1L]]))                                    # ... but this code errored with intercept-only model
+    std <- as.data.frame(std)
+    
+    ssr <- as.numeric(crossprod(residuals))
+    y <- unlist(lapply(ml, function(x) x[ , 1L]))
     fitted.values <- y - residuals
     tss <- tss(y)
     df.resid <- pdim$nT$N - card.cond * ncol(coef)
@@ -157,8 +164,8 @@ pvcm.random <- function(formula, data, effect){
     
     interc <- has.intercept(formula)
     index <- index(data)
-    id <- index[[1]]
-    time <- index[[2]]
+    id <- index[[1L]]
+    time <- index[[2L]]
     pdim <- pdim(data)
     N <- nrow(data)
     if (effect == "time"){
@@ -173,21 +180,24 @@ pvcm.random <- function(formula, data, effect){
     }
     
     ml <- split(data, cond)
-    nr <- sapply(ml, function(x) dim(x)[1]) > 0
+    nr <- vapply(ml, function(x) dim(x)[1L] > 0, FUN.VALUE = TRUE) # == sapply(ml, function(x) dim(x)[1L]) > 0
     ml <- ml[nr]
     attr(ml, "index") <- index
     ols <- lapply(ml,
                   function(x){
-                      X <- model.matrix(formula, x,)
+                      X <- model.matrix(formula, x)
                       if (nrow(X) <= ncol(X)) stop("insufficient number of observations")
                       y <- pmodel.response(x)
-                      r <- lm(y ~ X - 1)
+                      r <- lm(y ~ X - 1, model = FALSE)
                       nc <- colnames(model.frame(r)$X)
                       names(r$coefficients) <- nc
                       r
                   })
+
     # matrix of coefficients
-    coefm <- t(sapply(ols, coef))
+    coefm <- matrix(unlist(lapply(ols, coef)), nrow = length(ols), byrow = TRUE)
+    dimnames(coefm)[1:2] <- list(names(ols), names(coef(ols[[1]])))
+    
     # number of covariates
     K <- ncol(coefm) - has.intercept(formula)
     # check for NA coefficients
@@ -195,50 +205,54 @@ pvcm.random <- function(formula, data, effect){
     # list of model matrices
     X <- lapply(ols, model.matrix)
     # same without the covariates with NA coefficients
-    Xna <- lapply(seq_len(nrow(coefm)), function(i)X[[i]][, !coefna[i, ]])
+    Xna <- lapply(seq_len(nrow(coefm)), function(i) X[[i]][ , !coefna[i, ]]) # TODO: Xna is used nowhere!?
     # list of model responses
     y <- lapply(ols, function(x) model.response(model.frame(x)))
     # compute a list of XpX^-1 matrices, with 0 for lines/columns with
     # NA coefficients
     xpxm1 <- lapply(seq_len(card.cond), function(i){
         z <- matrix(0, ncol(coefm), ncol(coefm),
-                    dimnames=list(colnames(coefm), colnames(coefm)))
-        z[!coefna[i, ], !coefna[i, ]] <- solve(crossprod(X[[i]][!coefna[i, ], !coefna[i,]]))
+                    dimnames = list(colnames(coefm), colnames(coefm)))
+        z[!coefna[i, ], !coefna[i, ]] <- solve(crossprod(X[[i]][!coefna[i, ], !coefna[i, ]]))
         z
     })
+
     # compute the mean of the parameters
-    coefb <- apply(coefm, 2, function(x) mean(x, na.rm = TRUE))
-    # insert the mean values in place of NA coefficients
-    coefm <- apply(coefm, 2, function(x){x[is.na(x)] <- mean(x, na.rm = TRUE);x})
-    # compute the first part of the variance matrix
-    D1 <- (t(coefm) - coefb) %*% t (t(coefm) - coefb) / (card.cond - 1)
-    # compute the second part of the variance matrix
-    sigi <- sapply(ols, function(x) deviance(x) / df.residual(x))
+    coefb <- colMeans(coefm, na.rm = TRUE)
+    # insert the mean values in place of NA coefficients (if any)
+    if(any(coefna)) coefm <- apply(coefm, 2, function(x){x[is.na(x)] <- mean(x, na.rm = TRUE); x})
+    # D1: compute the first part of the variance matrix
+    coef.mb <- t(coefm) - coefb
+    D1 <- tcrossprod(coef.mb, coef.mb / (card.cond - 1)) # TODO: this fails if only 1 individual, catch this corner case w/ informative error msg?
+    # D2: compute the second part of the variance matrix
+    sigi <- vapply(ols, function(x) deviance(x) / df.residual(x), FUN.VALUE = 0.0)
     D2 <- Reduce("+", lapply(seq_len(card.cond),
                              function(i) sigi[i] * xpxm1[[i]])) / card.cond
     # if D1-D2 semi-definite positive, use it, otherwise use D1
     eig <- prod(eigen(D1 - D2)$values >= 0)
-    if (eig){
-        Delta <- D1 - D2
-    }
-    else{
-        Delta <- D1
-    }
+    Delta <- if(eig) { D1 - D2 } else  D1
+    
     # compute the Omega matrix for each individual
     Omegan <- lapply(seq_len(card.cond), function(i) sigi[i] * diag(nrow(X[[i]])) + X[[i]] %*% Delta %*% t(X[[i]]))
-    # compute X'Omega X et X'Omega y for each individual
+    # compute X'Omega X and X'Omega y for each individual
     XyOmXy <- lapply(seq_len(card.cond), function(i){
-        Xn <- X[[i]][, !coefna[i,]]
+        Xn <- X[[i]][ , !coefna[i, ]] ## TODO: check if drop = FALSE needed (also in other extractions)
         yn <- y[[i]]
-        XnXn <- matrix(0, ncol(coefm), ncol(coefm), dimnames=list(colnames(coefm), colnames(coefm)))
-        Xnyn <- matrix(0, ncol(coefm), 1, dimnames=list(colnames(coefm), "y"))
-        XnXn[!coefna[i,], !coefna[i,]] <- t(Xn) %*% solve(Omegan[[i]]) %*% Xn
-        Xnyn[!coefna[i, ],] <- t(Xn) %*% solve(Omegan[[i]]) %*% yn
-        list(XnXn = XnXn, Xnyn = Xnyn)
+        # pre-allocate matrices
+        XnXn <- matrix(0, ncol(coefm), ncol(coefm), dimnames = list(colnames(coefm), colnames(coefm)))
+        Xnyn <- matrix(0, ncol(coefm), 1L,          dimnames = list(colnames(coefm), "y"))
+        solve_Omegan_i <- solve(Omegan[[i]])
+        CP.tXn.solve_Omegan_i <- crossprod(Xn, solve_Omegan_i)
+        XnXn[!coefna[i, ], !coefna[i, ]] <- CP.tXn.solve_Omegan_i %*% Xn # == t(Xn) %*% solve(Omegan[[i]]) %*% Xn
+        Xnyn[!coefna[i, ], ]             <- CP.tXn.solve_Omegan_i %*% yn # == t(Xn) %*% solve(Omegan[[i]]) %*% yn
+        list("XnXn" = XnXn, "Xnyn" = Xnyn)
     })
-    # Compute the coefficients
-    XpXm1 <- solve(Reduce("+", lapply(XyOmXy, function(x) x$XnXn)))
-    beta <- XpXm1 %*% Reduce("+", lapply(XyOmXy, function(x) x$Xnyn))
+    # Compute coefficients
+    # extract and reduce XnXn (pos 1 in list's element) and Xnyn (pos 2)
+    # position-wise extraction is faster than name-based extraction
+    XpXm1 <-    solve(Reduce("+", vapply(XyOmXy, "[", 1L, FUN.VALUE = list(length(XyOmXy)))))
+    beta <- XpXm1 %*% Reduce("+", vapply(XyOmXy, "[", 2L, FUN.VALUE = list(length(XyOmXy))))
+    
     beta.names <- rownames(beta)
     beta <- as.numeric(beta)
     names(beta) <- beta.names
@@ -252,10 +266,10 @@ pvcm.random <- function(formula, data, effect){
 #                           wn <- solve(vcovn + Deltan)
                            #new
                            vcovn <- vcov(ols[[i]])
-                           wn <- solve((vcovn + Delta)[! coefna[i, ], ! coefna[i, ]])
-                           z <- matrix(0, ncol(coefm), ncol(coefm),
+                           wn <- solve((vcovn + Delta)[!coefna[i, ], !coefna[i, ]])
+                           z <- matrix(0, nrow = ncol(coefm), ncol = ncol(coefm),
                                        dimnames = list(colnames(coefm), colnames(coefm)))
-                           z[!coefna[i,], !coefna[i,]] <- wn
+                           z[!coefna[i, ], !coefna[i, ]] <- wn
                            z
                        }
                        )
@@ -289,14 +303,16 @@ pvcm.random <- function(formula, data, effect){
 summary.pvcm <- function(object, ...) {
   model <- describe(object, "model")
   if (model == "random") {
-    object$waldstatistic <- pwaldtest(object)
+    
+    coef_wo_int <- object$coefficients[!(names(coef(object)) %in% "(Intercept)")]
+    int.only <- !length(coef_wo_int)
+    object$waldstatistic <- if(!int.only) pwaldtest(object) else NULL
     std.err <- sqrt(diag(vcov(object)))
     b <- object$coefficients
     z <- b / std.err
     p <- 2 * pnorm(abs(z), lower.tail = FALSE)
     coef <- cbind(b, std.err, z, p)
-    colnames(coef) <-
-      c("Estimate", "Std. Error", "z-value", "Pr(>|z|)")
+    colnames(coef) <- c("Estimate", "Std. Error", "z-value", "Pr(>|z|)")
     object$coefficients <- coef
   }
   object$ssr <- deviance(object)
@@ -335,8 +351,7 @@ print.summary.pvcm <- function(x, digits = max(3, getOption("digits") - 2),
     cat(paste0("Total Sum of Squares: ",    signif(x$tss, digits), "\n"))
     cat(paste0("Residual Sum of Squares: ", signif(x$ssr, digits), "\n"))
     cat(paste0("Multiple R-Squared: ",      signif(x$rsqr, digits), "\n"))
-    if (model == "random") {
-      waldstat <- x$waldstatistic
+    if (model == "random" && !is.null(waldstat <- x$waldstatistic)) {
       cat(paste0("Chisq: ", signif(waldstat$statistic), " on ",
           waldstat$parameter, " DF, p-value: ",
           format.pval(waldstat$p.value, digits = digits), "\n"))

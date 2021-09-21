@@ -2,8 +2,8 @@
 output: rmarkdown::html_vignette
 bibliography: ../inst/REFERENCES.bib
 abstract: |
-  This introduction to the `plm` package is a slightly
-  modified version of @Croissant:Millo:2008, published in the
+  This introduction to the `plm` package is a modified 
+  and extended version of @Croissant:Millo:2008, published in the
   *Journal of Statistical Software*. 
   
   Panel data econometrics is obviously one of the main fields
@@ -18,7 +18,7 @@ author:
 - name: Yves Croissant
 - name: Giovanni Millo
 vignette: >
-  %\VignetteIndexEntry{Panel data econometrics with R: the plm package}
+  %\VignetteIndexEntry{Panel data econometrics in R: the plm package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -70,8 +70,8 @@ two-dimensional data, especially in the case of unbalanced panels.
 This paper is organized as follows: Section [linear panel model](#linear-panel-model)
 presents a very short overview of the typical model
 taxonomy^[Comprehensive treatments are to be found in many econometrics textbooks,
-e.g., @BALT:05, @BALT:13 or @WOOL:02, @WOOL:10: the reader is referred to
-these, especially to the first 9 chapters of @BALT:05, @BALT:13.].
+e.g., @BALT:05, @BALT:13, @BALT:21 or @WOOL:02, @WOOL:10: the reader is referred to
+these, especially to the first 9 chapters of @BALT:05, @BALT:13, @BALT:21.].
 Section [software approach](#software-approach) discusses the
 software approach used in the package. The next three sections present
 the functionalities of the package in more detail: data management
@@ -296,12 +296,12 @@ and then to use the `pdata.frame` in the estimation functions.
 
 ### Estimation interface
 
-`plm` provides various functions for estimation, among them:
+Package `plm` provides various functions for panel data estimation, among them:
 
 - `plm`: estimation of the
-  basic panel models, *i.e.*, within, between and random effect
-  models. Models are estimated using the `lm` function to
-  transformed data,
+  basic panel models and instrumental variable panel models, *i.e.*, between and
+  first-difference models and within and random effect  models. Models are
+  estimated internally using the `lm` function on transformed data,
 - `pvcm`: estimation of models with variable coefficients,
 - `pgmm`: estimation of generalized method of moments models,
 - `pggls`: estimation of general feasible generalized least squares
@@ -492,7 +492,7 @@ In the same framework, robust inference is accomplished substituting
 matrix into the Wald statistic formula. In the panel context, the
 estimator of choice is the White system estimator. This called for a
 flexible method for computing robust coefficient covariance matrices
-*\`a la White* for `plm` objects.
+*à la White* for `plm` objects.
 
 A general White system estimator for panel data is:
 
@@ -521,10 +521,12 @@ The package is now illustrated by application to some well-known
 examples. It is loaded using
 
 ```{r echo=FALSE,results='hide'}
-options(prompt= "R> ", useFancyQuotes = FALSE)
+options(prompt= "R> ", useFancyQuotes = FALSE, scipen = 999)
+library("knitr")
+opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
-```{r echo=TRUE,results='hide'}
+```{r echo=TRUE, results='hide'}
 library("plm")
 ``` 
 
@@ -643,9 +645,9 @@ The `Formula` package provides a class which enables to construct
 multi-part formula, each part being separated by a pipe sign (`|`).
 
 The two formulas below are identical:
-```{r }
-emp ~ wage + capital | lag(wage,1) + capital
-emp ~ wage + capital | . -wage + lag(wage,1)
+```{r results='hide'}
+emp ~ wage + capital | lag(wage, 1) + capital
+emp ~ wage + capital | . -wage + lag(wage, 1)
 ``` 
 
 In the second case, the `.` means the previous parts which
@@ -661,7 +663,7 @@ particularly interesting when there are a few external instruments.
 Several models can be estimated with `plm` by filling the
 `model` argument:
 
-- the fixed effects model (`"within"`),
+- the fixed effects model (`"within"`), the default,
 - the pooling model (`"pooling"`),
 - the first-difference model (`"fd"`),
 - the between model (`"between"`),
@@ -671,23 +673,23 @@ The basic use of `plm` is to indicate the model formula, the
 data and the model to be estimated. For example, the fixed effects
 model and the random effects model are estimated using:
 
-```{r fe}
+```{r fe_re}
 grun.fe <- plm(inv~value+capital, data = Grunfeld, model = "within")
-``` 
-```{r re}
 grun.re <- plm(inv~value+capital, data = Grunfeld, model = "random")
 ``` 
-
-```{r }
+Methods to display a sumamry of the model estimation are available via `summary`.
+For example, for a `random` model, the `summary` method gives information
+about the variance of the components of the errors and some test statistics.
+Random effects of the estimated model can be extracted via `ranef`.
+```{r summary_re}
 summary(grun.re)
+ranef(grun.re)
 ``` 
 
-For a `random` model, the `summary` method gives information
-about the variance of the components of the errors.  Fixed effects may
-be extracted easily using `fixef`. An argument `type`
-indicates how fixed effects should be computed: in levels 
-`type = "level"` (the default), in deviations from the overall mean
-`type = "dmean"` or in deviations from the first individual
+The fixed effects of a fixed effects model may be extracted easily using `fixef`.
+An argument `type` indicates how fixed effects should be computed: in levels by
+`type = "level"` (the default), in deviations from the overall mean by
+`type = "dmean"` or in deviations from the first individual by
 `type = "dfirst"`.
 
 ```{r }
@@ -703,12 +705,15 @@ errors and the test of equality to the overall intercept.
 summary(fixef(grun.fe, type = "dmean"))
 ``` 
 
-In case of a two-ways effect model, an additional argument
-`effect` is required to extract fixed effects:
+In case of a two-ways fixed effect model, argument `effect` is relevant in function 
+`fixef` to extract specific effect fixed effects with possible values `"individual"`
+for individual fixed effects (default for two-ways fixed effect models), `"time"` 
+for time fixed effects, and `"twoways"` for the sum of individual and time fixed
+effects. Example to extract the time fixed effects from a two-ways model:
 
 ```{r }
 grun.twfe <- plm(inv~value+capital, data=Grunfeld, model="within", effect="twoways")
-fixef(grun.twfe, effect="time")
+fixef(grun.twfe, effect = "time")
 ``` 
 
 ## More advanced use of plm
@@ -726,6 +731,8 @@ value of the argument `random.method`:
 - `"walhus"`: from @WALL:HUSS:69,
 - `"amemiya"`: from @AMEM:71,
 - `"nerlove"`: from @NERLO:71.
+- `"ht"`: for Hausman-Taylor-type instrumental variable (IV) estimation,
+discussed later, see Section [Instrumental variable estimator](#instrumental-variable-est).
 
 For example, to use the `amemiya` estimator:
 
@@ -753,7 +760,7 @@ effects. Using the `effect` argument, one may also introduce:
 For example, to estimate a two-ways effect model for the
 `Grunfeld` data:
 
-```{r }
+```{r 2RE-amemiya}
 grun.tways <- plm(inv~value+capital, data = Grunfeld, effect = "twoways",
                   model = "random", random.method = "amemiya")
 summary(grun.tways)
@@ -769,7 +776,8 @@ Estimations by `plm` support unbalanced panel models.
 
 The following example is using data used by @HARR:RUBI:78 to
 estimate an hedonic housing prices function. It is reproduced in
-@BALT:05, p.174/ @BALT:13, p.197.
+@BALT:CHAN:94, table 2 (and in @BALT:05, pp. 172/4; @BALT:13, pp. 195/7
+tables 9.1/3).
 
 ```{r hedonic}
 data("Hedonic", package = "plm")
@@ -786,7 +794,7 @@ balanced data and the more unbalanced the data the lower the value.
 punbalancedness(Hed)
 ```
 
-### Instrumental variable estimators
+### Instrumental variable estimators{#instrumental-variable-est}
 
 
 All of the models presented above may be estimated using instrumental
@@ -802,9 +810,9 @@ The instrumental variables estimator used is indicated with the
 - `"bms"`, from @BREU:MIZO:SCHM:89.
 
 An illustration is in the following example from 
-@BALT:05, p.120 / @BALT:13, p.137 ("G2SLS").
+@BALT:05, p. 120; @BALT:13, p. 137; @BALT:21, p. 165, table 7.3 ("G2SLS").
   
-```{r }
+```{r G2SLS}
 data("Crime", package = "plm")
 cr <- plm(lcrmrte ~ lprbarr + lpolpc + lprbconv + lprbpris + lavgsen +
           ldensity + lwcon + lwtuc + lwtrd + lwfir + lwser + lwmfg + lwfed +
@@ -815,21 +823,21 @@ summary(cr)
 ```
 
 The Hausman-Taylor model (see @HAUS:TAYL:81) may be estimated
-with the `plm` function by setting parameters accordingly like in
-the example below. The following replicates @BALT:05, p. 130/ @BALT:13, p. 146.
+with the `plm`^[Function `pht` is a deprecated way to estimate this type of model:
+`ht <- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+ bluecol+ind+union+sex+black+ed 
+| sex+black+bluecol+south+smsa+ind, data=Wages,index=595)`.] 
+function by setting parameters `random.method = "ht"` and
+`inst.method = "baltagi"` like in
+the example below. The following replicates @BALT:05, pp. 129/30;
+@BALT:13, pp. 145/6, tables 7.4/5; @BALT:21, pp. 174/5 tables 7.5/6:
 
-```{r }
-## (note: function pht is a deprecated way to estimate this type of model
-## ht <- pht(lwage~wks+south+smsa+married+exp+I(exp^2)+
-##           bluecol+ind+union+sex+black+ed | 
-##           sex+black+bluecol+south+smsa+ind,
-##           data=Wages,index=595)
+```{r hausman-taylor}
 ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp ^ 2) + 
               bluecol + ind + union + sex + black + ed |
               bluecol + south + smsa + ind + sex + black |
               wks + married + union + exp + I(exp ^ 2), 
           data = Wages, index = 595,
-          random.method = "ht", model = "random", inst.method = "baltagi")
+          model = "random", random.method = "ht", inst.method = "baltagi")
 summary(ht)
 ```
 
@@ -837,7 +845,7 @@ summary(ht)
 ## Variable coefficients model
 
 The `pvcm` function enables the estimation of variable
-coefficients models. Time or individual effects are introduced if
+coefficients models. Time or individual effects are introduced if argument
 `effect` is fixed to `"time"` or `"individual"` (the default value).
 
 Coefficients are assumed to be fixed if `model="within"` or 
@@ -1011,7 +1019,7 @@ lag of wages and output and current value of capital.
 
 ```{r gmm}
 emp.gmm <- pgmm(log(emp)~lag(log(emp), 1:2)+lag(log(wage), 0:1)+log(capital)+
-                lag(log(output), 0:1)|lag(log(emp), 2:99),
+                lag(log(output), 0:1) | lag(log(emp), 2:99),
                 data = EmplUK, effect = "twoways", model = "twosteps")
 summary(emp.gmm)
 ``` 
@@ -1020,7 +1028,8 @@ The following example is from @BLUN:BOND:98. The "sys"
 estimator is obtained using `transformation = "ld"` for level
 and difference. The `robust` argument of the `summary`
 method enables to use the robust covariance matrix proposed by
-@WIND:05.
+@WIND:05. For all pgmm models, `robust = TRUE` is the default (but set 
+in this example explicitly).
 
 ```{r gmm2}
 z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
@@ -1094,7 +1103,7 @@ error components.
 
 # Tests{#tests}
 
-As sketched in Section [linear panel model](#linear-panel-model)), specification
+As sketched in Section [linear panel model](#linear-panel-model), specification
 testing in panel models involves essentially testing for poolability,
 for individual or time unobserved effects and for correlation between
 these latter and the regressors (Hausman-type tests). As for the other
@@ -1159,7 +1168,8 @@ unbalanced panels in @BALT:CHAN:LI:98. The `"ghm"` test and the `"kw"`
 test were extended to two--way effects in @BALT:CHAN:LI:92. For a
 concise overview of all these statistics see @BALT:13 Sec. 4.2,
 pp. 68--76 (for balanced panels) and Sec. 9.5, pp. 200--203 (for
-unbalanced panels).]
+unbalanced panels) or @BALT:21, Sec. 4.2, pp. 81-84 (balanced), Sec. 9.6,
+pp. 243-246 (unbalanced).]
 
 To test the presence of individual and time effects in the
 `Grunfeld` example, using the @GOUR:HOLL:MONF:82 test,
@@ -1244,7 +1254,7 @@ assumptions.
 
 ### Unobserved effects test
 
-The unobserved effects test *\`a la Wooldridge*
+The unobserved effects test *à la Wooldridge*
 (see @WOOL:02 10.4.4), is a semiparametric test for the null
 hypothesis that $\sigma^2_{\mu}=0$, i.e. that there are no unobserved
 effects in the residuals. Given that under the null the covariance
@@ -1299,7 +1309,7 @@ direction of the departure from the null hypothesis, i.e.: is
 rejection due to the presence of serial correlation, of random effects
 or of both?
 
-@BERA:SOSA:YOON:01 derive locally robust tests both
+@BERA:SOSA:YOON:01 (hereafter BSY) derive locally robust tests both
 for individual random effects and for first-order serial correlation
 in residuals as "corrected" versions of the standard LM test (see
 `plmtest`). While still dependent on normality and
@@ -1575,7 +1585,7 @@ and distributed as a standard normal (see @PESA:04).
 A bias-corrected scaled version, $BCSCLM$, for the *fixed effect model with individual
 effects* only is also available which is simply the $SCLM$ with a term correcting
 for the bias (@BALT:FENG:KAO:12)^[The unbalanced version of this statistic uses
-max(Tij) for T in the bias-correction term]. This statistic is also asymptotically
+max(Tij) for T in the bias-correction term.]. This statistic is also asymptotically
 distributed as standard normal.
 $$BCSCLM=\sqrt{\frac{1}{n(n-1)}} ( \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} T_{ij} \hat{\rho}_{ij}^2 -1)-\frac{n}{2(T-1)}$$
 
@@ -1672,7 +1682,64 @@ from proximity matrices by means of the `nb2mat` function. Higher orders of
 the $CD(p)$ test can be obtained by lagging the corresponding `nb`s
 through `nblag`.]. 
 
-## Unit root tests
+## Panel unit root tests
+
+### Overview of functions for panel unit root testing
+
+
+Below, first an overview is provided which tests are implemented per functions. 
+A theoretical treatment is given for a few of those tests later on. The package 
+`plm` offers several panel unit root tests contained in three functions: 
+
+- `purtest` (Levin-Lin-Chu test, IPS test, several Fisher-type tests, Hadri's test),
+- `cipstest` (cross-sectionally augmented IPS test), and 
+- `phansi` (Simes' test).
+
+While `purtest` implements various tests which can be selected via its `test` 
+argument, `cipstest` and `phansi` are functions for a specific test each.
+
+Function `purtest` offers the following tests by setting argument `test` to:
+
+- `"levinlin"` (default), for the Levin-Lin-Chu test
+              (@LEVIN:LIN:CHU:02), see below for
+              a theoretical exposition ([Levin-Lin-Chu test](#levinlin))),
+- `"ips"`, for Im-Pesaran-Shin (IPS) test by @IM:PESAR:SHIN:03, see below for
+              a theoretical exposition ([Im-Pesaran-Shin test](#ips))),
+- `"madwu"`, is the inverse $\chi^2$ test by @MADDA:WU:99, also called
+            P test by @CHOI:01,
+- `"Pm"`, is the modified P test proposed by @CHOI:01 for large N,
+- `"invnormal"`, is the inverse normal test (@CHOI:01),
+- `"logit"`, is the logit test (@CHOI:01),
+- `"hadri"`, for Hadri's test (@HADR:00).
+
+The tests in `purtest` are often called first generation panel unit root tests 
+as they do assume absence of cross-sectional correlation; all these, except 
+Hadri's test, are based on the estimation of
+augmented Dickey-Fuller (ADF) regressions for each time series. A
+statistic is then computed using the t-statistics associated with
+the lagged variable. I a different manner, the Hadri residual-based LM statistic 
+is the cross-sectional average of individual KPSS statistics 
+(@KWIA:PHIL:SCHM:SHIN:92), standardized
+by their asymptotic mean and standard deviation.
+Among the tests in `purtest`, `"madwu"`, `"Pm"`, `"invormal"`, and `"logit"` are
+Fisher-type tests.^[The individual p-values for the Fisher-type tests
+are approximated as described in @MACK:96 if the package
+`urca` (@PFAFF:08) is available, otherwise as described in @MACK:94.]
+
+`purtest` returns an object of class `"purtest"` which contains details
+about the test performed, among them details about the individual
+regressions/statistics for the test. Associated `summary` and `print.summary`
+methods can be used to extract/display the additional information.
+
+Function `cipstest` implements Pesaran's (@pes07) cross-sectionally
+augmented version of the Im-Pesaran-Shin panel unit root test and is a
+so-called second-generation panel unit root test.
+
+Function `phansi` implements the idea of @HANCK:13 to apply Simes' testing
+approach for intersection of individual hypothesis tests to panel unit root
+testing, see below for a more thorough treatment
+of [Simes’ approach for intersecting hypotheses](#phansi).
+
 
 ### Preliminary results
 
@@ -1702,7 +1769,7 @@ time-series. Several possibilities are available. They all have in
 common that the maximum number of lags have to be chosen first. Then,
 $p_i$ can be chosen by using:
 
-- the Schwarz information criterion (SIC),
+- the Schwarz information criterion (SIC) (also known as Bayesian information criterion (BIC)),
 - the Akaike information criterion (AIC),
 - the Hall's method, which consist in removing the higher lags while
   they are not significant.
@@ -1722,11 +1789,11 @@ $$
 
 
 
-### Levin-Lin-Chu model
+### Levin-Lin-Chu model{#levinlin}
 
-Then, compute artificial regressions of $\Delta y_{it}$ and $y_{it-1}$
-on $\Delta y_{it-L}$ and $d_{mt}$ and get the two vectors of residuals
-$z_{it}$ and $v_{it}$. 
+Then, as per @LEVIN:LIN:CHU:02, compute artificial regressions of $\Delta y_{it}$
+and $y_{it-1}$ on $\Delta y_{it-L}$ and $d_{mt}$ and get the two vectors of
+residuals $z_{it}$ and $v_{it}$. 
 
 Standardize these two residuals and run the pooled regression of
 $z_{it}/\hat{\sigma}_i$ on $v_{it}/\hat{\sigma}_i$ to get
@@ -1763,10 +1830,21 @@ stationarity. $\mu^*_{m\tilde{T}}$ and $\sigma^*_{m\tilde{T}}$ are
 given in table 2 of the original paper and are also available in the
 package.
 
-### Im, Pesaran and Shin test
+An example how the Levin-Lin-Chu test is performed with `purtest` using a lag
+of 2 and intercept and a time trend as exogenous variables in the ADF
+regressions is:
+```{r levinlin}
+data("HousePricesUS", package = "pder")
+lprice <- log(pdata.frame(HousePricesUS)$price)
+(lev <- purtest(lprice, test = "levinlin", lags = 2, exo = "trend"))
+summary(lev) ### gives details
+```
 
-This test does not require that $\rho$ is the same for all the
-individuals. The null hypothesis is still that all the series have an
+
+### Im-Pesaran-Shin (IPS) test{#ips}
+
+This test by @IM:PESAR:SHIN:03 does not require that $\rho$ is the same for all
+the individuals. The null hypothesis is still that all the series have an
 unit root, but the alternative is that some may have a unit root and
 others have different values of $\rho_i <0$.
 
@@ -1788,13 +1866,72 @@ given in table 2 of the original paper and are also available in the
 package.
 
 
+An example of the IPS test with `purtest` with the same settings as in the
+previously performed Levin-Lin-Chu test is:
+```{r ips}
+purtest(lprice, test = "ips", lags = 2, exo = "trend")
+```
+
+
+
+### Simes' approach: intersecting hypotheses{#phansi}
+
+A different approach to panel unit root testing can be drawn from the general 
+Simes' test for intersection of individual hypothesis tests [@SIMES:86].
+@HANCK:13 suggests to apply the approach for panel unit root testing: The tests
+works by combining p-values from single hypothesis tests (individual
+unit root tests) with a global (intersected) hypothesis and controls for the
+multiplicity in testing. Thus, it works "on top" of any panel unit root test
+which yield a p-value for each individual series. Unlike most other panel unit
+root tests, this approach allows to discriminate between individuals for which
+the individual H0 (unit root present for individual series) is rejected/is not
+rejected and requires a pre-specified significance level. Further, the test is
+robust versus general patterns of cross-sectional dependence.
+
+The function `phansi` for this test takes as main input object either a numeric
+containing p-values of individual tests or a `"purtest"` object as produced by
+function `purtest` which holds a suitable pre-computed panel unit root test
+(one that produces p-values per individual series). The significance level is
+set by argument `alpha` (default 5 %). The function's return value is a list
+with detailed evaluation of the applied Simes test. The associated print method
+gives a verbal evaluation.
+
+The following examples shows both accepted ways of input, the first example
+replicates @HANCK:13, table 11 (left side), who applied some panel unit root test
+for a Purchasing Power Parity analysis per country (individual H0 hypotheses per
+series) to get the individual p-values and then used Simes' approach for testing
+the global (intersecting) hypothesis for the whole panel.
+```{r phansi1}
+### input is numeric (p-values), replicates Hanck (2013), Table 11 (left side)
+pvals <- c(0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0050,0.0050,0.0050,
+           0.0050,0.0175,0.0175,0.0200,0.0250,0.0400,0.0500,0.0575,0.2375,0.2475)
+countries <- c("Argentina","Sweden","Norway","Mexico","Italy","Finland","France",
+              "Germany","Belgium","U.K.","Brazil","Australia","Netherlands",
+              "Portugal","Canada", "Spain","Denmark","Switzerland","Japan")
+names(pvals) <- countries
+h <- phansi(pvals)
+print(h)
+h$rejected # logical indicating the individuals with rejected individual H0
+```
+
+```{r phansi2, results='hide'}
+### input is a (suitable) purtest object / different example
+y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
+obj <- purtest(y, pmax = 4, exo = "intercept", test = "madwu")
+phansi(obj, alpha = 0.06) # test with significance level set to 6 %
+```
+
+
 ## Robust covariance matrix estimation{#robust}
 
 Robust estimators of the covariance matrix of coefficients are
-provided, mostly for use in Wald-type tests. `vcovHC`
-estimates three "flavours" of White's heteroskedasticity-consistent
-covariance matrix^[See @WHIT:80 and @WHIT:84b.]
-(known as the *sandwich* estimator). Interestingly, in the
+provided, mostly for use in Wald-type tests, and this section provides
+some basics and examples. A more comprehensive exposition of the theory
+and the capabilities that come with the plm package is given in @mil17b.
+
+`vcovHC` estimates three "flavours" of White's heteroskedasticity-consistent
+covariance matrix^[See @WHIT:80 and @WHIT:84b.] (known as the
+*sandwich* estimator). Interestingly, in the
 context of panel data the most general version also proves consistent
 vs. serial correlation.
 
@@ -1843,9 +1980,9 @@ correlation of the errors, but on the converse, unlike the White 1 and
 The fixed effects case, as already observed in Section
 [tests of serial correlation](#serialcor) on serial correlation, is
 complicated by the fact that the demeaning induces serial correlation
-in the errors. The original White estimator (`white1`) turns out to be
+in the errors. The original White estimator (`"white1"`) turns out to be
 inconsistent for fixed $T$ as $n$ grows, so in this case it is
-advisable to use the `arellano` version (see @STOC:WATS:08).
+advisable to use the `"arellano"` version (see @STOC:WATS:08).
 
 The errors may be weighted according to the schemes proposed by
 @MACK:WHIT:85 and @CRIB:04 to improve small-sample performance^[The
@@ -1853,27 +1990,32 @@ HC3 and HC4 weighting schemes are computationally expensive and may
 hit memory limits for $nT$ in the thousands, where on the other hand
 it makes little sense to apply small sample corrections.].
 
-The main use of `vcovHC` is together with testing functions from the
-`lmtest` and `car` packages. These typically allow passing the `vcov`
-parameter either as a matrix or as a function (see @ZEIL:04). If one
+The main use of `vcovHC` (and the other variance-covariance estimators provided
+in the package `vcovBK`, `vcovNW`, `vcovDC`, `vcovSCC`) is to pass it to plm's
+own functions like `summary`, `pwaldtest`, and `phtest` or together with testing
+functions from the `lmtest` and `car` packages. All of these typically allow
+passing the `vcov` or `vcov.` parameter either as a matrix or as a function 
+(see also @ZEIL:04). If one
 is happy with the defaults, it is easiest to pass the function
 itself^[For `coeftest` set `df = Inf` to have the coefficients' tests
 be performed with standard normal distribution instead of t
 distribution as we deal with a random effects model here. For these
 types of models, the precise distribution of the coefficients
-estimates is unknown]:
+estimates is unknown.]:
 
-```{r }
+```{r vcovHC1}
+re <- plm(inv~value+capital, data = Grunfeld, model = "random")
+summary(re, vcov = vcovHC) # gives usual summary output but with robust test statistics
+
 library("lmtest")
-re <- plm(inv~value+capital, data=Grunfeld, model="random")
 coeftest(re, vcovHC, df = Inf)
 ```
 
 
-else one may do the covariance computation inside the call to
-`coeftest`, thus passing on a matrix:
+else one may do the covariance computation inside the call, thus passing on a matrix:
 
-```{r results='hide'}
+```{r vcovHC2, results='hide'}
+summary(re, vcov = vcovHC(re, method="white2", type="HC3"), df = Inf)
 coeftest(re, vcovHC(re, method="white2", type="HC3"), df = Inf)
 ``` 
 
@@ -1883,21 +2025,21 @@ allows providing the `vcov` of the unrestricted model as a matrix, see
 the documentation of package `lmtest`.].  In this case, optional
 parameters are provided as shown below (see also @ZEIL:04, p. 12):
 
-```{r waldtest}
-waldtest(re, update(re,.~.-capital),
+```{r waldtest-vcovHC}
+waldtest(re, update(re, . ~ . -capital),
          vcov=function(x) vcovHC(x, method="white2", type="HC3"))
 ```
 
 Moreover, `linearHypothesis` from package `car` may be used to test 
 for linear restrictions:
 
-```{r }
+```{r car-vcovHC}
 library("car")
-linearHypothesis(re, "2*value=capital", vcov.=vcovHC)
+linearHypothesis(re, "2*value=capital", vcov. = vcovHC)
 ```
 
-A specific `vcovHC` method for `pgmm` objects is also
-provided which implements the robust covariance matrix proposed by
+A specific methods are also provided for `pcce` and `pgmm` objects, for the latter
+`vcovHC` provides the robust covariance matrix proposed by
 @WIND:05 for generalized method of moments estimators.
 
 
@@ -2003,7 +2145,7 @@ component in the error term.
 
 In the mixed models literature, on the contrary, *fixed effect*
 indicates a parameter that is assumed constant, while
-*random  effects* are parameters that vary randomly around zero
+*random effects* are parameters that vary randomly around zero
 according to a joint multivariate normal distribution.
 
 <!---
@@ -2017,7 +2159,7 @@ according to a joint multivariate normal distribution.
 So, the FE model in econometrics has no counterpart in the
 mixed models framework, unless reducing it to OLS on a
 specification with one dummy for each group (often termed
-*least  squares dummy variables*, or LSDV model) which can
+*least squares dummy variables*, or LSDV model) which can
 trivially be estimated by OLS. The RE model is
 instead a special case of a mixed model where only the intercept is
 specified as a random effect, while the "random" type variable
@@ -2191,8 +2333,8 @@ lmAR1ML <- gls(inv~value+capital,data=Grunfeld,
 ```
 
 and analogously the random effects panel with, e.g., AR(1) errors
-(see @BALT:05, @BALT:13, ch. 5), which is a very common specification in
-econometrics, may be fit by `lme` specifying an additional
+(see @BALT:05; @BALT:13; @BALT:21, ch. 5), which is a very common specification
+in econometrics, may be fit by `lme` specifying an additional
 random intercept:
 
 ```{r reAR1}

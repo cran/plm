@@ -13,7 +13,13 @@ piest(formula, data, subset, na.action, index = NULL, robust = TRUE, ...)
 
 \method{summary}{piest}(object, ...)
 
-\method{print}{summary.piest}(x, ...)
+\method{print}{summary.piest}(
+  x,
+  digits = max(3, getOption("digits") - 2),
+  width = getOption("width"),
+  subset = NULL,
+  ...
+)
 }
 \arguments{
 \item{formula}{a symbolic description for the model to be estimated,}
@@ -31,7 +37,12 @@ otherwise, a robust estimation of the covariance matrix is computed,}
 
 \item{\dots}{further arguments.}
 
-\item{object, x}{an object of class \code{"plm"},}
+\item{object, x}{an object of class \code{"piest"} and of class \code{"summary.piest"}
+for the print method of summary for piest objects,}
+
+\item{digits}{number of digits for printed output,}
+
+\item{width}{the maximum length of the lines in the printed output,}
 }
 \value{
 An object of class \code{"piest"}.
@@ -40,7 +51,7 @@ An object of class \code{"piest"}.
 General estimator useful for testing the within specification
 }
 \details{
-The Chamberlain method consists on using the covariates of all the
+The Chamberlain method consists in using the covariates of all the
 periods as regressors. It allows to test the within specification.
 }
 \examples{

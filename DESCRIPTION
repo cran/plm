@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.4-1
-Date: 2021-03-02
+Version: 2.4-2
+Date: 2021-09-16
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
@@ -14,11 +14,11 @@ Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"
 Depends: R (>= 3.1.0)
 Imports: MASS, bdsmatrix, zoo, nlme, sandwich, lattice, lmtest, maxLik,
         Rdpack, Formula, stats
-Suggests: AER, car, pcse, clusterSEs, collapse, pglm, spdep, splm,
-        statmod, urca, Ecdat, pder, stargazer, texreg, foreign, knitr,
-        rmarkdown, bookdown
+Suggests: AER, car, pcse, clusterSEs, collapse (>= 1.6.0), pglm, spdep,
+        splm, statmod, urca, Ecdat, pder, stargazer, texreg, foreign,
+        knitr, rmarkdown, bookdown, fixest, lfe
 Description: A set of estimators and tests for panel data
-             econometrics, as described in Baltagi (2013), Econometric Analysis of Panel Data, ISBN-13:978-1-118-67232-7,
+             econometrics, as described in Baltagi (2021), Econometric Analysis of Panel Data, ISBN-13:978-3-030-53952-8,
              Hsiao (2014), Analysis of Panel Data <doi:10.1017/CBO9781139839327>, and
              Croissant and Millo (2018), Panel Data Econometrics with R, ISBN-13:978-1-118-94918-4.
 License: GPL (>= 2)
@@ -26,7 +26,7 @@ VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm,
         https://r-forge.r-project.org/projects/plm/
 BugReports: https://github.com/ycroissant/plm/issues
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 RdMacros: Rdpack
 Encoding: UTF-8
 Author: Yves Croissant [aut, cre],
@@ -41,8 +41,8 @@ Author: Yves Croissant [aut, cre],
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
 Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 1096
-Repository/R-Forge/DateTimeStamp: 2021-03-02 07:54:56
-Date/Publication: 2021-03-02 09:40:05 UTC
+Repository/R-Forge/Revision: 1317
+Repository/R-Forge/DateTimeStamp: 2021-09-17 05:13:29
+Date/Publication: 2021-09-21 09:40:02 UTC
 NeedsCompilation: no
-Packaged: 2021-03-02 08:08:28 UTC; rforge
+Packaged: 2021-09-17 05:28:30 UTC; rforge

@@ -44,7 +44,7 @@ residuals_overall_e_exp <- function(object) { ### experimental non-exported func
   if (obj.eff == "twoways") {
     res_ov_e <- res_ov - ranef(object, "individual")[index(object, "id")] - ranef(object, "time")[index(object, "time")]
   } else {
-    res_ov_e <- res_ov - ranef(object)[index(object, ifelse(obj.eff == "individual", "id", "time"))]
+    res_ov_e <- res_ov - ranef(object)[index(object, if(obj.eff == "individual") "id" else "time")]
   }
   names(res_ov_e) <- names(res_ov)
   return(res_ov_e)
@@ -62,11 +62,7 @@ fitted_exp.plm <- function(x, ...) { #### experimental, non-exported function
   # number of original observations. Thus, model.frame cannot be used but rather
   # pmodel.response because it has the right length. However, pmodel.response
   # shall not be used for the other models because we want the untransformed data.
-  if (model %in% c("between", "fd")) {
-    y <- pmodel.response(x)
-  } else {
-    y <- model.frame(x)[ , 1L]
-  }
+  y <- if (model %in% c("between", "fd")) pmodel.response(x) else model.frame(x)[ , 1L]
   return(y - res)
 }
 

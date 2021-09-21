@@ -1,3 +1,7 @@
+## ----setup, echo=FALSE--------------------------------------------------------
+library("knitr")
+opts_chunk$set(message = FALSE, warning = FALSE)
+
 ## -----------------------------------------------------------------------------
 library("plm")
 data("SeatBelt", package = "pder")
@@ -43,10 +47,10 @@ head(HX1, 3)
 coef(lm.fit(HX1, y))
 
 ## -----------------------------------------------------------------------------
-coef(AER::ivreg(formiv1, data = SeatBelt))
+coef(plm(formiv1, SeatBelt, model = "pooling"))
 
 ## -----------------------------------------------------------------------------
-coef(plm(formiv1, SeatBelt, model = "pooling"))
+coef(AER::ivreg(formiv1, data = SeatBelt))
 
 ## ----eval = FALSE, include = FALSE--------------------------------------------
 #  X2 <- model.matrix(Formula(form1), mfSB, rhs = 2, dot = "previous")

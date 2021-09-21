@@ -157,7 +157,7 @@ pggls <- function(formula, data, subset, na.action,
     commonpars <- intersect(names(coef(plm.model)), colnames(X))
     X <- X[ , commonpars, drop = FALSE]
     y <- pmodel.response(plm.model)[myord]
-    resid <- resid(lm.fit(X, y))
+    resid <- lm.fit(X, y)$residuals
     
     cond <- cond[myord]
     other <- other[myord]
@@ -183,7 +183,7 @@ pggls <- function(formula, data, subset, na.action,
         y0 <- y
         X <- X[t1, ]
         y <- y[t1]
-        resid <- resid(lm.fit(X,y))
+        resid <- lm.fit(X, y)$residuals
                                         #resid[t1]
         cond <- cond[t1]
         other <- other[t1]
@@ -198,7 +198,7 @@ pggls <- function(formula, data, subset, na.action,
             ut <- resid[cond == lcnd[i]]
             tres[ , , i] <- ut %o% ut
         }
-        subOmega <- apply(tres, 1:2, mean)
+        subOmega <- rowMeans(tres, dims = 2L) # == apply(tres, 1:2, mean) but faster
         omega <- bdsmatrix(rep(nother, ncond), rep(subOmega, ncond))
     } else {
         lti <- list()
@@ -209,12 +209,12 @@ pggls <- function(formula, data, subset, na.action,
             out <- ut %o% ut
             tres[names(ut), names(ut), i] <- out
         }
-        subOmega <- apply(tres, 1:2, mean, na.rm = TRUE)
+        subOmega <- rowMeans(tres, dims = 2L, na.rm = TRUE) # == apply(tres, 1:2, mean, na.rm = TRUE) but faster
         list.cov.blocks <- list()
         for (i in 1:ncond) {
             list.cov.blocks[[i]] <- subOmega[lti[[i]], lti[[i]]]
         }
-        omega <- bdsmatrix(groupsdim, unlist(list.cov.blocks))
+        omega <- bdsmatrix(groupsdim, unlist(list.cov.blocks, use.names = FALSE))
     }
     A <- crossprod(X, solve(omega, X))
     B <- crossprod(X, solve(omega, y))
@@ -254,12 +254,12 @@ summary.pggls <- function(object,...){
   b <- object$coefficients
   z <- b/std.err
   p <- 2*pnorm(abs(z), lower.tail = FALSE)
-  CoefTable <- cbind(b,std.err,z,p)
+  CoefTable <- cbind(b, std.err, z, p)
   colnames(CoefTable) <- c("Estimate", "Std. Error", "z-value", "Pr(>|z|)")
   object$CoefTable <- CoefTable
   y <- object$model[[1L]]
   object$tss <- tss(y)
-  object$ssr <- sum(residuals(object)^2)
+  object$ssr <- as.numeric(crossprod(residuals(object)))
   object$rsqr <- 1-object$ssr/object$tss
   class(object) <- c("summary.pggls")
   return(object)
@@ -280,7 +280,7 @@ print.summary.pggls <- function(x, digits = max(3, getOption("digits") - 2), wid
   cat("\n")
   print(pdim)
   cat("\nResiduals:\n")
-  print(summary(unlist(residuals(x))))
+  print(sumres(x)) # was until rev. 1176:  print(summary(unlist(residuals(x))))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
   cat(paste("Total Sum of Squares: ",    signif(x$tss,digits),  "\n", sep=""))

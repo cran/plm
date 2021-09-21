@@ -1,3 +1,104 @@
+---
+title: Changelog/NEWS for package plm
+subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
+          panel data econometrics - https://cran.r-project.org/package=plm
+---
+
+# plm 2.4-2
+
+### Speed-up:
+ * "Fast mode" is not yet the default. To enable, set
+   `options("plm.fast" = TRUE)` manually or in your `.Rprofile` file (see
+   `?plm.fast`, also for benchmarks), option introduced in plm version 2.4-0.
+   It is planned to default to "fast mode" for the next CRAN release of
+   plm (then making package `collapse` a hard dependency).
+ * Further speed-up if `options("plm.fast" = TRUE)` is set: In case package
+   `fixest` or `lfe` is available locally *in addition* to package `collapse`,
+   the two-ways fixed transformation is significantly faster compared to the case
+   if only `collapse` is available due to specialised algorithms in these two packages,
+   all being fully integrated into the usual plm functions/user interfaces
+   (`fixest` is preferred over `lfe`, in this case, plm uses internally
+   `collapse::fhdwithin` which in turn uses `fixest::demean`. Thanks to Sebastian
+   Krantz for guidance on this.
+
+### Features:
+ * phansi: new function for Simes (1986) test applied to panels for panel unit
+   root testing, as suggested in Hanck (2013).
+ * pseriesfy: new function to make each column of a pdata.frame a pseries, see
+   `?pseriesfy` for background and useful examples. (Faster version is executed
+   if `options("plm.fast" = TRUE)` is set, see `?plm.fast` (then internally
+   using `collapse::dapply`)). Thanks to Sebastian Krantz for inspiration.
+
+### Bug Fixes:
+ * between (and hence fixef, ranef): order of output is order of *factor levels*
+   again (this reverts a change introduced in 2.4-0, there called a fix introducing
+   the order of the appearance in the data which is actually not desirable). Change
+   is relevant in specific unbalanced data constellations.
+ * fixef: for two-ways FE models, fixef does not error anymore if factor is in
+   model and not anymore in IV case.
+ * vcovG (hence vcovHC, vcovDC, vcovNW, vcovSCC) and vcovBK: fix bug in case
+   of IV estimation with only one regressor (errored previously).
+ * within_intercept:
+     * fix bug which caused an error for FE models with only one regressor.
+     * error informatively for IV models as not suitable.
+ * between.matrix: do not coerce result to numeric vector for n x 1 matrix
+   input (by using drop = FALSE in extraction) (prior to this fix, estimation
+   of the between model with only an intercept errored).
+ * pvcm: intercept-only models are now estimable.
+ * detect.lindep: argument 'suppressPrint' now correctly passed on/respected
+   (methods for data frame and matrix).
+ * has.intercept.plm: argument 'part' renamed to 'rhs', argument values
+   (integer or NULL) aligned with and correctly passed on to 
+   has.intercept.Formula (with a *temporary* back-compatible solution).
+ * pcdtest: for formula method, the formula is evaluated in the parent environment.
+ * groupGenerics: no more warning in arithmetic operations on pseries when index
+   of both operands have same length but different content (e.g., something like
+   this does not warn anymore:
+   `your_pseries[1:(length(your_pseries)-1)] + your_pseries[2:length(your_pseries)]`).
+
+## Others:
+ * plm: for the nested random effect model (`effect = "nested"`), check if
+    argument `model = "random"` is set, if not, plm now warns and adjusts 
+    accordingly (will become an error in the future).
+ * pgmm: printing of summary gives more information about the model estimated
+   (print.summary.pgmm).
+ * purtest: now checks for NA-values, drops any, and warns about dropping.
+ * piest: better printing (handling of 'digits' and 'subset' argument) 
+     (print.piest, print.summary.piest).
+ * pwaldtest: error informatively if executed on intercept-only model
+   (also for such models: do not execute pwaldtest in summary.plm/pvcm and do 
+   not print pwaldtest in print.summary.plm/pvcm).
+ * mtest:
+    * switched to combination of generic and a method for pgmm.
+    * has information about user-supplied vcov in its return value's
+      method slot (vcov information thus printed as well).
+ * various print methods now return the input object invisible (before returned
+   NULL).
+ * various efficiency gains throughout the package by using more vapply(),
+   crossprod(), lm.fit(), better branching, rowSums(., dims = 2L) (instead of 
+   apply(., 1:2, sum))), etc., e.g., in plm for non-default random IV cases 
+   (cases with `inst.method = "baltagi"` / `"am"` / `"bms"`), pmg, pcce, purtest.
+ * piest, aneweytest: now use internal demeaning framework by Within() [thus
+   benefiting from fast mode].
+
+   
+### Vignettes and Other Documentation:
+ * 1st vignette:
+    * In section about panel unit root testing:
+      * added short intro with overview of available functions/tests and added
+        two example cases.
+      * added sub-section about new function phansi.
+    * added a little more information on the use of vcovXX.
+ * 2nd vignette: added formula for nested error component model.
+  * all vignettes: references updated to include Baltagi (2021), the 6th edition 
+    of the textbook; fixed a few typos.
+ * pldv: man page extended a little, esp. with examples.
+ * vcovXX: man pages extended with examples how to use with plm's own summary method.
+  
+  
+### Dependencies:
+ * Added packages 'fixest' and 'lfe' to 'Suggests'.
+
 # plm 2.4-1
 
  * lag: fix export of generic for lag (lost in 2.4-0; the panel-specific lag
@@ -7,11 +108,12 @@
  * pdata.frame: warns if NA in index dimension is encountered (before, only
    a plain message was printed).
  * Between/between/Sum/Within: Methods which rely on the index attribute
-   (\*.pseries and partly \*.matrix) now error informatively if NA in any index
-   dimension is encountered.
- * Vignettes: file names renamed to contain numbering so that the Vignettes are
-   sorted on CRAN's plm page in an order better suited for new package users.
- * checkNA.index: new non-exported helper function to check for NA in index 
+   (\*.pseries and (if with index attribute) \*.matrix) now error informatively
+   if NA in any index dimension is encountered.
+ * Vignettes: file names renamed to start with "A_", "B_", "C_" so that the
+   Vignettes are sorted on CRAN's plm page in an order better suited for new
+   package users.
+ * checkNA.index: new non-exported helper function to check for NA in index
    of a pdata.frame or pseries (all dimensions or a specific one).
 
 
@@ -51,7 +153,8 @@ plm()): Between, between, Sum, Within.
 * fixef: calculation for two-way models fixed; type = "dmean" for unbalanced
   models fixed (by using weighted.mean()).
 * between.default: keeps original sequence of elements' occurrence (before,
-  compressed output was sorted by the factor's *level* order).
+  compressed output was sorted by the factor's *level* order) [NB: this was
+  reverted again in plm 2.4-2].
 * Between.matrix and (internal) Tapply.matrix: ellipsis (three dots) is passed on,
   allowing for, e.g., na.rm = TRUE (like already possible for between.matrix etc.).
 * Within.pseries/matrix: now handle na.rm argument in ellipsis.
@@ -578,8 +681,7 @@ plm()): Between, between, Sum, Within.
 * pdata.frame's warnings:
   * if duplicate couples or NA values in the index variables are found
     while creating a pdata.frame, the warning now gives users a
-    hint how to find those (table(index(your_pdataframe), useNA =
-    "ifany").
+    hint how to find those (table(index(your_pdataframe), useNA = "ifany").
   * printed is now "id-time" (was: "time-id") to be consistent with
     order of index variables.
 
@@ -719,7 +821,7 @@ plm()): Between, between, Sum, Within.
     i.e., lag(x, k = -1) == lead(x, k = 1).
 * diff.pseries: prevented negative lags as input to avoid confusion.
 * doc for pseries functions are made available under their name, e.g., ?lag now displays helpfile for
-    lag.pseries in the help overview (besides e.g. stats::lag).
+    lag.pseries in the help overview (besides, e.g., stats::lag).
 * pdim.default: make error message "duplicate couples (time-id)" printed as proper error message
     (removed cat() around the message in stop(), was printed as regular string on screen before).
 * plm.data: slight improvement for printed outputs (spelling and spacing).
@@ -916,7 +1018,7 @@ plm()): Between, between, Sum, Within.
 
 * the resid and fitted method now return a pseries object.
 
-* the pgmm method has been rewritten; the data frame is then first
+* the pgmm method has been rewritten; the data frame is first
     balanced and NAs are then overwritten by 0s.
 
 
@@ -932,7 +1034,7 @@ plm()): Between, between, Sum, Within.
 * a bug in mtest for pgmm models with effect="individual" and
     transformation="ld" *and* for the wald test for time.dummies for
     model with effect="twoways" and transformation="ld" is fixed by
-    modifying namest in gmm.
+    modifying namest in pgmm.
 
 * there was a bug in pgmm for models with different lags for gmm
     instruments. The number of time series lost is now the min (and
@@ -952,7 +1054,7 @@ plm()): Between, between, Sum, Within.
 
 * fixed error in pggls, model="within" (FEGLS). Added model="fd" (FDGLS).
 
-* changed dependency from kinship to bdsmatrix (as suggested by
+* changed dependency from package 'kinship' to 'bdsmatrix' (as suggested by
     Terry Therneau after his reorganization of the packages).
 
 * fixed DESCRIPTION and NAMESPACE accordingly.
@@ -1146,7 +1248,7 @@ Change since version 1-1.4
     data.frame contains untransformed data.
 
 * the data sets which are relevant for panel data estimation that
-    where previously in the Ecdat package are now in the plm package.
+    where previously in the 'Ecdat' package are now in the plm package.
 
 * in pvcm a bug when the estimation was made on a subset is fixed.
 
@@ -1183,7 +1285,7 @@ Change since version 1-1.4
 * models without intercept (-1 in the formula) should now be
     consistently estimated with plm, pggls and pvcm.
 
-* plm depends now on the Formula package which provides useful
+* plm depends now on the 'Formula' package which provides useful
     tools for formula with two parts.
 
 
@@ -1193,7 +1295,7 @@ Change since version 1-1.4
 
 * functions pcdtest, pcdres have been added.
 
-* for Hausman-Taylor model, the summary now prints the variables
+* for Hausman-Taylor model, summary now prints the variables
     and not the effects.
 
 * the estimation of a model with only one explanatory variable
@@ -1210,7 +1312,7 @@ Change since version 1-1.4
 
 * the arguments 'type' and 'weights' in pvcovHC.panelmodel are renamed
     to 'method' and 'type', respectively. The default method (type in previous
-    versions) is arellano and not white1.
+    versions) is "arellano"" and not "white1".
 
 * honda is now the default option for plmtest.
 
@@ -1226,7 +1328,8 @@ Change since version 1-1.4
 
 * three testing functions are added : pbsytest (Bera,
     Sosa-Escudero and Yoon test), pARtest (Breusch-Godfrey test) and
-    pDWtest (Durbin-Watson test), pwartest, pBGtest, pwtest pbltest.
+    pDWtest (Durbin-Watson test) (later renamed to pdwtest), pwartest,
+    pBGtest (later renamed to pbgtest), pwtest, and pbltest.
 
 * plm, pvcm and pggls now have arguments "subset" and "na.action".
 
@@ -1253,7 +1356,7 @@ Change since version 1-1.4
 * a as.data.frame function is provided to coerce a pdata.frame to
     a data.frame.
 
-* the dependency to the Matrix package has been removed and pgmm
+* the dependency to the 'Matrix' package has been removed and pgmm
     is much faster now.
 
 * phtest has been fixed to return only positive values of the
@@ -1271,7 +1374,7 @@ Change since version 1-1.4
     error. This has been fixed.
 
 * Estimation methods are now available with these four functions : 
-    plm, pvcm, pggls and pgmm instead of one (plm) in the previous version.
+    plm, pvcm, pggls, and pgmm instead of one (plm) in the previous version.
 
 * pvcm is a new function which estimates variable coefficients
     models. The "nopool" model is now part of it.

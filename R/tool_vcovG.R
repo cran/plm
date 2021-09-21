@@ -18,14 +18,16 @@
 #' linear model) by \insertCite{MACK:WHIT:85;textual}{plm} and
 #' \insertCite{CRIB:04;textual}{plm} \insertCite{@see @ZEIL:04}{plm}).
 #' 
-#' The main use of `vcovSCC` is to be an argument to other functions,
-#' e.g.,for Wald--type testing: argument `vcov.` to `coeftest()`,
-#' argument `vcov` to `waldtest()` and other methods in the
+#' The main use of `vcovSCC` (and the other variance-covariance estimators 
+#' provided in the package `vcovHC`, `vcovBK`, `vcovNW`, `vcovDC`) is to pass 
+#' it to plm's own functions like `summary`, `pwaldtest`, and `phtest` or 
+#' together with testing functions from the `lmtest` and `car` packages. All of 
+#' these typically allow passing the `vcov` or `vcov.` parameter either as a 
+#' matrix or as a function, e.g., for Wald--type testing: argument `vcov.` to
+#' `coeftest()`, argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
-#' examples). Notice that the `vcov` and `vcov.` arguments allow to
-#' supply a function (which is the safest) or a matrix
-#' \insertCite{@see @ZEIL:04, 4.1-2 and examples below}{plm}.
+#' examples), see \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}.
 #' 
 #' @aliases vcovSCC
 #' @param x an object of class `"plm"` or `"pcce"`
@@ -61,10 +63,13 @@
 #' @keywords regression
 #' @examples
 #' 
-#' library(lmtest)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="pooling")
+#' ## as function input to plm's summary method (with and without additional arguments):
+#' summary(zz, vcov = vcovSCC)
+#' summary(zz, vcov = function(x) vcovSCC(x, method="arellano", type="HC1"))
 #' ## standard coefficient significance test
+#' library(lmtest)
 #' coeftest(zz)
 #' ## SCC robust significance test, default
 #' coeftest(zz, vcov.=vcovSCC)
@@ -100,14 +105,16 @@ vcovSCC <- function(x, ...){
 #' linear model) by \insertCite{MACK:WHIT:85;textual}{plm} and
 #' \insertCite{CRIB:04;textual}{plm} \insertCite{@see @ZEIL:04}{plm}.
 #' 
-#' The main use of `vcovNW` is to be an argument to other functions,
-#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
-#' argument `vcov` to `waldtest()` and other methods in the
+#' The main use of `vcovNW` (and the other variance-covariance estimators 
+#' provided in the package `vcovHC`, `vcovBK`, `vcovDC`, `vcovSCC`) is to pass 
+#' it to plm's own functions like `summary`, `pwaldtest`, and `phtest` or 
+#' together with testing functions from the `lmtest` and `car` packages. All of 
+#' these typically allow passing the `vcov` or `vcov.` parameter either as a 
+#' matrix or as a function, e.g., for Wald--type testing: argument `vcov.` to
+#' `coeftest()`, argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
-#' examples). Notice that the `vcov` and `vcov.` arguments allow to
-#' supply a function (which is the safest) or a matrix
-#' \insertCite{@see @ZEIL:04, 4.1-2 and examples below}{plm}.
+#' examples), see \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}.
 #' 
 #' @aliases vcovNW
 #' @param x an object of class `"plm"` or `"pcce"`
@@ -138,10 +145,13 @@ vcovSCC <- function(x, ...){
 #' @keywords regression
 #' @examples
 #' 
-#' library(lmtest)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="pooling")
+#' ## as function input to plm's summary method (with and without additional arguments):
+#' summary(zz, vcov = vcovNW)
+#' summary(zz, vcov = function(x) vcovNW(x, method="arellano", type="HC1"))
 #' ## standard coefficient significance test
+#' library(lmtest)
 #' coeftest(zz)
 #' ## NW robust significance test, default
 #' coeftest(zz, vcov.=vcovNW)
@@ -179,14 +189,16 @@ vcovNW <- function(x, ...){
 #' linear model) by \insertCite{MACK:WHIT:85;textual}{plm} and
 #' \insertCite{CRIB:04;textual}{plm} \insertCite{@see @ZEIL:04}{plm}.
 #' 
-#' The main use of `vcovDC` is to be an argument to other functions,
-#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
-#' argument `vcov` to `waldtest()` and other methods in the
+#' The main use of `vcovDC` (and the other variance-covariance estimators 
+#' provided in the package `vcovHC`, `vcovBK`, `vcovNW`, `vcovSCC`) is to pass 
+#' it to plm's own functions like `summary`, `pwaldtest`, and `phtest` or 
+#' together with testing functions from the `lmtest` and `car` packages. All of 
+#' these typically allow passing the `vcov` or `vcov.` parameter either as a 
+#' matrix or as a function, e.g., for Wald--type testing: argument `vcov.` to
+#' `coeftest()`, argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
-#' examples). Notice that the `vcov` and `vcov.` arguments allow to
-#' supply a function (which is the safest) or a matrix
-#' \insertCite{@see @ZEIL:04, 4.1-2 and examples below}{plm}.
+#' examples), see \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}. 
 #' 
 #' @aliases vcovDC
 #' @param x an object of class `"plm"` or `"pcce"`
@@ -214,10 +226,13 @@ vcovNW <- function(x, ...){
 #' @keywords regression
 #' @examples
 #' 
-#' library(lmtest)
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="pooling")
+#' ## as function input to plm's summary method (with and without additional arguments):
+#' summary(zz, vcov = vcovDC)
+#' summary(zz, vcov = function(x) vcovDC(x, type="HC1", maxlag=4))
 #' ## standard coefficient significance test
+#' library(lmtest)
 #' coeftest(zz)
 #' ## DC robust significance test, default
 #' coeftest(zz, vcov.=vcovDC)
@@ -279,13 +294,14 @@ vcovDC <- function(x, ...){
 #' model="pooling")
 #' ## reproduce Arellano's covariance matrix
 #' vcovG(zz, cluster="group", inner="cluster", l=0)
-#' ## use in coefficient significance test
-#' library(lmtest)
 #' ## define custom covariance function
 #' ## (in this example, same as vcovHC)
 #' myvcov <- function(x) vcovG(x, cluster="group", inner="cluster", l=0)
+#' summary(zz, vcov = myvcov)
+#' ## use in coefficient significance test
+#' library(lmtest)
 #' ## robust significance test
-#' coeftest(zz, vcov.=myvcov)
+#' coeftest(zz, vcov. = myvcov)
 #' 
 vcovG <- function(x, ...) {
     UseMethod("vcovG")
@@ -327,7 +343,11 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
         demZ <- model.matrix(x, model = model, rhs = 2, cstcovar.rm = "all")
         ## substitute (transformed) X with projection of X on Z
         ## any linear dependence in Z (demZ) is appropriately taken care of by lm.fit()
-        demX <- fitted(lm.fit(demZ, demX))
+        nms <- colnames(demX)
+        demX <- lm.fit(demZ, demX)$fitted.values
+        # catches case with only one regressor -> need to convert numeric 
+        # returned from lm.fit()$fitted.values to matrix:
+        if(!is.matrix(demX)) demX <- matrix(demX, dimnames = list(NULL, nms[1L]))
     }
 
     pdim <- pdim(x)
@@ -345,17 +365,6 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## (the weighting is defined "in sqrt" relative to the literature)
   ## 
   ## (see the theoretical comments in pvcovHC)
-
-    ## diaghat function for matrices
-
-# old:
-#    dhat <- function(x) {tx <- t(x)
-#                         diag(crossprod(tx, solve(crossprod(x), tx)))}
-    
-    dhat <- function(x) {
-      res <-  rowSums(crossprod(t(x), solve(crossprod(x))) * x) # == diag(crossprod(tx, solve(crossprod(x), tx)))
-      return(res)
-    }
 
     ## this is computationally heavy, do only if needed
     switch(match.arg(type), "HC0" = {diaghat <- NULL},
@@ -468,8 +477,9 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## group (i.e., the vcov estimator is robust vs. xsectional dependence)
 
   ## extract indices
-    groupind <- as.numeric(attr(x$model, "index")[ , 1L])
-    timeind  <- as.numeric(attr(x$model, "index")[ , 2L])
+    xindex <- unclass(attr(x$model, "index")) # unclass for speed
+    groupind <- as.numeric(xindex[[1L]])
+    timeind  <- as.numeric(xindex[[2L]])
 
   ## adjust for 'fd' model (losing first time period)
     if(model == "fd") {
@@ -558,7 +568,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     ## meat
     ## salame <- apply(Sl, 1:2, mean, na.rm=TRUE) * (n-l)
-    salame <- apply(Sl, 1:2, sum)
+    salame <- rowSums(Sl, dims = 2L) # == apply(Sl, 1:2, sum) but faster
 
     ## bread by standard method
     pane <- solve(crossprod(demX))
@@ -606,14 +616,16 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 # % TODO: give formula for "sss";
 # elaborate why different result for FE models (intercept)
 #' 
-#' The main use of `vcovHC` is to be an argument to other functions,
-#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
-#' argument `vcov` to `waldtest()` and other methods in the
+#' The main use of `vcovHC` (and the other variance-covariance estimators 
+#' provided in the package `vcovBK`, `vcovNW`, `vcovDC`, `vcovSCC`) is to pass 
+#' it to plm's own functions like `summary`, `pwaldtest`, and `phtest` or 
+#' together with testing functions from the `lmtest` and `car` packages. All of 
+#' these typically allow passing the `vcov` or `vcov.` parameter either as a 
+#' matrix or as a function, e.g., for Wald--type testing: argument `vcov.` to
+#' `coeftest()`, argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
-#' examples). Notice that the `vcov` and `vcov.` arguments allow to
-#' supply a function (which is the safest) or a matrix
-#' \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}.
+#' examples), see \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}.
 #' 
 #' A special procedure for `pgmm` objects, proposed by
 #' \insertCite{WIND:05;textual}{plm}, is also provided.
@@ -663,11 +675,15 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' @keywords regression
 #' @examples
 #' 
-#' library(lmtest)
 #' data("Produc", package = "plm")
 #' zz <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
 #'           data = Produc, model = "random")
+#' ## as function input to plm's summary method (with and without additional arguments):
+#' summary(zz, vcov = vcovHC)
+#' summary(zz, vcov = function(x) vcovHC(x, method="arellano", type="HC1"))
+#' 
 #' ## standard coefficient significance test
+#' library(lmtest)
 #' coeftest(zz)
 #' ## robust significance test, cluster by group
 #' ## (robust vs. serial correlation)
@@ -786,7 +802,6 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     return(S0)
 }
 
-                                        # ICI
 
 ##############################################################
 
@@ -829,14 +844,16 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 # % sample correction as used by Stata. give formula for "sss";
 # % elaborate why different result for FE models (intercept)
 #' 
-#' The main use of `vcovBK` is to be an argument to other functions,
-#' e.g., for Wald--type testing: argument `vcov.` to `coeftest()`,
-#' argument `vcov` to `waldtest()` and other methods in the
+#' The main use of `vcovBK` (and the other variance-covariance estimators 
+#' provided in the package `vcovHC`, `vcovNW`, `vcovDC`, `vcovSCC`) is to pass 
+#' it to plm's own functions like `summary`, `pwaldtest`, and `phtest` or 
+#' together with testing functions from the `lmtest` and `car` packages. All of 
+#' these typically allow passing the `vcov` or `vcov.` parameter either as a 
+#' matrix or as a function, e.g., for Wald--type testing: argument `vcov.` to
+#' `coeftest()`, argument `vcov` to `waldtest()` and other methods in the
 #' \CRANpkg{lmtest} package; and argument `vcov.` to
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
-#' examples). Notice that the `vcov` and `vcov.` arguments allow to
-#' supply a function (which is the safest) or a matrix
-#' \insertCite{@see @ZEIL:04, 4.1-2 and examples below}{plm}.
+#' examples), see \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}.
 #' 
 #' @param x an object of class `"plm"`,
 #' @param type the weighting scheme used, one of `"HC0"`, `"HC1"`,
@@ -867,10 +884,14 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' @keywords regression
 #' @examples
 #' 
-#' library(lmtest)
+
 #' data("Produc", package="plm")
 #' zz <- plm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc, model="random")
+#' summary(zz, vcov = vcovBK)
+#' summary(zz, vcov = function(x) vcovBK(x, type="HC1"))
+#' 
 #' ## standard coefficient significance test
+#' library(lmtest)
 #' coeftest(zz)
 #' ## robust significance test, cluster by group
 #' ## (robust vs. serial correlation), default arguments
@@ -879,8 +900,7 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' coeftest(zz, vcov.=function(x) vcovBK(x, type="HC1"))
 #' ## idem, cluster by time period
 #' ## (robust vs. cross-sectional correlation)
-#' coeftest(zz, vcov.=function(x) vcovBK(x,
-#'  type="HC1", cluster="time"))
+#' coeftest(zz, vcov.=function(x) vcovBK(x, type="HC1", cluster="time"))
 #' ## idem with parameters, pass vcov as a matrix argument
 #' coeftest(zz, vcov.=vcovBK(zz, type="HC1"))
 #' ## joint restriction test
@@ -958,11 +978,15 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     if (!is.null(x$aliased) && any(x$aliased, na.rm = TRUE)) demX <- demX[, !x$aliased, drop = FALSE]
     
     ## control: IV or not (two- or one-part formula)
-    if(length(formula(x))[2L] > 1) {
+    if(length(formula(x))[2L] > 1L) {
         demZ <- model.matrix(x, model = model, rhs = 2, cstcovar.rm = "all")
         ## substitute (transformed) X with projection of X on Z
         ## any linear dependence in Z (demZ) is appropriately taken care of by lm.fit()
-        demX <- fitted(lm.fit(demZ, demX))
+        nms <- colnames(demX)
+        demX <- lm.fit(demZ, demX)$fitted.values
+        # catches case with only one regressor -> need to convert numeric 
+        # returned from lm.fit()fitted.values to matrix:
+        if(!is.matrix(demX)) demX <- matrix(demX, dimnames = list(NULL, nms[1L]))
     }
 
     pdim <- pdim(x)
@@ -981,8 +1005,9 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## group (i.e., the vcov estimator is robust vs. xsectional dependence)
 
   ## extract indices
-    groupind <- as.numeric(attr(x$model, "index")[ , 1L])
-    timeind  <- as.numeric(attr(x$model, "index")[ , 2L])
+    xindex <- unclass(attr(x$model, "index")) # unclass for speed
+    groupind <- as.numeric(xindex[[1L]])
+    timeind  <- as.numeric(xindex[[2L]])
 
   ## Achim's fix for 'fd' model (losing first time period)
     if(model == "fd") {
@@ -1020,18 +1045,6 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
   ## (the weighting is defined "in sqrt" relative to the literature)
   ##
   ## (see the theoretical comments in pvcovHC)
-
-    ## diaghat function for matrices
-    
-    ## old:
-    # dhat <- function(x) {tx <- t(x)
-    #                      diag(crossprod(tx, solve(crossprod(x), tx)))}
-    
-    dhat <- function(x) {
-      res <-  rowSums(crossprod(t(x), solve(crossprod(x))) * x) # == diag(crossprod(tx, solve(crossprod(x), tx)))
-      return(res)
-    }
-    
 
     ## this is computationally heavy, do only if needed
     switch(match.arg(type), "HC0" = {diaghat <- NULL},
@@ -1087,18 +1100,13 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
       ut <- uhat[tind[[i]]]
       tpos <- (1:t)[unique(lab) %in% tlab[[i]]]
       ## put nondiag elements to 0 if diagonal=TRUE
-      if(diagonal) {
-        tres[tpos, tpos, i] <- diag(diag(ut %o% ut))
-      } else {
-        tres[tpos, tpos, i] <- ut %o% ut
-      }
+      tres[tpos, tpos, i] <- if(diagonal) diag(diag(ut %o% ut)) else ut %o% ut
     }
 
     ## average over all omega blocks, removing NAs (apply preserving
     ## *two* dimensions, i.e., over the third) to get the unconditional
     ## covariance matrix of errors for a group (viz. time period):
-    OmegaT <- apply(tres, 1:2, mean, na.rm = TRUE)
-
+    OmegaT <- rowMeans(tres, dims = 2L, na.rm = TRUE) # == apply(tres, 1:2, mean, na.rm = TRUE) but faster
   ## end of PCSE covariance calculation.
 
   ## fetch (all, unique) values of the relevant labels
@@ -1114,15 +1122,14 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     OmegaTi <- OmegaT[tpos, tpos, drop = FALSE]
     salame[ , , i] <- crossprod(xi, OmegaTi) %*% xi
   }
-
   ## meat
-  salame <- apply(salame, 1:2, sum)
+  salame <- rowSums(salame, dims = 2L) # == apply(salame, 1:2, sum) but faster
 
   ## bread
   pane <- solve(crossprod(demX))
 
   ## sandwich
-  mycov <- tcrossprod(crossprod(t(pane), salame), t(pane)) # == pane %*% salame %*% pane pane %*% salame %*% pane
+  mycov <- tcrossprod(crossprod(t(pane), salame), t(pane)) # == pane %*% salame %*% pane
   
   # save information about cluster variable in matrix (needed for e.g.,
   # robust F test)
@@ -1181,14 +1188,14 @@ vcovHC.pgmm <- function(x, ...) {
   else {
     yX <- x$model
     residuals <- x$residuals
-  }    
+  }
   minevA2 <- min(abs(Re(eigen(A2)$values)))
   eps <- 1E-9
-  if(minevA2 < eps){
-    SA2 <- ginv(A2)
+  
+  SA2 <- if(minevA2 < eps){
     warning("a general inverse is used")
-  }
-  else SA2 <- solve(A2)
+    ginv(A2)
+  } else solve(A2)
   
   if(model == "twosteps") {
     coef1s <- x$coefficients[[1L]]
@@ -1204,7 +1211,7 @@ vcovHC.pgmm <- function(x, ...) {
     vcov1s <- B1 %*% (t(WX) %*% A1 %*% SA2 %*% A1 %*% WX) %*% B1
     for (k in 2:K) {
       exk <- mapply(
-                    function(x,y){
+                    function(x, y){
                       z <- crossprod(t(x[ , k, drop = FALSE]), t(y))
                       - z - t(z)
                     },
@@ -1215,11 +1222,12 @@ vcovHC.pgmm <- function(x, ...) {
                              crossprod(x, crossprod(y, x)),
                              x$W, exk, SIMPLIFY = FALSE))
       Dk <- -B2 %*% t(WX) %*% A2 %*% wexkw %*% A2 %*% We
-      D <- cbind(D,Dk)
+      D <- cbind(D, Dk)
     }
     vcovr <- B2 + crossprod(t(D), B2) + t(crossprod(t(D), B2)) + D %*% vcov1s %*% t(D)
   }
   else {
+    # model = "onestep"
     res1s <- lapply(yX, function(z) z[ , 1L] - crossprod(t(z[ , -1L, drop = FALSE]), x$coefficients))
     K <- ncol(yX[[1L]])
     WX <- Reduce("+", mapply(function(z, y) crossprod(z[ , -1L, drop = FALSE], y), yX, x$W, SIMPLIFY = FALSE))
@@ -1227,4 +1235,12 @@ vcovHC.pgmm <- function(x, ...) {
     vcovr <- B1 %*% (WX %*% A1 %*% SA2 %*% A1 %*% t(WX)) %*% B1
   }
   vcovr
+}
+
+
+## dhat: diaghat function for matrices
+# old: dhat <- function(x) {tx <- t(x); diag(crossprod(tx, solve(crossprod(x), tx)))}
+dhat <- function(x) {
+  res <-  rowSums(crossprod(t(x), solve(crossprod(x))) * x) # == diag(crossprod(tx, solve(crossprod(x), tx)))
+  return(res)
 }

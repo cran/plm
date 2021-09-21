@@ -1,11 +1,18 @@
-## Function that are used in more that on place in plm. 
+## Function that are used in more than on place in plm (or likely to be used in more than one place in the future)
 
 ## - bdiag : takes matrices as argument and returns the block-diagonal matrix (used in pgmm and plm.list)
+## - mylm : inner fitting func based on stats::lm with matrix inputs (used in plm.fit)
+## - my.lm.fit : like the barebone stats::lm.fit but with some extra information (e.g., SEs, sigma) used in purtest
 ## - twosls : computes the 2SLS estimator (used in plm and ercomp)
+## - data.name : used in a lot tests to generate the 'data.name' entry for htest objects from the model object's call$formula
 ## - has.intercept : tests the presence of an intercept
 ## - pres : extract model residuals as pseries (used in several estimation functions)
+## - punbalancedness : measures for the unbalancedness of panel data
+## - myvar : calculates variance with NA removal, checks if input is constant (also for factor and character)
+## - pvar : checks if input varies in individual / time dimension
 
 bdiag <- function(...){
+  ## non-exported
   if (nargs() == 1L)
     x <- as.list(...)
   else
@@ -33,61 +40,101 @@ bdiag <- function(...){
   iuse <- as.vector(unlist(iuse))
   out[iuse] <- unlist(x)
   return(out)
-} 
+}
 
+# mylm is used in plm.fit()
+mylm <- function(y, X, W = NULL) {
+  ## non-exported
+  names.X <- colnames(X)
+  result <- if(is.null(W)) lm(y ~ X - 1) else twosls(y, X, W)
+  if(any(na.coef <- is.na(result$coefficients))) {
+    ## for debug purpose:
+    # warning("Coefficient(s) '", paste((names.X)[na.coef], collapse = ", "), 
+    #"' could not be estimated and is (are) dropped.")
+    X <- X[ , !na.coef, drop = FALSE]
+    if(dim(X)[2L] == 0L) stop(paste("estimation not possible: all coefficients",
+                                    "omitted from estimation due to aliasing"))
+    
+    ## re-estimate without the columns which resulted previously in NA-coefficients
+    result <- if(is.null(W)) lm(y ~ X - 1) else twosls(y, X, W)
+  }
+  result$vcov <- vcov(result)
+  result$X <- X
+  result$y <- y
+  result$W <- W
+  # aliased is an element of summary.lm-objects:
+  # since plm drops aliased coefs, store this info in plm object
+  # NB: this only sets coefs to NA that are detected/set to NA by mylm()/lm.fit();
+  #     covariates dropped earlier by model.matrix( , cstcovar.rm) are not included here anymore
+  result$aliased <- na.coef
+  names(result$aliased) <- names.X
+  names(result$coefficients) <- colnames(result$vcov) <- 
+    rownames(result$vcov) <- colnames(X)
+  result
+}
 
-twosls <- function(y, X, W, intercept = FALSE){
-  Xhat <- lm(X ~ W)$fitted.values
+# my.lm.fit is used in purtest()
+my.lm.fit <- function(X, y, dfcor = TRUE, ...){
+  reg <- lm.fit(X, y)
+  ## 'as' summary method for lm.fit
+  p <- reg$rank
+  Qr <- reg$qr
+  n <- NROW(Qr$qr)
+  rdf <- n - p
+  p1 <- 1L:p
+  r <- reg$residuals
+  rss <- as.numeric(crossprod(r))
+  resvar <- if (dfcor) rss/rdf else rss/n
+  sigma <- sqrt(resvar)
+  R <- chol2inv(Qr$qr[p1, p1, drop = FALSE])
+  thecoef <- reg$coefficients[Qr$pivot[p1]] #[lags+1]
+  these <- sigma * sqrt(diag(R)) #[lags+1])
+  list(coef = thecoef, se = these, sigma = sigma,
+       rss = rss, n = n, K = p, rdf = rdf)
+}
+
+#' @importFrom stats .lm.fit
+twosls <- function(y, X, W, intercept = FALSE, lm.type = "lm"){
+  ## non-exported
+  # Return value can be controlled by argument lm.type. Often, a full lm model
+  # is needed for further processing but can select one of the fast but less
+  # rich objects produced by lm.fit or .lm.fit (the latter does not contain, e.g.,
+  # fitted.values and is to be used very carefully (e.g., coefs not in input order).
+
+  # As NA/NaN/(+/-)Inf-freeness needs to be guaranteed when functions call
+  # twosls(), so can use lm.fit to calc. Xhat.
+  Xhat <- lm.fit(cbind(1, W), X)$fitted.values
+  # old: Xhat <- lm(X ~ W)$fitted.values
+  
   if(!is.matrix(Xhat)){
     Xhat <- matrix(Xhat, ncol = 1L)
     colnames(Xhat) <- colnames(X)
   }
+  
   if(intercept){
-    model <- lm(y ~ Xhat)
+    model <- switch(lm.type,
+                    "lm"      =  lm(y ~ Xhat),
+                    "lm.fit"  =  lm.fit(cbind(1, Xhat), y),
+                    ".lm.fit" = .lm.fit(cbind(1, Xhat), y))
     yhat <- as.vector(crossprod(t(cbind(1, X)), coef(model)))
   }
   else{
-    model <- lm(y ~ Xhat - 1)
+    model <- switch(lm.type,
+                    "lm"      =  lm(y ~ Xhat - 1),
+                    "lm.fit"  =  lm.fit(Xhat, y),
+                    ".lm.fit" = .lm.fit(Xhat, y))
     yhat <- as.vector(crossprod(t(X), coef(model)))
   }
   model$residuals <- y - yhat
   model
 }
 
-## expand.formula <- function(x){
-##   oclass <- class(x)
-##   if (! any(class(x) == "Formula")) stop("not a Formula object")
-##   if (length(x)[2] != 2) stop("not a two part formula")
-##   xs <- structure(x, class = "formula")
-##   has.response <- attr(terms(xs),"response") == 1
-##   if (has.response){
-##     y <- x[[2]]
-##     rhs <- x[[3]]
-##   }
-##   else{
-##     y <- NULL
-##     rhs <- x[[2]]
-##   }
-##   firstpart <- rhs[[2]]
-##   secondpart <- rhs[[3]]
-##   if (has.response){
-##     one <- do.call("~", list(y,firstpart))
-##     two <- do.call("~", list(y,secondpart))
-##   }
-##   else{
-##     one <- do.call("~", list(firstpart))
-##     two <- do.call("~", list(secondpart))
-##   }
-##   two <- update(one, two)
-##   one <- paste(deparse(one), collapse = "")
-##   two <- paste(deparse(two[[3]]), collapse = "")
-##   result <- as.formula(paste(one, "|", two, collapse = ""));
-##   result <- as.Formula(result)
-##   #YC  class(result) <- c("pFormula", class(result))
-##   structure(result, class = oclass)
-## }
-
-
+data.name <- function(x) {
+  ## non-exported, used in various tests
+  data.name <- paste(deparse(x$call$formula))
+  if (length(data.name) > 1L) paste(data.name[1L], "...")
+  else data.name
+}
 
 ##### has.intercept methods #####
 
@@ -96,16 +143,17 @@ twosls <- function(y, X, W, intercept = FALSE){
 #'
 #' The presence of an intercept is checked using the formula which is
 #' either provided as the argument of the function or extracted from
-#' a fitted model
+#' a fitted model.
 #'
 #' @param object a `formula`, a `Formula` or a fitted model (of class
 #'     `plm` or `panelmodel`),
-#' @param rhs,part the index of the right hand sides part of the
-#'     formula for which one wants to check the presence of an
-#'     intercept (relevant for the `Formula` and the `plm` methods),
+#' @param rhs an integer (length > 1 is possible), indicating the parts of right
+#'      hand sides of the formula to be evaluated for the presence of an
+#'      intercept or NULL for all parts of the right hand side
+#'      (relevant for the `Formula` and the `plm` methods)
 #' @param \dots further arguments.
 #'
-#' @return a boolean
+#' @return a logical
 #' @export
 has.intercept <- function(object, ...) {
   UseMethod("has.intercept")
@@ -128,14 +176,14 @@ has.intercept.formula <- function(object, ...) {
 has.intercept.Formula <- function(object, rhs = NULL, ...) {
   ## NOTE: returns a logical vector of the necessary length
   ## (which might be > 1)
-    if(is.null(rhs)) rhs <- 1:length(attr(object, "rhs"))
-    sapply(rhs, function(x){
-        aform <- formula(object, lhs = 0, rhs = x)
-        # expand the dot if any in all the parts except the first
-        if(x > 1) aform <- update(formula(object, lhs = 0, rhs = 1), aform)
-        has.intercept(aform)
-    }
-    )
+  if (is.null(rhs)) rhs <- 1:length(attr(object, "rhs"))
+  res <- sapply(rhs, function(x) {
+    aform <- formula(object, lhs = 0, rhs = x)
+    # expand the dot if any in all the parts except the first
+    if (x > 1L) aform <- update(formula(object, lhs = 0, rhs = 1), aform)
+    has.intercept(aform)
+  })
+  return(res)
 }
 
 #' @rdname has.intercept
@@ -147,9 +195,24 @@ has.intercept.panelmodel <- function(object, ...) {
 
 #' @rdname has.intercept
 #' @export
-has.intercept.plm <- function(object, part = "first", ...) {
-  has.intercept(formula(object), part = part)
+has.intercept.plm <- function(object, rhs = 1L, ...) {
+    
+  # catch deprecated argument "part": convert and warn / 2021-03-10
+  dots <- list(...)
+  if(!is.null(part <- dots[["part"]])) {
+    warning("has.intercept.plm: argument 'part' is deprecated and will soon be removed, use argument 'rhs' instead")
+    warning("has.intercept.plm: arguement 'rhs' (if present) overwritten by argument 'part'")
+    if(part[1L] == "first") {
+      rhs <- 1L
+      } else {
+        if(is.numeric(part)) {
+          rhs <- part
+          } else stop("unsupported value for argument 'part', only \"first\" or an integer allowed") 
+      }
+  }
+  has.intercept(formula(object), rhs = rhs)
 }
+
 
 pres <- function(x) {  # pres.panelmodel
   ## extracts model residuals as pseries
@@ -157,8 +220,9 @@ pres <- function(x) {  # pres.panelmodel
   ## but used in residuals.pggls, residuals.pcce, residuals.pmg
   
   ## extract indices
-  groupind <- attr(x$model, "index")[ , 1L]
-  timeind  <- attr(x$model, "index")[ , 2L]
+  xindex <- unclass(attr(x$model, "index")) # unclass for speed
+  groupind <- xindex[[1L]]
+  timeind  <- xindex[[2L]]
   
   # fix to allow operation with pggls, pmg
   # [TODO: one day, make this cleaner; with the describe framework?]
@@ -338,6 +402,7 @@ punbalancedness.default <- function(x, ...) {
     if (ncol(ii) == 3L) {
      ## extension to nested model with additional group variable
      ## Baltagi/Song/Jung (2001), pp. 368-369
+      ii <- unclass(ii) # unclass for speed
       ids <- ii[[1L]]
       tss <- ii[[2L]]
       gps <- ii[[3L]]
@@ -380,6 +445,7 @@ punbalancedness.panelmodel <- function(x, ...) {
 
 
 myvar <- function(x){
+  ## non-exported
   x.na <- is.na(x)
   if(anyNA(x.na)) x <- x[!x.na]
   n <- length(x)
@@ -428,7 +494,8 @@ myvar <- function(x){
 #' NA values in the time dimension for at least one individual,
 #' `FALSE` if not.}
 #' 
-#' @note `pvar` can be time consuming for ``big'' panels.
+#' @note `pvar` can be time consuming for ``big'' panels. As a fast alternative
+#' [collapse::varying()] from package \CRANpkg{collapse} could be used. 
 #' @export
 #' @author Yves Croissant
 #' @seealso [pdim()] to check the dimensions of a 'pdata.frame' (and
@@ -550,10 +617,8 @@ pvar.data.frame <- function(x, index = NULL, ...){
 #' @rdname pvar
 #' @export
 pvar.pdata.frame <- function(x, ...){
-  index <- attr(x, "index")
-  id   <- index[[1L]]
-  time <- index[[2L]]
-  pvar.default(x, id, time)
+  index <- unclass(attr(x, "index")) # unclass for speed
+  pvar.default(x, index[[1L]], index[[2L]])
 }
 
 #' @rdname pvar
@@ -589,6 +654,7 @@ print.pvar <- function(x, ...){
     var_anyNA <- varnames[x$id.variation_anyNA]
     if(length(var_anyNA)!=0) cat(paste("all NA in ind. dimension for at least one time period:", paste(var_anyNA,collapse=" "),"\n"))
   }
+  invisible(x)
 }
 
 

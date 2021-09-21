@@ -1,9 +1,9 @@
 padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...){
  # p-value approximation for tau distribution of (augmented) Dickey-Fuller test
  # as used in some panel unit root tests in purtest().
- 
+ #
  # argument 'x' must be a numeric (can be length == 1 or >= 1)
-  
+ #  
  # p-values approximation is performed by the method of MacKinnon (1994) or
  # MacKinnon (1996), the latter yielding better approximated p-values but
  # requires package 'urca'.
@@ -27,11 +27,11 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
   # required dependency.)
   ## Procedure for pkg check for pkg in 'Suggests' as recommended in 
   ## Wickham, R packages (http://r-pkgs.had.co.nz/description.html).
-  urca <- if (!requireNamespace("urca", quietly = TRUE)) FALSE else TRUE
+  urca <- if(!requireNamespace("urca", quietly = TRUE)) FALSE else TRUE
   
   # default: if no p.approx specified by input (NULL),
   # use MacKinnon (1996) if 'urca' is available, else MacKinnon (1994)
-  p.approx <- if (is.null(p.approx)) { if (urca)  "MacKinnon1996" else "MacKinnon1994" } else p.approx
+  p.approx <- if(is.null(p.approx)) { if (urca)  "MacKinnon1996" else "MacKinnon1994" } else p.approx
   
   if (!is.null(p.approx) && p.approx == "MacKinnon1996" && !urca) {
     # catch case when user demands MacKinnon (1996) per argument but 'urca' is unavailable
@@ -39,7 +39,7 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
     p.approx <- "MacKinnon1994"
   }
   
-  if (p.approx == "MacKinnon1996") {
+  if(p.approx == "MacKinnon1996") {
     # translate exo argument to what urca::punitroot expects
     punitroot.exo <- switch (exo,
                              "none"      = "nc",
@@ -49,7 +49,7 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
     res <- urca::punitroot(x, N = Inf, trend = punitroot.exo) # return asymptotic value
   }
   
-  if (p.approx == "MacKinnon1994") {
+  if(p.approx == "MacKinnon1994") {
     # values from MacKinnon (1994), table 3, 4
     small <- matrix(c(0.6344, 1.2378, 3.2496,
                       2.1659, 1.4412, 3.8269,
@@ -63,14 +63,16 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
     large <- t(t(large) / c(1, 10, 10, 100))
     limit <- c(-1.04, -1.61, -2.89)
     rownames(small) <- rownames(large) <- names(limit) <- c("none", "intercept", "trend")
+
+    c.x.x2 <- rbind(1, x, x ^ 2)
+    psmall <- colSums(small[exo, ] * c.x.x2)
+    plarge <- colSums(large[exo, ] * rbind(c.x.x2, x ^ 3))
     
-    psmall <- apply(small[exo, ] * rbind(1, x, x ^ 2), 2, sum)
-    plarge <- apply(large[exo, ] * rbind(1, x, x ^ 2, x ^ 3), 2, sum)
     res <- as.numeric(pnorm(psmall * (x <= limit[exo]) + plarge * (x > limit[exo])))
   }
   attr(res, "p.approx") <- p.approx
   return(res)
-}
+} ## END padf
 
 
 ## IPS (2003), table 3 for Wtbar statistic
@@ -141,7 +143,7 @@ adj.ips.wtbar <- aperm(adj.ips.wtbar, c(2, 1, 3, 4))
 
 
 ###############
-## IPS (2003), table 2 (obvious typos (missing minus signs corrected))
+## IPS (2003), table 2 (obvious typos (missing minus signs) corrected)
 
 # intercept 1% critical values
 critval.ips.tbar.int1 <- c(
@@ -265,25 +267,6 @@ purtest.names.test <- c(levinlin  = "Levin-Lin-Chu Unit-Root Test",
                         logit     = "Choi's Logit Unit-Root Test",
                         hadri     = "Hadri Test")
 
-my.lm.fit <- function(X, y, dfcor = TRUE, ...){
-  reg <- lm.fit(X, y)
-  ## 'as' summary method for lm.fit
-  p <- reg$rank
-  Qr <- reg$qr
-  n <- NROW(Qr$qr)
-  rdf <- n - p
-  p1 <- 1L:p
-  r <- reg$residuals
-  rss <- as.numeric(crossprod(r))
-  resvar <- if (dfcor) rss/rdf else rss/n
-  sigma <- sqrt(resvar)
-  R <- chol2inv(Qr$qr[p1, p1, drop = FALSE])
-  thecoef <- reg$coefficients[Qr$pivot[p1]] #[lags+1]
-  these <- sigma * sqrt(diag(R)) #[lags+1])
-  list(coef = thecoef, se = these, sigma = sigma,
-       rss = rss, n = n, K = p, rdf = rdf)
-}
-
 
 ## General functions to transform series:
 
@@ -303,15 +286,15 @@ YCdiff <- function(object){
 selectT <- function(x, Ts){
   ## This function selects the length of the series as it is tabulated
   if (x %in% Ts) return(x)
-  if (x < Ts[1]){
+  if (x < Ts[1L]){
     warning("the time series is short")
-    return(Ts[1])
+    return(Ts[1L])
   }
   if (x > Ts[length(Ts)]){
     warning("the time series is long")
     return(Ts[length(Ts)])
   }
-  pos <- which((Ts - x) > 0)[1]
+  pos <- which((Ts - x) > 0)[1L]
   return(Ts[c(pos - 1, pos)])
 }
 
@@ -363,22 +346,22 @@ lagsel <- function(object, exo = c("intercept", "none", "trend"),
     lags <- pmax + 1 - which.min(l)
   }
   lags
-}
+} ## END lagsel
 
 
 adj.levinlin.value <- function(l, exo = c("intercept", "none", "trend")){
   ## extract the adjustment values for Levin-Lin-Chu test
-  theTs <- as.numeric(dimnames(adj.levinlin)[[1]])
+  theTs <- as.numeric(dimnames(adj.levinlin)[[1L]])
   Ts <- selectT(l, theTs)
-  if (length(Ts) == 1){
+  if (length(Ts) == 1L){
     return(adj.levinlin[as.character(Ts), , exo])
   }
   else{
-    low <- adj.levinlin[as.character(Ts[1]), , exo]
-    high <- adj.levinlin[as.character(Ts[2]), , exo]
-    return(low + (l - Ts[1])/(Ts[2] - Ts[1]) * (high - low))
+    low <- adj.levinlin[as.character(Ts[1L]), , exo]
+    high <- adj.levinlin[as.character(Ts[2L]), , exo]
+    return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
   }
-}
+} ## END adj.levinlin.value
 
 adj.ips.wtbar.value <- function(l = 30, lags = 2, exo = c("intercept", "trend")){
   ## extract the adjustment values for Im-Pesaran-Shin test for Wtbar statistic (table 3 in IPS (2003))
@@ -386,7 +369,7 @@ adj.ips.wtbar.value <- function(l = 30, lags = 2, exo = c("intercept", "trend"))
   lags <- min(lags, 8)
   theTs <- as.numeric(dimnames(adj.ips.wtbar)[[2L]])
   Ts <- selectT(l, theTs)
-  if (length(Ts) == 1){
+  if (length(Ts) == 1L){
     # take value as in table
     return(adj.ips.wtbar[as.character(lags), as.character(Ts), , exo])
   }
@@ -394,9 +377,9 @@ adj.ips.wtbar.value <- function(l = 30, lags = 2, exo = c("intercept", "trend"))
     # interpolate value from table
     low  <- adj.ips.wtbar[as.character(lags), as.character(Ts[1L]), , exo]
     high <- adj.ips.wtbar[as.character(lags), as.character(Ts[2L]), , exo]
-    return(low + (l - Ts[1])/(Ts[2] - Ts[1]) * (high - low))
+    return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
   }
-}
+} ## END adj.ips.wtbar.value
 
 adj.ips.ztbar.value <- function(l = 30L, time, means, vars){
   ## extract the adjustment values for Im-Pesaran-Shin test's Ztbar statistic
@@ -412,7 +395,7 @@ adj.ips.ztbar.value <- function(l = 30L, time, means, vars){
     high <- c("mean" = means[as.character(Ts[2L])], "var" = vars[as.character(Ts[2L])])
     return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
   }
-}
+} ## END adj.ips.ztbar.value
 
 critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("intercept", "trend")){
   ## extract and interpolate 1%, 5%, 10% critical values for Im-Pesaran-Shin test's
@@ -420,7 +403,7 @@ critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("int
   ##
   ## Interpolation is based on inverse distance weighting (IDW) of
   ## L1 distance (1d case) and L2 distance (euclidean distance) (2d case)
-  ## (optical inspections shows this method is a good approxmimation)
+  ## (optical inspections shows this method is a good approximation)
   
   theInds <- as.numeric(dimnames(critvals)[[1L]])
   theTs <- as.numeric(dimnames(critvals)[[2L]])
@@ -429,14 +412,14 @@ critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("int
   
   exo <- match.arg(exo)
   
-  if (length(Inds) == 1L && length(Ts) == 1L) {
+  if(length(Inds) == 1L && length(Ts) == 1L) {
     # exact hit for individual AND time: take value as in table
     return(critvals[as.character(Inds), as.character(Ts), , exo])
   }
   else{
-    if (length(Inds) == 1L || length(Ts) == 1L) {
+    if(length(Inds) == 1L || length(Ts) == 1L) {
       # exact hit for individual (X)OR time: interpolate other dimension
-      if (length(Inds) == 1L) {
+      if(length(Inds) == 1L) {
         low  <- critvals[as.character(Inds), as.character(Ts[1L]), , exo]
         high <- critvals[as.character(Inds), as.character(Ts[2L]), , exo]
         # L1 distances and inverse weighting for time dimension
@@ -446,7 +429,7 @@ critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("int
         weight2 <- 1/dist2
         return ((weight1 * low + weight2 * high ) / (weight1 + weight2))
       }
-      if (length(Ts) == 1L) {
+      if(length(Ts) == 1L) {
         # L1 distances and inverse weighting for individual dimension
         low  <- critvals[as.character(Inds[1L]), as.character(Ts), , exo]
         high <- critvals[as.character(Inds[2L]), as.character(Ts), , exo]
@@ -466,18 +449,18 @@ critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("int
       m <- as.matrix(expand.grid(Inds, Ts))
       colnames(m) <- c("ind", "time")
       dist <- lapply(1:4, function(x) m[x, ] - dot)
-      dist <- vapply(dist, function(x) sqrt(as.numeric(crossprod(x))), 0.0)
+      dist <- vapply(dist, function(x) sqrt(as.numeric(crossprod(x))), 0.0, USE.NAMES = FALSE)
       weight <- 1/dist
       
       res <- (
-          crit4[as.character(Inds[1L]), as.character(Ts[1L]), ] * weight[1] +
-          crit4[as.character(Inds[2L]), as.character(Ts[1L]), ] * weight[2] +
-          crit4[as.character(Inds[1L]), as.character(Ts[2L]), ] * weight[3] +
-          crit4[as.character(Inds[2L]), as.character(Ts[2L]), ] * weight[4]) / sum(weight)
+          crit4[as.character(Inds[1L]), as.character(Ts[1L]), ] * weight[1L] +
+          crit4[as.character(Inds[2L]), as.character(Ts[1L]), ] * weight[2L] +
+          crit4[as.character(Inds[1L]), as.character(Ts[2L]), ] * weight[3L] +
+          crit4[as.character(Inds[2L]), as.character(Ts[2L]), ] * weight[4L]) / sum(weight)
       return(res)
     }
   }
-}
+} ## END critval.ips.tbar.value
 
 tsadf <- function(object, exo = c("intercept", "none", "trend"),
                   lags = NULL, dfcor = FALSE, comp.aux.reg = FALSE, ...){
@@ -486,17 +469,17 @@ tsadf <- function(object, exo = c("intercept", "none", "trend"),
   L <- length(y)
   Dy <- YCdiff(object)
   Ly <- c(NA, object[1:(length(object) - 1)])
-  if (exo == "none")      m <- NULL
-  if (exo == "intercept") m <- rep(1, length(object))
-  if (exo == "trend")     m <- cbind(1, YCtrend(object))
+  if(exo == "none")      m <- NULL
+  if(exo == "intercept") m <- rep(1, length(object))
+  if(exo == "trend")     m <- cbind(1, YCtrend(object))
   narow <- 1:(lags+1)
   LDy <- YClags(Dy, lags)
   X <- cbind(Ly, LDy, m)[-narow, , drop = FALSE]
   y <- Dy[- narow]
   result <- my.lm.fit(X, y, dfcor = dfcor)
   sigma <- result$sigma
-  rho <- result$coef[1]
-  sdrho <- result$se[1]
+  rho <- result$coef[1L]
+  sdrho <- result$se[1L]
   trho <- rho/sdrho
   p.trho <- padf(trho, exo = exo, ...)
   result <- list(rho    = rho,
@@ -507,11 +490,11 @@ tsadf <- function(object, exo = c("intercept", "none", "trend"),
                  lags   = lags,
                  p.trho = p.trho)
   
-  if (comp.aux.reg){
+  if(comp.aux.reg){
     # for Levin-Lin-Chu test only, compute the residuals of the auxiliary
     # regressions
     X <- cbind(LDy[ , 0:lags], m)[-narow, , drop = FALSE]
-    if (lags == 0 && exo == "none"){
+    if(lags == 0 && exo == "none"){
       resid.diff  <- Dy[-narow]/sigma
       resid.level <- Ly[-narow]/sigma
     }
@@ -537,8 +520,8 @@ longrunvar <- function(x, exo = c("intercept", "none", "trend"), q = NULL){
   T <- length(x)
   if (is.null(q)) q <- round(3.21 * T^(1/3))
   dx <- x[2:T] - x[1:(T-1)]
-  if (exo == "intercept") dx <- dx - mean(dx)
-  if (exo == "trend") dx <- lm.fit(cbind(1, 1:length(dx)), dx)$residuals
+  if(exo == "intercept") dx <- dx - mean(dx)
+  if(exo == "trend")     dx <- lm.fit(cbind(1, 1:length(dx)), dx)$residuals
   dx <- c(NA, dx)
   res <- 1/(T-1)*sum(dx[-1]^2)+
     2*sum(
@@ -558,42 +541,43 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
   ## used by purtest(<.>, test = "hadri"); non-exported function
   ## Hadri's test is applicable to balanced data only
   ## input 'object' is a list with observations per individual
-  if (!is.list(object)) stop("argument 'object' in hadritest is supposed to be a list")
-  if (exo == "none") stop("exo = \"none\" is not a valid option for Hadri's test")
-  if (length(unique(sapply(object, length))) > 1L) stop("Hadri test is not applicable to unbalanced panels")
+  if(!is.list(object)) stop("argument 'object' in hadritest is supposed to be a list")
+  if(exo == "none") stop("exo = \"none\" is not a valid option for Hadri's test")
   # determine L (= time periods), unique for balanced panel and number of individuals (n)
-  L <- unique(sapply(object, length))
+  if(length(L <- unique(vapply(object, length, FUN.VALUE = 0.0, USE.NAMES = FALSE))) > 1L) 
+    stop("Hadri test is not applicable to unbalanced panels")
   n <- length(object)
   
-  if (exo == "intercept"){
-    resid <- lapply(object, function(x) lm(x ~ 1)$residuals)
+  if(exo == "intercept"){
+    # can use lm.fit here as NAs are dropped in beginning of 'purtest'
+    resid <- lapply(object, function(x) lm.fit(matrix(1, nrow = length(x)), x)$residuals)
     adj <- c(1/6, 1/45) # xi, zeta^2 in eq. (17) in Hadri (2000)
   }
-  
   if (exo == "trend"){
-    resid <- lapply(object,
-                    function(x){
-                      trend <- 1:length(x)
-                      lm(x ~ trend)$residuals
-                    })
+    resid <- lapply(object, function(x) {
+                              lx <- length(x)
+                              dmat <- matrix(c(rep(1, lx), 1:lx), nrow = lx)
+                              # can use lm.fit here as NAs are dropped in beginning of 'purtest'
+                              lm.fit(dmat, x)$residuals
+                              })
     adj <- c(1/15, 11/6300) # xi, zeta^2 in eq. (25) in Hadri (2000)
   }
-  
+
   cumres2 <- lapply(resid, function(x) cumsum(x)^2)
   
   if (!dfcor) {
-    sigma2  <- mean(unlist(resid)^2)
-    sigma2i <- unlist(lapply(resid, function(x) mean(x^2)))
+    sigma2  <- mean(unlist(resid, use.names = FALSE)^2)
+    sigma2i <- vapply(resid, function(x) mean(x^2), FUN.VALUE = 0.0, USE.NAMES = FALSE)
   } else {
     # df correction as suggested in Hadri (2000), p. 157
     dfcorval <- switch(exo, "intercept" = (L-1), "trend" = (L-2))
     # -> apply to full length residuals over all individuals -> n*(L-1) or n*(L-2)
-    sigma2 <- sum(unlist(resid)^2) / (n * dfcorval)
+    sigma2 <- as.numeric(crossprod(unlist(resid, use.names = FALSE))) / (n * dfcorval)
     # -> apply to individual residuals' length, so just L -> L-1 or L-2
-    sigma2i <- unlist(lapply(resid, function(x) sum(x^2)/dfcorval))
+    sigma2i <- vapply(resid, function(x) crossprod(x)/dfcorval, FUN.VALUE = 0.0, USE.NAMES = FALSE)
   }
   
-  Si2 <- unlist(lapply(cumres2, function(x) sum(x)))
+  Si2 <- vapply(cumres2, function(x) sum(x), FUN.VALUE = 0.0, USE.NAMES = FALSE)
   numerator <- 1/n * sum(1/(L^2) * Si2)
   LM <- numerator / sigma2 # non-het consist case (Hcons == FALSE)
   LMi <- 1/(L^2) * Si2 / sigma2i # individual LM statistics
@@ -603,7 +587,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
     method <- paste0(method, " (Heterosked. Consistent)")
   }
   
-  stat <- c(z = sqrt(n) * (LM - adj[1])  / sqrt(adj[2])) # eq. (14), (22) in Hadri (2000)
+  stat <- c(z = sqrt(n) * (LM - adj[1L])  / sqrt(adj[2L])) # eq. (14), (22) in Hadri (2000)
   pvalue <- pnorm(stat, lower.tail = FALSE) # is one-sided! was until rev. 572: 2*(pnorm(abs(stat), lower.tail = FALSE))
   
   htest <- structure(list(statistic   = stat,
@@ -638,33 +622,33 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #' statistic is then computed using the t-statistics associated with
 #' the lagged variable. The Hadri residual-based LM statistic is the
 #' cross-sectional average of the individual KPSS statistics
-#' \insertCite{KWIA:PHIL:SCHM:SHIN:92}{plm}, standardized by their
+#' \insertCite{KWIA:PHIL:SCHM:SHIN:92;textual}{plm}, standardized by their
 #' asymptotic mean and standard deviation.
 #' 
 #' Several Fisher-type tests that combine p-values from tests based on
 #' ADF regressions per individual are available:
 #'
 #' - `"madwu"` is the inverse chi-squared test
-#' \insertCite{MADDA:WU:99}{plm}, also called P test by
+#' \insertCite{MADDA:WU:99;textual}{plm}, also called P test by
 #' \insertCite{CHOI:01;textual}{plm}.
 #'
 #' - `"Pm"` is the modified P test proposed by
 #' \insertCite{CHOI:01;textual}{plm} for large N,
 #'
-#' - `"invnormal"` is the inverse normal test by \insertCite{CHOI:01}{plm}, and
+#' - `"invnormal"` is the inverse normal test by \insertCite{CHOI:01;textual}{plm}, and
 #' 
-#' - `"logit"` is the logit test by \insertCite{CHOI:01}{plm}.
+#' - `"logit"` is the logit test by \insertCite{CHOI:01;textual}{plm}.
 #'
 #' The individual p-values for the Fisher-type tests are approximated
-#' as described in \insertCite{MACK:96;textual}{plm} if the package 'urca' 
+#' as described in \insertCite{MACK:96;textual}{plm} if the package \CRANpkg{urca}
 #' (\insertCite{PFAFF:08;textual}{plm}) is available, otherwise as described in
 #' \insertCite{MACK:94;textual}{plm}.
 #' 
 #' For the test statistic tbar of the test of Im/Pesaran/Shin (2003)
-#' (`ips.stat = "tbar`), no p-value is given but 1%, 5%, and 10% critical
+#' (`ips.stat = "tbar"`), no p-value is given but 1%, 5%, and 10% critical
 #' values are interpolated from paper's tabulated values via inverse distance
 #' weighting (printed and contained in the returned value's element
-#' statistic$ips.tbar.crit).
+#' `statistic$ips.tbar.crit`).
 #'
 #' Hadri's test, the test of Levin/Lin/Chu, and the tbar statistic of
 #' Im/Pesaran/Shin are not applicable to unbalanced panels; the tbar statistic
@@ -706,7 +690,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #'     variables (`"none"`), individual intercepts (`"intercept"`), or
 #'     individual intercepts and trends (`"trend"`), but see Details,
 #' @param lags the number of lags to be used for the augmented
-#'     Dickey-Fuller regressions: either an integer (the number of
+#'     Dickey-Fuller regressions: either a single value integer (the number of
 #'     lags for all time series), a vector of integers (one for each
 #'     time series), or a character string for an automatic
 #'     computation of the number of lags, based on the AIC
@@ -718,7 +702,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #'     indicating whether the heteroskedasticity-consistent test of
 #'     \insertCite{HADR:00;textual}{plm} should be computed,
 #' @param q the bandwidth for the estimation of the long-run variance 
-#'     (only relevant for `test = "levinlin"`, the default (`q = NULL``)
+#'     (only relevant for `test = "levinlin"`, the default (`q = NULL`)
 #'     gives the value as suggested by the authors as round(3.21 * T^(1/3))),
 #' @param dfcor logical, indicating whether the standard deviation of
 #'     the regressions is to be computed using a degrees-of-freedom
@@ -734,19 +718,20 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #'  to force a specific method for p-value approximation, the latter only being 
 #'  possible if package 'urca' is installed).
 #' @return For purtest: An object of class `"purtest"`: a list with the elements
-#'     `"statistic"` (a `"htest"` object), `"call"`, `"args"`,
-#'     `"idres"` (containing results from the individual regressions),
-#'     and `"adjval"` (containing the simulated means and variances
-#'     needed to compute the statistic, for `"test = levinlin"` and `"ips"`,
-#'     otherwise `NULL`), `"sigma2"` (short-run and long-run variance for
-#'     `"test = levinlin"`, otherwise NULL).
+#'   named:
+#' - `"statistic"` (a `"htest"` object),
+#' - `"call"`,
+#' - `"args"`,
+#' - `"idres"` (containing results from the individual regressions),
+#' - `"adjval"` (containing the simulated means and variances needed to compute 
+#'      the statistic, for `test = "levinlin"` and `"ips"`, otherwise `NULL`),
+#' - `"sigma2"` (short-run and long-run variance for `test = "levinlin"`, otherwise NULL).
 #' @export
 #' @importFrom stats setNames
-#' @author Yves Croissant and for "Pm", "invnormal", and "logit" Kevin
-#'     Tappe
-#' @seealso [cipstest()]
+#' @author Yves Croissant and for "Pm", "invnormal", and "logit" Kevin Tappe
+#' @seealso [cipstest()], [phansi()]
+
 #' @references
-#'
 #' \insertAllCited{}
 #'  
 #' @keywords htest
@@ -758,6 +743,10 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #' y <- data.frame(split(Grunfeld$inv, Grunfeld$firm)) # individuals in columns
 #' 
 #' purtest(y, pmax = 4, exo = "intercept", test = "madwu")
+#' 
+#' ## same via pseries interface
+#' pGrunfeld <- pdata.frame(Grunfeld, index = c("firm", "year"))
+#' purtest(pGrunfeld$inv, pmax = 4, exo = "intercept", test = "madwu")
 #' 
 #' ## same via formula interface
 #' purtest(inv ~ 1, data = Grunfeld, index = c("firm", "year"), pmax = 4, test = "madwu")
@@ -776,30 +765,30 @@ purtest <- function(object, data = NULL, index = NULL,
     # exo is derived from specified formula:
     terms <- terms(object)
     lab <- labels(terms)
-    if (length(lab) == 0){
-      if (attr(terms, "intercept")) exo <- "intercept"
+    if(length(lab) == 0L){
+      if(attr(terms, "intercept")) exo <- "intercept"
       else exo <- "none"
     }
     else{
-      if (length(lab) > 1 || lab != "trend") stop("incorrect formula")
+      if(length(lab) > 1L || lab != "trend") stop("incorrect formula")
       exo <- "trend"
     }
-    object <- paste(deparse(object[[2]]))
-    if (exists(object) && is.vector(get(object))){
+    object <- paste(deparse(object[[2L]]))
+    if(exists(object) && is.vector(get(object))){
       # is.vector because, eg, inv exists as a function
       object <- get(object)
     }
     else{
-      if (is.null(data)) stop("unknown response")
+      if(is.null(data)) stop("unknown response")
       else{
-        if (!inherits(data, "data.frame")) stop("'data' does not specify a data.frame/pdata.frame")
-        if (object %in% names(data)){
+        if(!inherits(data, "data.frame")) stop("'data' does not specify a data.frame/pdata.frame")
+        if(object %in% names(data)){
           object <- data[[object]]
-          if (!inherits(data, "pdata.frame")){
-            if (is.null(index)) stop("the index attribute is required")
+          if(!inherits(data, "pdata.frame")){
+            if(is.null(index)) stop("the index attribute is required")
             else data <- pdata.frame(data, index)
           }
-          id <- attr(data, "index")[[1]]
+          id <- unclass(attr(data, "index"))[[1L]]
         }
         else{
           stop(paste0("unknown response (\"", object, "\" not in data)"))
@@ -809,25 +798,30 @@ purtest <- function(object, data = NULL, index = NULL,
   } # END object is a formula
   else{
     exo <- match.arg(exo)
-    if (is.null(dim(object))){
-      if (inherits(object, "pseries")){
-        id <- attr(object, "index")[[1]]
+    if(is.null(dim(object))){
+      if(inherits(object, "pseries")){
+        id <- unclass(attr(object, "index"))[[1L]]
       }
       else stop("the individual dimension is undefined") # cannot derive individual dimension from a vector if not pseries
     }
-    if (is.matrix(object) || is.data.frame(object)) {
-      if (!is.null(data)) stop("object is data.frame or matrix but data is not NULL")
-      if (is.matrix(object)) object <- as.data.frame(object)
+    if(is.matrix(object) || is.data.frame(object)) {
+      if(!is.null(data)) stop("object is data.frame or matrix but argument 'data' is not NULL")
+      if(is.matrix(object)) object <- as.data.frame(object)
     }
   }
   
-  # by now, object is either a pseries to be split or a data.frame 
+  # by now, object is either a pseries to be split or a data.frame, code continues with list
+  object <- na.omit(object)
+  if(!is.null(attr(object, "na.action")))
+    warning("NA value(s) encountered and dropped, results may not be reliable")
   
-  if (!inherits(object, "data.frame")){
-    if (is.null(id)) stop("the individual dimension is undefined")
+  if(!inherits(object, "data.frame")){
+    if(is.null(id)) stop("the individual dimension is undefined")
+    # adjust 'id' to correspond data in 'object' after NA dropping:
+    if(!is.null(attr(object, "na.action"))) id <- id[-attr(object, "na.action")]
     object <- split(object, id)
   } else {
-    if (!ncol(object) > 1) warning("data.frame or matrix specified in argument object does not contain more than one individual (individuals are supposed to be in columns)")
+    if(!ncol(object) > 1L) warning("data.frame or matrix specified in argument object does not contain more than one individual (individuals are supposed to be in columns)")
     object <- as.list(object)
   }
   
@@ -846,14 +840,14 @@ purtest <- function(object, data = NULL, index = NULL,
                    purtest.names.exo[exo],")")
   
   # If Hadri test, call function and exit early
-  if (test == "hadri") return(hadritest(object, exo, Hcons, dfcor,
+  if(test == "hadri") return(hadritest(object, exo, Hcons, dfcor,
                                         method, cl, args, data.name, ...)) 
   
   # compute the lags for each time series if necessary
-  if (is.numeric(lags)){
-    if (length(lags) == 1L) lags <- rep(lags, n)
+  if(is.numeric(lags)){
+    if(length(lags) == 1L) lags <- rep(lags, n)
     else{
-      if (length(lags) != n) stop("lags should be of length 1 or n")
+      if(length(lags) != n) stop("lags should be of length 1 or n")
       else lags <- as.list(lags)
     }
   }
@@ -872,14 +866,13 @@ purtest <- function(object, data = NULL, index = NULL,
   
   
   if (test == "levinlin"){
-    if (length(unique(sapply(object, length))) > 1L) stop("test = \"levinlin\" is not applicable to unbalanced panels")
-    
-    T.levinlin <- unique(sapply(object, length)) # time periods
+    if (length(T.levinlin <- unique(vapply(object, length, FUN.VALUE = 0.0))) > 1L)
+      stop("test = \"levinlin\" is not applicable to unbalanced panels")
     
     # get the adjustment parameters for the mean and the variance
     adjval <- adj.levinlin.value(T.levinlin, exo = exo)
-    mymu  <- adjval[1]
-    mysig <- adjval[2]
+    mymu  <- adjval[1L]
+    mysig <- adjval[2L]
     # calculate the ratio of LT/ST variance
     sigmaST <- sapply(idres, function(x) x[["sigma"]])
     sigmaLT <- sqrt(sapply(object, longrunvar, exo = exo, q = q))
@@ -888,8 +881,8 @@ purtest <- function(object, data = NULL, index = NULL,
     
     # stack the residuals of each time series and perform the pooled
     # regression
-    res.level <- unlist(lapply(idres, function(x) x$resid[["resid.level"]]))
-    res.diff  <- unlist(lapply(idres, function(x) x$resid[["resid.diff"]]))
+    res.level <- unlist(lapply(idres, function(x) x$resid[["resid.level"]]), use.names = FALSE)
+    res.diff  <- unlist(lapply(idres, function(x) x$resid[["resid.diff"]]), use.names = FALSE)
     z <- my.lm.fit(as.matrix(res.level), res.diff, dfcor = dfcor)
     # compute the Levin-Lin-Chu statistic
     tildeT <- T.levinlin - mean(lags) - 1
@@ -903,48 +896,47 @@ purtest <- function(object, data = NULL, index = NULL,
     parameter <- NULL
     sigma2 <- cbind(sigmaST^2, sigmaLT^2)
     colnames(sigma2) <- c("sigma2ST", "sigma2LT")
-    pvalues.trho <- sapply(idres, function(x) x[["p.trho"]])
+    pvalues.trho <- vapply(idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0)
   }
   
-  if (test == "ips"){
-    if (exo == "none") stop("exo = \"none\" is not a valid option for the Im-Pesaran-Shin test")
-    if (!is.null(ips.stat) && !any(ips.stat %in% c("Wtbar", "Ztbar", "tbar"))) stop("argument 'ips.stat' must be one of \"Wtbar\", \"Ztbar\", \"tbar\"")
-    
-    lags  <- sapply(idres, function(x) x[["lags"]])
-    L.ips <- sapply(idres, function(x) x[["T"]]) - lags - 1
-    trho  <- sapply(idres, function(x) x[["trho"]])
-    pvalues.trho <- sapply(idres, function(x) x[["p.trho"]])
+  if(test == "ips"){
+    if(exo == "none") stop("exo = \"none\" is not a valid option for the Im-Pesaran-Shin test")
+    if(!is.null(ips.stat) && !any(ips.stat %in% c("Wtbar", "Ztbar", "tbar"))) stop("argument 'ips.stat' must be one of \"Wtbar\", \"Ztbar\", \"tbar\"")
+    lags  <- vapply(idres, function(x) x[["lags"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    L.ips <- vapply(idres, function(x) x[["T"]],    FUN.VALUE = 0.0, USE.NAMES = FALSE) - lags - 1
+    trho  <- vapply(idres, function(x) x[["trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    pvalues.trho <- vapply(idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     tbar <- mean(trho)
     parameter <- NULL
     adjval <- NULL
     
     
-    if (is.null(ips.stat) || ips.stat == "Wtbar") {
+    if(is.null(ips.stat) || ips.stat == "Wtbar") {
       # calc Wtbar - default
       adjval <- mapply(function(x, y) adj.ips.wtbar.value(x, y, exo = exo),
                        as.list(L.ips), as.list(lags))
-      Etbar <- mean(adjval[1, ])
-      Vtbar <- mean(adjval[2, ])
+      Etbar <- mean(adjval[1L, ])
+      Vtbar <- mean(adjval[2L, ])
       stat <- c("Wtbar" = sqrt(n) * (tbar - Etbar) / sqrt(Vtbar)) # (3.13) = (4.10) in IPS (2003) [same generic formula for Ztbar and Wtbar]
       pvalue <- pnorm(stat, lower.tail = TRUE) # need lower.tail = TRUE (like ADF one-sided to the left), was until rev. 577: 2*pnorm(abs(stat), lower.tail = FALSE)
     }
     
-    if (!is.null(ips.stat) && ips.stat == "Ztbar") {
+    if(!is.null(ips.stat) && ips.stat == "Ztbar") {
       # calc Ztbar
       adjval <- adjval.ztbar <- sapply(L.ips, adj.ips.ztbar.value, 
                                        adj.ips.zbar.time, adj.ips.zbar.means, adj.ips.zbar.vars)
       rownames(adjval) <- rownames(adjval.ztbar) <- c("mean", "var")
-      Etbar.ztbar <- mean(adjval.ztbar[1, ])
-      Vtbar.ztbar <- mean(adjval.ztbar[2, ])
+      Etbar.ztbar <- mean(adjval.ztbar[1L, ])
+      Vtbar.ztbar <- mean(adjval.ztbar[2L, ])
       stat <- stat.ztbar <- c("Ztbar" = sqrt(n) * (tbar - Etbar.ztbar) / sqrt(Vtbar.ztbar)) # (3.13) = (4.10) in IPS (2003) [same generic formula for Ztbar and Wtbar]
       pvalue <- pvalue.ztbar <- pnorm(stat.ztbar, lower.tail = TRUE)
     }
     
-    if (!is.null(ips.stat) && ips.stat == "tbar") {
+    if(!is.null(ips.stat) && ips.stat == "tbar") {
       # give tbar
-      T.tbar <- unique(sapply(object, length))
-      if (length(T.tbar) > 1L) stop("tbar statistic is not applicable to unbalanced panels")
-      if (any(lags > 0L)) stop("tbar statistic is not applicable when 'lags' > 0 is specified")
+      T.tbar <- unique(vapply(object, length, FUN.VALUE = 0.0, USE.NAMES = FALSE))
+      if(length(T.tbar) > 1L) stop("tbar statistic is not applicable to unbalanced panels")
+      if(any(lags > 0L)) stop("tbar statistic is not applicable when 'lags' > 0 is specified")
       L.tbar <- T.tbar - 1
       stat <- tbar
       names(stat) <- "tbar"
@@ -954,11 +946,11 @@ purtest <- function(object, data = NULL, index = NULL,
     }
   }
   
-  if (test == "madwu"){
+  if(test == "madwu"){
     # Maddala/Wu (1999), pp. 636-637; Choi (2001), p. 253; Baltagi (2013), pp. 283-285
     ## does not require a balanced panel
-    trho <- sapply(idres, function(x) x[["trho"]])
-    pvalues.trho <- sapply(idres, function(x) x[["p.trho"]])
+    trho <- vapply(idres, function(x) x[["trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    pvalues.trho <- vapply(idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     stat <- c(chisq = - 2 * sum(log(pvalues.trho)))
     n.madwu <- length(trho)
     parameter <- c(df = 2 * n.madwu)
@@ -966,10 +958,10 @@ purtest <- function(object, data = NULL, index = NULL,
     adjval <- NULL
   }
   
-  if (test == "Pm"){
+  if(test == "Pm"){
     ## Choi Pm (modified P) [proposed for large N]
-    trho <- sapply(idres, function(x) x[["trho"]])
-    pvalues.trho <- sapply(idres, function(x) x[["p.trho"]])
+    trho <- vapply(idres, function(x) x[["trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    pvalues.trho <- vapply(idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     n.Pm <- length(trho)
     # formula (18) in Choi (2001), p. 255:
     stat <- c( "Pm" = 1/(2 * sqrt(n.Pm)) * sum(-2 * log(pvalues.trho) - 2) ) # == -1/sqrt(n.Pm) * sum(log(pvalues.trho) +1)
@@ -978,10 +970,10 @@ purtest <- function(object, data = NULL, index = NULL,
     adjval <- NULL
   }
   
-  if (test == "invnormal"){
+  if(test == "invnormal"){
     # inverse normal test as in Choi (2001)
-    trho <- sapply(idres, function(x) x[["trho"]])
-    pvalues.trho <- sapply(idres, function(x) x[["p.trho"]])
+    trho <- vapply(idres, function(x) x[["trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    pvalues.trho <- vapply(idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     n.invnormal <- length(trho)
     stat <- c("z" = sum(qnorm(pvalues.trho)) / sqrt(n.invnormal)) # formula (9), Choi (2001), p. 253
     pvalue <- pnorm(stat, lower.tail = TRUE) # formula (12), Choi, p. 254
@@ -989,10 +981,10 @@ purtest <- function(object, data = NULL, index = NULL,
     adjval <- NULL
   }
   
-  if (test == "logit"){
+  if(test == "logit"){
     # logit test as in Choi (2001)
-    trho <- sapply(idres, function(x) x[["trho"]])
-    pvalues.trho <- sapply(idres, function(x) x[["p.trho"]])
+    trho <- vapply(idres, function(x) x[["trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    pvalues.trho <- vapply(idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     n.logit <- length(trho)
     l_stat <-  c("L*" = sum(log(pvalues.trho / (1 - pvalues.trho)))) # formula (10), Choi (2001), p. 253
     k <- (3 * (5 * n.logit + 4)) / (pi^2 * n.logit * (5 * n.logit + 2))
@@ -1030,17 +1022,18 @@ print.purtest <- function(x, ...){
     cat("tbar critival values:\n")
     print(x$statistic$ips.tbar.crit, ...)
   }
+  invisible(x)
 }
 
 #' @rdname purtest
 #' @export
 summary.purtest <- function(object, ...){
   if (!object$args$test == "hadri"){
-    lags   <- sapply(object$idres, function(x) x[["lags"]])
-    L      <- sapply(object$idres, function(x) x[["T"]])
-    rho    <- sapply(object$idres, function(x) x[["rho"]])
-    trho   <- sapply(object$idres, function(x) x[["trho"]])
-    p.trho <- sapply(object$idres, function(x) x[["p.trho"]])
+    lags   <- vapply(object$idres, function(x) x[["lags"]],   FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    L      <- vapply(object$idres, function(x) x[["T"]],      FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    rho    <- vapply(object$idres, function(x) x[["rho"]],    FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    trho   <- vapply(object$idres, function(x) x[["trho"]],   FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    p.trho <- vapply(object$idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     sumidres <- cbind(
       "lags"   = lags,
       "obs"    = L - lags - 1,
@@ -1056,8 +1049,8 @@ summary.purtest <- function(object, ...){
     }
   } else {
     # hadri
-    LM     <- sapply(object$idres, function(x) x[["LM"]])
-    sigma2 <- sapply(object$idres, function(x) x[["sigma2"]])
+    LM     <- vapply(object$idres, function(x) x[["LM"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    sigma2 <- vapply(object$idres, function(x) x[["sigma2"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     sumidres <- cbind("LM" = LM, "sigma2" = sigma2)
   }
   
@@ -1074,7 +1067,7 @@ print.summary.purtest <- function(x, ...){
   cat(paste(purtest.names.test[x$args$test], "\n"))
   cat(paste("Exogenous variables:", purtest.names.exo[x$args$exo], "\n"))
   if (x$args$test != "hadri") {
-    thelags <- sapply(x$idres, function(x) x[["lags"]])
+    thelags <- vapply(x$idres, function(x) x[["lags"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     if (is.character(x$args$lags)){
       lagselectionmethod <- if (x$args$lags == "Hall") "Hall's method" else x$args$lags
       cat(paste0("Automatic selection of lags using ", lagselectionmethod, ": ",
@@ -1097,5 +1090,184 @@ print.summary.purtest <- function(x, ...){
   }
   cat("\n")
   print(x$sumidres, ...)
+  invisible(x)
+}
+
+
+
+
+
+#' Simes Test for unit roots in panel data
+#' 
+#' Simes' test of intersection of individual hypothesis tests
+#' (\insertCite{SIMES:86;textual}{plm}) applied to panel unit root tests as suggested by
+#' \insertCite{HANCK:13;textual}{plm}.
+#' 
+#' Simes' approach to testing is combining p-values from single hypothesis tests
+#' with a global (intersected) hypothesis. \insertCite{HANCK:13;textual}{plm}
+#' mentions it can be applied to any panel unit root test which yield a p-value
+#' for each individual series.
+#' The test is robust versus general patterns of cross-sectional dependence.
+#' 
+#' Further, this approach allows to discriminate between individuals for which
+#' the individual H0 (unit root present for individual series) is rejected/is
+#' not rejected by Hommel's procedure (\insertCite{HOMM:88;textual}{plm}) for
+#' family-wise error rate control (FWER) at pre-specified significance level
+#' alpha via argument `alpha` (defaulting to `0.05`), i.e., it controls for the
+#' multiplicity in testing.
+#' 
+#' The function `phansi` takes as main input `object` either a plain numeric
+#' containing p-values of individual tests or a `purtest` object which holds
+#' a suitable pre-computed panel unit root test (one that produces p-values per
+#' individual series).
+#' 
+#' The function's return value (see section Value) is a list with detailed
+#' evaluation of the applied Simes test.
+#' 
+#' The associated `print` method prints a verbal evaluation.
+#' 
+#' @aliases phansi
+#' @param object either a numeric containing p-values of individual unit root 
+#' test results (does not need to be sorted) or a suitable `purtest` object
+#' (as produced by `purtest()` for a test which gives p-values of the individuals
+#' (Hadri's test in `purtest` is not suitable)),
+#' @param alpha numeric, the pre-specified significance level (defaults to `0.05`),
+#' @param x an object of class `c("phansi", "list")` as produced by `phansi` to be printed,
+#' @param cutoff integer, cutoff value for printing of enumeration of individuals with
+#' rejected individual H0, for print method only,
+#' @param \dots further arguments (currently not used).
+#' 
+#' @return For `phansi`, an object of class `c("phansi", "list")` which is a list with the elements:
+#' - `id`: integer, the identifier of the individual (integer sequence referring to
+#' position in input),
+#' - `name`: character, name of the input's individual (if it has a name,
+#' otherwise "1", "2", "3", ...),
+#' - `p`: numeric, p-values as input (either the numeric or extracted from
+#' the purtest object),
+#' - `p.hommel`: numeric, p-values after Hommel's transformation,
+#' - `rejected`: logical, indicating for which individual the individual null
+#' hypothesis is rejected (`TRUE`)/non-rejected (`FALSE`) (after controlling
+#' for multiplicity),
+#' - `rejected.no`: integer, giving the total number of rejected individual series,
+#' - `alpha`: numeric, the input `alpha`.
+#' 
+#' @export
+#' @importFrom stats p.adjust
+#' 
+#' @author Kevin Tappe
+#' @seealso [purtest()], [cipstest()]
+#' 
+#' @references
+#' \insertAllCited{}
+#'  
+#' @keywords htest
+#
+#' @examples
+#' 
+#' ### input is numeric (p-values)
+#' #### example from Hanck (2013), Table 11 (left side)
+#' pvals <- c(0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0050,0.0050,0.0050,
+#'            0.0050,0.0175,0.0175,0.0200,0.0250,0.0400,0.0500,0.0575,0.2375,0.2475)
+#'
+#' countries <- c("Argentina","Sweden","Norway","Mexico","Italy","Finland","France",
+#'               "Germany","Belgium","U.K.","Brazil","Australia","Netherlands",
+#'               "Portugal","Canada", "Spain","Denmark","Switzerland","Japan")
+#' names(pvals) <- countries
+#' 
+#' h <- phansi(pvals)
+#' print(h)              # (explicitly) prints test's evaluation
+#' print(h, cutoff = 3L) # print only first 3 rejected ids 
+#' h$rejected # logical indicating the individuals with rejected individual H0
+#' 
+#' 
+#' ### input is a (suitable) purtest object
+#' data("Grunfeld", package = "plm")
+#' y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
+#' obj <- purtest(y, pmax = 4, exo = "intercept", test = "madwu")
+#' 
+#' phansi(obj)
+#' 
+phansi <- function(object, alpha = 0.05) {
+  
+  is.purtest <- if(inherits(object, "purtest")) TRUE else FALSE
+  if(!is.purtest) {
+    if(is.numeric(object)) {
+      if(anyNA(object)) stop("input p-values 'p' contain at least one NA/NaN value")
+      n <- length(object)
+      p <- object
+    } else {
+      stop("argument 'p' needs to specify either a 'purtest' object or a numeric")
+    }
+  } else {
+    # purtest object
+    if(object$args$test == "hadri") stop("phansi() [Hanck/Simes' test] not possible for purtest objects based on Hadri's test")
+    p <- vapply(object$idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    n <- length(p)
+  }
+  
+  id <- seq_len(n)
+  names(id) <- if(!is.null(names(p))) names(p) else id
+  
+  p.hommel <- p.adjust(p, method = "hommel")
+  rejected.ind <- p.hommel <= alpha    # TRUE for individual-H0-rejected individuals
+  rejected.ind.no <- sum(rejected.ind) # number of rejected individuals
+  
+  res <- structure(list(id           = id,
+                        name         = names(id),
+                        p            = p,
+                        p.hommel     = p.hommel,
+                        rejected     = rejected.ind,
+                        rejected.no  = rejected.ind.no,
+                        alpha        = alpha),
+                   class = c("phansi", "list"))
+  return(res)
+}
+
+#' @rdname phansi
+#' @export
+print.phansi <- function(x, cutoff = 10L, ...) {
+  if(round(cutoff) != cutoff) stop("Argument 'cutoff' has to be an integer")
+  id         <- x$id
+  alpha      <- x$alpha
+  rej.ind    <- x$rejected
+  rej.ind.no <- x$rejected.no
+  n <- length(rej.ind)
+  H0.txt <- "H0: All individual series have a unit root\n"
+  HA.txt <- "HA: Stationarity for at least some individuals\n"
+  H0.rej.txt     <- "H0 rejected (globally)"
+  H0.not.rej.txt <- "H0 not rejected (globally)"
+  test.txt <- "    Simes Test as Panel Unit Root Test (Hanck (2013))"
+  
+  cat("\n")
+  cat(paste0("    ", test.txt, "\n"))
+  cat("\n")
+  cat(H0.txt)
+  cat(HA.txt)
+  cat("\n")
+  cat(paste0("Alpha: ", alpha, "\n"))
+  cat(paste0("Number of individuals: ", n, "\n"))
+  
+  cat("\n")
+  cat("Evaluation:\n")
+  if(rej.ind.no > 0L) {
+    cat(paste0(" ", H0.rej.txt, "\n"))
+    cat("\n")
+    
+    if(rej.ind.no <= cutoff) {
+      ind10 <- paste0(paste0(id[rej.ind], collapse = ", "))
+      ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no, " individual(s) (integer id(s)):\n")
+      cat(paste0(" ", ind.txt))
+      cat(paste0("  ", ind10, "\n"))
+    }
+    else { # cut off enumeration of individuals if more than specified in cutoff
+      ind10 <- paste0(paste0(id[rej.ind][1L:cutoff], collapse = ", "), ", ...")
+      ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no ," individuals, only first ", cutoff , " printed (integer id(s)):\n")
+      cat(paste0(" ", ind.txt))
+      cat(paste0("  ", ind10, "\n"))
+    }
+  } else {
+    cat(paste0(" ", H0.rej.txt, "\n"))
+  }
+  invisible(x)
 }
 
