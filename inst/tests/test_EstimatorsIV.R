@@ -165,6 +165,8 @@ summary(IVam_ubal)
 IVbms_ubal <- plm(form_wage_iv2,
              data = pWages_ubal,
              model = "random", inst.method = "bms")
+
+
 summary(IVbms_ubal)
 
 # texreg::screenreg(list("BVK ui" = IVbvk_ubal, "Baltagi ui" = IVbalt_ubal, "AM ui" = IVam_ubal, "BMS ui" = IVbms_ubal),
@@ -245,3 +247,5 @@ summary(IVbms_t_ubal)
 # 
 # texreg::screenreg(list("BVK tw" = IVbvktw, "Baltagi tw" = IVbalttw, "AM tw" = IVamtw, "BMS tw" = IVbmstw),
 #                   digits = 5)
+
+

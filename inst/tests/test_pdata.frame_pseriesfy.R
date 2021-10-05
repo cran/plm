@@ -8,6 +8,12 @@ pGrun <- pdata.frame(Grunfeld)
 options("plm.fast" = FALSE)
 pGrunpser1.1 <- pseriesfy(pGrun)
 
+## Run tests only if package 'collapse' is available
+## (as they are 'Suggests' dependencies)
+collapse.avail <- if (!requireNamespace("collapse", quietly = TRUE)) FALSE else TRUE
+
+if(collapse.avail) {
+
 options("plm.fast" = TRUE)
 pGrunpser2.1 <- pseriesfy(pGrun)
 options("plm.fast" = FALSE)
@@ -51,6 +57,8 @@ stopifnot(identical(pGrunpser1.2, pGrunpser2.2))
 
 with(pGrun,        lag(value)) # dispatches to base R's lag
 with(pGrunpser1.1, lag(value)) # dispatches to plm's lag() respect. panel structure
+invisible(NULL)
+}
 
 ### benchmark: collapse version about 10x faster
 # library(collapse)

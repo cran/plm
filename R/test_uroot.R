@@ -1192,11 +1192,11 @@ phansi <- function(object, alpha = 0.05) {
   is.purtest <- if(inherits(object, "purtest")) TRUE else FALSE
   if(!is.purtest) {
     if(is.numeric(object)) {
-      if(anyNA(object)) stop("input p-values 'p' contain at least one NA/NaN value")
+      if(anyNA(object)) stop("input p-values in 'object' contain at least one NA/NaN value")
       n <- length(object)
       p <- object
     } else {
-      stop("argument 'p' needs to specify either a 'purtest' object or a numeric")
+      stop("argument 'object' needs to specify either a 'purtest' object or a numeric")
     }
   } else {
     # purtest object
@@ -1209,7 +1209,7 @@ phansi <- function(object, alpha = 0.05) {
   names(id) <- if(!is.null(names(p))) names(p) else id
   
   p.hommel <- p.adjust(p, method = "hommel")
-  rejected.ind <- p.hommel <= alpha    # TRUE for individual-H0-rejected individuals
+  rejected.ind <- p.hommel <= alpha    # is TRUE for individual-H0-rejected individuals
   rejected.ind.no <- sum(rejected.ind) # number of rejected individuals
   
   res <- structure(list(id           = id,
@@ -1253,17 +1253,19 @@ print.phansi <- function(x, cutoff = 10L, ...) {
     cat(paste0(" ", H0.rej.txt, "\n"))
     cat("\n")
     
-    if(rej.ind.no <= cutoff) {
-      ind10 <- paste0(paste0(id[rej.ind], collapse = ", "))
+    if(rej.ind.no <= cutoff && cutoff >= 0L) {
+      ind.cutoff <- paste0(paste0(id[rej.ind], collapse = ", "))
       ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no, " individual(s) (integer id(s)):\n")
       cat(paste0(" ", ind.txt))
-      cat(paste0("  ", ind10, "\n"))
+      cat(paste0("  ", ind.cutoff, "\n"))
     }
     else { # cut off enumeration of individuals if more than specified in cutoff
-      ind10 <- paste0(paste0(id[rej.ind][1L:cutoff], collapse = ", "), ", ...")
-      ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no ," individuals, only first ", cutoff , " printed (integer id(s)):\n")
-      cat(paste0(" ", ind.txt))
-      cat(paste0("  ", ind10, "\n"))
+      if(cutoff > 0L) {
+        ind.cutoff <- paste0(paste0(id[rej.ind][seq_len(cutoff)], collapse = ", "), ", ...")
+        ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no ," individuals, only first ", cutoff , " printed (integer id(s)):\n")
+        cat(paste0(" ", ind.txt))
+        cat(paste0("  ", ind.cutoff, "\n"))
+      } else cat(paste0(" Individual H0 rejected for ", rej.ind.no ," individuals. None printed as 'cutoff' set to ", cutoff, ".\n"))
     }
   } else {
     cat(paste0(" ", H0.rej.txt, "\n"))

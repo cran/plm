@@ -1,9 +1,9 @@
 Package: plm
-Version: 2.4-2
-Date: 2021-09-16
+Version: 2.4-3
+Date: 2021-10-02
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
-             person(given = "Giovanni",  family = "Millo",        role = "aut", email = "Giovanni.Millo@Generali.com"),
+             person(given = "Giovanni",  family = "Millo",        role = "aut", email = "giovanni.millo@deams.units.it"),
              person(given = "Kevin",     family = "Tappe",        role = "aut", email = "kevin.tappe@bwi.uni-stuttgart.de"),
              person(given = "Ott",       family = "Toomet",       role = "ctb", email = "otoomet@gmail.com"),
              person(given = "Christian", family = "Kleiber",      role = "ctb", email = "Christian.Kleiber@unibas.ch"), 
@@ -24,11 +24,13 @@ Description: A set of estimators and tests for panel data
 License: GPL (>= 2)
 VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm,
-        https://r-forge.r-project.org/projects/plm/
+        https://github.com/ycroissant/plm
 BugReports: https://github.com/ycroissant/plm/issues
 RoxygenNote: 7.1.2
 RdMacros: Rdpack
 Encoding: UTF-8
+NeedsCompilation: no
+Packaged: 2021-10-02 12:39:51 UTC; kevin
 Author: Yves Croissant [aut, cre],
   Giovanni Millo [aut],
   Kevin Tappe [aut],
@@ -40,9 +42,4 @@ Author: Yves Croissant [aut, cre],
   Nina Schoenfelder [ctb]
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
-Repository/R-Forge/Project: plm
-Repository/R-Forge/Revision: 1317
-Repository/R-Forge/DateTimeStamp: 2021-09-17 05:13:29
-Date/Publication: 2021-09-21 09:40:02 UTC
-NeedsCompilation: no
-Packaged: 2021-09-17 05:28:30 UTC; rforge
+Date/Publication: 2021-10-05 08:50:02 UTC

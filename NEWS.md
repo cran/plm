@@ -4,6 +4,20 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
           panel data econometrics - https://cran.r-project.org/package=plm
 ---
 
+# plm 2.4-3
+
+* Release to pacify CRAN additional checks with various BLAS implementations/platforms:
+  Checks moaned about neglectable small numerical differences vs. .Rout.save output.
+  Moved almost all test files to inst/tests so they are not run on CRAN.
+  These can be run manually and by `R CMD check --test-dir=inst/tests plm_VERSION.tar.gz.`
+
+### Admin
+* Source code repository for development is now on GitHub https://github.com/ycroissant/plm,
+  not on R-Forge anymore.
+* Update one author's e-mail address.
+
+  
+
 # plm 2.4-2
 
 ### Speed-up:
@@ -14,12 +28,16 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
    plm (then making package `collapse` a hard dependency).
  * Further speed-up if `options("plm.fast" = TRUE)` is set: In case package
    `fixest` or `lfe` is available locally *in addition* to package `collapse`,
-   the two-ways fixed transformation is significantly faster compared to the case
-   if only `collapse` is available due to specialised algorithms in these two packages,
-   all being fully integrated into the usual plm functions/user interfaces
-   (`fixest` is preferred over `lfe`, in this case, plm uses internally
-   `collapse::fhdwithin` which in turn uses `fixest::demean`. Thanks to Sebastian
+   the two-ways fixed effect transformation is significantly faster compared to 
+   the case if only `collapse` is available due to specialised algorithms in these
+   two packages, all being fully integrated into the usual plm functions/user
+   interfaces (`fixest` is preferred over `lfe`, in this case, plm uses internally
+   `collapse::fhdwithin` which in turn uses `fixest::demean`). Thanks to Sebastian
    Krantz for guidance on this.
+ * various efficiency gains throughout the package by using more vapply(),
+   crossprod(), lm.fit(), better branching, rowSums(., dims = 2L) (instead of 
+   apply(., 1:2, sum)), etc., e.g., in plm for non-default random IV cases 
+   (cases with `inst.method = "baltagi"` / `"am"` / `"bms"`), pmg, pcce, purtest.
 
 ### Features:
  * phansi: new function for Simes (1986) test applied to panels for panel unit
@@ -35,18 +53,20 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
    the order of the appearance in the data which is actually not desirable). Change
    is relevant in specific unbalanced data constellations.
  * fixef: for two-ways FE models, fixef does not error anymore if factor is in
-   model and not anymore in IV case.
+   model and not anymore in IV case ([#10](https://github.com/ycroissant/plm/issues/10)).
  * vcovG (hence vcovHC, vcovDC, vcovNW, vcovSCC) and vcovBK: fix bug in case
-   of IV estimation with only one regressor (errored previously).
+   of IV estimation with only one regressor (errored previously) 
+   ([#4](https://github.com/ycroissant/plm/issues/4)).
  * within_intercept:
-     * fix bug which caused an error for FE models with only one regressor.
+     * fix bug which caused an error for FE models with only one regressor 
+     ([#4](https://github.com/ycroissant/plm/issues/4)).
      * error informatively for IV models as not suitable.
  * between.matrix: do not coerce result to numeric vector for n x 1 matrix
    input (by using drop = FALSE in extraction) (prior to this fix, estimation
    of the between model with only an intercept errored).
  * pvcm: intercept-only models are now estimable.
  * detect.lindep: argument 'suppressPrint' now correctly passed on/respected
-   (methods for data frame and matrix).
+   (methods for data frame and matrix) ([#11](https://github.com/ycroissant/plm/issues/11)).
  * has.intercept.plm: argument 'part' renamed to 'rhs', argument values
    (integer or NULL) aligned with and correctly passed on to 
    has.intercept.Formula (with a *temporary* back-compatible solution).
@@ -56,7 +76,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
    this does not warn anymore:
    `your_pseries[1:(length(your_pseries)-1)] + your_pseries[2:length(your_pseries)]`).
 
-## Others:
+### Others:
  * plm: for the nested random effect model (`effect = "nested"`), check if
     argument `model = "random"` is set, if not, plm now warns and adjusts 
     accordingly (will become an error in the future).
@@ -74,10 +94,6 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
       method slot (vcov information thus printed as well).
  * various print methods now return the input object invisible (before returned
    NULL).
- * various efficiency gains throughout the package by using more vapply(),
-   crossprod(), lm.fit(), better branching, rowSums(., dims = 2L) (instead of 
-   apply(., 1:2, sum))), etc., e.g., in plm for non-default random IV cases 
-   (cases with `inst.method = "baltagi"` / `"am"` / `"bms"`), pmg, pcce, purtest.
  * piest, aneweytest: now use internal demeaning framework by Within() [thus
    benefiting from fast mode].
 
@@ -97,12 +113,13 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
   
   
 ### Dependencies:
- * Added packages 'fixest' and 'lfe' to 'Suggests'.
+ * Added packages `fixest` and `lfe` to 'Suggests'.
 
 # plm 2.4-1
 
  * lag: fix export of generic for lag (lost in 2.4-0; the panel-specific lag
-   method was executed anyway if base R's lag() encountered a pseries).
+   method was executed anyway if base R's lag() encountered a pseries) 
+   ([#3](https://github.com/ycroissant/plm/issues/3)).
  * model.frame.pdata.frame: errors informatively if any index dimension has
    NA values.
  * pdata.frame: warns if NA in index dimension is encountered (before, only

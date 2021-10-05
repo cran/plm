@@ -13,6 +13,7 @@ y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
 purtest(pG$inv, pmax = 4, exo = "intercept", test = "ips")
 purtest(inv ~ 1, data = Grunfeld, index = "firm", pmax = 4, test = "madwu")
 
+
 summary(a1 <- purtest(pG$inv, lags = "SIC", exo = "intercept", test = "ips", pmax = 8)) # TODO: why is the data requirement check not triggered
 print(a1$args$lags)
 if (length(a1$args$lags) != 1) stop("length(return_value$args$lags must be 1")
@@ -55,7 +56,6 @@ h_3.2 <- purtest(pG$value, exo = "trend", test = "hadri", Hcons = FALSE, dfcor =
 h_4.1 <- purtest(pG$value, exo = "trend", test = "hadri")
 h_4.2 <- purtest(pG$value, exo = "trend", test = "hadri", dfcor = TRUE)
 
-## IGNORE_RDIFF_BEGIN
 summary(h_1.1)
 summary(h_1.2)
 summary(h_2.1)
@@ -64,7 +64,7 @@ summary(h_3.1)
 summary(h_3.2)
 summary(h_4.1)
 summary(h_4.2)
-## IGNORE_RDIFF_END
+
 
 ### IPS (2003) test
 ## use dfcor = TRUE to match gretl 2017c and EViews 9.5 exactly

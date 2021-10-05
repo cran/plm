@@ -28,6 +28,12 @@ options("plm.fast" = FALSE)
 (bet.def.plm.slow.unbal.a <- between(Crime.unbal.a$crmrte, effect = ix.a[[2L]])) # year 81 first from rev. 1307 (and plm < 2.4-0) (year 83 first in rev. 1305 (and plm 2.4-0/1))
 (bet.def.plm.slow.unbal.b <- between(Crime.unbal.b$crmrte, effect = ix.b[[2L]])) # year 81 first
 
+## Run tests only if package 'collapse' is available
+## (as they are 'Suggests' dependencies)
+collapse.avail <- if (!requireNamespace("collapse", quietly = TRUE)) FALSE else TRUE
+
+if(collapse.avail) {
+  
 options("plm.fast" = TRUE) # same
 (bet.def.plm.fast.unbal.a <- between(Crime.unbal.a$crmrte, effect = ix.a[[2L]])) # year 81 first from rev. 1307 (and plm < 2.4-0) (year 83 first in rev. 1305 (and plm 2.4-0/1))
 (bet.def.plm.fast.unbal.b <- between(Crime.unbal.b$crmrte, effect = ix.b[[2L]])) # year 81 first
@@ -77,7 +83,7 @@ mat_no_index.unbal.a <- as.matrix(Crime.unbal.a[ , 1:6])[ , 3:4]
 mat_no_index.unbal.b <- as.matrix(Crime.unbal.b[ , 1:6])[ , 3:4]
 
 options("plm.fast" = FALSE)
-(bet.matnoi.unbal.a <- between(mat_no_index.unbal.a, effect = ix.a[[1L]])) # individual effect 
+(bet.matnoi.unbal.a <- between(mat_no_index.unbal.a, effect = ix.a[[1L]])) # individual effect
 (bet.matnoi.unbal.b <- between(mat_no_index.unbal.b, effect = ix.b[[1L]])) # individual effect
 
 options("plm.fast" = FALSE)
@@ -214,7 +220,6 @@ stopifnot(isTRUE(all.equal(fx_fe_plm.slow.tw.id.b, fx_fe_plm.fast.tw.id.b)))
 stopifnot(isTRUE(all.equal(fx_fe_plm.slow.tw.ti.b, fx_fe_plm.fast.tw.ti.b)))
 stopifnot(isTRUE(all.equal(fx_fe_plm.slow.tw.tw.b, fx_fe_plm.fast.tw.tw.b)))
 
-
 ### ranef ###
 
 crime_formula_plm_RE <- lpctymle ~ lmix + lprbconv
@@ -251,7 +256,7 @@ options("plm.fast" = TRUE) # same
 (fx_re_plm.fast.ti.b    <- ranef(RE_ti.b)) # year 81 first from rev. 1307 (and plm < 2.4-0) (year 83 first in rev. 1305 (and plm 2.4-0/1))
 (fx_re_plm.fast.tw.id.b <- ranef(RE_tw.b, effect = "individual"))
 (fx_re_plm.fast.tw.ti.b <- ranef(RE_tw.b, effect = "time"))  # year 81 first (order same as *.a for 2-ways FE)
-# (fx_re_plm.fast.tw.tw.b <- # ranef(RE_tw.b, effect = "twoways")) # do not have this for ranef 
+# (fx_re_plm.fast.tw.tw.b <- # ranef(RE_tw.b, effect = "twoways")) # do not have this for ranef
 
 stopifnot(isTRUE(all.equal(names(fx_re_plm.slow.id.a),    levels(ix.a[[1L]]))))
 stopifnot(isTRUE(all.equal(names(fx_re_plm.slow.ti.a),    levels(ix.a[[2L]]))))
@@ -277,8 +282,6 @@ stopifnot(isTRUE(all.equal(names(fx_re_plm.fast.tw.id.b), levels(ix.b[[1L]]))))
 stopifnot(isTRUE(all.equal(names(fx_re_plm.fast.tw.ti.b), levels(ix.b[[2L]]))))
 # stopifnot(isTRUE(all.equal(names(fx_re_plm.fast.tw.tw.b), levels(ix.b[[2L]])))) # don't have this for ranef
 
-
-
 stopifnot(isTRUE(all.equal(fx_re_plm.slow.id.a,    fx_re_plm.fast.id.a)))
 stopifnot(isTRUE(all.equal(fx_re_plm.slow.ti.a,    fx_re_plm.fast.ti.a)))
 stopifnot(isTRUE(all.equal(fx_re_plm.slow.tw.id.a, fx_re_plm.fast.tw.id.a)))
@@ -289,3 +292,4 @@ stopifnot(isTRUE(all.equal(fx_re_plm.slow.ti.b,    fx_re_plm.fast.ti.b)))
 stopifnot(isTRUE(all.equal(fx_re_plm.slow.tw.id.b, fx_re_plm.fast.tw.id.b)))
 stopifnot(isTRUE(all.equal(fx_re_plm.slow.tw.ti.b, fx_re_plm.fast.tw.ti.b)))
 
+}
