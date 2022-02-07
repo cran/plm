@@ -20,7 +20,7 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
   if (!is.null(dots$p.approx)) p.approx <- dots$p.approx
   
   if (!is.null(p.approx) && !p.approx %in% c("MacKinnon1994", "MacKinnon1996"))
-    stop(paste0("unknown 'p.approx' argument: ", p.approx))
+    stop(paste0("unknown argument value: p.approx = \"", p.approx, "\""))
   
   # Check if package 'urca' is available on local machine. We placed 'urca' 
   # in 'Suggests' rather than 'Imports' so that it is not an absolutely 
@@ -31,7 +31,7 @@ padf <- function(x, exo = c("none", "intercept", "trend"), p.approx = NULL, ...)
   
   # default: if no p.approx specified by input (NULL),
   # use MacKinnon (1996) if 'urca' is available, else MacKinnon (1994)
-  p.approx <- if(is.null(p.approx)) { if (urca)  "MacKinnon1996" else "MacKinnon1994" } else p.approx
+  p.approx <- if(is.null(p.approx)) { if(urca)  "MacKinnon1996" else "MacKinnon1994" } else p.approx
   
   if (!is.null(p.approx) && p.approx == "MacKinnon1996" && !urca) {
     # catch case when user demands MacKinnon (1996) per argument but 'urca' is unavailable
@@ -357,7 +357,7 @@ adj.levinlin.value <- function(l, exo = c("intercept", "none", "trend")){
     return(adj.levinlin[as.character(Ts), , exo])
   }
   else{
-    low <- adj.levinlin[as.character(Ts[1L]), , exo]
+    low  <- adj.levinlin[as.character(Ts[1L]), , exo]
     high <- adj.levinlin[as.character(Ts[2L]), , exo]
     return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
   }
@@ -598,7 +598,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
                           p.value     = pvalue),
                      class = "htest")
   
-  idres <- mapply(list, LMi, sigma2i, SIMPLIFY = F)
+  idres <- mapply(list, LMi, sigma2i, SIMPLIFY = FALSE)
   idres <- lapply(idres, setNames, c("LM", "sigma2"))
   
   result <- list(statistic = htest,
@@ -729,7 +729,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #' @export
 #' @importFrom stats setNames
 #' @author Yves Croissant and for "Pm", "invnormal", and "logit" Kevin Tappe
-#' @seealso [cipstest()], [phansi()]
+#' @seealso [cipstest()], [phansitest()]
 
 #' @references
 #' \insertAllCited{}
@@ -828,7 +828,7 @@ purtest <- function(object, data = NULL, index = NULL,
   cl <- match.call()
   test <- match.arg(test)
   ips.stat <- if (is.null(ips.stat)) "Wtbar" else ips.stat # set default for IPS test
-  if (is.character(lags)) lags <- match.arg(lags) # if character, select one possible value
+  if (is.character(lags)) lags <- match.arg(lags) # if character, match from list of possible values
   args <- list(test = test, exo = exo, pmax = pmax, lags = lags,
                dfcor = dfcor, fixedT = fixedT, ips.stat = ips.stat)
   n <- length(object) # number of individuals, assumes object is a list
@@ -1028,18 +1028,17 @@ print.purtest <- function(x, ...){
 #' @rdname purtest
 #' @export
 summary.purtest <- function(object, ...){
-  if (!object$args$test == "hadri"){
+  if(!object$args$test == "hadri"){
     lags   <- vapply(object$idres, function(x) x[["lags"]],   FUN.VALUE = 0.0, USE.NAMES = FALSE)
     L      <- vapply(object$idres, function(x) x[["T"]],      FUN.VALUE = 0.0, USE.NAMES = FALSE)
     rho    <- vapply(object$idres, function(x) x[["rho"]],    FUN.VALUE = 0.0, USE.NAMES = FALSE)
     trho   <- vapply(object$idres, function(x) x[["trho"]],   FUN.VALUE = 0.0, USE.NAMES = FALSE)
     p.trho <- vapply(object$idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
-    sumidres <- cbind(
-      "lags"   = lags,
-      "obs"    = L - lags - 1,
-      "rho"    = rho,
-      "trho"   = trho,
-      "p.trho" = p.trho)
+    sumidres <- cbind("lags"   = lags,
+                      "obs"    = L - lags - 1,
+                      "rho"    = rho,
+                      "trho"   = trho,
+                      "p.trho" = p.trho)
     
     if (object$args$test == "ips" && !object$args$ips.stat == "tbar") {
       sumidres <- cbind(sumidres, t(object$adjval))
@@ -1048,8 +1047,8 @@ summary.purtest <- function(object, ...){
       sumidres <- cbind(sumidres, object$sigma2)
     }
   } else {
-    # hadri
-    LM     <- vapply(object$idres, function(x) x[["LM"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
+    # hadri case
+    LM     <- vapply(object$idres, function(x) x[["LM"]],     FUN.VALUE = 0.0, USE.NAMES = FALSE)
     sigma2 <- vapply(object$idres, function(x) x[["sigma2"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     sumidres <- cbind("LM" = LM, "sigma2" = sigma2)
   }
@@ -1116,7 +1115,7 @@ print.summary.purtest <- function(x, ...){
 #' alpha via argument `alpha` (defaulting to `0.05`), i.e., it controls for the
 #' multiplicity in testing.
 #' 
-#' The function `phansi` takes as main input `object` either a plain numeric
+#' The function `phansitest` takes as main input `object` either a plain numeric
 #' containing p-values of individual tests or a `purtest` object which holds
 #' a suitable pre-computed panel unit root test (one that produces p-values per
 #' individual series).
@@ -1126,18 +1125,20 @@ print.summary.purtest <- function(x, ...){
 #' 
 #' The associated `print` method prints a verbal evaluation.
 #' 
-#' @aliases phansi
+#' @aliases phansitest
 #' @param object either a numeric containing p-values of individual unit root 
 #' test results (does not need to be sorted) or a suitable `purtest` object
 #' (as produced by `purtest()` for a test which gives p-values of the individuals
 #' (Hadri's test in `purtest` is not suitable)),
 #' @param alpha numeric, the pre-specified significance level (defaults to `0.05`),
-#' @param x an object of class `c("phansi", "list")` as produced by `phansi` to be printed,
+#' @param x an object of class `c("phansitest", "list")` as produced by 
+#'          `phansitest` to be printed,
 #' @param cutoff integer, cutoff value for printing of enumeration of individuals with
 #' rejected individual H0, for print method only,
 #' @param \dots further arguments (currently not used).
 #' 
-#' @return For `phansi`, an object of class `c("phansi", "list")` which is a list with the elements:
+#' @return For `phansitest`, an object of class `c("phansitest", "list")` which i
+#' s a list with the elements:
 #' - `id`: integer, the identifier of the individual (integer sequence referring to
 #' position in input),
 #' - `name`: character, name of the input's individual (if it has a name,
@@ -1174,7 +1175,7 @@ print.summary.purtest <- function(x, ...){
 #'               "Portugal","Canada", "Spain","Denmark","Switzerland","Japan")
 #' names(pvals) <- countries
 #' 
-#' h <- phansi(pvals)
+#' h <- phansitest(pvals)
 #' print(h)              # (explicitly) prints test's evaluation
 #' print(h, cutoff = 3L) # print only first 3 rejected ids 
 #' h$rejected # logical indicating the individuals with rejected individual H0
@@ -1185,9 +1186,9 @@ print.summary.purtest <- function(x, ...){
 #' y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
 #' obj <- purtest(y, pmax = 4, exo = "intercept", test = "madwu")
 #' 
-#' phansi(obj)
+#' phansitest(obj)
 #' 
-phansi <- function(object, alpha = 0.05) {
+phansitest <- function(object, alpha = 0.05) {
   
   is.purtest <- if(inherits(object, "purtest")) TRUE else FALSE
   if(!is.purtest) {
@@ -1200,7 +1201,7 @@ phansi <- function(object, alpha = 0.05) {
     }
   } else {
     # purtest object
-    if(object$args$test == "hadri") stop("phansi() [Hanck/Simes' test] not possible for purtest objects based on Hadri's test")
+    if(object$args$test == "hadri") stop("phansitest() [Hanck/Simes' test] not possible for purtest objects based on Hadri's test")
     p <- vapply(object$idres, function(x) x[["p.trho"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     n <- length(p)
   }
@@ -1219,13 +1220,20 @@ phansi <- function(object, alpha = 0.05) {
                         rejected     = rejected.ind,
                         rejected.no  = rejected.ind.no,
                         alpha        = alpha),
-                   class = c("phansi", "list"))
+                   class = c("phansitest", "list"))
   return(res)
 }
 
-#' @rdname phansi
+phansi <- function(object, alpha = 0.05) {
+  .Deprecated(new = "phansitest", msg = "function 'phansi' renamed to 'phansitest'. Change your code to use 'phansitest'.",
+              old = "phansi")
+  phansitest(object, alpha = alpha)
+}
+
+
+#' @rdname phansitest
 #' @export
-print.phansi <- function(x, cutoff = 10L, ...) {
+print.phansitest <- function(x, cutoff = 10L, ...) {
   if(round(cutoff) != cutoff) stop("Argument 'cutoff' has to be an integer")
   id         <- x$id
   alpha      <- x$alpha
@@ -1262,7 +1270,7 @@ print.phansi <- function(x, cutoff = 10L, ...) {
     else { # cut off enumeration of individuals if more than specified in cutoff
       if(cutoff > 0L) {
         ind.cutoff <- paste0(paste0(id[rej.ind][seq_len(cutoff)], collapse = ", "), ", ...")
-        ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no ," individuals, only first ", cutoff , " printed (integer id(s)):\n")
+        ind.txt <- paste0("Individual H0 rejected for ", rej.ind.no ," individuals, only first ", cutoff, " printed (integer id(s)):\n")
         cat(paste0(" ", ind.txt))
         cat(paste0("  ", ind.cutoff, "\n"))
       } else cat(paste0(" Individual H0 rejected for ", rej.ind.no ," individuals. None printed as 'cutoff' set to ", cutoff, ".\n"))

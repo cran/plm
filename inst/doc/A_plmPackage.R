@@ -120,12 +120,12 @@ summary(zz)
 zz <- pggls(log(emp)~log(wage)+log(capital), data=EmplUK, model="within")
 
 ## -----------------------------------------------------------------------------
-znp <- pvcm(inv~value+capital, data=Grunfeld, model="within")
-zplm <- plm(inv~value+capital, data=Grunfeld, model="within")
+znp <- pvcm(inv ~ value + capital, data = Grunfeld, model = "within")
+zplm <- plm(inv ~ value + capital, data = Grunfeld, model = "within")
 pooltest(zplm, znp)
 
 ## ----results='hide'-----------------------------------------------------------
-pooltest(inv~value+capital, data=Grunfeld, model="within")
+pooltest(inv ~ value + capital, data = Grunfeld, model = "within")
 
 ## -----------------------------------------------------------------------------
 g <- plm(inv ~ value + capital, data=Grunfeld, model="pooling")
@@ -143,9 +143,12 @@ pFtest(gw, gp)
 pFtest(inv~value+capital, data=Grunfeld, effect="twoways")
 
 ## -----------------------------------------------------------------------------
-gw <- plm(inv~value+capital, data=Grunfeld, model="within")
-gr <- plm(inv~value+capital, data=Grunfeld, model="random")
+gw <- plm(inv ~ value + capital, data = Grunfeld, model="within")
+gr <- plm(inv ~ value + capital, data = Grunfeld, model="random")
 phtest(gw, gr)
+
+## -----------------------------------------------------------------------------
+phtest(inv ~ value + capital, data = Grunfeld, method = "aux", vcov = vcovHC)
 
 ## ----wtest--------------------------------------------------------------------
 pwtest(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, data=Produc)
@@ -190,7 +193,7 @@ summary(lev) ### gives details
 ## ----ips----------------------------------------------------------------------
 purtest(lprice, test = "ips", lags = 2, exo = "trend")
 
-## ----phansi1------------------------------------------------------------------
+## ----phansitest1--------------------------------------------------------------
 ### input is numeric (p-values), replicates Hanck (2013), Table 11 (left side)
 pvals <- c(0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0050,0.0050,0.0050,
            0.0050,0.0175,0.0175,0.0200,0.0250,0.0400,0.0500,0.0575,0.2375,0.2475)
@@ -198,15 +201,15 @@ countries <- c("Argentina","Sweden","Norway","Mexico","Italy","Finland","France"
               "Germany","Belgium","U.K.","Brazil","Australia","Netherlands",
               "Portugal","Canada", "Spain","Denmark","Switzerland","Japan")
 names(pvals) <- countries
-h <- phansi(pvals)
+h <- phansitest(pvals)
 print(h)
 h$rejected # logical indicating the individuals with rejected individual H0
 
-## ----phansi2, results='hide'--------------------------------------------------
+## ----phansitest2, results='hide'----------------------------------------------
 ### input is a (suitable) purtest object / different example
 y <- data.frame(split(Grunfeld$inv, Grunfeld$firm))
 obj <- purtest(y, pmax = 4, exo = "intercept", test = "madwu")
-phansi(obj, alpha = 0.06) # test with significance level set to 6 %
+phansitest(obj, alpha = 0.06) # test with significance level set to 6 %
 
 ## ----vcovHC1------------------------------------------------------------------
 re <- plm(inv~value+capital, data = Grunfeld, model = "random")
@@ -216,7 +219,7 @@ library("lmtest")
 coeftest(re, vcovHC, df = Inf)
 
 ## ----vcovHC2, results='hide'--------------------------------------------------
-summary(re, vcov = vcovHC(re, method="white2", type="HC3"), df = Inf)
+summary(re, vcov = vcovHC(re, method="white2", type="HC3"))
 coeftest(re, vcovHC(re, method="white2", type="HC3"), df = Inf)
 
 ## ----waldtest-vcovHC----------------------------------------------------------

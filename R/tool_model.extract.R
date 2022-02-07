@@ -18,7 +18,7 @@
 #' requested), in this case the supplied `data` argument should be a
 #' model frame created by plm's `model.frame` method. If not, it is
 #' tried to construct the model frame from the data. Constructing the
-#' model frame first ensures proper NA handling, see **Examples**.
+#' model frame first ensures proper `NA` handling, see **Examples**.
 #'
 #' @name model.frame.pdata.frame
 #' @param object,formula an object of class `"pdata.frame"` or an
@@ -213,20 +213,20 @@ model.matrix.pdata.frame <- function(object,
 #' response must reside in the first column; this is the case for a
 #' model frame), a `pFormula` + `data` or a `plm` object, and the
 #' transformation specified by `effect` and `model` is applied to
-#' it.\cr Constructing the model frame first ensures proper NA
+#' it.\cr Constructing the model frame first ensures proper `NA`
 #' handling and the response being placed in the first column, see
 #' also **Examples** for usage.
 #' 
 #' @aliases pmodel.response
 #' @param object an object of class `"plm"`, or a formula of
-#'     class `"pFormula"`,
+#'     class `"Formula"`,
 #' @param data a `data.frame`
 #' @param \dots further arguments.
 #' @return A pseries except if model responses' of a `"between"`
-#'     or "fd" model as these models "compress" the data (the number
+#'     or `"fd"` model as these models "compress" the data (the number
 #'     of observations used in estimation is smaller than the original
 #'     data due to the specific transformation). A numeric is returned
-#'     for the "between" and "fd" model.
+#'     for the `"between"` and `"fd"` model.
 #' @export
 #' @author Yves Croissant
 #' @seealso `plm`'s [model.matrix()] for (transformed)
@@ -324,14 +324,14 @@ ptransform <- function(x, model = NULL, effect = NULL, theta = NULL, ...){
         if(effect == "twoways" && balanced)
             x <- x - theta$id   * Between(x, "individual") -
                      theta$time * Between(x, "time") + theta$total * mean(x)
-        ## TODO: could catch non-treated case to error gracefully:
+        ## TODO: could catch non-treated RE unbalanced twoways case to error gracefully:
         # if (effect == "twoways" && !balanced) warning("two-way unbalanced case not implemented in ptransform")
     }
     
     # between and fd models "compress" the data, thus an index does not make
     # sense for those, but add to all others (incl. Between (capital B))
     x <- if(model %in% c("between", "fd")) x
-         else structure(x, index = index(x), class = union("pseries", class(x)))
+         else structure(x, index = index(x), class = unique(c("pseries", class(x))))
     return(x)
 }
 

@@ -111,24 +111,24 @@ Within.pseries <- function(x, effect = c("individual", "time", "group", "twoways
 
     if(is.null(getOption("plm.fast.pkg.FE.tw"))) options("plm.fast.pkg.FE.tw" = "collapse")
     switch(getOption("plm.fast.pkg.FE.tw"),
-           "collapse" = Within.pseries.collapse(x, effect, ...),        # collapse only,
+           "collapse" = Within.pseries.collapse(       x, effect, ...), # collapse only,
            "fixest"   = Within.pseries.collapse.fixest(x, effect, ...), # collapse for 1-way FE + fixest for 2-way FE,
-           "lfe"      = Within.pseries.collapse.lfe(x, effect, ...),    # collapse for 1-way FE + lfe for 2-way FE,
+           "lfe"      = Within.pseries.collapse.lfe(   x, effect, ...), # collapse for 1-way FE + lfe for 2-way FE,
            stop("unknown value of option 'plm.fast.pkg.FE.tw'"))
   }
 }
 
-Within.matrix <- function(x, effect, rm.null = TRUE, ...) {
+Within.matrix <- function(x, effect, ...) {
   if(!isTRUE(getOption("plm.fast"))) {
-    Within.matrix.baseR(x, effect, ...)
+    Within.matrix.baseR(x, effect, ...) 
   } else {
     if (!isTRUE(getOption("plm.fast.pkg.collapse"))) stop(txt.no.collapse, call. = FALSE)
     
     if(is.null(getOption("plm.fast.pkg.FE.tw"))) options("plm.fast.pkg.FE.tw" = "collapse")
     switch(getOption("plm.fast.pkg.FE.tw"),
-           "collapse" = Within.matrix.collapse(x, effect, ...),        # collapse only,
+           "collapse" = Within.matrix.collapse(       x, effect, ...), # collapse only,
            "fixest"   = Within.matrix.collapse.fixest(x, effect, ...), # collapse for 1-way FE + fixest for 2-way FE,
-           "lfe"      = Within.matrix.collapse.lfe(x, effect, ...),    # collapse for 1-way FE + lfe for 2-way FE,
+           "lfe"      = Within.matrix.collapse.lfe(   x, effect, ...), # collapse for 1-way FE + lfe for 2-way FE,
            stop("unknown value of option 'plm.fast.pkg.FE.tw'"))
   }
 }
@@ -404,29 +404,21 @@ Within.pseries.collapse <- function(x, effect = c("individual", "time", "group",
   return(res)
 }
 
-Within.matrix.collapse <- function(x, effect, rm.null = TRUE, ...) {
+Within.matrix.collapse <- function(x, effect, ...) {
 # print("Within.matrix.collapse")
 # browser()
   
+  # check for presence of na.rm in dots, if not present set to FALSE
+  na.rm <- if(missing(...) || is.null(na.rm <- list(...)$na.rm)) FALSE else na.rm
   
   if(is.null(xindex <- attr(x, "index"))) {
     # non-index case, 'effect' needs to be a factor
-    result <- Within.default(x, effect, ...)
-    othervar <- colSums(abs(x)) > sqrt(.Machine$double.eps)
-    if(rm.null) {
-      result <- result[ , othervar, drop = FALSE]
-      attr(result, "constant") <- character(0)
-    }
-    else attr(result, "constant") <- colnames(x)[! othervar]
-    return(result)
+    result <- collapse::fwithin(x, g = effect, w = NULL, na.rm = na.rm)
   }
   else {
     # index case
     xindex <- unclass(xindex) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
-
-    # check for presence of na.rm in dots, if not present set to FALSE
-    na.rm <- if(missing(...) || is.null(na.rm <- list(...)$na.rm)) FALSE else na.rm
     
     if(effect != "twoways") {
       eff.fac <- switch(effect,
@@ -442,6 +434,7 @@ Within.matrix.collapse <- function(x, effect, rm.null = TRUE, ...) {
       # effect = "twoways"
       eff.ind.fac  <- xindex[[1L]]
       eff.time.fac <- xindex[[2L]]
+      
       if(is.pbalanced(eff.ind.fac, eff.time.fac)) {
         # balanced twoways
         result <- collapse::fwithin(  x, g = eff.ind.fac,  w = NULL, na.rm = na.rm, mean = "overall.mean") -
@@ -494,27 +487,21 @@ Within.pseries.collapse.fixest <- function(x, effect = c("individual", "time", "
   return(res)
 }
 
-Within.matrix.collapse.fixest <- function(x, effect, rm.null = TRUE, ...) {
+Within.matrix.collapse.fixest <- function(x, effect, ...) {
 # print("Within.matrix.collapse.fixest")
 # browser()
   
+  # check for presence of na.rm in dots, if not present set to FALSE
+  na.rm <- if(missing(...) || is.null(na.rm <- list(...)$na.rm)) FALSE else na.rm
+  
   if(is.null(xindex <- attr(x, "index"))) {
     # non-index case, 'effect' needs to be a factor
-    result <- Within.default(x, effect, ...)
-    othervar <- colSums(abs(x)) > sqrt(.Machine$double.eps)
-    if(rm.null) {
-      result <- result[ , othervar, drop = FALSE]
-      attr(result, "constant") <- character(0)
-    }
-    else attr(result, "constant") <- colnames(x)[! othervar]
-    return(result)
+    result <- collapse::fwithin(x, g = effect, w = NULL, na.rm = na.rm)
   }
   else {
     # index case
     xindex <- unclass(xindex) # unclass for speed
     checkNA.index(xindex) # index may not contain any NA
-    # check for presence of na.rm in dots, if not present set to FALSE
-    na.rm <- if(missing(...) || is.null(na.rm <- list(...)$na.rm)) FALSE else na.rm
     
     if(effect != "twoways") {
       eff.fac <- switch(effect,
@@ -566,28 +553,21 @@ Within.pseries.collapse.lfe <- function(x, effect = c("individual", "time", "gro
   return(res)
 }
 
-Within.matrix.collapse.lfe <- function(x, effect, rm.null = TRUE, ...) {
+Within.matrix.collapse.lfe <- function(x, effect,  ...) {
 # print("Within.matrix.collapse.lfe")
 # browser()
-
-
+  
+  # check for presence of na.rm in dots, if not present set to FALSE
+  na.rm <- if(missing(...) || is.null(na.rm <- list(...)$na.rm)) FALSE else na.rm
+  
   if(is.null(xindex <- attr(x, "index"))) {
     # non-index case, 'effect' needs to be a factor
-    result <- Within.default(x, effect, ...)
-    othervar <- colSums(abs(x)) > sqrt(.Machine$double.eps)
-    if(rm.null) {
-      result <- result[ , othervar, drop = FALSE]
-      attr(result, "constant") <- character(0)
-    }
-    else attr(result, "constant") <- colnames(x)[! othervar]
-    return(result)
+    result <- collapse::fwithin(x, g = effect, w = NULL, na.rm = na.rm)
   }
   else {
     # index case
     xindex <- unclass(xindex)
     checkNA.index(xindex) # index may not contain any NA
-    # check for presence of na.rm in dots, if not present set to FALSE
-    na.rm <- if(missing(...) || is.null(na.rm <- list(...)$na.rm)) FALSE else na.rm
     
     if(effect != "twoways") {
       eff.fac <- switch(effect,
@@ -625,8 +605,7 @@ pseriesfy <- function(x,  ...) {
 }
 
 .onAttach <- function(libname, pkgname) {
-  # options("plm.fast" = TRUE) # not yet the default, maybe in Q3/2021,
-                               # would need pkg collapse as hard dependency
+  options("plm.fast" = TRUE) # since 2.6: needs pkg collapse as hard dependency
   
   # determine when pkg plm is attached whether pkg collapse, fixest, and lfe are
   # available and set (non-documented) options, which packages are available.
@@ -660,33 +639,37 @@ pseriesfy <- function(x,  ...) {
 #' achieved if package `fixest` or `lfe` is installed (package `collapse`
 #' needs to be installed for the fast mode in any case).
 #' 
-#' @details By default, this speed up is not enabled.
+#' @details By default, this speed up is enabled.
 #' Option `plm.fast` can be used to enable/disable the speed up. The option is
 #' evaluated prior to execution of supported transformations (see below), so 
 #' `option("plm.fast" = TRUE)` enables the speed up while 
 #' `option("plm.fast" = FALSE)` disables the speed up.
 #' 
-#' To have it always switched on, put `options("plm.fast" = TRUE)` in your 
+#' To have it always switched off, put `options("plm.fast" = FALSE)` in your 
 #' .Rprofile file.
 #' 
 #' See **Examples** for how to use the option and for a benchmarking example.
 #'
-#' By default, package `plm` uses base R implementations and R-based code. The
+#' For long, package `plm` used base R implementations and R-based code. The
 #' package `collapse` provides fast data transformation functions written
 #' in C/C++, among them some especially suitable for panel data.
-#' Having package `collapse` installed is a requirement for the speed up.
-#' However, this package is currently not a hard dependency for package `plm`
-#' but a 'Suggests' dependency.
+#' Having package `collapse` installed is a requirement for the speed up, so
+#' this package is a hard dependency for package `plm`.
 #' 
 #' Availability of packages `fixest` and `lfe` is checked for once when
 #' package plm is attached and the additional speed up for the two-way fixed
 #' effect case is enabled automatically (`fixest` wins over `lfe`),
-#' given one of the packages is detected and `options("plm.fast" = TRUE)` is set.
-#' If so, the packages' fast algorithms to partial out fixed effects are
-#' used (`fixest::demean` (via `collapse::fhdwithin`), `lfe::demeanlist`).
-#' Both packages are 'Suggests' dependencies.
+#' given one of the packages is detected and `options("plm.fast" = TRUE)` 
+#' (default) is set. If so, the packages' fast algorithms to partial out fixed 
+#' effects are #' used (`fixest::demean` (via `collapse::fhdwithin`), 
+#' `lfe::demeanlist`). Both packages are 'Suggests' dependencies.
 #' 
-#' Currently, these functions benefit from the speed-up (more functions are
+#' Users might experience neglectable numerical differences between enabled and
+#' disabled fast mode and base R implementation, depending on the platform and 
+#' the additional packages installed.
+#' 
+#' Currently, these basic functions benefit from the speed-up, used as building 
+#' blocks in most model estimation functions, e.g., in `plm` (more functions are
 #' under investigation):
 #' \itemize{
 #'   \item between,
@@ -697,6 +680,7 @@ pseriesfy <- function(x,  ...) {
 #' }
 #' 
 #' @name plm.fast
+#' @importFrom collapse fhdwithin fwithin fbetween dapply fdroplevels
 #' @keywords sysdata manip
 #' @examples
 #' \dontrun{
@@ -741,7 +725,7 @@ pseriesfy <- function(x,  ...) {
 #'    requireNamespace("lfe", quietly = TRUE)) {
 #' 
 #' twowayFE <-  microbenchmark(
-#'  {options("plm.fast" = FALSE);                                    
+#'  {options("plm.fast" = FALSE);
 #'     plm(form, data = data, model = "within", effect = "twoways")},
 #'  {options("plm.fast" = TRUE, "plm.fast.pkg.FE.tw" = "collapse");
 #'     plm(form, data = data, model = "within", effect = "twoways")},

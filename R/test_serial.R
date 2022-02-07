@@ -645,8 +645,7 @@ pbsytest.panelmodel <- function(x, test = c("ar", "re", "j"), re.normal = if (te
   A <- 1 - S1/S2
   
   unind <- unique(ind)
-  uu <- rep(NA, length(unind))
-  uu1 <- rep(NA, length(unind))
+  uu <-  uu1 <- rep(NA, length(unind))
   for(i in 1:length(unind)) {
     u.t <- poolres[ind == unind[i]]
     u.t.1 <- u.t[-length(u.t)]
@@ -1118,7 +1117,7 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   mymod <- lme(x, data = data, random = rformula, method = "ML")
 
   nt. <- mymod$dims$N
-  n. <- as.numeric(mymod$dims$ngrps[1])
+  n. <- as.numeric(mymod$dims$ngrps[1L])
   t. <- nt./n.
   Jt <- matrix(1, ncol = t., nrow = t.)/t.
   Et <- diag(1, t.) - Jt
@@ -1218,8 +1217,8 @@ pbltest.plm <- function(x, alternative = c("twosided", "onesided"), ...) {
   if (describe(x, "model") != "random") stop("Test is only for random effects models.")
   
   # call pbltest.formula the right way
-  pbltest.formula(formula(x$formula), data=cbind(index(x), x$model),
-                  index=names(index(x)), alternative = alternative, ...)
+  pbltest.formula(formula(x$formula), data = cbind(index(x), x$model),
+                  index = names(index(x)), alternative = alternative, ...)
 }
 
 #' Wooldridge first--difference--based test for AR(1) errors in levels

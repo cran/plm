@@ -6,8 +6,11 @@
 \alias{pdim.data.frame}
 \alias{pdim.pdata.frame}
 \alias{pdim.pseries}
-\alias{pdim.panelmodel}
+\alias{pdim.pggls}
+\alias{pdim.pcce}
+\alias{pdim.pmg}
 \alias{pdim.pgmm}
+\alias{pdim.panelmodel}
 \alias{print.pdim}
 \title{Check for the Dimensions of the Panel}
 \usage{
@@ -21,9 +24,15 @@ pdim(x, ...)
 
 \method{pdim}{pseries}(x, ...)
 
-\method{pdim}{panelmodel}(x, ...)
+\method{pdim}{pggls}(x, ...)
+
+\method{pdim}{pcce}(x, ...)
+
+\method{pdim}{pmg}(x, ...)
 
 \method{pdim}{pgmm}(x, ...)
+
+\method{pdim}{panelmodel}(x, ...)
 
 \method{print}{pdim}(x, ...)
 }
@@ -72,7 +81,7 @@ called on an estimated \code{panelmodel}, the number of
 observations (individual, time) actually used for model
 estimation are taken into account.  When called on a
 \verb{(p)data.frame}, the rows in the \verb{(p)data.frame} are
-considered, disregarding any NA values in the dependent or
+considered, disregarding any \code{NA}values in the dependent or
 independent variable(s) which would be dropped during model
 estimation.
 }

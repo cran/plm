@@ -126,7 +126,8 @@ pmg <- function(formula, data, subset, na.action,
     ## evaluates the call, modified with model = "pooling", inside the
     ## parent frame resulting in the pooling model on formula, data
     plm.model <- eval(plm.model, parent.frame())
-    index <- unclass(attr(model.frame(plm.model), "index")) # unclass for speed
+    mf <- model.frame(plm.model)
+    index <- unclass(attr(mf, "index")) # unclass for speed
     ind  <- index[[1L]] ## individual index
     tind <- index[[2L]] ## time index
     ## set dimension variables
@@ -139,14 +140,14 @@ pmg <- function(formula, data, subset, na.action,
     N <- pdim$nT$N
     ## set index names
     time.names <- pdim$panel.names$time.names
-    id.names <- pdim$panel.names$id.names
+    id.names   <- pdim$panel.names$id.names
     coef.names <- names(coef(plm.model))
     ## number of coefficients
     k <- length(coef.names)
 
     ## model data
     X <- model.matrix(plm.model)
-    y <- model.response(model.frame(plm.model))
+    y <- model.response(mf)
 
 
   ## det. *minimum* group numerosity
@@ -275,15 +276,14 @@ pmg <- function(formula, data, subset, na.action,
 
     names(coef) <- rownames(vcov) <- colnames(vcov) <- coef.names
     dimnames(tcoef) <- list(coef.names, id.names)
-    pmodel <- attr(plm.model, "pmodel")
-    pmodel$model.name <- model.name
+    pmodel <- list(model.name = model.name)
     mgmod <- list(coefficients  = coef,
                   residuals     = residuals,
                   fitted.values = fitted.values,
                   vcov          = vcov,
                   df.residual   = df.residual,
                   r.squared     = r2,
-                  model         = model.frame(plm.model),
+                  model         = mf,
                   indcoef       = tcoef,
                   formula       = formula,
                   call          = cl)
@@ -295,7 +295,6 @@ pmg <- function(formula, data, subset, na.action,
 #' @rdname pmg
 #' @export
 summary.pmg <- function(object, ...){
-  pmodel <- attr(object, "pmodel")
   std.err <- sqrt(diag(object$vcov))
   b <- object$coefficients
   z <- b/std.err
@@ -316,10 +315,8 @@ summary.pmg <- function(object, ...){
 print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2),
                               width = getOption("width"), ...){
   pmodel <- attr(x, "pmodel")
-  pdim <- attr(x, "pdim")
-#  formula <- pmodel$formula
-  model.name <- pmodel$model.name
-  cat(paste(model.pmg.list[model.name], "\n", sep=""))
+  pdim   <- attr(x, "pdim")
+  cat(paste(model.pmg.list[pmodel$model.name], "\n", sep=""))
   cat("\nCall:\n")
   print(x$call)
   cat("\n")
@@ -328,8 +325,8 @@ print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2),
   print(sumres(x)) # was until rev. 1178: print(summary(unlist(residuals(x))))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
-  cat(paste("Total Sum of Squares: ",    signif(x$tss, digits),  "\n", sep=""))
-  cat(paste("Residual Sum of Squares: ", signif(x$ssr, digits),  "\n", sep=""))
+  cat(paste("Total Sum of Squares: ",    signif(x$tss,  digits),  "\n", sep=""))
+  cat(paste("Residual Sum of Squares: ", signif(x$ssr,  digits),  "\n", sep=""))
   cat(paste("Multiple R-squared: ",      signif(x$rsqr, digits), "\n", sep=""))
   invisible(x)
 }

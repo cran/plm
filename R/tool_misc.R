@@ -1,5 +1,7 @@
 ## Function that are used in more than on place in plm (or likely to be used in more than one place in the future)
 
+## - trace : calculate trace of a matrix (used in ercomp())
+## - is.constant : check if a numeric vector or columns of a matrix is constant
 ## - bdiag : takes matrices as argument and returns the block-diagonal matrix (used in pgmm and plm.list)
 ## - mylm : inner fitting func based on stats::lm with matrix inputs (used in plm.fit)
 ## - my.lm.fit : like the barebone stats::lm.fit but with some extra information (e.g., SEs, sigma) used in purtest
@@ -10,6 +12,11 @@
 ## - punbalancedness : measures for the unbalancedness of panel data
 ## - myvar : calculates variance with NA removal, checks if input is constant (also for factor and character)
 ## - pvar : checks if input varies in individual / time dimension
+## - make.dummies : create a contrast-coded dummy matrix from a factor
+
+trace <- function(x) sum(diag(x))
+
+is.constant <- function(x) (max(x) - min(x)) < sqrt(.Machine$double.eps)
 
 bdiag <- function(...){
   ## non-exported
@@ -99,19 +106,20 @@ twosls <- function(y, X, W, intercept = FALSE, lm.type = "lm"){
   # Return value can be controlled by argument lm.type. Often, a full lm model
   # is needed for further processing but can select one of the fast but less
   # rich objects produced by lm.fit or .lm.fit (the latter does not contain, e.g.,
-  # fitted.values and is to be used very carefully (e.g., coefs not in input order).
+  # fitted.values and is to be used very carefully (e.g., coefs not in input order)).
 
   # As NA/NaN/(+/-)Inf-freeness needs to be guaranteed when functions call
   # twosls(), so can use lm.fit to calc. Xhat.
   Xhat <- lm.fit(cbind(1, W), X)$fitted.values
   # old: Xhat <- lm(X ~ W)$fitted.values
   
-  if(!is.matrix(Xhat)){
+  if(!is.matrix(Xhat)) {
+    # ensure Xhat is a matrix
     Xhat <- matrix(Xhat, ncol = 1L)
     colnames(Xhat) <- colnames(X)
   }
   
-  if(intercept){
+  if(intercept) {
     model <- switch(lm.type,
                     "lm"      =  lm(y ~ Xhat),
                     "lm.fit"  =  lm.fit(cbind(1, Xhat), y),
@@ -196,21 +204,7 @@ has.intercept.panelmodel <- function(object, ...) {
 #' @rdname has.intercept
 #' @export
 has.intercept.plm <- function(object, rhs = 1L, ...) {
-    
-  # catch deprecated argument "part": convert and warn / 2021-03-10
-  dots <- list(...)
-  if(!is.null(part <- dots[["part"]])) {
-    warning("has.intercept.plm: argument 'part' is deprecated and will soon be removed, use argument 'rhs' instead")
-    warning("has.intercept.plm: arguement 'rhs' (if present) overwritten by argument 'part'")
-    if(part[1L] == "first") {
-      rhs <- 1L
-      } else {
-        if(is.numeric(part)) {
-          rhs <- part
-          } else stop("unsupported value for argument 'part', only \"first\" or an integer allowed") 
-      }
-  }
-  has.intercept(formula(object), rhs = rhs)
+  has.intercept(formula(object), rhs = rhs, ...)
 }
 
 
@@ -326,7 +320,7 @@ pres <- function(x) {  # pres.panelmodel
 #'     number of observations (individual, time) actually used for
 #'     model estimation are taken into account. When called on a
 #'     `(p)data.frame`, the rows in the `(p)data.frame` are
-#'     considered, disregarding any NA values in the dependent or
+#'     considered, disregarding any `NA` values in the dependent or
 #'     independent variable(s) which would be dropped during model
 #'     estimation.
 #' @export
@@ -467,7 +461,7 @@ myvar <- function(x){
 #' This function checks for each variable of a panel if it varies
 #' cross-sectionally and over time.
 #' 
-#' For (p)data.frame and matrix interface: All-NA columns are removed
+#' For (p)data.frame and matrix interface: All-`NA` columns are removed
 #' prior to calculation of variation due to coercing to pdata.frame
 #' first.
 #' 
@@ -486,12 +480,12 @@ myvar <- function(x){
 #'
 #' \item{id.variation_anyNA}{a logical vector with `TRUE` values if
 #' the variable has at least one individual-time combination with all
-#' NA values in the individual dimension for at least one time period,
+#' `NA` values in the individual dimension for at least one time period,
 #' `FALSE` if not,}
 #'
 #' \item{time.variation_anyNA}{a logical vector with `TRUE` values if
 #' the variable has at least one individual-time combination with all
-#' NA values in the time dimension for at least one individual,
+#' `NA` values in the time dimension for at least one individual,
 #' `FALSE` if not.}
 #' 
 #' @note `pvar` can be time consuming for ``big'' panels. As a fast alternative
@@ -656,5 +650,140 @@ print.pvar <- function(x, ...){
   }
   invisible(x)
 }
+
+
+#' Create a Dummy Matrix
+#' 
+#' Contrast-coded dummy matrix created from a factor
+#' 
+#' This function creates a matrix of dummies from the levels of a factor.
+#' In model estimations, it is usually preferable to not create the dummy matrix 
+#' prior to estimation but to simply specify a factor in the formula and let the
+#' estimation function handle the creation of the dummies.
+#' 
+#' This function is merely a convenience wrapper around `stats::contr.treatment`
+#' to ease the dummy matrix creation process shall the dummy matrix be explicitly
+#' required. See Examples for a use case in LSDV (least squares dummy variable)
+#' model estimation.
+#' 
+#' The default method uses a factor as main input (or something coercible to a 
+#' factor) to derive the dummy matrix from. Methods for data frame and pdata.frame 
+#' are available as well and have the additional argument `col` to specify the
+#' the column from which the dummies are created; both methods merge the dummy 
+#' matrix to the data frame/pdata.frame yielding a ready-to-use data set.
+#' See also Examples for use cases.
+#' 
+#' @param x a factor from which the dummies are created (x is coerced to 
+#'          factor if not yet a factor) for the default method or a data 
+#'          data frame/pdata.frame for the respective method.
+#' @param base integer or character, specifies the reference level (base), if 
+#'             integer it refers to position in `levels(x)`, if character the name 
+#'             of a level,
+#' @param base.add logical, if `TRUE` the reference level (base) is added 
+#'                 to the return value as first column, if `FALSE` the reference
+#'                 level is not included.
+#' @param col character (only for the data frame and pdata.frame methods), to
+#'            specify the column which is used to derive the dummies from,
+#' @param \dots further arguments.
+#'
+#' @return For the default method, a matrix containing the contrast-coded dummies, 
+#'         dimensions are n x n where `n = length(levels(x))` if argument  
+#'        `base.add = TRUE` or `n = length(levels(x)-1)` if `base.add = FALSE`;
+#'         for the data frame and pdata.frame method, a data frame or pdata.frame,
+#'         respectively, with the dummies appropriately merged to the input as 
+#'         last columns (column names are derived from the name of the column 
+#'         used to create the dummies and its levels).
+#' @author Kevin Tappe
+#' @importFrom stats contr.treatment
+#' @export
+#' @seealso [stats::contr.treatment()], [stats::contrasts()]
+#' @keywords manip
+#' @examples
+#' library(plm)
+#' data("Grunfeld", package = "plm")
+#' Grunfeld <- Grunfeld[1:100, ] # reduce data set (down to 5 firms)
+#'
+#' ## default method
+#' make.dummies(Grunfeld$firm) # gives 5 x 5 matrix (5 firms, base level incl.)
+#' make.dummies(Grunfeld$firm, base = 2L, base.add = FALSE) # gives 5 x 4 matrix
+#'
+#' ## data frame method
+#' Grun.dummies <- make.dummies(Grunfeld, col = "firm")
+#' 
+#' ## pdata.frame method
+#' pGrun <- pdata.frame(Grunfeld)
+#' pGrun.dummies <- make.dummies(pGrun, col = "firm")
+#' 
+#' ## Model estimation:
+#' ## estimate within model (individual/firm effects) and LSDV models (firm dummies)
+#' # within model:
+#' plm(inv ~ value + capital, data = pGrun, model = "within")
+#' 
+#' ## LSDV with user-created dummies by make.dummies:
+#' form_dummies <- paste0("firm", c(1:5), collapse = "+")
+#' form_dummies <- formula(paste0("inv ~ value + capital + ", form_dummies))
+#' plm(form_dummies, data = pGrun.dummies, model = "pooling") # last dummy is dropped
+#'
+#' # LSDV via factor(year) -> let estimation function generate dummies:
+#' plm(inv ~ value + capital + factor(firm), data = pGrun, model = "pooling")
+make.dummies <- function(x, ...){
+  UseMethod("make.dummies")
+}
+
+#' @rdname make.dummies
+#' @export
+make.dummies.default <- function(x, base = 1L, base.add = TRUE, ...) {
+  
+  stopifnot(is.numeric(base) || is.character(base))
+  if(is.numeric(base)) if(round(base) != base) stop("Argument 'ref' specified as numeric but is not integer")
+  if(!is.factor(x)) x <- factor(x)
+  
+  lvl <- levels(x)
+  
+  if(is.character(base)) {
+    pos <- match(base, lvl)
+    if(is.na(pos)) stop(paste0("argument 'ref' specified as character but value \"", 
+                               base, "\", is not in levels(x)"))
+    base <- pos
+  }
+  
+  dummies <- contr.treatment(lvl, base = base)
+  
+  # if requested, add reference level to dummy matrix in 1st position
+  if(base.add) {
+    lvl.base <- levels(x)[base]
+    dummies <- cbind(c(1, rep(0, NROW(dummies)-1)), dummies)
+    colnames(dummies) <- c(lvl.base, colnames(dummies)[-1L])  
+  }
+  dummies # is a matrix
+}
+
+#' @rdname make.dummies
+#' @export
+make.dummies.data.frame <- function(x, col, base = 1L, base.add = TRUE, ...) {
+
+  stopifnot(inherits(col, "character"))
+  dum.mat <- make.dummies.default(x[ , col], base, base.add) # dummy matrix
+  colnames(dum.mat) <- paste0(col, colnames(dum.mat))
+  dum.df <- data.frame(cbind("merge.col" = rownames(dum.mat), dum.mat))
+ 
+  merge(x, dum.df, by.x = col, by.y = "merge.col", sort = FALSE)
+}
+
+#' @rdname make.dummies
+#' @export
+make.dummies.pdata.frame <- function(x, col, base = 1L, base.add = TRUE, ...) {
+  
+  stopifnot(inherits(col, "character"))
+#  idx.pos <- pos.index(x)
+#  drop.idx <- anyNA(idx.pos)
+  idx <- attr(x, "index")
+  res <- make.dummies.data.frame(x, col, base, base.add)
+  # add back pdata.frame features (assumption is: merge did not change order of original data.frame)
+  attr(res, "index") <- idx
+  class(res) <- c("pdata.frame", class(res))
+  res
+}
+
 
 

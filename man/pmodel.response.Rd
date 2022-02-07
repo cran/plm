@@ -17,7 +17,7 @@ pmodel.response(object, ...)
 }
 \arguments{
 \item{object}{an object of class \code{"plm"}, or a formula of
-class \code{"pFormula"},}
+class \code{"Formula"},}
 
 \item{\dots}{further arguments.}
 
@@ -25,10 +25,10 @@ class \code{"pFormula"},}
 }
 \value{
 A pseries except if model responses' of a \code{"between"}
-or "fd" model as these models "compress" the data (the number
+or \code{"fd"} model as these models "compress" the data (the number
 of observations used in estimation is smaller than the original
 data due to the specific transformation). A numeric is returned
-for the "between" and "fd" model.
+for the \code{"between"} and \code{"fd"} model.
 }
 \description{
 pmodel.response has several methods to conveniently extract the
@@ -39,7 +39,7 @@ The model response is extracted from a \code{pdata.frame} (where the
 response must reside in the first column; this is the case for a
 model frame), a \code{pFormula} + \code{data} or a \code{plm} object, and the
 transformation specified by \code{effect} and \code{model} is applied to
-it.\cr Constructing the model frame first ensures proper NA
+it.\cr Constructing the model frame first ensures proper \code{NA}
 handling and the response being placed in the first column, see
 also \strong{Examples} for usage.
 }

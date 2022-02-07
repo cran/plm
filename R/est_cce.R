@@ -90,8 +90,7 @@ pcce <- function (formula, data, subset, na.action,
                    #residuals = c("defactored", "standard"),
                   index = NULL, trend = FALSE, ...) {
   
-  ## Create a Formula object if necessary (from plm.R)
-#  if (!inherits(formula, "pFormula")) formula <- pFormula(formula)
+  ## Create a Formula object if necessary (from plm)
   if (!inherits(formula, "Formula")) formula <- as.Formula(formula)
 
   ## same as pggls but for effect, fixed at "individual" for compatibility
@@ -113,7 +112,8 @@ pcce <- function (formula, data, subset, na.action,
   ## evaluates the call, modified with model = "pooling", inside the
   ## parent frame resulting in the pooling model on formula, data
   plm.model <- eval(plm.model, parent.frame())
-  index <- unclass(attr(model.frame(plm.model), "index")) # unclass for speed
+  mf <- model.frame(plm.model)
+  index <- unclass(attr(mf, "index")) # unclass for speed
   ind  <- index[[1L]] ## individual index
   tind <- index[[2L]] ## time index
   ## set dimension variables
@@ -126,14 +126,14 @@ pcce <- function (formula, data, subset, na.action,
   N <- pdim$nT$N
   ## set index names
   time.names <- pdim$panel.names$time.names
-  id.names <- pdim$panel.names$id.names
+  id.names   <- pdim$panel.names$id.names
   coef.names <- names(coef(plm.model))
   ## number of coefficients
   k <- length(coef.names)
 
   ## model data
   X <- model.matrix(plm.model)
-  y <- model.response(model.frame(plm.model))
+  y <- model.response(mf)
 
   ## det. *minimum* group numerosity
   t <- min(Ti) # ==  min(tapply(X[ , 1], ind, length))
@@ -151,8 +151,9 @@ pcce <- function (formula, data, subset, na.action,
   ## as min(t) > k+1)
 
   ## subtract intercept from parms number and names
-  if(attr(terms(plm.model), "intercept")) {
-      k <- k-1
+  has.int <- attr(terms(plm.model), "intercept")
+  if(has.int) {
+      k <- k - 1
       coef.names <- coef.names[-1L]
   }
 
@@ -168,7 +169,7 @@ pcce <- function (formula, data, subset, na.action,
 
   ## must put the intercept into the group-invariant part!!
   ## so first drop it from X
-  if(attr(terms(plm.model), "intercept")) {
+  if(has.int) {
       X <- X[ , -1L, drop = FALSE]
   }
 
@@ -177,11 +178,7 @@ pcce <- function (formula, data, subset, na.action,
       Xm <- Between(X, effect = tind, na.rm = TRUE)
       ym <- as.numeric(Between(y, effect = "time", na.rm = TRUE))
 
-      if(attr(terms(plm.model), "intercept")) {
-        Hhat <- cbind(ym, Xm, 1L)
-        } else {
-          Hhat <- cbind(ym, Xm)
-      }
+      Hhat <- if(has.int) cbind(ym, Xm, 1L) else cbind(ym, Xm)
 
       ## prepare XMX, XMy arrays
       XMX <- array(data = NA_real_, dim = c(k, k, n))
@@ -338,7 +335,6 @@ pcce <- function (formula, data, subset, na.action,
     ## calc. measures of fit according to model type
     switch(model,
         "mg" = {
-
             ## R2 as in HPY 2010: sigma2ccemg = average (over n) of variances
             ## of defactored residuals
             ## (for unbalanced panels, each variance is correctly normalized
@@ -376,7 +372,7 @@ pcce <- function (formula, data, subset, na.action,
     r2cce <- 1 - sigma2cce/sigma2y
 
     ## allow outputting different types of residuals
-    stdres <- unlist(stdres)
+    stdres    <- unlist(stdres)
     residuals <- unlist(cceres)
 
     ## add transformed data (for now a simple list)
@@ -395,8 +391,7 @@ pcce <- function (formula, data, subset, na.action,
     coef <- as.numeric(coef)
     names(coef) <- rownames(vcov) <- colnames(vcov) <- coef.names
     dimnames(tcoef) <- list(coef.names, id.names)
-    pmodel <- attr(plm.model, "pmodel")
-    pmodel$model.name <- model.name
+    pmodel <- list(model.name = model.name)
     pccemod <- list(coefficients  = coef,
                     residuals     = residuals,
                     stdres        = stdres,
@@ -404,7 +399,7 @@ pcce <- function (formula, data, subset, na.action,
                     fitted.values = fitted.values,
                     vcov          = vcov,
                     df.residual   = df.residual,
-                    model         = model.frame(plm.model),
+                    model         = mf,
                     indcoef       = tcoef,
                     r.squared     = r2cce,
                     #cceres   = as.vector(cceres),
@@ -419,7 +414,6 @@ pcce <- function (formula, data, subset, na.action,
 #' @rdname pcce
 #' @export
 summary.pcce <- function(object, vcov = NULL, ...){
-  pmodel <- attr(object, "pmodel")
   vcov_arg <- vcov
   std.err <- if (!is.null(vcov_arg)) {
     if (is.matrix(vcov_arg))   rvcov <- vcov_arg
@@ -453,11 +447,9 @@ summary.pcce <- function(object, vcov = NULL, ...){
 #' @export
 print.summary.pcce <- function(x, digits = max(3, getOption("digits") - 2), width = getOption("width"), ...){
   pmodel <- attr(x, "pmodel")
-  pdim <- attr(x, "pdim")
-#  formula <- pmodel$formula
-  model.name <- pmodel$model.name
+  pdim   <- attr(x, "pdim")
   cat("Common Correlated Effects ")
-  cat(paste(model.pcce.list[model.name], "\n", sep = ""))
+  cat(paste(model.pcce.list[pmodel$model.name], "\n", sep = ""))
   if (!is.null(x$rvcov)) {
     cat("\nNote: Coefficient variance-covariance matrix supplied: ", attr(x$rvcov, which = "rvcov.name"), "\n", sep = "")
   }
@@ -469,9 +461,9 @@ print.summary.pcce <- function(x, digits = max(3, getOption("digits") - 2), widt
   print(sumres(x)) # was until rev. 1178: print(summary(unlist(residuals(x))))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
-  cat(paste("Total Sum of Squares: ",    signif(x$tss,digits), "\n", sep=""))
-  cat(paste("Residual Sum of Squares: ", signif(x$ssr,digits), "\n", sep=""))
-  cat(paste("HPY R-squared: ",           signif(x$rsqr,digits),"\n", sep=""))
+  cat(paste("Total Sum of Squares: ",    signif(x$tss,  digits), "\n", sep=""))
+  cat(paste("Residual Sum of Squares: ", signif(x$ssr,  digits), "\n", sep=""))
+  cat(paste("HPY R-squared: ",           signif(x$rsqr, digits), "\n", sep=""))
   invisible(x)
 }
 
