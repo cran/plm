@@ -380,7 +380,10 @@ Wooldridge-type serial correlation tests.
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(E<span class="sc">$</span>emp)</span></code></pre></div>
 <pre><code>## total sum of squares: 261539.4 
 ##          id        time 
-## 0.980765381 0.009108488</code></pre>
+## 0.980765381 0.009108488 
+## 
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   0.104   1.181   2.287   7.892   7.020 108.562</code></pre>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">as.matrix</span>(E<span class="sc">$</span>emp))</span></code></pre></div>
 <pre><code>##     1976   1977   1978   1979   1980   1981   1982   1983 1984
 ## 1     NA  5.041  5.600  5.015  4.715  4.093  3.166  2.936   NA
@@ -455,7 +458,7 @@ Wooldridge-type serial correlation tests.
 <p>The basic use of <code>plm</code> is to indicate the model formula, the data and the model to be estimated. For example, the fixed effects model and the random effects model are estimated using:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>grun.fe <span class="ot">&lt;-</span> <span class="fu">plm</span>(inv<span class="sc">~</span>value<span class="sc">+</span>capital, <span class="at">data =</span> Grunfeld, <span class="at">model =</span> <span class="st">&quot;within&quot;</span>)</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>grun.re <span class="ot">&lt;-</span> <span class="fu">plm</span>(inv<span class="sc">~</span>value<span class="sc">+</span>capital, <span class="at">data =</span> Grunfeld, <span class="at">model =</span> <span class="st">&quot;random&quot;</span>)</span></code></pre></div>
-<p>Methods to display a sumamry of the model estimation are available via <code>summary</code>. For example, for a <code>random</code> model, the <code>summary</code> method gives information about the variance of the components of the errors and some test statistics. Random effects of the estimated model can be extracted via <code>ranef</code>.</p>
+<p>Methods to display a summary of the model estimation are available via <code>summary</code>. For example, for a <code>random</code> model, the <code>summary</code> method gives information about the variance of the components of the errors and some test statistics. Random effects of the estimated model can be extracted via <code>ranef</code>.</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(grun.re)</span></code></pre></div>
 <pre><code>## Oneway (individual) effect Random Effect Model 
 ##    (Swamy-Arora&#39;s transformation)

@@ -11,7 +11,7 @@
 ## in the future, maybe make.pconsective could gain an additional argument 'fill' for the filled value (currently NA)
 ##      if so, check other packages (data.table, dplyr, tidyr, ...) what the argument is called there
 ##      arg would need to be a (named) list (for (p)data.frame methods) because columns of 
-##      (p)data.frames are of arbitraty classes
+##      (p)data.frames are of arbitrary classes
 
 
 #' Make data consecutive (and, optionally, also balanced)
@@ -24,7 +24,7 @@
 #' dimension is interpreted to be numeric, and the data are extended to a
 #' regularly spaced sequence with distance 1 between the time periods for each
 #' individual (for each individual the time dimension become a sequence t, t+1,
-#' t+2, \ldots{} where t is an integer). Non--index variables are filled with
+#' t+2, \ldots{}, where t is an integer). Non--index variables are filled with
 #' `NA` for the inserted elements (rows for (p)data.frames, vector
 #' elements for pseries).
 #' 
@@ -35,8 +35,8 @@
 #' dimension by taking the min and max of the time index variable over all
 #' individuals (w/o `NA` values) and inserting the missing time periods.
 #' Looking at the number of rows of the resulting (pdata.frame) (elements for
-#' pseries), this results in nrow(make.pconsecutive, balanced = FALSE) <=
-#' nrow(make.pconsecutive, balanced = TRUE).  For making the data only
+#' pseries), this results in `nrow(make.pconsecutive(<.>, balanced = FALSE))` <=
+#' `nrow(make.pconsecutive(<.>, balanced = TRUE))`. For making the data only
 #' balanced, i.e., not demanding consecutiveness at the same time, use
 #' [make.pbalanced()] (see **Examples** for a comparison)).
 #' 
@@ -50,7 +50,7 @@
 #' series is taken to be the min and max (w/o `NA` values) of the original
 #' time series for that individual, see also **Examples**. Thus, one might
 #' want to check if there are any `NA` values in the index variables
-#' before applying make.pconsecutive, and especially check for `NA` values
+#' before applying `make.pconsecutive`, and especially check for `NA` values
 #' in the first and last position for each individual in original data and, if
 #' so, maybe set those to some meaningful begin/end value for the time series.
 #' 
@@ -215,7 +215,7 @@ make.pconsecutive.indexes <- function(x, index, balanced = FALSE, ...) {
   }
   
   times_filled_vector <- unlist(times_filled_list, use.names = FALSE)
-  id_times <- vapply(times_filled_list, length, FUN.VALUE = 0.0) # lengths (with an "s") would be more efficient, but requires R >= 3.2
+  id_times <- lengths(times_filled_list, use.names = FALSE)
   
   id_filled_vector <- unlist(mapply(rep, unique(id_orig), id_times, SIMPLIFY = FALSE), use.names = FALSE)
                       # SIMPLIFY = FALSE => always return list
@@ -425,7 +425,7 @@ make.pconsecutive.pseries <- function(x, balanced = FALSE, ...) {
 #' depict the beginning and ending of the time series for that
 #' individual.  Thus, one might want to check if there are any
 #' `NA` values in the index variables before applying
-#' make.pbalanced, and especially check for `NA` values in the
+#' `make.pbalanced`, and especially check for `NA` values in the
 #' first and last position for each individual in original data and,
 #' if so, maybe set those to some meaningful begin/end value for the
 #' time series.
@@ -529,11 +529,6 @@ make.pbalanced <- function(x, balance.type = c("fill", "shared.times", "shared.i
 #' @export
 make.pbalanced.pdata.frame <- function(x, balance.type = c("fill", "shared.times", "shared.individuals"), ...) {
 
-  if (length(balance.type) == 1 && balance.type == "shared") {
-    # accept "shared" for backward compatibility
-    balance.type <- "shared.times"
-    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.times'")
-  }
   balance.type <- match.arg(balance.type)
   index <- attr(x, "index")
   
@@ -576,11 +571,6 @@ make.pbalanced.pdata.frame <- function(x, balance.type = c("fill", "shared.times
 #' @export
 make.pbalanced.pseries <- function(x, balance.type = c("fill", "shared.times", "shared.individuals"), ...) {
 
-  if (length(balance.type) == 1 && balance.type == "shared") {
-    # accept "shared" for backward compatibility
-    balance.type <- "shared.times"
-    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.times'")
-  }
   balance.type <- match.arg(balance.type)
   index <- attr(x, "index")
 
@@ -631,11 +621,6 @@ make.pbalanced.pseries <- function(x, balance.type = c("fill", "shared.times", "
 make.pbalanced.data.frame <- function(x, balance.type = c("fill", "shared.times", "shared.individuals"), index = NULL, ...) {
   # NB: for data.frame interface: the data is also sorted as stack time series
 
-  if (length(balance.type) == 1L && balance.type == "shared") {
-    # accept "shared" for backward compatibility
-    balance.type <- "shared.times"
-    warning("Use of balanced.type = 'shared' discouraged, set to 'shared.times'")
-  }
   balance.type <- match.arg(balance.type)
 
   ## identify index of data.frame  
@@ -695,6 +680,4 @@ intersect_index <- function(index, by) {
   keep_entries <- time %in% common_times
   return(keep_entries)
 }
-
-
 

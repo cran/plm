@@ -6,6 +6,38 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 
 ***
 
+# plm 2.6-1
+
+### Bug Fixes:
+* pmodel.response: `I()` in LHS of formula led to error in estimation with plm
+  ([#17](https://github.com/ycroissant/plm/issues/17)).
+
+### Changes:
+* summary.pseries: returned object is class "summary.pseries" for all inputs and
+  now has added as attribute "SummaryDefault" the summary of the base object
+  (e.g., summary(your_numeric)) if the base object is not a factor, logical, or 
+  character. For factors, logicals, and characters in a pseries, the 
+  summary.pseries object is simply the summary of the base object.
+  Printing of the summary object now gives the pseries-specific output as before 
+  (if applicable) and additionally summary printing of the base object.
+
+### Clean-ups:
+* pdata.frame: argument `stringsAsFactors` set to `FALSE` (was previously
+  `default.stringsAsFactors()` to determine value from options, but that 
+   will be deprecated as of R 4.2.0).
+* make.pbalanced: for argument `balance.type` the value `"shared"` is not 
+  accepted anymore, it was allowed for back-compatibility for some time. Use
+  `balance.type = "shared.times"` for the same result (see also NEWS entry for 
+  version 1.6-6).
+* Adjust example benchmark in `?plm.fast` to new behaviour from version 1.4.8
+  onwards of package `microbenchmark` 
+  (<https://github.com/joshuaulrich/microbenchmark/issues/34>).
+
+### Dependencies:
+* Minimum required R version corrected to R 3.2.
+
+***
+
 # plm 2.6-0
 
 ### Speed-up:
@@ -48,7 +80,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
     NEWS for 2.4-0, 1.6-6).
 * pggls:
   * argument model: removed "random" from the list of official argument's
-    values as its use is depreciated (model = "pooling" does the same; however,
+    values as its use is deprecated (model = "pooling" does the same; however,
     value "random" is still accepted and adapted to "pooling" for 
     back-compatibility with a warning).
   * print.summary.pggls: fix printed model name in case default model was selected
@@ -172,7 +204,8 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
     * In section about panel unit root testing:
       * added short intro with overview of available functions/tests and added
         two example cases.
-      * added sub-section about new function phansi.
+      * added sub-section about new function phansi [later renamed to phansitest 
+        in plm 2.6].
     * added a little more information on the use of vcovXX.
  * 2nd vignette: added formula for nested error component model.
   * all vignettes: references updated to include Baltagi (2021), the 6th edition 
