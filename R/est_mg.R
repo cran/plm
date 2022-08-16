@@ -1,7 +1,9 @@
   ## Mean Group estimator
   ## ref. Coakley, Fuertes and Smith 2004
   ##
-  ## This version 10:
+  ## This version 11:
+  ##   uses optimised data split approach (via split())
+  ## version 10:
   ##   added R2 = 1-var(resid)/var(y) as a measure of fit
   ## from version 9:
   ##   fixed residuals
@@ -132,12 +134,9 @@ pmg <- function(formula, data, subset, na.action,
     tind <- index[[2L]] ## time index
     ## set dimension variables
     pdim <- pdim(plm.model)
-    balanced <- pdim$balanced
-    nt <- pdim$Tint$nt
     Ti <- pdim$Tint$Ti
     T. <- pdim$nT$T
     n <- pdim$nT$n
-    N <- pdim$nT$N
     ## set index names
     time.names <- pdim$panel.names$time.names
     id.names   <- pdim$panel.names$id.names
@@ -165,19 +164,27 @@ pmg <- function(formula, data, subset, na.action,
   ## (might be unbalanced => t1!=t2 but we don't care as long
   ## as min(t)>k+1)
 
-  ## "pre-allocate" coefficients matrix for the n models
-  kt <- if (trend) 1L else 0L
-  tcoef <- matrix(data = NA_real_, nrow = k+kt, ncol = n)
+  ## "pre-allocate" coefficients matrix for the n models and list for residuals
+  kt <- if(trend) 1L else 0L
+  tcoef <- if(model == "cmg") {
+    matrix(data = NA_real_, nrow = 2*k+kt, ncol = n) ## allow for extended coef vector
+  } else matrix(data = NA_real_, nrow = k+kt, ncol = n)
   tres <- vector("list", n)
 
   switch(model,
     "mg" = {
+      # split X, y by individual and store in lists
+      X.col <- NCOL(X)
+      tX.list <- split(X, ind)
+      tX.list <- lapply(tX.list, function(m) matrix(m, ncol = X.col))
+      
+      ty.list <- split(y, ind)
+      
       ## for each x-sect. i = 1..n
-      unind <- unique(ind)
-      for(i in 1:n) {
-        tX <- X[ind == unind[i], ]
-        ty <- y[ind == unind[i]]
-        if(trend) tX <- cbind(tX, 1:(dim(tX)[[1L]]))
+      for(i in seq_len(n)) {
+        tX <- tX.list[[i]]
+        ty <- ty.list[[i]]
+        if(trend) tX <- cbind(tX, seq_len(dim(tX)[[1L]]))
         tfit <- lm.fit(tX, ty)
         tcoef[ , i] <- tfit$coefficients
         tres[[i]]   <- tfit$residuals
@@ -195,31 +202,28 @@ pmg <- function(formula, data, subset, na.action,
       
       augX <- cbind(X, ym, Xm[ , -1L, drop = FALSE])
 
-      ## allow for extended coef vector
-      tcoef0 <- matrix(data = NA_real_, nrow = 2*k+kt, ncol = n)
-
+      augX.col <- NCOL(augX)
+      taugX.list <- split(augX, ind)
+      taugX.list <- lapply(taugX.list, function(m) matrix(m, ncol = augX.col))
+      
+      ty.list <- split(y, ind)
+      
       ## for each x-sect. i = 1..n estimate (over t) an augmented model
       ## y_it = alpha_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
-      unind <- unique(ind)
-      for(i in 1:n) {
-        taugX <- augX[ind == unind[i], ] # TODO: check if this kind of extractions need drop = FALSE for corner cases
-        ty    <-    y[ind == unind[i]]
-        if(trend) taugX <- cbind(taugX, 1:(dim(taugX)[[1L]]))
+      for(i in seq_len(n)) {
+        taugX <- taugX.list[[i]]
+        ty    <-    ty.list[[i]]
+        if(trend) taugX <- cbind(taugX, seq_len(dim(taugX)[[1L]]))
         tfit <- lm.fit(taugX, ty)
-        tcoef0[ , i] <- tfit$coefficients
-        tres[[i]]    <- tfit$residuals
+        tcoef[ , i] <- tfit$coefficients
+        tres[[i]]   <- tfit$residuals
       }
-      tcoef     <- tcoef0[1:k, ] # TODO: this line seems superfluous as tcoef is overwritten a few lines below again
-      tcoef.bar <- tcoef0[-(1:k), ]
 
+      ## add names of coefs for augmented x-sectional averages
       coef.names.bar <- c("y.bar", paste(coef.names[-1L], ".bar", sep=""))
-
-      ## 'trend' always comes last
-      if(trend) coef.names.bar <- c(coef.names.bar, "trend")
-
-      ## output complete coefs
-      tcoef <- tcoef0
       coef.names <- c(coef.names, coef.names.bar)
+      ## 'trend' always comes last
+      if(trend) coef.names <- c(coef.names, "trend")
       ## adjust k
       k <- length(coef.names)
 
@@ -231,14 +235,19 @@ pmg <- function(formula, data, subset, na.action,
       demX <- Within(X, effect = "time", na.rm = TRUE)
       demX[ , 1L] <- 1 # put back intercept lost by within transformation
       demy <- as.numeric(Within(y, effect = "time", na.rm = TRUE))
+
+      demX.col <- NCOL(demX)
+      tdemX.list <- split(demX, ind)
+      tdemX.list <- lapply(tdemX.list, function(m) matrix(m, ncol = demX.col))
       
+      tdemy.list <- split(demy, ind)
+            
       ## for each x-sect. i=1..n estimate (over t) a demeaned model
       ## (y_it-my_t) = alpha_i + beta_i*(X_it-mX_t) + err_it
-      unind <- unique(ind)
-      for (i in 1:n) {
-        tdemX <- demX[ind == unind[i], ]
-        tdemy <- demy[ind == unind[i]]
-        if(trend) tdemX <- cbind(tdemX, 1:(dim(tdemX)[[1L]]))
+      for (i in seq_len(n)) {
+        tdemX <- tdemX.list[[i]]
+        tdemy <- tdemy.list[[i]]
+        if(trend) tdemX <- cbind(tdemX, seq_len(dim(tdemX)[[1L]]))
         tfit <- lm.fit(tdemX, tdemy)
         tcoef[ , i] <- tfit$coefficients
         tres[[i]]   <- tfit$residuals
@@ -256,7 +265,7 @@ pmg <- function(formula, data, subset, na.action,
     coefmat <- array(data = NA_real_, dim = c(k, k, n))
     demcoef <- tcoef - coef # gets recycled n times by column
 
-    for (i in 1:n) coefmat[ , , i] <- outer(demcoef[ , i], demcoef[ , i])
+    for (i in seq_len(n)) coefmat[ , , i] <- outer(demcoef[ , i], demcoef[ , i])
     ## summing over the n-dimension of the array we get the
     ## covariance matrix of coefs
     vcov <- rowSums(coefmat, dims = 2L) / (n*(n-1)) # == apply(coefmat, 1:2, sum) / (n*(n-1)) but rowSums(., dims = 2L)-construct is way faster
@@ -322,7 +331,7 @@ print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2),
   cat("\n")
   print(pdim)
   cat("\nResiduals:\n")
-  print(sumres(x)) # was until rev. 1178: print(summary(unlist(residuals(x))))
+  print(sumres(x))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
   cat(paste("Total Sum of Squares: ",    signif(x$tss,  digits),  "\n", sep=""))
@@ -334,5 +343,5 @@ print.summary.pmg <- function(x, digits = max(3, getOption("digits") - 2),
 #' @rdname pmg
 #' @export
 residuals.pmg <- function(object, ...) {
-  return(pres(object))
+  pres(object)
 }

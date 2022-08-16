@@ -98,7 +98,8 @@ named:
 \item \code{"idres"} (containing results from the individual regressions),
 \item \code{"adjval"} (containing the simulated means and variances needed to compute
 the statistic, for \code{test = "levinlin"} and \code{"ips"}, otherwise \code{NULL}),
-\item \code{"sigma2"} (short-run and long-run variance for \code{test = "levinlin"}, otherwise NULL).
+\item \code{"sigma2"} (short-run and long-run variance for \code{test = "levinlin"},
+otherwise \code{NULL}).
 }
 }
 \description{
@@ -141,7 +142,7 @@ Hadri's test, the test of Levin/Lin/Chu, and the tbar statistic of
 Im/Pesaran/Shin are not applicable to unbalanced panels; the tbar statistic
 is not applicable when \code{lags > 0} is given.
 
-The exogeneous instruments of the tests (where applicable) can be specified
+The exogenous instruments of the tests (where applicable) can be specified
 in several ways, depending on how the data is handed over to the function:
 \itemize{
 \item For the \code{formula}/\code{data} interface (if \code{data} is a \code{data.frame},

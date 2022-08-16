@@ -271,16 +271,19 @@ purtest.names.test <- c(levinlin  = "Levin-Lin-Chu Unit-Root Test",
 ## General functions to transform series:
 
 YClags <- function(object,  k = 3){
-  if (k > 0)
-    sapply(1:k, function(x) c(rep(NA, x), object[1:(length(object)-x)]))
-  else
-    NULL
+  n <- length(object)
+  if(k > n) stop("lag value larger than length of series to lag")
+  if(k > 0) {
+    res <- sapply(seq_len(k), function(x) c(rep(NA, x), object[seq_len(n - x)]))
+    if(is.null(dim(res))) res <- as.matrix(res) # guarantee to return a matrix
+  } else res <-  NULL
+  res
 }
 
-YCtrend <- function(object) 1:length(object)
-
-YCdiff <- function(object){
-  c(NA, object[2:length(object)] - object[1:(length(object)-1)])
+YCdiff <- function(object) {
+  # NB/TODO: no sanity check here: for input of length(object) == 1, a result of 
+  # length 3 is returned: c(NA, NA, 0)
+  c(NA, object[seq_along(object)[-1L]] - object[seq_len(length(object)-1)])
 }
 
 selectT <- function(x, Ts){
@@ -305,24 +308,25 @@ lagsel <- function(object, exo = c("intercept", "none", "trend"),
   method <- match.arg(method)
   y <- object
   Dy <- YCdiff(object)
-  Ly <- c(NA, object[1:(length(object)-1)])
+  Ly <- c(NA, object[seq_len(length(object)-1)])
   if (exo == "none")      m <- NULL
   if (exo == "intercept") m <- rep(1, length(object))
-  if (exo == "trend")     m <- cbind(1, YCtrend(object))
-  LDy <- YClags(Dy, pmax)
+  if (exo == "trend")     m <- cbind(1, seq_along(object))
+  LDy <- YClags(Dy, k = pmax)
+  
   decreasei <- TRUE
-  i <- 0
-  narow <- 1:(pmax+1)
+  i <- 0L
+  narow <- seq_len(pmax+1)
   if (method == "Hall"){
     while(decreasei){
       lags <- pmax - i
-      if (!fixedT) narow <- 1:(lags+1)
+      if (!fixedT) narow <- seq_len(lags + 1L)
       X <- cbind(Ly, LDy[ , 0:lags], m)[-narow, , drop = FALSE]
       y <- Dy[-narow]
       sres <- my.lm.fit(X, y, dfcor = dfcor)
-      tml <- sres$coef[lags+1]/sres$se[lags+1]
-      if (abs(tml) < 1.96 && lags > 0)
-        i <- i + 1
+      tml <- sres$coef[lags + 1L]/sres$se[lags + 1L]
+      if (abs(tml) < 1.96 && lags > 0L)
+        i <- i + 1L
       else
         decreasei <- FALSE
     }
@@ -331,17 +335,17 @@ lagsel <- function(object, exo = c("intercept", "none", "trend"),
     l <- c()
     while(i <= pmax){
       lags <- pmax - i
-      if (!fixedT) narow <- 1:(lags+1)
+      if (!fixedT) narow <- seq_len(lags + 1L)
       X <- cbind(Ly, LDy[ , 0:lags], m)[-narow, , drop = FALSE]
       y <- Dy[-narow]
       sres <- my.lm.fit(X, y, dfcor = dfcor)
       AIC <- if (method == "AIC") {
-        log(sres$rss / sres$n) + 2 * sres$K / sres$n
+        log(sres$rss / sres$n) + 2 * sres$K / sres$n # AIC
       } else {
-        log(sres$rss / sres$n) + sres$K * log(sres$n) / sres$n
+        log(sres$rss / sres$n) + sres$K * log(sres$n) / sres$n # SIC
       }
       l <- c(l, AIC)
-      i <- i + 1
+      i <- i + 1L
     }
     lags <- pmax + 1 - which.min(l)
   }
@@ -353,14 +357,14 @@ adj.levinlin.value <- function(l, exo = c("intercept", "none", "trend")){
   ## extract the adjustment values for Levin-Lin-Chu test
   theTs <- as.numeric(dimnames(adj.levinlin)[[1L]])
   Ts <- selectT(l, theTs)
-  if (length(Ts) == 1L){
-    return(adj.levinlin[as.character(Ts), , exo])
-  }
-  else{
+  res <- if (length(Ts) == 1L) {
+    adj.levinlin[as.character(Ts), , exo]
+  } else{
     low  <- adj.levinlin[as.character(Ts[1L]), , exo]
     high <- adj.levinlin[as.character(Ts[2L]), , exo]
-    return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
+    low + (l - Ts[1L]) / (Ts[2L] - Ts[1L]) * (high - low)
   }
+  res
 } ## END adj.levinlin.value
 
 adj.ips.wtbar.value <- function(l = 30, lags = 2, exo = c("intercept", "trend")){
@@ -369,32 +373,35 @@ adj.ips.wtbar.value <- function(l = 30, lags = 2, exo = c("intercept", "trend"))
   lags <- min(lags, 8)
   theTs <- as.numeric(dimnames(adj.ips.wtbar)[[2L]])
   Ts <- selectT(l, theTs)
-  if (length(Ts) == 1L){
+  res <- if (length(Ts) == 1L) {
     # take value as in table
-    return(adj.ips.wtbar[as.character(lags), as.character(Ts), , exo])
+    adj.ips.wtbar[as.character(lags), as.character(Ts), , exo]
   }
   else{
     # interpolate value from table
-    low  <- adj.ips.wtbar[as.character(lags), as.character(Ts[1L]), , exo]
-    high <- adj.ips.wtbar[as.character(lags), as.character(Ts[2L]), , exo]
-    return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
+    lags.char <- as.character(lags)
+    low  <- adj.ips.wtbar[lags.char, as.character(Ts[1L]), , exo]
+    high <- adj.ips.wtbar[lags.char, as.character(Ts[2L]), , exo]
+    low + (l - Ts[1L]) / (Ts[2L] - Ts[1L]) * (high - low)
   }
+  res
 } ## END adj.ips.wtbar.value
 
 adj.ips.ztbar.value <- function(l = 30L, time, means, vars){
   ## extract the adjustment values for Im-Pesaran-Shin test's Ztbar statistic
   ## from table 1, right hand pane in IPS (2003) fed by arguments means and vars
   Ts <- selectT(l, time)
-  if (length(Ts) == 1L){
+  res <- if (length(Ts) == 1L){
     # take value as in table
-    return(c("mean" = means[as.character(Ts)], "var" = vars[as.character(Ts)]))
+    c("mean" = means[as.character(Ts)], "var" = vars[as.character(Ts)])
   }
   else{
     # interpolate value from table
     low  <- c("mean" = means[as.character(Ts[1L])], "var" = vars[as.character(Ts[1L])])
     high <- c("mean" = means[as.character(Ts[2L])], "var" = vars[as.character(Ts[2L])])
-    return(low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low))
+    low + (l - Ts[1L])/(Ts[2L] - Ts[1L]) * (high - low)
   }
+  res
 } ## END adj.ips.ztbar.value
 
 critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("intercept", "trend")){
@@ -412,6 +419,7 @@ critval.ips.tbar.value <- function(ind = 10L, time = 19L, critvals, exo = c("int
   
   exo <- match.arg(exo)
   
+  ## check cases and early exit:
   if(length(Inds) == 1L && length(Ts) == 1L) {
     # exact hit for individual AND time: take value as in table
     return(critvals[as.character(Inds), as.character(Ts), , exo])
@@ -468,13 +476,14 @@ tsadf <- function(object, exo = c("intercept", "none", "trend"),
   y <- object
   L <- length(y)
   Dy <- YCdiff(object)
-  Ly <- c(NA, object[1:(length(object) - 1)])
+  Ly <- c(NA, object[seq_len(length(object)-1)])
   if(exo == "none")      m <- NULL
   if(exo == "intercept") m <- rep(1, length(object))
-  if(exo == "trend")     m <- cbind(1, YCtrend(object))
-  narow <- 1:(lags+1)
-  LDy <- YClags(Dy, lags)
+  if(exo == "trend")     m <- cbind(1, seq_along(object))
+  narow <- seq_len(lags+1)
+  LDy <- YClags(Dy, k = lags)
   X <- cbind(Ly, LDy, m)[-narow, , drop = FALSE]
+  if(dim(X)[[1]] == 0L) stop("after lagging, no non-NA case left in a series")
   y <- Dy[- narow]
   result <- my.lm.fit(X, y, dfcor = dfcor)
   sigma <- result$sigma
@@ -519,13 +528,13 @@ longrunvar <- function(x, exo = c("intercept", "none", "trend"), q = NULL){
   # integer from that formula (not, e.g., trunc)
   T <- length(x)
   if (is.null(q)) q <- round(3.21 * T^(1/3))
-  dx <- x[2:T] - x[1:(T-1)]
+  dx <- x[2:T] - x[seq_len(T-1)]
   if(exo == "intercept") dx <- dx - mean(dx)
-  if(exo == "trend")     dx <- lm.fit(cbind(1, 1:length(dx)), dx)$residuals
+  if(exo == "trend")     dx <- lm.fit(cbind(1, seq_along(dx)), dx)$residuals
   dx <- c(NA, dx)
   res <- 1/(T-1)*sum(dx[-1]^2)+
     2*sum(
-      sapply(1:q,
+      sapply(seq_len(q),
              function(L){
                sum(dx[2:(T-L)] * dx[(L+2):T]) / (T-1) *
                  (1 - L / (q+1))
@@ -542,7 +551,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
   ## Hadri's test is applicable to balanced data only
   ## input 'object' is a list with observations per individual
   if(!is.list(object)) stop("argument 'object' in hadritest is supposed to be a list")
-  if(exo == "none") stop("exo = \"none\" is not a valid option for Hadri's test")
+  if(exo == "none") stop("exo = \"none\" (\"~0\" in the formula interface) is not a valid option for Hadri's test")
   # determine L (= time periods), unique for balanced panel and number of individuals (n)
   if(length(L <- unique(lengths(object, use.names = FALSE))) > 1L)
     stop("Hadri test is not applicable to unbalanced panels")
@@ -556,7 +565,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
   if (exo == "trend"){
     resid <- lapply(object, function(x) {
                               lx <- length(x)
-                              dmat <- matrix(c(rep(1, lx), 1:lx), nrow = lx)
+                              dmat <- matrix(c(rep(1, lx), seq_len(lx)), nrow = lx)
                               # can use lm.fit here as NAs are dropped in beginning of 'purtest'
                               lm.fit(dmat, x)$residuals
                               })
@@ -579,16 +588,17 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
   
   Si2 <- vapply(cumres2, function(x) sum(x), FUN.VALUE = 0.0, USE.NAMES = FALSE)
   numerator <- 1/n * sum(1/(L^2) * Si2)
-  LM <- numerator / sigma2 # non-het consist case (Hcons == FALSE)
   LMi <- 1/(L^2) * Si2 / sigma2i # individual LM statistics
   
-  if (Hcons) {
-    LM <- mean(LMi)
-    method <- paste0(method, " (Heterosked. Consistent)")
-  }
+  LM <- if(!Hcons) {
+                    numerator / sigma2 # non-het consistent case
+                  } else {
+                    method <- paste0(method, " (Heterosked. Consistent)")
+                    mean(LMi) # het. consistent case
+                  }
   
   stat <- c(z = sqrt(n) * (LM - adj[1L])  / sqrt(adj[2L])) # eq. (14), (22) in Hadri (2000)
-  pvalue <- pnorm(stat, lower.tail = FALSE) # is one-sided! was until rev. 572: 2*(pnorm(abs(stat), lower.tail = FALSE))
+  pvalue <- pnorm(stat, lower.tail = FALSE) # is one-sided!
   
   htest <- structure(list(statistic   = stat,
                           parameter   = NULL,
@@ -654,7 +664,7 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #' Im/Pesaran/Shin are not applicable to unbalanced panels; the tbar statistic
 #' is not applicable when `lags > 0` is given.
 #' 
-#' The exogeneous instruments of the tests (where applicable) can be specified
+#' The exogenous instruments of the tests (where applicable) can be specified
 #' in several ways, depending on how the data is handed over to the function:
 #' 
 #' - For the `formula`/`data` interface (if `data` is a `data.frame`,
@@ -725,7 +735,8 @@ hadritest <- function(object, exo, Hcons, dfcor, method,
 #' - `"idres"` (containing results from the individual regressions),
 #' - `"adjval"` (containing the simulated means and variances needed to compute 
 #'      the statistic, for `test = "levinlin"` and `"ips"`, otherwise `NULL`),
-#' - `"sigma2"` (short-run and long-run variance for `test = "levinlin"`, otherwise NULL).
+#' - `"sigma2"` (short-run and long-run variance for `test = "levinlin"`, 
+#'       otherwise `NULL`).
 #' @export
 #' @importFrom stats setNames
 #' @author Yves Croissant and for "Pm", "invnormal", and "logit" Kevin Tappe
@@ -766,8 +777,7 @@ purtest <- function(object, data = NULL, index = NULL,
     terms <- terms(object)
     lab <- labels(terms)
     if(length(lab) == 0L){
-      if(attr(terms, "intercept")) exo <- "intercept"
-      else exo <- "none"
+      exo <- if(attr(terms, "intercept")) "intercept" else "none"
     }
     else{
       if(length(lab) > 1L || lab != "trend") stop("incorrect formula")
@@ -810,7 +820,7 @@ purtest <- function(object, data = NULL, index = NULL,
     }
   }
   
-  # by now, object is either a pseries to be split or a data.frame, code continues with list
+  # by now, object is either a pseries or a data.frame
   object <- na.omit(object)
   if(!is.null(attr(object, "na.action")))
     warning("NA value(s) encountered and dropped, results may not be reliable")
@@ -824,6 +834,7 @@ purtest <- function(object, data = NULL, index = NULL,
     if(!ncol(object) > 1L) warning("data.frame or matrix specified in argument object does not contain more than one individual (individuals are supposed to be in columns)")
     object <- as.list(object)
   }
+  # by now, object is a list
   
   cl <- match.call()
   test <- match.arg(test)
@@ -851,7 +862,7 @@ purtest <- function(object, data = NULL, index = NULL,
       else lags <- as.list(lags)
     }
   }
-  else{ # lag selection procedure SIC, AIC, or Hall
+  else{ # one of the lag selection procedures SIC, AIC, or Hall
     lag.method <- match.arg(lags)
     lags <- sapply(object, function(x)
       lagsel(x, exo = exo, method = lag.method,
@@ -900,7 +911,7 @@ purtest <- function(object, data = NULL, index = NULL,
   }
   
   if(test == "ips"){
-    if(exo == "none") stop("exo = \"none\" is not a valid option for the Im-Pesaran-Shin test")
+    if(exo == "none") stop("exo = \"none\" (\"~0\" in the formula interface) is not a valid option for the Im-Pesaran-Shin test")
     if(!is.null(ips.stat) && !any(ips.stat %in% c("Wtbar", "Ztbar", "tbar"))) stop("argument 'ips.stat' must be one of \"Wtbar\", \"Ztbar\", \"tbar\"")
     lags  <- vapply(idres, function(x) x[["lags"]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
     L.ips <- vapply(idres, function(x) x[["T"]],    FUN.VALUE = 0.0, USE.NAMES = FALSE) - lags - 1
@@ -918,7 +929,7 @@ purtest <- function(object, data = NULL, index = NULL,
       Etbar <- mean(adjval[1L, ])
       Vtbar <- mean(adjval[2L, ])
       stat <- c("Wtbar" = sqrt(n) * (tbar - Etbar) / sqrt(Vtbar)) # (3.13) = (4.10) in IPS (2003) [same generic formula for Ztbar and Wtbar]
-      pvalue <- pnorm(stat, lower.tail = TRUE) # need lower.tail = TRUE (like ADF one-sided to the left), was until rev. 577: 2*pnorm(abs(stat), lower.tail = FALSE)
+      pvalue <- pnorm(stat, lower.tail = TRUE) # need lower.tail = TRUE (like ADF one-sided to the left)
     }
     
     if(!is.null(ips.stat) && ips.stat == "Ztbar") {

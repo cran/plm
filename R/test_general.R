@@ -392,8 +392,6 @@ plmtest.plm <- function(x,
   type <- match.arg(type)
   if (describe(x, "model") != "pooling") x <- update(x, model = "pooling")
   pdim <- pdim(x)
-  n <- pdim$nT$n
-  T <- pdim$nT$T
   N_obs <- pdim$nT$N
   balanced <- pdim$balanced
   index <- unclass(attr(model.frame(x), "index")) # unclass for speed
@@ -471,10 +469,8 @@ plmtest.plm <- function(x,
                             time    = "time effects",
                             twoways = "two-ways effects")
   
-  balanced.type <- if(balanced) "balanced" else "unbalanced"
-  
   method <- paste("Lagrange Multiplier Test - ", method.effect,
-                  " (", method.type, ") for ", balanced.type, " panels", sep="")
+                  " (", method.type, ")", sep="")
   
   if (type %in% c("honda", "kw")) {
     RVAL <- list(statistic = stat,

@@ -88,10 +88,15 @@ aneweytest <- function(formula, data, subset, na.action, index = NULL,  ...){
     # time-demean and split by period:
     attr(X, "index") <- index
     X <- Within(X, effect ="time")
-    X <- lapply(as.list(periods), function(x) X[time == x, , drop = FALSE])
+    
+    X.ncol <- NCOL(X)
+    namesX <- colnames(X)
+    X <- split(X, time)
+    X <- lapply(X, function(m) matrix(m, ncol = X.ncol))
+    
     # put column names for split matrices in X:
-    for (i in 1:(length(periods))){
-      colnames(X[[i]]) <- paste(colnames(X[[i]]), periods[i], sep = ".")
+    for (i in seq_along(periods)){
+      colnames(X[[i]]) <- paste(namesX, periods[i], sep = ".")
     }
     
     if (!is.null(Z)){
@@ -213,10 +218,14 @@ piest <- function(formula, data, subset, na.action, index = NULL, robust = TRUE,
     attr(X, "index") <- index
     X <- Within(X, effect ="time")
     periods <- unique(time)
-    X <- lapply(as.list(periods), function(x) X[time == x, , drop = FALSE])
-    # put columnnames for split matrices in X:
-    for (i in 1:(length(periods))){
-      colnames(X[[i]]) <- paste(colnames(X[[i]]), periods[i], sep = ".")
+    
+    X.ncol <- NCOL(X)
+    X <- split(X, time)
+    X <- lapply(X, function(m) matrix(m, ncol = X.ncol))
+
+    # put column names for split matrices in X:
+    for (i in seq_along(periods)){
+      colnames(X[[i]]) <- paste(namesX, periods[i], sep = ".")
     }
     
     if (!is.null(Z)){
@@ -252,15 +261,15 @@ piest <- function(formula, data, subset, na.action, index = NULL, robust = TRUE,
     
     # construct the matrix of linear restrictions R | R x theta = pi
     R <- matrix(0, T * (T * Kx + Kz), (T + 1) * Kx + Kz)
-    for (i in 1:Kx){
+    for (i in seq_len(Kx)){
         R[ ((1:T) - 1) * (Kx * T + Kz) + (Kx * (1:T - 1)) + i , i] <- 1
     }
     if (Kz > 0){
-        for (i in 1:Kz){
+        for (i in seq_len(Kz)){
             R[ (Kx * T) + (1:T - 1) * (Kx * T + Kz) + i, Kx + i] <- 1
         }
     }
-    for (i in 1:(Kx * T)){
+    for (i in seq_len(Kx * T)){
         R[((1:T) - 1) * (Kx * T + Kz) + i , Kx + Kz + i] <- 1
     }
     

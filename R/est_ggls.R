@@ -115,7 +115,7 @@ pggls <- function(formula, data, subset, na.action,
     id.names   <- pdim$panel.names$id.names
     coef.names <- names(coef(plm.model))
     K <- length(coef.names)
-    
+
     if (model.name == "fd") {
     ## eliminate first year in indices
         nt <- pdim$Tint$nt[-1L]
@@ -124,9 +124,12 @@ pggls <- function(formula, data, subset, na.action,
         n <- pdim$nT$n
         N <- pdim$nT$N - pdim$Tint$nt[1L]
         time.names <- pdim$panel.names$time.names[-1L]
-        tind <- as.numeric(index[ , 2L])
-        sel <- (tind - c(-1, tind[-length(tind)])) == 1
-        index <- index[sel, ]
+        groupi <- as.numeric(index[[1L]])
+        ## make vector =1 on first obs in each group, 0 elsewhere
+        sel <- groupi - c(0, groupi[-length(groupi)])
+        sel[1L] <- 1 # the first must always be 1
+        ## eliminate first obs in time for each group
+        index <- index[!sel, ]
         id <- index[[1L]]
         time <- factor(index[[2L]], levels = attr(index[ , 2L], "levels")[-1L])
     } else {
@@ -135,7 +138,6 @@ pggls <- function(formula, data, subset, na.action,
         T <- pdim$nT$T
         n <- pdim$nT$n
         N <- pdim$nT$N
-        
         id <- index[[1L]]
         time <- index[[2L]]
     }
@@ -167,8 +169,11 @@ pggls <- function(formula, data, subset, na.action,
     
     cond <- cond[myord]
     other <- other[myord]
+    
     drop1 <- FALSE
     if (drop1 && model.name %in% c("within", "fd")) {
+    ## This 'if' parameterization is just for debugging.
+    ##  
     ## drop one time period (e.g., first as we do here)
     ## (see Wooldridge (2002) 10.5, eq. 10.61)/Wooldridge (2010),10.5.5, eq.10.61)
     ## this is needed according to Wooldridge (2002), p.277 / Wooldridge (2010), p. 312
@@ -181,7 +186,6 @@ pggls <- function(formula, data, subset, na.action,
     ## to discarding one year (N columns)
     ## -> as noted by Wooldridge
     ##
-    ## The 'if' parameterization is just for debugging.
     
         numeric.t <- as.numeric(other)
         t1 <- which(numeric.t != min(numeric.t))
@@ -196,40 +200,44 @@ pggls <- function(formula, data, subset, na.action,
         nother <- nother - 1
         other.names <- other.names[-1L]
     }
-    tres <- array(NA_real_, dim = c(nother, nother, ncond),
-                  dimnames = list(other.names, other.names, cond.names))
-    lcnd <- levels(cond)
+
     if (balanced) {
-        for (i in 1:ncond) {
-            ut <- resid[cond == lcnd[i]]
-            tres[ , , i] <- ut %o% ut
-        }
+        tres <- split(resid, cond)
+        tres <- lapply(tres, function(x) outer(x, x))
+        tres <- array(unlist(tres), dim = c(nother, nother, ncond)) # make array so rowMeans can be used
+      
         subOmega <- rowMeans(tres, dims = 2L) # == apply(tres, 1:2, mean) but faster
         omega <- bdsmatrix::bdsmatrix(rep(nother, ncond), rep(subOmega, ncond))
     } else {
-        lti <- list()
-        for (i in 1:ncond) {
-            cond.i <- cond == lcnd[i]
-            ut <- resid[cond.i]
-            names(ut) <- lti[[i]] <- other[cond.i]
-            out <- ut %o% ut
-            tres[names(ut), names(ut), i] <- out
+      # pre-allocate
+        tres <- array(NA_real_, dim = c(nother, nother, ncond),
+                      dimnames = list(other.names, other.names, cond.names))
+        
+        # split data by cond
+        resid.list <- split(resid, cond)
+        other.list <- split(other, cond)
+        
+        for (i in seq_len(ncond)) {
+            ut <- resid.list[[i]]
+            names(ut) <- other.list[[i]]
+            tres[names(ut), names(ut), i] <- outer(ut, ut)
         }
+
         subOmega <- rowMeans(tres, dims = 2L, na.rm = TRUE) # == apply(tres, 1:2, mean, na.rm = TRUE) but faster
-        list.cov.blocks <- list()
-        for (i in 1:ncond) {
-            list.cov.blocks[[i]] <- subOmega[lti[[i]], lti[[i]]]
-        }
+        list.cov.blocks <- sapply(other.list, function(i) subOmega[i, i], USE.NAMES = FALSE)
         omega <- bdsmatrix::bdsmatrix(groupsdim, unlist(list.cov.blocks, use.names = FALSE))
     }
     A <- crossprod(X, solve(omega, X))
     B <- crossprod(X, solve(omega, y))
     vcov <- solve(A)
     coef <- as.numeric(solve(A, B))
+    
     if (drop1 && model == "within") {
+      ## This 'if' parameterization is just for debugging.
         X <- X0
         y <- y0
     }
+    
     residuals <- y - as.numeric(tcrossprod(coef, X))
     df.residual <- nrow(X) - ncol(X)
     fitted.values <- y - residuals
@@ -249,6 +257,7 @@ pggls <- function(formula, data, subset, na.action,
     class(fullGLS) <- c("pggls", "panelmodel")
     fullGLS
 }
+
 
 #' @rdname pggls
 #' @export
@@ -280,7 +289,7 @@ print.summary.pggls <- function(x, digits = max(3, getOption("digits") - 2), wid
   cat("\n")
   print(pdim)
   cat("\nResiduals:\n")
-  print(sumres(x)) # was until rev. 1176:  print(summary(unlist(residuals(x))))
+  print(sumres(x))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
   cat(paste("Total Sum of Squares: ",    signif(x$tss,  digits), "\n", sep=""))
@@ -292,5 +301,5 @@ print.summary.pggls <- function(x, digits = max(3, getOption("digits") - 2), wid
 #' @rdname pggls
 #' @export
 residuals.pggls <- function(object, ...) {
-  return(pres(object))
+  pres(object)
 }

@@ -129,7 +129,6 @@ starX <- function(formula, data, model, rhs = 1, effect){
 #' @param formula. a new formula for the update method,
 #' @param evaluate a boolean for the update method, if `TRUE` the
 #'     updated model is returned, if `FALSE` the call is returned,
-#' @param newdata the new data set for the `predict` method,
 #' @param \dots further arguments.
 #' 
 #' @return An object of class `"plm"`.
@@ -177,7 +176,8 @@ starX <- function(formula, data, model, rhs = 1, effect){
 #' @seealso [summary.plm()] for further details about the associated
 #' summary method and the "summary.plm" object both of which provide some model
 #' tests and tests of coefficients.  [fixef()] to compute the fixed
-#' effects for "within" models (=fixed effects models).
+#' effects for "within" models (=fixed effects models). [predict.plm()] for 
+#' predicted values.
 #' @references
 #'
 #' \insertRef{AMEM:71}{plm}
@@ -442,7 +442,7 @@ plm.fit <- function(data, model, effect, random.method,
               stop("argument 'weights' not yet implemented for instrumental variable models")
             
           if ( ! (model == "random" && inst.method != "bvk")) {
-           #  FD/FE/BE IV and RE "bvk" IV estimator
+           #  Pool/FD/FE/BE IV and RE "bvk" IV estimator
             if (length(formula)[2L] == 2L) {
                   W <- model.matrix(data, rhs = 2,
                                     model = model, effect = effect,

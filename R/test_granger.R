@@ -155,7 +155,7 @@ pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), orde
     }
     else { # cut off enumeration of individuals in warning message if more than 5
       breakpoint <- which(cumsum(!indi_con) == 5L)[1L]
-      paste0(paste0(indnames[1L:breakpoint][!indi_con[1L:breakpoint]], collapse = ", "), ", ...")
+      paste0(paste0(indnames[seq_len(breakpoint)][!indi_con[seq_len(breakpoint)]], collapse = ", "), ", ...")
     }
     wrn <- paste0(wrn1, wrn2)
     warning(wrn)
@@ -212,11 +212,10 @@ pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), orde
     names(stat) <- "Wbar"
     pval <- NULL
   }
-  
+
   # make data frame with individual Granger test results and lag order
   indgranger <- data.frame(indi[!duplicated(indi)],
-                           Wi, pWi, dfWi, 
-                           (if(length(order) == 1L) rep(order, N) else order))
+                           Wi, pWi, dfWi, order_grangertest)
   colnames(indgranger) <- c(names(index(data))[1L], "Chisq", "p-value", "df", "lag")
   
   RVAL <- list(statistic = stat,

@@ -45,11 +45,11 @@ plm.list <- function(formula, data, subset, na.action,
     BIGX <- c()
     BIGy <- c()
     L <- nrow(S)
-    for (l in 1:L){
+    for (l in seq_len(L)){
       rowBIGy <- rep(0, N)
       rowBIGX <- c()
       if (!is.null(W)) rowBIGW <- c()
-      for (m in 1:L){
+      for (m in seq_len(L)){
         rowBIGX <- cbind(rowBIGX, t(solve(S))[l, m] * X[[m]])
         if (!is.null(W)) rowBIGW <- cbind(rowBIGW, t(S)[l, m] * W[[m]])
         rowBIGy <- rowBIGy + t(solve(S))[l, m] * y[[m]]
@@ -93,7 +93,7 @@ plm.list <- function(formula, data, subset, na.action,
     }
     else{
       .resid <- Reduce("c", lapply(object, resid))
-      structure(list(coefficents = Ucoef, vcov = Uvcov, residuals = .resid), class = "basiclm")
+      structure(list(coefficients = Ucoef, vcov = Uvcov, residuals = .resid), class = "basiclm")
     }
   }
   models <- plm.models(sysplm, amodel = model, random.method = "kinla") #TODO NB: "kinla" does not seem to be supported anymore...
@@ -143,7 +143,7 @@ plm.list <- function(formula, data, subset, na.action,
     #    X[, colnames(BIGW$X)] <- X[, colnames(BIGW$X)] + BIGW$X
     # version provisoire : emplacement des constantes
     intercepts <- c(1, cumsum(sapply(XB, ncol))[-length(XB)]+1)
-    X[, - intercepts] <- X[, - intercepts] + BIGW$X
+    X[ , - intercepts] <- X[ , - intercepts] + BIGW$X
     m <- mylm(y, X, cbind(BIGW$W, BIGB$W))
   }
   else{
@@ -203,7 +203,7 @@ summary.plm.list <- function(object, ...){
                        "t-value"    = z,
                        "Pr(>|t|)"   = p)
   }
-  for (l in 1:L){
+  for (l in seq_len(L)){
       models[[l]] <- coefTable[(Ks[l] + 1):Ks[l + 1] , ]
   }
   names(models) <- eqnames
@@ -270,7 +270,7 @@ print.summary.plm.list <- function(x, digits = max(3, getOption("digits") - 2),
     print(corer, digits = digits, na.print = ".")
     cat("\n")
   }
-  for (l in 1:length(x$models)){
+  for (l in seq_along(x$models)){
     cat(paste("\n - ", names(x$models)[l], "\n", sep = ""))
     printCoefmat(x$models[[l]], digits = digits)
   }
@@ -281,7 +281,7 @@ print.summary.plm.list <- function(x, digits = max(3, getOption("digits") - 2),
 #' @export
 print.plm.list <- function(x, digits = max(3, getOption("digits") - 2), width = getOption("width"),...){
   cat("\nModel Formulas:\n")
-  for (l in 1:length(formula(x))){
+  for (l in seq_along(formula(x))){
     cat(paste(names(formula(x))[l], "  : ", deparse(formula(x)[[l]]), "\n", sep = ""))
   }
   cat("\nCoefficients:\n")

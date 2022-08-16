@@ -344,11 +344,10 @@ pgmm <- function(formula, data, subset, na.action,
   attr(data, "formula") <- formula(main.form)
   yX <- extract.data(data)
   names.coef <- colnames(yX[[1L]])[-1L]
-  if (normal.instruments){
-    attr(data, "formula") <- inst.form
-    Z <- extract.data(data)
-  }
-  else Z <- NULL
+  Z <- if(normal.instruments){
+          attr(data, "formula") <- inst.form
+          extract.data(data)
+        } else NULL
   attr(data, "formula") <- gmm.form
   W <- extract.data(data, as.matrix = FALSE)
   
@@ -371,7 +370,7 @@ pgmm <- function(formula, data, subset, na.action,
   yX1 <- lapply(yX,
                 function(x){
                   xd <- diff(x)
-                  xd <- xd[- c(1:(TL1 - 1)), , drop = FALSE]
+                  xd <- xd[- c(seq_len(TL1 - 1)), , drop = FALSE]
                   xd
                 }
                 )
@@ -379,7 +378,7 @@ pgmm <- function(formula, data, subset, na.action,
     Z1 <- lapply(Z,
                  function(x){
                    xd <- diff(x)
-                   xd <- xd[- c(1:(TL1 - 1)), , drop = FALSE]
+                   xd <- xd[- c(seq_len(TL1 - 1)), , drop = FALSE]
                    xd
                  }
                  )
@@ -435,11 +434,11 @@ pgmm <- function(formula, data, subset, na.action,
       # in level (the difference of position between rows and columns
       # is due to the fact that the first column of td is the
       # intercept and should be kept anyway
-      V2 <- td[- c(1:TL2), - c(2:(2 + TL2 - 1))]
+      V2 <- td[- c(seq_len(TL2)), - c(2:(2 + TL2 - 1))]
       V1 <- diff(V2)
       namesV <- c("(Intercept)", namesV[- c(0:TL2 + 1)])
     }
-    for (i in 1:N){
+    for (i in seq_len(N)){
       yX1[[i]] <- cbind(yX1[[i]], V1)
       if (transformation == "d"){
         W1[[i]] <- cbind(W1[[i]], V1)
@@ -461,7 +460,7 @@ pgmm <- function(formula, data, subset, na.action,
   ##### rows for missing time series with 0
   #################################################################
 
-  for (i in 1:N){
+  for (i in seq_len(N)){
     narows <- apply(yX1[[i]], 1, function(z) anyNA(z))
     yX1[[i]][narows, ] <- 0
     W1[[i]][is.na(W1[[i]])] <- 0
@@ -488,14 +487,14 @@ pgmm <- function(formula, data, subset, na.action,
   #################################################################
   
   if (transformation == "ld"){
-    for (i in 1:N){
+    for (i in seq_len(N)){
       W1[[i]] <- bdiag(W1[[i]], W2[[i]])
       yX1[[i]] <- rbind(yX1[[i]], yX2[[i]])
       if (normal.instruments) Z1[[i]] <- bdiag(Z1[[i]], Z2[[i]])
     }
   }
   if (normal.instruments){
-    for (i in 1:N) W1[[i]] <- cbind(W1[[i]], Z1[[i]])
+    for (i in seq_len(N)) W1[[i]] <- cbind(W1[[i]], Z1[[i]])
   }
 
   
@@ -515,7 +514,7 @@ pgmm <- function(formula, data, subset, na.action,
   ## WX <- mapply(function(x, y) crossprod(x, y), W, yX, SIMPLIFY = FALSE)
   ## WX <- Reduce("+", WX)
   ## zerolines <- which(apply(WX, 1, function(z) sum(abs(z))) == 0)
-  ## for (i in 1:N) W[[i]] <- W[[i]][, - zerolines]
+  ## for (i in seq_len(N)) W[[i]] <- W[[i]][, - zerolines]
 
   WX <- mapply(function(x, y) crossprod(x, y), W, yX, SIMPLIFY = FALSE)
   Wy <- lapply(WX, function(x) x[ ,  1L])
@@ -527,8 +526,7 @@ pgmm <- function(formula, data, subset, na.action,
   A1 <- if(minevA1 < eps){
     warning("the first-step matrix is singular, a general inverse is used")
     ginv(A1)
-  }
-  else solve(A1)
+  } else solve(A1)
   A1 <- A1 * length(W)
   
   WX <- Reduce("+", WX)
@@ -551,8 +549,7 @@ pgmm <- function(formula, data, subset, na.action,
   A2 <- if (minevA2 < eps) {
     warning("the second-step matrix is singular, a general inverse is used")
     ginv(A2)
-  }
-  else solve(A2)
+  } else solve(A2)
 
   if (model == "twosteps") {
     coef1s <- coefficients
@@ -653,7 +650,7 @@ getvar <- function(x){
 
 dynterms2formula <- function(x, response.name = NULL){
   result <- character(0)
-  for (i in 1:length(x)){
+  for (i in seq_along(x)){
     theinst <- x[[i]]
     # if the first element is zero, write the variable without lag and
     # drop the 0 from the vector
@@ -714,7 +711,7 @@ extract.data <- function(data, as.matrix = TRUE){
 
 G <- function(t){
   G <- matrix(0, t, t)
-  for (i in 1:(t-1)){
+  for (i in seq_len(t-1)){
     G[i,   i]   <-  2
     G[i,   i+1] <- -1
     G[i+1, i]   <- -1
@@ -725,7 +722,7 @@ G <- function(t){
 
 FD <- function(t){
   FD <- Id(t)[-1L, ]
-  for (i in 1:(t-1)){
+  for (i in seq_len(t-1)){
     FD[i, i] <- -1
   }
   FD
@@ -752,7 +749,7 @@ makegmm <- function(x, g, TL1, collapse = FALSE){
   if (collapse) {
     x <- lapply(x, rev)
     m <- matrix(0, T - TL1, min(T - rg[1L], rg[2L]+1-rg[1L]))
-    for (y in 1:length(x)){ m[y, 1:length(x[[y]])] <- x[[y]]}
+    for (y in seq_along(x)){ m[y, seq_along(x[[y]])] <- x[[y]]}
     result <- m
    }
    else {
@@ -793,13 +790,13 @@ summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...) {
        else                   length(object$coefficients[[2L]])
   object$sargan <- sargan(object, "twosteps")
   object$m1 <- mtest(object, order = 1, vcov = vv)
-  # TODO: catch case when order = 2 is not feasible due to too few data
-  object$m2 <- mtest(object, order = 2, vcov = vv)
+  # mtest with order = 2 is only feasible if more than 2 observations are present
+  if(NROW(object$model[[1]]) > 2) object$m2 <- mtest(object, order = 2, vcov = vv)
   object$wald.coef <- pwaldtest(object, param = "coef", vcov = vv)
   if(effect == "twoways") object$wald.td <- pwaldtest(object, param = "time", vcov = vv)
   Kt <- length(object$args$namest)
   rowsel <- if(!time.dummies && effect == "twoways") -c((K - Kt + 1):K)
-            else 1:K
+            else seq_len(K)
   std.err <- sqrt(diag(vv))
   b <- coef(object)
   z <- b / std.err
@@ -844,7 +841,7 @@ summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...) {
 #' mtest(ar, order = 2L, vcov = vcovHC)
 #'
 mtest <- function(object, ...) {
-UseMethod("mtest")
+  UseMethod("mtest")
 }
 
 #' @rdname mtest
@@ -858,13 +855,20 @@ mtest.pgmm <- function(object, order = 1L, vcov = NULL, ...) {
   model <- describe(object, "model")
   transformation <- describe(object, "transformation")
   Kt <- length(object$args$namest)
-  
+
+  if(order >= (obs <- NROW(object$model[[1]]))) {
+    error.msg <- paste0("argument 'order' (", order, ") specifies an order ",
+                        "larger or equal than the number of available ", 
+                        "observations (", obs, ")")
+    stop(error.msg)
+  }
+
   switch(transformation,
          "d" = {
            resid <- object$residuals
            residl <- lapply(resid,
                             function(x)
-                              c(rep(0, order), x[1:(length(x) - order)]))
+                              c(rep(0, order), x[seq_len(length(x) - order)]))
                },
          "ld" = {
            resid <- lapply(object$residuals,
@@ -872,7 +876,7 @@ mtest.pgmm <- function(object, order = 1L, vcov = NULL, ...) {
                              c(x[-c(Kt:(2 * Kt + 1))], rep(0, Kt)))
            residl <- lapply(object$residuals,
                             function(x)
-                              c(rep(0, order), x[1:(Kt - order - 1)], rep(0, Kt)))
+                              c(rep(0, order), x[seq_len(Kt - order - 1)], rep(0, Kt)))
          })
   
   X <- lapply(object$model, function(x) x[ , -1L, drop = FALSE])
@@ -936,10 +940,13 @@ print.summary.pgmm <- function(x, digits = max(3, getOption("digits") - 2),
   cat("Autocorrelation test (1): ", names(x$m1$statistic),
       " = ", x$m1$statistic,
       " (p-value = ", format.pval(x$m1$p.value, digits = digits), ")\n", sep = "")
-  cat("Autocorrelation test (2): ", names(x$m2$statistic),
-      " = ", x$m2$statistic,
-      " (p-value = ", format.pval(x$m2$p.value,digits=digits), ")\n", sep = "")
-  cat("Wald test for coefficients: ", names(x$wald.coef$statistic),
+  if(!is.null(x$m2)) {
+    # # mtest with order = 2 is only present in x if more than 2 observations were present
+    cat("Autocorrelation test (2): ", names(x$m2$statistic),
+        " = ", x$m2$statistic,
+        " (p-value = ", format.pval(x$m2$p.value,digits=digits), ")\n", sep = "")
+  }
+    cat("Wald test for coefficients: ", names(x$wald.coef$statistic),
       "(",x$wald.coef$parameter,") = ", x$wald.coef$statistic,
       " (p-value = ", format.pval(x$wald.coef$p.value, digits = digits), ")\n", sep = "")
   

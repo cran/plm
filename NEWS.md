@@ -6,9 +6,53 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 
 ***
 
+# plm 2.6-2
+
+
+### Features:
+* `predict.plm`:
+  * prediction implemented for fixed effects models incl. support for
+    argument `newdata` and out-of-sample prediction. Help page (`?predict.plm`) 
+    added to specifically explain the prediction for fixed effects models and the 
+    out-of-sample case.
+  * change: case without supplied non-`NULL` `newdata` now gives the predicted 
+    values of the outer model (before: inner model).
+
+### Fixes:
+* `mtest`: error gracefully if argument `order` specifies a value larger than or 
+   equal to the number of available observations ([#23](https://github.com/ycroissant/plm/issues/23)).
+* `summary.pgmm` (and associated print method): does not execute `mtest` with 
+   `order = 2L` in case there are too few observations ([#23](https://github.com/ycroissant/plm/issues/23)).
+* `plm` for IV estimation: respect suppressed intercept in formula's 2nd part of 
+   RHS.
+* `vcovXX` functions: fix vcov output for first-difference models in case of 
+  `cluster = "time"`.
+* `pggls`: unbalanced first-difference models do not error anymore.
+* `pldv`: variance-covariance fixed for case `model = "fd"` when `objfun == "lsq"` 
+   and `sample == "cens"`.
+* `fixef(., type = "dfirst"`): for models with `length(fixef(<model_object>)) == 2`, 
+  fixef does not error anymore and for `length(fixef(<model_object>)) == 1`, 
+  the result is more sane (`numeric(0)`).
+  
+### Speed-up:
+* Many functions which split data by an index dimension are now faster on large
+  data sets due to more efficient splitting approach, esp. `pcce`, `pggls`, 
+  `pmg`, `cipstest`, `pcdtest`.
+  
+### Others/Minors/Admin:
+* `purtest`: errors more informatively when no non-NA cases are left after lagging.
+* `plmtest` and `pbsytest`: text in result object's `method` does not 
+  contain information about balanced/unbalanced panel anymore and is, thus, not
+  printed anymore.
+* `print.pseries`: return input object invisibly (prevents double printing when 
+  print() is called explicitly on a pseries).
+* Package's maintainer changed (for technical reasons only).
+
+***
+
 # plm 2.6-1
 
-### Bug Fixes:
+### Fixes:
 * pmodel.response: `I()` in LHS of formula led to error in estimation with plm
   ([#17](https://github.com/ycroissant/plm/issues/17)).
 
@@ -148,7 +192,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
    if `options("plm.fast" = TRUE)` is set, see `?plm.fast` (then internally
    using `collapse::dapply`)). Thanks to Sebastian Krantz for inspiration.
 
-### Bug Fixes:
+### Fixes:
  * between (and hence fixef, ranef): order of output is order of *factor levels*
    again (this reverts a change introduced in 2.4-0, there called a fix introducing
    the order of the appearance in the data which is actually not desirable). Change
@@ -231,7 +275,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
  * Between/between/Sum/Within: Methods which rely on the index attribute
    (\*.pseries and (if with index attribute) \*.matrix) now error informatively
    if NA in any index dimension is encountered.
- * Vignettes: file names renamed to start with "A_", "B_", "C_" so that the
+ * Vignettes: files renamed to start with "A_", "B_", "C_" so that the
    Vignettes are sorted on CRAN's plm page in an order better suited for new
    package users.
  * checkNA.index: new non-exported helper function to check for NA in index

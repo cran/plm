@@ -229,23 +229,11 @@ pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
 
   ## if effect="individual" std., else swap
   xindex <- unclass(attr(data, "index")) # unclass for speed
-  if (effect == "individual"){
-    index  <- xindex[[1L]]
-    tindex <- xindex[[2L]]
-  }
-  else{
-    index  <- xindex[[2L]]
-    tindex <- xindex[[1L]]
-  }
+  index <- if(effect == "individual") xindex[[1L]] else xindex[[2L]]
+  
   ## det. number of groups and df
   n <- length(unique(index))
   X <- model.matrix(x)
-
-  k <- ncol(X)
-  ## det. total number of obs. (robust vs. unbalanced panels)
-  nT <- nrow(X)
-  ## det. max. group numerosity
-  t <- max(tapply(X[ , 1L], index, length))
 
   ## ref. Wooldridge (2002), p.264 / Wooldridge (2010), p.299
     
@@ -253,22 +241,15 @@ pwtest.panelmodel <- function(x, effect = c("individual", "time"), ...) {
   u <- x$residuals
 
   ## est. random effect variance
-  ## "pre-allocate" an empty list of length n
-  tres <- vector("list", n)
-
   ## list of n "empirical omega-blocks"
   ## with averages of xproducts of t(i) residuals
   ## for each group 1..n 
   ## (possibly different sizes if unbal., thus a list
   ## and thus, unlike Wooldridge (eq.10.37), we divide 
   ## every block by *its* t(t-1)/2)
-  unind <- unique(index) # ????
- 
-  for(i in 1:n) {
-    ut <- u[index == unind[i]]
-    tres[[i]] <- ut %o% ut
-  }
-
+  ut.list <- split(u, index)
+  tres <- lapply(ut.list, function(x) outer(x, x))
+  
   ## det. # of upper triangle members (n*t(t-1)/2 if balanced)
   ## no needed, only for illustration
   # ti <- vapply(tres, function(x) dim(x)[[1L]], FUN.VALUE = 0.0, USE.NAMES = FALSE)
@@ -380,7 +361,9 @@ pwartest.formula <- function(x, data, ...) {
 #' @export
 pwartest.panelmodel <- function(x, ...) {
   
-  if (describe(x, "model") != "within") stop("pwartest only relevant for within models")
+  mod.nam <- describe(x, "model")
+  if(mod.nam != "within") stop(paste0("pwartest only relevant for \"within\" ",
+                                      "models, but model = \"", mod.nam, "\""))
 
   FEres <- x$residuals
   data <- model.frame(x)
@@ -390,11 +373,11 @@ pwartest.panelmodel <- function(x, ...) {
   
   attr(FEres, "data") <- NULL
   N <- length(FEres)
-  FEres.1 <- c(NA, FEres[1:(N-1)])
+  FEres.1 <- c(NA, FEres[seq_len(N-1)])
   xindex <- unclass(attr(data, "index")) # unclass for speed
   id   <- xindex[[1L]]
   time <- xindex[[2L]]
-  lagid <- as.numeric(id) - c(NA, as.numeric(id)[1:(N-1)])
+  lagid <- as.numeric(id) - c(NA, as.numeric(id)[seq_len(N-1)])
   FEres.1[lagid != 0] <- NA
   data <- data.frame(id, time, FEres = unclass(FEres), FEres.1 = unclass(FEres.1))
   names(data)[c(1L, 2L)] <- c("id", "time")
@@ -631,7 +614,7 @@ pbsytest.panelmodel <- function(x, test = c("ar", "re", "j"), re.normal = if (te
   tind <- tindex[oo]
   poolres <- poolres[oo]
   pdim <- pdim(x)
-  n <- max(pdim$Tint$n) ## det. number of groups
+  n <- max(pdim$Tint$nt) ## det. number of groups
   T_i <- pdim$Tint$Ti
   N_t <- pdim$Tint$nt
   t <- max(T_i) ## det. max. group numerosity
@@ -645,16 +628,19 @@ pbsytest.panelmodel <- function(x, test = c("ar", "re", "j"), re.normal = if (te
   A <- 1 - S1/S2
   
   unind <- unique(ind)
-  uu <-  uu1 <- rep(NA, length(unind))
-  for(i in 1:length(unind)) {
-    u.t <- poolres[ind == unind[i]]
+  length.unind <- length(unind)
+  uu <-  uu1 <- rep(NA_real_, length.unind) # pre-allocate
+  poolres.list <- split(poolres, ind)
+  
+  for(i in seq_len(length.unind)) {
+    u.t <- poolres.list[[i]]
     u.t.1 <- u.t[-length(u.t)]
     u.t <- u.t[-1L]
     uu[i] <- crossprod(u.t)
     uu1[i] <- crossprod(u.t, u.t.1)
   }
+
   B <- sum(uu1)/sum(uu)
-  
   a <- as.numeric(crossprod(T_i)) # Sosa-Escudera/Bera (2008), p. 69
   
   switch(test,
@@ -702,8 +688,6 @@ pbsytest.panelmodel <- function(x, test = c("ar", "re", "j"), re.normal = if (te
   ) # END switch
   
   dname <- paste(deparse(substitute(formula)))
-  balanced.type <- if(pdim$balanced) "balanced" else "unbalanced"
-  tname <- paste(tname, "-", balanced.type, "panel", collapse = " ")
 
   RVAL <- list(statistic   = stat,
                parameter   = df,
@@ -848,7 +832,7 @@ pdwtest.formula <- function(x, data, ...) {
 
 
 
-## references:
+## pbnftest references:
 ## * balanced and consecutive:
 ##    Bhargava/Franzini/Narendranathan (1982), Serial Correlation and the Fixed Effects Model, Review of Economic Studies (1982), XLIX(4), pp. 533-549.
 ##    (also in Baltagi (2005/2013), p. 98-99/109-110 for FE application)
@@ -953,7 +937,7 @@ pbnftest.panelmodel <- function(x, test = c("bnf", "lbi"), ...) {
   # it would be the case if base::diff() is used and as it is done for
   # lm-objects) NAs are introduced by the differencing as one
   # observation is lost per observational unit
-  if (!inherits(residuals(x), "pseries")) stop("pdwtest internal error: residuals are not of class \"pseries\"") # check to be safe: need pseries
+  if (!inherits(residuals(x), "pseries")) stop("pbnftest internal error: residuals are not of class \"pseries\"") # check to be safe: need pseries
   
   ind <- unclass(index(x))[[1L]] # unclass for speed
   obs1 <- !duplicated(ind)                  # first ob of each individual
@@ -1134,17 +1118,18 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   ## sigma2.e and sigma2.1 as in BL
   ## break up residuals by group to get rid of Kronecker prod.
   ## data have to be balanced and sorted by group/time, so this works
+  
+  ## pre-allocate
   uhat.i <- vector("list", n.)
-  for(i in 1:n.) {
-    uhat.i[[i]] <- uhat[t.*(i-1)+1:t.]
-    }
   s2e <- rep(NA, n.)
   s21 <- rep(NA, n.)
-  for(i in 1:n.) {
-    u.i <- uhat.i[[i]]
-    s2e[i] <- as.numeric(crossprod(u.i, Et) %*% u.i)
-    s21[i] <- as.numeric(crossprod(u.i, Jt) %*% u.i)
-    }
+  
+  for(i in seq_len(n.)) {
+    uhat.i[[i]] <- u.i <- uhat[t.*(i-1)+1:t.]
+    s2e[i] <- as.numeric(tcrossprod(crossprod(u.i, Et), u.i))
+    s21[i] <- as.numeric(tcrossprod(crossprod(u.i, Jt), u.i))
+  }
+
   sigma2.e <- sum(s2e) / (n.*(t.-1))
   sigma2.1 <- sum(s21) / n.
 
@@ -1152,7 +1137,7 @@ pbltest.formula <- function(x, data, alternative = c("twosided", "onesided"), in
   star1 <- (Jt/sigma2.1 + Et/sigma2.e) %*% G %*% (Jt/sigma2.1 + Et/sigma2.e)
   star2 <- rep(NA, n.)
   ## again, do this group by group to avoid Kronecker prod.
-  for(i in 1:n.) {
+  for(i in seq_len(n.)) {
     star2[i] <- as.numeric(crossprod(uhat.i[[i]], star1) %*% uhat.i[[i]])
     }
   star2 <- sum(star2)
@@ -1337,12 +1322,10 @@ pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
   
   ## fetch fd residuals
   FDres <- x$residuals
+  
   ## indices (full length! must reduce by 1st time period)
   ## this is an ad-hoc solution for the fact that the 'fd' model
   ## carries on the full indices while losing the first time period
-  xindex <- unclass(attr(model.frame(x), "index")) # unclass for speed
-  time <- as.numeric(xindex[[2L]])
-  id   <- as.numeric(xindex[[1L]])
   
   ## fetch dimensions and adapt to those of indices
   pdim <- pdim(x)
@@ -1356,11 +1339,11 @@ pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
   ##     creation needs to be re-worked because more than 1 observation per
   ##     individual can be dropped
   red_id <- integer()
-  for(i in 1:n) {
+  for(i in seq_len(n)) {
     red_id <- c(red_id, rep(i, Ti_minus_one[i]))
   }
   # additional check
-  # (but should error earlier already as the FD model should be nonestimable)
+  # (but should error earlier already as the FD model should be non-estimable)
   if(length(red_id) == 0L)
     stop("only individuals with one observation in original data: test not feasible")
   
@@ -1386,8 +1369,6 @@ pwfdtest.panelmodel <- function(x, ..., h0 = c("fd", "fe")) {
          ## theoretical rho under H0: no serial 
          ## corr. in original errors is -0.5
          rho.H0 <- -0.5})
-  
-  myH0 <- paste("FDres.1 = ", as.character(rho.H0), sep="")
   
   ## test H0: rho=rho.H0 with HAC, more params may be passed via ellipsis
   myvcov <- function(x) vcovHC(x, method = "arellano", ...) 

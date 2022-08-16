@@ -185,7 +185,7 @@ summary(plm_grunfeld_re_nerlove_tw_unbal)
 # south                      -.0606309      .0109319
 # _cons                      1.03732        .0485546
 
-# resambles Stata (ex. 2, p. 14)
+# resembles Stata (ex. 2, p. 14)
 # => coefficients, std.errors, R^2 (=R-sq within), F => correct
 # (NB: Stata outputs an "artificial" constant for FE models, see below)
 #summary(plm_fe_nlswork)
@@ -238,29 +238,6 @@ pHedonic2 <- pdata.frame(Hedonic, index = "townid")
 form2 <- formula(mv2 ~ crim2 + zn2 + indus2 + chas2 + nox2 + rm2 + age2 + dis2 + rad2 + tax2 + ptratio2 + blacks + lstat2)
 summary(plm(form2, data = pHedonic2, model = "random"))
 
-
-# pcce(., model = "mg") and pmg(., model = "cmg") estimate the same model but
-# in a different way - coefficients need to match
-data("Produc", package = "plm")
-form <- log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp
-pccemgmod   <- pcce(form, data = Produc, model = "mg")
-pmgccemgmod <- pmg (form, data = Produc, model = "cmg")
-common <- intersect(names(pccemgmod[["coefficients"]]), names(pmgccemgmod[["coefficients"]]))
-coef_pccemgmod   <- round(pccemgmod[["coefficients"]][common],   digits = 7)
-coef_pmgccemgmod <- round(pmgccemgmod[["coefficients"]][common], digits = 7)
-stopifnot(all.equal(coef_pccemgmod, coef_pmgccemgmod, tolerance = 1E-04))
-
-print(summary(pccemgmod))
-print(summary(pmgccemgmod))
-
-
-# run and output tests for pcce/pmg with model = 'p'/'mg'/'dmg'
-print(summary(pcce(form, data = Produc, model = "p")))
-print(summary(pmg (form, data = Produc, model = "mg")))
-print(summary(pmg (form, data = Produc, model = "dmg")))
-print(summary(pmg (form, data = Produc, model = "cmg", trend = TRUE)))
-print(summary(pmg (form, data = Produc, model = "mg",  trend = TRUE)))
-print(summary(pmg (form, data = Produc, model = "dmg", trend = TRUE)))
 
 ## further run tests without intercept
 plm(inv ~ 0 + value + capital, data = Grunfeld, model = "between")

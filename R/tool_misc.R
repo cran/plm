@@ -2,6 +2,7 @@
 
 ## - trace : calculate trace of a matrix (used in ercomp())
 ## - is.constant : check if a numeric vector or columns of a matrix is constant
+## - sumres : gives summary for residuals (used in several print.summary.* methods)
 ## - bdiag : takes matrices as argument and returns the block-diagonal matrix (used in pgmm and plm.list)
 ## - mylm : inner fitting func based on stats::lm with matrix inputs (used in plm.fit)
 ## - my.lm.fit : like the barebone stats::lm.fit but with some extra information (e.g., SEs, sigma) used in purtest
@@ -18,12 +19,18 @@ trace <- function(x) sum(diag(x))
 
 is.constant <- function(x) (max(x) - min(x)) < sqrt(.Machine$double.eps)
 
+sumres <- function(x){
+  sr <- summary(unclass(resid(x)))
+  srm <- sr["Mean"]
+  if (abs(srm) < 1e-10){
+    sr <- sr[c(1:3, 5:6)]
+  }
+  sr
+}
+
 bdiag <- function(...){
   ## non-exported
-  if (nargs() == 1L)
-    x <- as.list(...)
-  else
-    x <- list(...)
+  x <- if(nargs() == 1L) as.list(...) else list(...)
   n <- length(x)
   if(n == 0L) return(NULL)
   x <- lapply(x, function(y) if(length(y)) as.matrix(y) else
@@ -41,12 +48,12 @@ bdiag <- function(...){
   ind[2,   ] <- rcum
   ind[3, -1] <- ccum[-n]
   ind[4,   ] <- ccum
-  imat <- array(1:(rsum * csum), c(rsum, csum))
+  imat <- array(seq_len(rsum * csum), c(rsum, csum))
   iuse <- apply(ind, 2, function(y, imat) imat[(y[1L]+1):y[2L],
                                                (y[3L]+1):y[4L]], imat = imat)
   iuse <- as.vector(unlist(iuse))
   out[iuse] <- unlist(x)
-  return(out)
+  out
 }
 
 # mylm is used in plm.fit()
@@ -88,7 +95,7 @@ my.lm.fit <- function(X, y, dfcor = TRUE, ...){
   Qr <- reg$qr
   n <- NROW(Qr$qr)
   rdf <- n - p
-  p1 <- 1L:p
+  p1 <- seq_len(p)
   r <- reg$residuals
   rss <- as.numeric(crossprod(r))
   resvar <- if (dfcor) rss/rdf else rss/n
@@ -110,8 +117,8 @@ twosls <- function(y, X, W, intercept = FALSE, lm.type = "lm"){
 
   # As NA/NaN/(+/-)Inf-freeness needs to be guaranteed when functions call
   # twosls(), so can use lm.fit to calc. Xhat.
-  Xhat <- lm.fit(cbind(1, W), X)$fitted.values
-  # old: Xhat <- lm(X ~ W)$fitted.values
+   Xhat <- lm.fit(W, X)$fitted.values
+
   
   if(!is.matrix(Xhat)) {
     # ensure Xhat is a matrix
@@ -184,7 +191,7 @@ has.intercept.formula <- function(object, ...) {
 has.intercept.Formula <- function(object, rhs = NULL, ...) {
   ## NOTE: returns a logical vector of the necessary length
   ## (which might be > 1)
-  if (is.null(rhs)) rhs <- 1:length(attr(object, "rhs"))
+  if (is.null(rhs)) rhs <- seq_along(attr(object, "rhs"))
   res <- sapply(rhs, function(x) {
     aform <- formula(object, lhs = 0, rhs = x)
     # expand the dot if any in all the parts except the first
@@ -377,7 +384,6 @@ punbalancedness <- function(x, ...) {
 
 
 punbalancedness.default <- function(x, ...) {
-
   ii <- index(x)
   if(!is.index(ii)) stop("no valid index found for input object 'x'")
   
@@ -401,9 +407,9 @@ punbalancedness.default <- function(x, ...) {
       tss <- ii[[2L]]
       gps <- ii[[3L]]
       Tis <- unique(data.frame(tss, gps))
-      Tis <- table(Tis$gps)               # no of max time periods per group
+      Tis <- collapse::qtable(Tis$gps)    # no of max time periods per group
       Nis <- unique(data.frame(ids, gps))
-      Nis <- table(Nis$gps)               # no of individuals per group
+      Nis <- collapse::qtable(Nis$gps)    # no of individuals per group
       M <- length(unique(gps))            # no of unique groups
       Nbar <- sum(Nis)/M
       Tbar <- sum(Tis)/M
@@ -414,7 +420,7 @@ punbalancedness.default <- function(x, ...) {
       result <- (c(c1 = c1, c2 = c2, c3 = c3))
     } else stop(paste0("unsupported number of dimensions: ", ncol(ii)))
   }
-  return(result)
+  result
 }
 
 #' @rdname punbalancedness
@@ -735,14 +741,14 @@ make.dummies <- function(x, ...){
 make.dummies.default <- function(x, base = 1L, base.add = TRUE, ...) {
   
   stopifnot(is.numeric(base) || is.character(base))
-  if(is.numeric(base)) if(round(base) != base) stop("Argument 'ref' specified as numeric but is not integer")
+  if(is.numeric(base)) if(round(base) != base) stop("Argument 'base' specified as numeric but is not integer")
   if(!is.factor(x)) x <- factor(x)
   
   lvl <- levels(x)
   
   if(is.character(base)) {
     pos <- match(base, lvl)
-    if(is.na(pos)) stop(paste0("argument 'ref' specified as character but value \"", 
+    if(is.na(pos)) stop(paste0("argument 'base' specified as character but value \"", 
                                base, "\", is not in levels(x)"))
     base <- pos
   }
@@ -784,6 +790,4 @@ make.dummies.pdata.frame <- function(x, col, base = 1L, base.add = TRUE, ...) {
   class(res) <- c("pdata.frame", class(res))
   res
 }
-
-
 

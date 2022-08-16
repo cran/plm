@@ -204,34 +204,39 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
       hetero.spec <- FALSE
       model <- "within"
     }
-    
-    ind0 <- attr(model.frame(mymod), "index")
+
+    ind0 <- unclass(attr(model.frame(mymod), "index")) # unclass for speed
     tind <- as.numeric(ind0[[2L]])
-    ind <- as.numeric(ind0[[1L]])
+    ind  <- as.numeric(ind0[[1L]])
+
+    unind <- unique(ind)
+    n <- length(unind)
     
     if(hetero.spec) {
         ## estimate individual normal regressions one by one
         ## (original heterogeneous specification of Pesaran)
         X <- model.matrix(mymod)
         y <- model.response(model.frame(mymod))
-        unind <- unique(ind)
-        n <- length(unind)
-        ti.res   <- vector("list", n)
-        ind.res  <- vector("list", n)
-        tind.res <- vector("list", n)
-        for (i in 1:n) {
-            tX <- X[ind == unind[i], , drop = FALSE]
-            ty <- y[ind == unind[i]]
-            res.i <- lm.fit(tX, ty)$residuals
-            ti.res[[i]] <- res.i
-            names(ti.res[[i]]) <- tind[ind == unind[i]]
-            ind.res[[i]] <- rep(i, length(res.i))
-            tind.res[[i]] <- tind[ind == unind[i]]
-        }
+ 
+        # split X, y per individual
+        X.ncol <- NCOL(X)
+        tX <- split(X, ind)
+        tX <- lapply(tX, function(m) matrix(m, ncol = X.ncol))
+        ty <- split(y, ind)
+
+        # calc. residuals
+        res.i <- mapply(function(X, y) lm.fit(X, y)$residuals, tX, ty, SIMPLIFY = FALSE)
+        
+        # construct indexes
+        ind.i <- rep(seq_len(n), lengths(res.i))
+        tind.i <- split(tind, ind)
+        tind.i <- unlist(tind.i, use.names = FALSE)
+        
         ## make pseries of (all) residuals
-        resdata <- data.frame(ee   = unlist(ti.res,   use.names = FALSE),
-                              ind  = unlist(ind.res,  use.names = FALSE),
-                              tind = unlist(tind.res, use.names = FALSE))
+        resdata <- data.frame(ee   = unlist(res.i,  use.names = FALSE),
+                              ind  = ind.i,
+                              tind = tind.i)
+        
         pee <- pdata.frame(resdata, index = c("ind", "tind"))
         tres <- pee$ee
     } else {
@@ -249,12 +254,7 @@ pcdtest.formula <- function(x, data, index = NULL, model = NULL,
       }
       
       tres <- resid(mymod)
-      unind <- unique(ind)
-      n <- length(unind)
-      t <- min(pdim(mymod)$Tint$Ti)
-      nT <- length(ind)
-      k <- length(mymod$coefficients)
-      }
+    }
 
     return(pcdres(tres = tres, n = n, w = w,
                   form = paste(deparse(x)),
@@ -273,11 +273,11 @@ pcdtest.panelmodel <- function(x, test = c("cd", "sclm", "bcsclm", "lm", "rho", 
     model <- describe(x, "model")
     effect <- describe(x, "effect")
     eff <- (effect == "individual" || effect == "twoways")
-    if (test == "bcsclm")
-      if (model != "within" || !eff) stop("for test = 'bcsclm', model x must be a within individual or twoways model")
-  
+    if (test == "bcsclm" && (model != "within" || !eff))
+      stop("for test = 'bcsclm', model x must be a within individual or twoways model")
+    
     tres <- resid(x)
-    index <- attr(model.frame(x), "index")
+    index <- unclass(attr(model.frame(x), "index")) # unclass for speed
     #tind <- as.numeric(index[[2L]])
     ind <- as.numeric(index[[1L]])
     unind <- unique(ind)
@@ -311,30 +311,15 @@ pcdtest.pseries <- function(x, test = c("cd", "sclm", "bcsclm", "lm", "rho", "ab
     }
   
     ## get indices
-    tind <- as.numeric(attr(x, "index")[[2L]])
-    ind <- as.numeric(attr(x, "index")[[1L]])
+    ix <- unclass(attr(x, "index")) # unclass for speed
+    tind <- as.numeric(ix[[2L]])
+    ind  <- as.numeric(ix[[1L]])
 
     ## det. number of groups and df
     unind <- unique(ind)
     n <- length(unind)
 
-    tres <- x
-    
-    ## "pre-allocate" an empty list of length n
-    #tres <- vector("list", n)
-
-    ## use model residuals, group by group
-    ## list of n:
-    ## t_i residuals for each x-sect. 1..n
-    #for(i in 1:n) {
-    #          # remove NAs
-    #          xnonna <- !is.na(x[ind==unind[i]])
-    #          tres[[i]] <- x[ind==unind[i]][xnonna]
-    #          ## name resids after the time index
-    #          names(tres[[i]]) <- tind[ind==unind[i]][xnonna]
-    #          }
-
-    return(pcdres(tres = tres, n = n, w = w,
+    return(pcdres(tres = x, n = n, w = w,
                   form = form,
                   test = match.arg(test)))
 }
@@ -359,10 +344,9 @@ pcdres <- function(tres, n, w, form, test) {
     
     ## find length of intersecting pairs
     ## fast method, times down 200x
-    data.res <- data.frame(time = attr(tres, "index")[[2L]],
-                           indiv = attr(tres, "index")[[1L]])
+    ix <- unclass(attr(tres, "index")) # unclass for speed
     ## tabulate which obs in time for each ind are !na
-    presence.tab <- table(data.res)
+    presence.tab <- collapse::qtable(ix[[2L]], ix[[1L]])
     ## calculate t.ij
     t.ij <- crossprod(presence.tab)
     
@@ -408,7 +392,7 @@ pcdres <- function(tres, n, w, form, test) {
   
   ## if no intersection or only 1 shared period of e_it and e_jt
   ## => exclude from calculation and issue a warning.
-  ## In general, length(m.ij) gives the number of shared periods by indiviudals i, j
+  ## In general, length(m.ij) gives the number of shared periods by individuals i, j
   ## Thus, non intersecting pairs are indicated by length(m.ij) == 0 (t.ij[i,j] == 0)
   no.one.intersect <- (t.ij <= 1)
   if (any(no.one.intersect, na.rm = TRUE)) {
@@ -452,7 +436,7 @@ pcdres <- function(tres, n, w, form, test) {
    },
    bcsclm = {
      # Baltagi/Feng/Kao (2012), formula (11)
-     # (unbalanced case as sclm + in bias correction as EViews: max(T_ij) instead of T)
+     # (unbalanced case as sclm + bias correction as EViews: max(T_ij) instead of T)
       CDstat        <- sqrt(1/(2*elem.num))*sum((t.ij*rho^2-1)[selector.mat]) - (n/(2*(max(t.ij)-1)))
       pCD           <- 2*pnorm(abs(CDstat), lower.tail = FALSE)
       names(CDstat) <- "z"
@@ -499,10 +483,11 @@ preshape <- function(x, na.rm = TRUE, ...) {
     ## e.g., of residuals from a panelmodel,
     ## in wide form
     inames <- names(attr(x, "index"))
-    mres <- reshape(cbind(as.vector(x), attr(x, "index")),
+    mres <- reshape(cbind(as.vector(x),
+                          attr(x, "index")),
                     direction = "wide",
-                    timevar = inames[2L],
-                    idvar = inames[1L])
+                    timevar   = inames[2L],
+                    idvar     = inames[1L])
     ## drop ind in first column
     mres <- mres[ , -1L, drop = FALSE]
     ## reorder columns (may be scrambled depending on first
@@ -511,7 +496,7 @@ preshape <- function(x, na.rm = TRUE, ...) {
     ## if requested, drop columns (time periods) with NAs
     if(na.rm) {
         na.cols <- vapply(mres, FUN = anyNA, FUN.VALUE = TRUE, USE.NAMES = FALSE)
-        if(sum(na.cols) > 0L) mres <- mres[ , !na.cols]
+        if(sum(na.cols) > 0L) mres <- mres[ , !na.cols, drop = FALSE]
     }
     return(mres)
 }
@@ -556,7 +541,7 @@ cortab <- function(x, grouping, groupnames = NULL,
     fullind <- as.numeric(attr(x, "index")[ , 1L])
     ids <- unique(fullind)
     n <- length(ids)
-    regs <- 1:length(unique(grouping))
+    regs <- seq_along(unique(grouping))
 
     if(!(is.numeric(grouping))) grouping <- as.numeric(as.factor(grouping))
     
@@ -570,16 +555,16 @@ cortab <- function(x, grouping, groupnames = NULL,
     ## for each pair of regions (nb: no duplicates, e.g., 3.1 but not 1.3)
 
     ## make w<1.n>:
-    for(h in 1:length(regs)) {
-      for(k in 1:h) {
+    for(h in seq_along(regs)) {
+      for(k in seq_len(h)) {
         statew <- matrix(0, ncol = n, nrow = n)
         ## make statew for cor. between h and k
-        for(i in 1:n) {
+        for(i in seq_len(n)) {
           ## get first region (all values equal, so take first one)
-          ireg <- grouping[fullind == ids[i]][1L]
+          ireg <- grouping[fullind == ids[i]][1L] # TODO: can be made faster via split()-approach
           if(ireg == h) {
-            for(j in 1:n) {
-                jreg <- grouping[fullind == ids[j]][1L]
+            for(j in seq_len(n)) {
+                jreg <- grouping[fullind == ids[j]][1L] # TODO: can be made faster via split()-approach
                 if(jreg == k) statew[i, j] <- 1
             }
           }
@@ -605,8 +590,8 @@ cortab <- function(x, grouping, groupnames = NULL,
     tab.g <- function(x, regs, regnames, test="rho", value) {
         myw <- 0
          tabg <- matrix(NA, ncol=length(regs), nrow=length(regs))
-         for(i in 1:length(regs)) {
-             for(j in 1:i) {
+         for(i in seq_along(regs)) {
+             for(j in seq_len(i)) {
                  ## take appropriate w matrix
                  eval(parse(text = paste("myw<-w", i, ".", j, sep = "")))
                  tabg[i, j] <- pcdtest(x, test = "rho", w = myw)[[value]]
@@ -619,7 +604,4 @@ cortab <- function(x, grouping, groupnames = NULL,
     mytab <- tab.g(x, regs = regs, regnames = regnames, test = "rho", value = value)
     return(mytab)
 }
-
-
-
 

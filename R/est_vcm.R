@@ -75,7 +75,7 @@
 #' data(Grunfeld, package = "AER") # 11 firm Grunfeld data needed from package AER
 #' gw <- pvcm(invest ~ value + capital, data = Grunfeld, index = c("firm", "year"))
 #' }
-#'              
+#'
 #' 
 pvcm <- function(formula, data, subset ,na.action, effect = c("individual", "time"),
                  model = c("within", "random"), index = NULL, ...){
@@ -116,7 +116,7 @@ pvcm.within <- function(formula, data, effect){
         card.cond <- pdim$nT$n
     }
     ml <- split(data, cond)
-    nr <- vapply(ml, function(x) dim(x)[1L] > 0, FUN.VALUE = TRUE) # == sapply(ml, function(x) dim(x)[1L]) > 0
+    nr <- vapply(ml, function(x) dim(x)[1L] > 0, FUN.VALUE = TRUE)
     ml <- ml[nr]
     attr(ml, "index") <- index
     ols <- lapply(ml,
@@ -130,8 +130,8 @@ pvcm.within <- function(formula, data, effect){
                       r
                   })
     # extract coefficients:
-    coef <- matrix(unlist(lapply(ols, coef)), nrow = length(ols), byrow = TRUE) # was: as.data.frame(t(sapply(ols, coef)))...
-    dimnames(coef)[1:2] <- list(names(ols), names(coef(ols[[1L]])))             # ... but that code errored with intercept-only model
+    coef <- matrix(unlist(lapply(ols, coef)), nrow = length(ols), byrow = TRUE)
+    dimnames(coef)[1:2] <- list(names(ols), names(coef(ols[[1L]])))
     coef <- as.data.frame(coef)
     
     # extract residuals and make pseries:
@@ -140,10 +140,9 @@ pvcm.within <- function(formula, data, effect){
     
     # extract standard errors:
     vcov <- lapply(ols, vcov)
-    std <- matrix(unlist(lapply(vcov, function(x) sqrt(diag(x)))), nrow = length(ols), byrow = TRUE) # was: as.data.frame(t(sapply(vcov, function(x) sqrt(diag(x)))))
-    dimnames(std)[1:2] <- list(names(vcov), colnames(vcov[[1L]]))                                    # ... but this code errored with intercept-only model
+    std <- matrix(unlist(lapply(vcov, function(x) sqrt(diag(x)))), nrow = length(ols), byrow = TRUE)
+    dimnames(std)[1:2] <- list(names(vcov), colnames(vcov[[1L]]))
     std <- as.data.frame(std)
-    
     ssr <- as.numeric(crossprod(residuals))
     y <- unlist(lapply(ml, function(x) x[ , 1L]))
     fitted.values <- y - residuals
@@ -161,7 +160,9 @@ pvcm.within <- function(formula, data, effect){
 
 
 pvcm.random <- function(formula, data, effect){
-    
+    ## Swamy (1970)
+    ## see also Poi (2003), The Stata Journal: 
+    ## https://www.stata-journal.com/sjpdf.html?articlenum=st0046
     interc <- has.intercept(formula)
     index <- index(data)
     id <- index[[1L]]
@@ -180,7 +181,7 @@ pvcm.random <- function(formula, data, effect){
     }
     
     ml <- split(data, cond)
-    nr <- vapply(ml, function(x) dim(x)[1L] > 0, FUN.VALUE = TRUE) # == sapply(ml, function(x) dim(x)[1L]) > 0
+    nr <- vapply(ml, function(x) dim(x)[1L] > 0, FUN.VALUE = TRUE)
     ml <- ml[nr]
     attr(ml, "index") <- index
     ols <- lapply(ml,
@@ -205,7 +206,7 @@ pvcm.random <- function(formula, data, effect){
     # list of model matrices
     X <- lapply(ols, model.matrix)
     # same without the covariates with NA coefficients
-    Xna <- lapply(seq_len(nrow(coefm)), function(i) X[[i]][ , !coefna[i, ]]) # TODO: Xna is used nowhere!?
+    # Xna <- lapply(seq_len(nrow(coefm)), function(i) X[[i]][ , !coefna[i, ], drop = FALSE])
     # list of model responses
     y <- lapply(ols, function(x) model.response(model.frame(x)))
     # compute a list of XpX^-1 matrices, with 0 for lines/columns with
@@ -213,7 +214,8 @@ pvcm.random <- function(formula, data, effect){
     xpxm1 <- lapply(seq_len(card.cond), function(i){
         z <- matrix(0, ncol(coefm), ncol(coefm),
                     dimnames = list(colnames(coefm), colnames(coefm)))
-        z[!coefna[i, ], !coefna[i, ]] <- solve(crossprod(X[[i]][!coefna[i, ], !coefna[i, ]]))
+        ii <- !coefna[i, ]
+        z[ii, ii] <- solve(crossprod(X[[i]][ii, ii, drop = FALSE]))
         z
     })
 
@@ -234,22 +236,26 @@ pvcm.random <- function(formula, data, effect){
     
     # compute the Omega matrix for each individual
     Omegan <- lapply(seq_len(card.cond), function(i) sigi[i] * diag(nrow(X[[i]])) + X[[i]] %*% Delta %*% t(X[[i]]))
+
     # compute X'Omega X and X'Omega y for each individual
     XyOmXy <- lapply(seq_len(card.cond), function(i){
-        Xn <- X[[i]][ , !coefna[i, ]] ## TODO: check if drop = FALSE needed (also in other extractions)
+        Xn <- X[[i]][ , !coefna[i, ], drop = FALSE]
         yn <- y[[i]]
+        
         # pre-allocate matrices
         XnXn <- matrix(0, ncol(coefm), ncol(coefm), dimnames = list(colnames(coefm), colnames(coefm)))
         Xnyn <- matrix(0, ncol(coefm), 1L,          dimnames = list(colnames(coefm), "y"))
+        
         solve_Omegan_i <- solve(Omegan[[i]])
         CP.tXn.solve_Omegan_i <- crossprod(Xn, solve_Omegan_i)
         XnXn[!coefna[i, ], !coefna[i, ]] <- CP.tXn.solve_Omegan_i %*% Xn # == t(Xn) %*% solve(Omegan[[i]]) %*% Xn
         Xnyn[!coefna[i, ], ]             <- CP.tXn.solve_Omegan_i %*% yn # == t(Xn) %*% solve(Omegan[[i]]) %*% yn
         list("XnXn" = XnXn, "Xnyn" = Xnyn)
     })
+    
     # Compute coefficients
     # extract and reduce XnXn (pos 1 in list's element) and Xnyn (pos 2)
-    # position-wise extraction is faster than name-based extraction
+    # (position-wise extraction is faster than name-based extraction)
     XpXm1 <-    solve(Reduce("+", vapply(XyOmXy, "[", 1L, FUN.VALUE = list(length(XyOmXy)))))
     beta <- XpXm1 %*% Reduce("+", vapply(XyOmXy, "[", 2L, FUN.VALUE = list(length(XyOmXy))))
     
@@ -266,13 +272,13 @@ pvcm.random <- function(formula, data, effect){
 #                           wn <- solve(vcovn + Deltan)
                            #new
                            vcovn <- vcov(ols[[i]])
-                           wn <- solve((vcovn + Delta)[!coefna[i, ], !coefna[i, ]])
+                           ii <- !coefna[i, ]
+                           wn <- solve((vcovn + Delta)[ii, ii, drop = FALSE])
                            z <- matrix(0, nrow = ncol(coefm), ncol = ncol(coefm),
                                        dimnames = list(colnames(coefm), colnames(coefm)))
-                           z[!coefna[i, ], !coefna[i, ]] <- wn
+                           z[ii, ii] <- wn
                            z
-                       }
-                       )
+                       })
     V <- solve(Reduce("+", weightsn))
     weightsn <- lapply(weightsn, function(x) V %*% x)
     ## TODO: should "Beta" be called "beta"?
@@ -303,7 +309,6 @@ pvcm.random <- function(formula, data, effect){
 summary.pvcm <- function(object, ...) {
   model <- describe(object, "model")
   if (model == "random") {
-    
     coef_wo_int <- object$coefficients[!(names(coef(object)) %in% "(Intercept)")]
     int.only <- !length(coef_wo_int)
     object$waldstatistic <- if(!int.only) pwaldtest(object) else NULL

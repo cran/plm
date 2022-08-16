@@ -294,7 +294,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
         time.name <- time
     }
     
-    # if index is numeric, this indicats a balanced panel with no. of
+    # if index is numeric, this indicates a balanced panel with no. of
     # individuals equal to id.name
     if(is.numeric(id.name)){
         if(!is.null(time.name))
@@ -319,7 +319,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     }
     else{
         # id.name is not numeric, i.e., individual index is supplied
-        if (!id.name %in% names(x)) stop(paste("variable ", id.name, " does not exist (individual index)", sep=""))
+        if (!id.name %in% names(x)) stop(paste("variable '", id.name, "' does not exist (individual index)", sep=""))
         if (is.factor(x[[id.name]])){
             id <- x[[id.name]] <- x[[id.name]][drop = TRUE] # drops unused levels of factor
         }
@@ -333,10 +333,10 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
             # for the automatic addition of time index to be
             # successful if no time index was supplied
             x <- x[order(x[[id.name]]), ]
-            Ti <- table(x[[id.name]]) # was: Ti <- table(id)
+            Ti <- collapse::qtable(x[[id.name]])
             n <- length(Ti)
             time <- c()
-            for (i in 1:n){
+            for (i in seq_len(n)){
                 time <- c(time, 1:Ti[i])
             }
             time.name <- "time"
@@ -347,7 +347,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
         else{
             # use supplied time index
             if (!time.name %in% names(x))
-                stop(paste0("variable ", time.name, " does not exist (time index)"))
+                stop(paste0("variable '", time.name, "' does not exist (time index)"))
             
             if (is.factor(x[[time.name]])){
                 time <- x[[time.name]] <- x[[time.name]][drop = TRUE]
@@ -391,9 +391,9 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
         x <- x[ , -posindex, drop = FALSE]
         if (ncol(x) == 0L) warning("after dropping of index variables, the pdata.frame contains 0 columns")
     }
-    
+
     ### warn if duplicate couples
-    test_doub <- table(index[[1L]], index[[2L]], useNA = "ifany")
+    test_doub <- collapse::qtable(index[[1L]], index[[2L]], na.exclude = FALSE) # == base R's table(x, y) # == table(index[[1L]], index[[2L]], useNA = "ifany")
     if (any(as.vector(test_doub[!is.na(rownames(test_doub)), !is.na(colnames(test_doub))]) > 1L))
       warning(paste("duplicate couples (id-time) in resulting pdata.frame\n to find out which,",
                     "use, e.g., table(index(your_pdataframe), useNA = \"ifany\")"))
@@ -594,7 +594,7 @@ subset_pseries <- function(x, ...) {
         # Kevin Tappe 2016-01-04 : in case of indexing (subsetting) a 
         # pdata.frame by a character, the subsetting vector should be 
         # converted to numeric by matching to the row names so that the 
-        # index can be correctly subsetted (by this numeric value).
+        # index can be correctly subset (by this numeric value).
         # Motivation:
         # Row names of the pdata.frame and row names of the pdata.frame's 
         # index are not guaranteed to be the same!
@@ -647,7 +647,7 @@ subset_pseries <- function(x, ...) {
       # if dim is NULL, subsetting did not return a data frame but  a vector or a
       #   factor or NULL (nothing more is left)
       if (is.null(mydata)) {
-        # since R 3.4.0 NULL cannot have attributes, so special case it
+        # since R 3.4.0, NULL cannot have attributes, so special case it
         res <- NULL
       } else {
         # vector or factor -> make it a pseries
@@ -1001,7 +1001,7 @@ pdim.default <- function(x, y, ...) {
   if (length(x) != length(y)) stop("The length of the two inputs differs\n")
   x <- x[drop = TRUE] # drop unused factor levels so that table() 
   y <- y[drop = TRUE] # gives only needed combinations
-  z <- table(x,y)
+  z <- collapse::qtable(x, y) ## == base R's table(x, y)
   Ti <- rowSums(z) # faster than: apply(z, 1, sum)
   nt <- colSums(z) #              apply(z, 2, sum)
   n <- nrow(z)
@@ -1011,8 +1011,8 @@ pdim.default <- function(x, y, ...) {
   id.names <- rownames(z)
   time.names <- colnames(z)
   panel.names <- list(id.names = id.names, time.names = time.names)
-  balanced <- if(any(as.vector(z) == 0)) FALSE else TRUE
-  if(any(as.vector(z) > 1)) stop("duplicate couples (id-time)\n")
+  balanced <- if(any(z <- as.vector(z) == 0)) FALSE else TRUE
+  if(any(z > 1)) stop("duplicate couples (id-time)\n")
   Tint <- list(Ti = Ti, nt = nt)
   z <- list(nT = nT, Tint = Tint, balanced = balanced, panel.names = panel.names)
   class(z) <- "pdim"
@@ -1092,6 +1092,143 @@ print.pdim <- function(x, ...) {
       cat(paste("N = ", x$nT$N, "\n", sep=""))
   }
   invisible(pdim)
+}
+
+########### is.pbalanced ##############
+### for convenience and to be faster than pdim() for the purpose
+### of the determination of balancedness only, because it avoids
+### pdim()'s calculations which are unnecessary for balancedness.
+###
+### copied (and adapted) methods and code from pdim.*
+### (only relevant parts to determine balancedness)
+
+
+#' Check if data are balanced
+#' 
+#' This function checks if the data are balanced, i.e., if each individual has
+#' the same time periods
+#' 
+#' Balanced data are data for which each individual has the same time periods.
+#' The returned values of the `is.pbalanced(object)` methods are identical
+#' to `pdim(object)$balanced`.  `is.pbalanced` is provided as a short
+#' cut and is faster than `pdim(object)$balanced` because it avoids those
+#' computations performed by `pdim` which are unnecessary to determine the
+#' balancedness of the data.
+#' 
+#' @aliases is.pbalanced
+#' @param x an object of class `pdata.frame`, `data.frame`,
+#'     `pseries`, `panelmodel`, or `pgmm`,
+#' @param y (only in default method) the time index variable (2nd index
+#' variable),
+#' @param index only relevant for `data.frame` interface; if
+#'     `NULL`, the first two columns of the data.frame are
+#'     assumed to be the index variables; if not `NULL`, both
+#'     dimensions ('individual', 'time') need to be specified by
+#'     `index` as character of length 2 for data frames, for
+#'     further details see [pdata.frame()],
+#' @param \dots further arguments.
+#' @return A logical indicating whether the data associated with
+#'     object `x` are balanced (`TRUE`) or not
+#'     (`FALSE`).
+#' @seealso [punbalancedness()] for two measures of
+#'     unbalancedness, [make.pbalanced()] to make data
+#'     balanced; [is.pconsecutive()] to check if data are
+#'     consecutive; [make.pconsecutive()] to make data
+#'     consecutive (and, optionally, also balanced).\cr
+#'     [pdim()] to check the dimensions of a 'pdata.frame'
+#'     (and other objects), [pvar()] to check for individual
+#'     and time variation of a 'pdata.frame' (and other objects),
+#'     [pseries()], [data.frame()],
+#'     [pdata.frame()].
+#' @export
+#' @keywords attribute
+#' @examples
+#' 
+#' # take balanced data and make it unbalanced
+#' # by deletion of 2nd row (2nd time period for first individual)
+#' data("Grunfeld", package = "plm")
+#' Grunfeld_missing_period <- Grunfeld[-2, ]
+#' is.pbalanced(Grunfeld_missing_period)     # check if balanced: FALSE
+#' pdim(Grunfeld_missing_period)$balanced    # same
+#' 
+#' # pdata.frame interface
+#' pGrunfeld_missing_period <- pdata.frame(Grunfeld_missing_period)
+#' is.pbalanced(Grunfeld_missing_period)
+#' 
+#' # pseries interface
+#' is.pbalanced(pGrunfeld_missing_period$inv)
+#' 
+is.pbalanced <- function(x, ...) {
+  UseMethod("is.pbalanced")
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.default <- function(x, y, ...) {
+  if (length(x) != length(y)) stop("The length of the two inputs differs\n")
+  x <- x[drop = TRUE] # drop unused factor levels so that table 
+  y <- y[drop = TRUE] # gives only needed combinations
+  z <- collapse::qtable(x, y) # == base R's table(x, y)
+  balanced <- if(any(v <- as.vector(z) == 0L)) FALSE else TRUE
+  if (any(v > 1L)) warning("duplicate couples (id-time)\n")
+  balanced
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.data.frame <- function(x, index = NULL, ...) {
+  x <- pdata.frame(x, index)
+  index <- unclass(attr(x, "index")) # unclass for speed
+  is.pbalanced(index[[1L]], index[[2L]])
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.pdata.frame <- function(x, ...) {
+  index <- unclass(attr(x, "index")) # unclass for speed
+  is.pbalanced(index[[1L]], index[[2L]])
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.pseries <- function(x, ...) {
+  index <- unclass(attr(x, "index")) # unclass for speed
+  is.pbalanced(index[[1L]], index[[2L]])
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.pggls <- function(x, ...) {
+  # pggls is also class panelmodel, but take advantage of its pdim attribute
+  attr(x, "pdim")$balanced
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.pcce <- function(x, ...) {
+  # pcce is also class panelmodel, but take advantage of its pdim attribute
+  attr(x, "pdim")$balanced
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.pmg <- function(x, ...) {
+  # pmg is also class panelmodel, but take advantage of its pdim attribute
+  attr(x, "pdim")$balanced
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.pgmm <- function(x, ...) {
+  # pgmm is also class panelmodel, but take advantage of its pdim attribute
+  attr(x, "pdim")$balanced
+}
+
+#' @rdname is.pbalanced
+#' @export
+is.pbalanced.panelmodel <- function(x, ...) {
+  x <- model.frame(x)
+  is.pbalanced(x)
 }
 
 #' Extract the indexes of panel data

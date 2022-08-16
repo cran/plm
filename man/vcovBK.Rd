@@ -26,7 +26,7 @@ vcovBK(x, ...)
 \item{cluster}{one of \code{"group"}, \code{"time"},}
 
 \item{diagonal}{a logical value specifying whether to force
-nondiagonal elements to zero,}
+non-diagonal elements to zero,}
 }
 \value{
 An object of class \code{"matrix"} containing the estimate of
@@ -52,7 +52,7 @@ formula is based on N- (T-) asymptotics and will not be appropriate
 elsewhere.
 
 The \code{diagonal} logical argument can be used, if set to
-\code{TRUE}, to force to zero all nondiagonal elements in the
+\code{TRUE}, to force to zero all non-diagonal elements in the
 estimated error covariances; this is appropriate if both serial and
 cross--sectional correlation are assumed out, and yields a
 timewise- (groupwise-) heteroskedasticity--consistent estimator.
@@ -72,7 +72,7 @@ matrix or as a function, e.g., for Wald--type testing: argument \code{vcov.} to
 \code{coeftest()}, argument \code{vcov} to \code{waldtest()} and other methods in the
 \CRANpkg{lmtest} package; and argument \code{vcov.} to
 \code{linearHypothesis()} in the \CRANpkg{car} package (see the
-examples), see \insertCite{@ZEIL:04, 4.1-2 and examples below}{plm}.
+examples), see \insertCite{@see also @ZEIL:04}{plm}, 4.1-2, and examples below.
 }
 \examples{
 

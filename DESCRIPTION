@@ -1,10 +1,10 @@
 Package: plm
-Version: 2.6-1
-Date: 2022-03-02
+Version: 2.6-2
+Date: 2022-08-15
 Title: Linear Models for Panel Data
-Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
+Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = c("aut"), email = "giovanni.millo@deams.units.it"),
-             person(given = "Kevin",     family = "Tappe",        role = c("aut"), email = "kevin.tappe@bwi.uni-stuttgart.de"),
+             person(given = "Kevin",     family = "Tappe",        role = c("aut", "cre"), email = "kevin.tappe@bwi.uni-stuttgart.de"),
              person(given = "Ott",       family = "Toomet",       role = "ctb", email = "otoomet@gmail.com"),
              person(given = "Christian", family = "Kleiber",      role = "ctb", email = "Christian.Kleiber@unibas.ch"), 
              person(given = "Achim",     family = "Zeileis",      role = "ctb", email = "Achim.Zeileis@R-project.org"),
@@ -12,7 +12,7 @@ Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"
              person(given = "Liviu",     family = "Andronic",     role = "ctb"),
              person(given = "Nina",      family = "Schoenfelder", role = "ctb"))
 Depends: R (>= 3.2.0)
-Imports: MASS, bdsmatrix, collapse (>= 1.6.0), zoo, nlme, sandwich,
+Imports: MASS, bdsmatrix, collapse (>= 1.8.0), zoo, nlme, sandwich,
         lattice, lmtest, maxLik, Rdpack, Formula, stats
 Suggests: AER, car, statmod, urca, pder, texreg, knitr, rmarkdown,
         fixest, lfe
@@ -24,28 +24,28 @@ Description: A set of estimators for models and (robust) covariance matrices, an
              with common factors, variable coefficients and limited dependent variables models.
              Test functions include model specification, serial correlation, cross-sectional dependence,
              panel unit root and panel Granger (non-)causality. Typical references are general econometrics 
-             text books such as Baltagi (2021), Econometric Analysis of Panel Data, ISBN-13:978-3-030-53952-8, 
-             Hsiao (2014), Analysis of Panel Data <doi:10.1017/CBO9781139839327>, and Croissant and Millo (2018), 
-             Panel Data Econometrics with R, ISBN-13:978-1-118-94918-4.
+             text books such as Baltagi (2021), Econometric Analysis of Panel Data (<doi:10.1007/978-3-030-53953-5>),
+             Hsiao (2014), Analysis of Panel Data (<doi:10.1017/CBO9781139839327>), and Croissant and Millo (2018), 
+             Panel Data Econometrics with R (<doi:10.1002/9781119504641>).
 License: GPL (>= 2)
 VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm (CRAN releases),
         https://github.com/ycroissant/plm (development repository)
 BugReports: https://github.com/ycroissant/plm/issues
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 RdMacros: Rdpack
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2022-03-03 13:36:20 UTC; kevin
-Author: Yves Croissant [aut, cre],
+Packaged: 2022-08-15 10:57:00 UTC; kevin
+Author: Yves Croissant [aut],
   Giovanni Millo [aut],
-  Kevin Tappe [aut],
+  Kevin Tappe [aut, cre],
   Ott Toomet [ctb],
   Christian Kleiber [ctb],
   Achim Zeileis [ctb],
   Arne Henningsen [ctb],
   Liviu Andronic [ctb],
   Nina Schoenfelder [ctb]
-Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
+Maintainer: Kevin Tappe <kevin.tappe@bwi.uni-stuttgart.de>
 Repository: CRAN
-Date/Publication: 2022-03-05 15:40:06 UTC
+Date/Publication: 2022-08-16 13:00:13 UTC

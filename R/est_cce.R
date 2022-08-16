@@ -1,6 +1,6 @@
 ## Common Correlated Effects Pooled/MG estimators
   ## ref. Holly, Pesaran and Yamagata JoE 158 (2010)
-  ## (also Kapetanios, Pesaran and Yamagata JoE 2010)
+  ## (also Kapetanios, Pesaran and Yamagata JoE 2011)
   ## CCEP and CCEMG together in the same SW framework
   ## based on generalized FEs
 
@@ -74,6 +74,8 @@
 #'
 #' \insertRef{kappesyam11}{plm}
 #' 
+#' \insertRef{HOLL:PESA:YAMA:10}{plm}
+#' 
 #' @keywords regression
 #' @examples
 #' 
@@ -89,6 +91,14 @@ pcce <- function (formula, data, subset, na.action,
                   model = c("mg", "p"),
                    #residuals = c("defactored", "standard"),
                   index = NULL, trend = FALSE, ...) {
+  
+  ## TODO: in general: 
+  ##    * consider if data can be split only once and work on the split
+  ##      data instead of cycling through the data with for-loops at various
+  ##      occasions (could be faster); splitting only once is implemented since 
+  ##      2022-05-21
+  ##    * consider parallel execution via mclapply/mcmapply (aligns with the 
+  ##      split-only-once aspect mentioned above).
   
   ## Create a Formula object if necessary (from plm)
   if (!inherits(formula, "Formula")) formula <- as.Formula(formula)
@@ -109,7 +119,7 @@ pcce <- function (formula, data, subset, na.action,
   plm.model[[1L]] <- as.name("plm")
   ## change the 'model' in call
   plm.model$model <- "pooling"
-  ## evaluates the call, modified with model = "pooling", inside the
+  ## evaluates the call, modified with model == "pooling", inside the
   ## parent frame resulting in the pooling model on formula, data
   plm.model <- eval(plm.model, parent.frame())
   mf <- model.frame(plm.model)
@@ -118,7 +128,6 @@ pcce <- function (formula, data, subset, na.action,
   tind <- index[[2L]] ## time index
   ## set dimension variables
   pdim <- pdim(plm.model)
-  balanced <- pdim$balanced
   nt <- pdim$Tint$nt
   Ti <- pdim$Tint$Ti
   T. <- pdim$nT$T
@@ -136,7 +145,7 @@ pcce <- function (formula, data, subset, na.action,
   y <- model.response(mf)
 
   ## det. *minimum* group numerosity
-  t <- min(Ti) # ==  min(tapply(X[ , 1], ind, length))
+  t <- min(Ti)
 
   ## check min. t numerosity
     ## NB it is also possible to allow estimation if there *is* one group
@@ -150,183 +159,184 @@ pcce <- function (formula, data, subset, na.action,
   ## (might be unbalanced => t1 != t2 but we don't care as long
   ## as min(t) > k+1)
 
-  ## subtract intercept from parms number and names
   has.int <- attr(terms(plm.model), "intercept")
   if(has.int) {
+    ## subtract intercept from parms number and names
       k <- k - 1
       coef.names <- coef.names[-1L]
+      
+    ## must put the intercept into the group-invariant part!!
+    ## so first drop it from X
+      X <- X[ , -1L, drop = FALSE]
   }
 
   ## "pre-allocate" coefficients matrix for the n models
+  ## (dimensions are known in advance/by now)
   tcoef <- matrix(NA_real_, nrow = k, ncol = n)
 
   ## pre-allocate residuals lists for individual regressions
   ## (lists allow for unbalanced panels)
   cceres <- vector("list", n)
   stdres <- vector("list", n)
-
+  
   ## CCE by-group estimation
-
-  ## must put the intercept into the group-invariant part!!
-  ## so first drop it from X
-  if(has.int) {
-      X <- X[ , -1L, drop = FALSE]
-  }
 
   ## group-invariant part, goes in Hhat
     ## between-periods transformation (take means over groups for each t)
-      Xm <- Between(X, effect = tind, na.rm = TRUE)
-      ym <- as.numeric(Between(y, effect = "time", na.rm = TRUE))
+    Xm <- Between(X, effect = tind, na.rm = TRUE)
+    ym <- as.numeric(Between(y, effect = "time", na.rm = TRUE))
 
-      Hhat <- if(has.int) cbind(ym, Xm, 1L) else cbind(ym, Xm)
+    Hhat <- if(has.int) cbind(ym, Xm, 1L) else cbind(ym, Xm)
 
-      ## prepare XMX, XMy arrays
-      XMX <- array(data = NA_real_, dim = c(k, k, n))
-      XMy <- array(data = NA_real_, dim = c(k, 1L, n))
+    ## pre-allocate XMX, XMy arrays
+    ## (dimensions are known in advance/by now)
+    XMX <- array(data = NA_real_, dim = c(k, k, n))
+    XMy <- array(data = NA_real_, dim = c(k, 1L, n))
+    
+    ## pre-allocate MX, My for list of transformed data, 
+    ## later reduced to matrix and numeric, respectively
+    ## (dimensions of n matrices/numerics to be hold by MX/My are not known in
+    ## advance, depend on time periods per individual -> hence use list)
+    MX <- vector("list", length = n)
+    My <- vector("list", length = n)
 
-      ## hence calc. beta_i anyway because of vcov
+    ## hence calc. beta_i anyway because of vcov
 
-      ## for each x-sect. i=1..n estimate (over t) the CCE for every TS
-      ## as in KPY, eq. 15
-      unind <- unique(ind)
-      for(i in 1:n) {
-          tX <- X[ind == unind[i], , drop = FALSE]
-          ty <- y[ind == unind[i]]
-          tHhat <- Hhat[ind == unind[i], , drop = FALSE]
+    ## for each x-sect. i=1..n estimate (over t) the CCE for every TS
+    ## as in KPY, eq. 15
+    
+    # split X, y, Hhat by individual and store in lists
+    X.col <- NCOL(X)
+    tX.list <- split(X, ind)
+    tX.list <- lapply(tX.list, function(m) matrix(m, ncol = X.col))
+    
+    ty.list <- split(y, ind)
+    
+    Hhat.col <- NCOL(Hhat)
+    tHhat.list <- split(Hhat, ind)
+    tHhat.list <- lapply(tHhat.list, function(m) matrix(m, ncol = Hhat.col))
+    tMhat.list <- vector("list", length = n) # pre-allocate
+ 
+    for(i in seq_len(n)) {
+      tX <- tX.list[[i]]
+      ty <- ty.list[[i]]
+      tHhat <- tHhat.list[[i]]
 
-          ## if 'trend' then augment the xs-invariant component
-          if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1L]]))
+      ## if 'trend' then augment the xs-invariant component 
+      if(trend) tHhat <- cbind(tHhat, seq_len(dim(tHhat)[[1L]]))
+      
+      ## NB tHHat, tMhat should be i-invariant (but for the
+      ## group size if unbalanced)
+      tMhat <- diag(1, length(ty)) -
+                crossprod(t(tHhat), solve(crossprod(tHhat), t(tHhat)))
+      
+      ## tMhat is needed again later, so save in list
+      tMhat.list[[i]] <- tMhat
+ 
+      CP.tXtMhat <- crossprod(tX, tMhat)
+      tXMX <- tcrossprod(CP.tXtMhat, t(tX))
+      tXMy <- tcrossprod(CP.tXtMhat, t(ty))
+      
+      ## XMX_i, XMy_i
+      XMX[ , , i] <- tXMX
+      XMy[ , , i] <- tXMy
+      
+      ## save transformed data My, MX for vcovHC use
+      ## (NB M is symmetric)
+      MX[[i]] <- t(CP.tXtMhat)
+      My[[i]] <- crossprod(tMhat, ty)
 
-          ## NB tHat, tMhat should be i-invariant
-          tMhat <- diag(1, length(ty)) -
-              tHhat %*% solve(crossprod(tHhat), t(tHhat))
-          
-          CP.tXtMhat <- crossprod(tX, tMhat)
-          tXMX <- tcrossprod(CP.tXtMhat, t(tX))
-          tXMy <- tcrossprod(CP.tXtMhat, t(ty))
-
-          ## XMX_i, XMy_i
-          XMX[ , , i] <- tXMX
-          XMy[ , , i] <- tXMy
-
-          ## single CCE coefficients
-          tb <- ginv(tXMX) %*% tXMy  #solve(tXMX, tXMy)
-          ## USED A GENERALIZED INVERSE HERE BECAUSE OF PBs WITH ECM SPECS
-          ## Notice remark in Pesaran (2006, p.977, between (27) and (28))
-          ## that XMX.i is invariant to the choice of a g-inverse for H'H
-          tcoef[ , i] <- tb
-
-          ## cce (defactored) residuals as M_i(y_i - X_i * bCCEMG_i)
-          tytXtb <- ty - tcrossprod(tX, t(tb))
-          cceres[[i]] <- tcrossprod(tMhat, t(tytXtb))
-          ## std. (raw) residuals as y_i - X_i * bCCEMG_i - a_i
-          ta <- mean(ty - tX)
-          stdres[[i]] <- tytXtb - ta
-        }
-
-  ## module for making transformed data My, MX for vcovHC use
-    ## (NB M is symmetric)
-    ## Some redundancy because this might be moved to model.matrix.pcce
-
-    ## initialize
-    tX1 <- X[ind == unind[1L], , drop = FALSE]
-    ty1 <- y[ind == unind[1L]]
-    tHhat1 <- Hhat[ind == unind[1L], , drop = FALSE]
-
-    ## if 'trend' then augment the xs-invariant component
-    if(trend) tHhat1 <- cbind(tHhat1, 1:(dim(tHhat)[[1L]]))
-
-    ## NB tHat, tMhat should be i-invariant (but beware of unbalanced)
-    tMhat1 <- diag(1, length(ty1)) -
-        tHhat1 %*% solve(crossprod(tHhat1), t(tHhat1))
-    MX <- crossprod(tMhat1, tX1)
-    My <- crossprod(tMhat1, ty1)
-    for(i in 2:n) {
-        tX <- X[ind == unind[i], , drop = FALSE]
-        ty <- y[ind == unind[i]]
-        tHhat <- Hhat[ind == unind[i], , drop = FALSE]
-
-        ## if 'trend' then augment the xs-invariant component
-        if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1L]]))
-
-        ## NB tHat, tMhat should be i-invariant
-        tMhat <- diag(1, length(ty)) -
-            tHhat %*% solve(crossprod(tHhat), t(tHhat))
-        tMX <- crossprod(tMhat, tX)
-        tMy <- crossprod(tMhat, ty)
-
-        MX <- rbind(MX, tMX)
-        My <- c(My, tMy)
+      ## single CCE coefficients
+      tcoef[ , i] <- crossprod(ginv(tXMX), tXMy) # solve(tXMX, tXMy)
+        ## USED A GENERALIZED INVERSE HERE BECAUSE OF PBs WITH ECM SPECS
+        ## Notice remark in Pesaran (2006, p.977, between (27) and (28))
+        ## that XMX.i is invariant to the choice of a g-inverse for H'H
     }
 
-    ## checks
-    ## MX <<- MX
-    ## My <<- My
-
-    ## ALT:
-    ## MXa <<- kronecker(diag(n), tMhat1) %*% X
-    ## Mya <<- kronecker(diag(n), tMhat1) %*% y
-    ## very same result, less efficient
+    # Reduce transformed data to matrix and numeric, respectively
+    MX <- Reduce(rbind, MX)
+    My <- Reduce(c, My)
+    
+    # set names lost in processing above
+    dimnames(MX) <- list(rownames(X), colnames(X))
+    names(My) <- names(y)
 
   ## end data module
 
     ## CCEMG coefs are averages across individual regressions
     ## (here: coefs of xs-variants only!)
-    coefmg <- rowMeans(tcoef) # was: apply(tcoef, 1, mean)
+    coefmg <- rowMeans(tcoef)
 
-    ## make matrix of cross-products of demeaned individual coefficients
+    ## make demeaned coefficients: b_i - b_CCEMG
+    demcoef <- tcoef - coefmg # coefmg gets recycled n times by column
+    
+    ## pre-allocate matrix of cross-products of demeaned individual coefficients
     Rmat <- array(data = NA_real_, dim = c(k, k, n))
 
-    ## make b_i - b_CCEMG
-    demcoef <- tcoef - coefmg # coefmg gets recycled n times by column
-
-    ## calc. coef and vcov according to model
+    ## calc. coef, vcov, and residuals according to model
     switch(model,
         "mg" = {
             ## assign beta CCEMG
             coef <- coefmg
-            for(i in 1:n) Rmat[ , , i] <- outer(demcoef[ , i], demcoef[ , i])
+
+            ## calc CCEMG covariance:
+            ## (HPY 2010, p. 163, between (3.10) and (3.11) / KPY 2011, p. 330 (38))
+            for(i in seq_len(n)) Rmat[ , , i] <- outer(demcoef[ , i], demcoef[ , i])
             vcov <- 1/(n*(n-1)) * rowSums(Rmat, dims = 2L) # == 1/(n*(n-1)) * apply(Rmat, 1:2, sum), but rowSums(., dims = 2L)-construct is way faster
+
+            ## calc CCEMG residuals, both defactored and raw
+            for(i in seq_len(n)) {
+              ## must redo all this because needs b_CCEP, which is
+              ## not known at by-groups step
+              tX <- tX.list[[i]]
+              ty <- ty.list[[i]]
+              tMhat <- tMhat.list[[i]]
+              tb <- tcoef[ , i]
+              
+              ## cce (defactored) residuals as M_i(y_i - X_i * bCCEMG_i)
+              tytXtb      <- ty - tcrossprod(tX, t(tb))
+              cceres[[i]] <- tcrossprod(tMhat, t(tytXtb))
+              ## std. (raw) residuals as y_i - X_i * bCCEMG_i - a_i
+              ta <- mean(ty - tX)
+              stdres[[i]] <- tytXtb - ta
+            }
         },
            
         "p" = {
             ## calc beta_CCEP
             sXMX <- rowSums(XMX, dims = 2L) # == apply(XMX, 1:2, sum), but rowSums(., dims = 2L)-construct is way faster
             sXMy <- rowSums(XMy, dims = 2L) # == apply(XMy, 1:2, sum), but rowSums(., dims = 2L)-construct is way faster
-            coef <- solve(sXMX, sXMy)
-    
+            coef <- solve(sXMX, sXMy) # bCCEP in HPY
+
             ## calc CCEP covariance:
-            psi.star <- 1/N * sXMX
-    
-            for(i in 1:n) Rmat[ , , i] <- XMX[ , , i] %*%
-                outer(demcoef[ , i], demcoef[ , i]) %*% XMX[ , , i]
+            ## (HPY 2010, p. 163-4, (3.12, 3.13)
+            for(i in seq_len(n)) {
+              Rmat[ , , i] <- crossprod(XMX[ , , i], 
+                                        crossprod(outer(demcoef[ , i],
+                                                        demcoef[ , i]), 
+                                                  XMX[ , , i]))
+            }
+            
             ## summing over the n-dimension of the array we get the
             ## covariance matrix of coefs
             R.star <- 1/(n-1) * rowSums(Rmat, dims = 2L) * 1/(t^2) # rowSums(Rmat, dims = 2L) faster than == apply(Rmat, 1:2, sum)
     
-            Sigmap.star <- solve(psi.star, R.star) %*% solve(psi.star)
+            psi.star <- 1/N * sXMX
+            Sigmap.star <-  tcrossprod(solve(psi.star, R.star), solve(psi.star))
             vcov <- Sigmap.star/n
-    
-            ## calc CCEP residuals both defactored and raw
-            for(i in 1:n) {
-                ## must redo all this because needs b_CCEP, which is
-                ## not known at by-groups step
-                tX <- X[ind == unind[i], , drop = FALSE]
-                ty <- y[ind == unind[i]]
-                tHhat <- Hhat[ind == unind[i], , drop = FALSE]
-    
-                ## if 'trend' then augment the xs-invariant component
-                if(trend) tHhat <- cbind(tHhat, 1:(dim(tHhat)[[1L]]))
-    
-                ## NB tHat, tMhat should be i-invariant (but for the
-                ## group size if unbalanced)
-                tMhat <- diag(1, length(ty)) -
-                    tHhat %*% solve(crossprod(tHhat), t(tHhat))
+
+            ## calc CCEP residuals, both defactored and raw
+            for(i in seq_len(n)) {
+                tX <- tX.list[[i]]
+                ty <- ty.list[[i]]
+                tMhat <- tMhat.list[[i]]
     
                 ## cce residuals as M_i(y_i - X_i * bCCEP)
-                tytXcoef <- ty - tcrossprod(tX, t(coef))
+                tytXcoef    <- ty - tcrossprod(tX, t(coef))
                 cceres[[i]] <- tcrossprod(tMhat, t(tytXcoef))
-                ## std. (raw) residuals as y_i - X_i * bCCEMG_i - a_i
+                
+                ## std. (raw) residuals as y_i - X_i * bCCEP - a_i
+                # (HPY, p. 165 (left column at the bottom))
                 ta <- mean(ty - tX)
                 stdres[[i]] <- tytXcoef - ta
             }
@@ -343,15 +353,13 @@ pcce <- function (formula, data, subset, na.action,
             ## If balanced, would simply be
             ## sum(unlist(cceres)^2)/(n*(T.-2*k-2))
     
-            ## pre-allocate list for individual CCEMG residual variances
-            sigma2cce.i <- vector("list", n)
             ## average variance of defactored residuals sigma2ccemg as in
             ## Holly, Pesaran and Yamagata, (3.14)
-            for(i in 1:n) {
-                sigma2cce.i[[i]] <- crossprod(cceres[[i]])*
-                    1/(length(cceres[[i]])-2*k-2)
-            }
-            sigma2cce <- 1/n*sum(unlist(sigma2cce.i, use.names = FALSE))
+            sigma2cce.i <- vapply(cceres,
+                                  function(cceres.i)
+                                    crossprod(cceres.i) * 1/(length(cceres.i)-2*k-2),
+                                  FUN.VALUE = 0.0, USE.NAMES = FALSE)
+            sigma2cce <- 1/n*sum(sigma2cce.i)
         },
            
         "p" = {
@@ -363,15 +371,14 @@ pcce <- function (formula, data, subset, na.action,
     })
 
     ## calc. overall R2, CCEMG or CCEP depending on 'model'
-    sigma2.i <- vector("list", n)
-    for(i in 1:n) {
-          ty <- y[ind == unind[i]]
-          sigma2.i[[i]] <- as.numeric(crossprod((ty-mean(ty))))/(length(ty)-1)
-      }
+    sigma2.i <- split(y, ind)
+    sigma2.i <- lapply(sigma2.i, function(y.i) {
+                    as.numeric(crossprod(y.i - mean(y.i)))/(length(y.i)-1)})
     sigma2y <- mean(unlist(sigma2.i, use.names = FALSE))
     r2cce <- 1 - sigma2cce/sigma2y
 
-    ## allow outputting different types of residuals
+    ## allow outputting different types of residuals, defactored residuals are
+    ## default/go into slot 'residuals'
     stdres    <- unlist(stdres)
     residuals <- unlist(cceres)
 
@@ -458,7 +465,7 @@ print.summary.pcce <- function(x, digits = max(3, getOption("digits") - 2), widt
   cat("\n")
   print(pdim)
   cat("\nResiduals:\n")
-  print(sumres(x)) # was until rev. 1178: print(summary(unlist(residuals(x))))
+  print(sumres(x))
   cat("\nCoefficients:\n")
   printCoefmat(x$CoefTable, digits = digits)
   cat(paste("Total Sum of Squares: ",    signif(x$tss,  digits), "\n", sep=""))

@@ -145,9 +145,7 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
   ## (might be unbalanced => t1!=t2 but we don't care as long
   ## as min(t)>k+1)
 
-  ## "pre-allocate" models' list for the n models
-  tmods <- vector("list", n)
-
+  # prepare data as per requested model
   switch(match.arg(model),
          
     "mg" = {
@@ -166,15 +164,7 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
         "none" = {
           ## just make df (intercept isn't there)
           adfdati <- data.frame(cbind(y, X))
-          dimnames(adfdati)[[2L]] <- clnames}
-        )
-      
-      ## for each x-sect. i=1..n
-      unind <- unique(ind)
-      for(i in 1:n) {
-        tdati <- adfdati[ind == unind[i], ]
-        tmods[[i]] <- lm(adffm, tdati, model = FALSE) # TODO: check if my.lm.fit can be used
-        }                              # (with minor modifications to code down below for t-val extraction etc.)
+          dimnames(adfdati)[[2L]] <- clnames})
       },
     
     "dmg" = {
@@ -200,14 +190,6 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
           ## just make df (intercept isn't there)
           adfdati <- data.frame(cbind(demy, demX))
           dimnames(adfdati)[[2L]] <- clnames})
-
-      ## for each x-sect. i=1..n estimate (over t) a demeaned model
-      ## (y_it-my_t) = alpha_i + beta_i*(X_it-mX_t) + err_it
-      unind <- unique(ind)
-      for(i in 1:n) {
-        tdati <- adfdati[ind == unind[i], ]
-        tmods[[i]] <- lm(adffm, tdati, model = FALSE)  # TODO: check if my.lm.fit can be used
-        }
     },
     
     "cmg" = {
@@ -251,16 +233,19 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
           dimnames(adfdati)[[2L]] <- c(clnames,
                                       paste(clnames, "bar", sep="."))
           })
-
-      ## for each x-sect. i=1..n estimate (over t) an augmented model
-      ## y_it = alpha_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
-      unind <- unique(ind)
-      for(i in 1:n) {
-        tdati <- adfdati[ind == unind[i], ]
-        tmods[[i]] <- lm(adffm, tdati, model = FALSE)  # TODO: check if my.lm.fit can be used
-        }
   })
 
+  ## Estimate each x-sect. i=1..n with the data as prepared above:
+  #  * for "dmg" this is:
+  ##    for each x-sect. i=1..n estimate (over t) a demeaned model
+  ##    (y_it-my_t) = alpha_i + beta_i*(X_it-mX_t) + err_it
+  #  * for "cmg" this is:
+  ##    for each x-sect. i=1..n estimate (over t) an augmented model
+  ##    y_it = alpha_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
+  adfdati.list <- split(adfdati, ind)
+  tmods <- lapply(adfdati.list, function(tdati) lm(adffm, tdati, model = FALSE))
+    # TODO: check if my.lm.fit can be used instead of lm (with minor modifications
+    #       to code down below for t-val extraction etc.)
   
   ## CIPS statistic as an average of the t-stats on the coefficient of 'le'
   tstats <- vapply(tmods, function(mod) gettvalue(mod, "le"), FUN.VALUE = 0.0, USE.NAMES = FALSE)
@@ -493,11 +478,10 @@ critvals.cips <- function(stat, n, T., type = c("trend", "drift", "none"),
   }
   
   ## set this according to model
-  switch(match.arg(type), 
-         "trend" = {cvals <- tvals},
-         "drift" = {cvals <- dvals},
-         "none"  = {cvals <- nvals})
-  
+  cvals <- switch(match.arg(type), 
+                   "trend" = tvals,
+                   "drift" = dvals,
+                   "none"  = nvals)
   
   ## find intervals for current n and T.
   nintl <- findInterval(n, rnam)

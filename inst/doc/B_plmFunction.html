@@ -11,11 +11,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2022-03-03" />
+<meta name="date" content="2022-08-15" />
 
 <title>Estimation of error components models with the plm function</title>
 
-<script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -25,6 +37,7 @@
   div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
   ul.task-list{list-style: none;}
     </style>
+
 
 
 <style type="text/css">
@@ -148,7 +161,187 @@ div.csl-indent {
 }
 </style>
 
-<link rel="stylesheet" href="data:text/css,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" type="text/css" />
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
 
 
 
@@ -160,54 +353,137 @@ div.csl-indent {
 
 
 
-<h1 class="title toc-ignore">Estimation of error components models with the plm function</h1>
+<h1 class="title toc-ignore">Estimation of error components models with
+the plm function</h1>
 <h4 class="author">Yves Croissant</h4>
-<h4 class="date">2022-03-03</h4>
+<h4 class="date">2022-08-15</h4>
 
 
 
-<p><code>plm</code> is a very versatile function which enable the estimation of a wide range of error component models. Those models can be written as follows :</p>
+<p><code>plm</code> is a very versatile function which enable the
+estimation of a wide range of error component models. Those models can
+be written as follows :</p>
 <p><span class="math display">\[
-y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} + \eta_n + \mu_t + \nu_{nt}
+y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top
+x_{nt} + \eta_n + \mu_t + \nu_{nt}
 \]</span></p>
-<p>where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes, <span class="math inline">\(y\)</span> the response, <span class="math inline">\(x\)</span> a vector of covariates, <span class="math inline">\(\alpha\)</span> the overall intercept and <span class="math inline">\(\beta\)</span> the vector of parameters of interest that we are willing to estimate. The error term <span class="math inline">\(\epsilon_{nt}\)</span> is composed of three elements (in the two-way case):</p>
+<p>where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes,
+<span class="math inline">\(y\)</span> the response, <span class="math inline">\(x\)</span> a vector of covariates, <span class="math inline">\(\alpha\)</span> the overall intercept and <span class="math inline">\(\beta\)</span> the vector of parameters of
+interest that we are willing to estimate. The error term <span class="math inline">\(\epsilon_{nt}\)</span> is composed of three
+elements (in the two-way case):</p>
 <ul>
-<li><span class="math inline">\(\eta_n\)</span> is the individual effect,</li>
+<li><span class="math inline">\(\eta_n\)</span> is the individual
+effect,</li>
 <li><span class="math inline">\(\mu_t\)</span> is the time effect,</li>
-<li><span class="math inline">\(\nu_{nt}\)</span> is the idiosyncratic error.</li>
+<li><span class="math inline">\(\nu_{nt}\)</span> is the idiosyncratic
+error.</li>
 </ul>
 <div id="basic-use-of-plm" class="section level1">
 <h1>Basic use of <code>plm</code></h1>
-<p>The first two arguments of <code>plm</code> are, like for most of the estimation functions of <code>R</code> a <code>formula</code> which describes the model to be estimated and a <code>data.frame</code>. <code>subset</code>, <code>weights</code>, and <code>na.action</code> are also available and have the same behavior as in the <code>lm</code> function. Three more main arguments can be set :</p>
+<p>The first two arguments of <code>plm</code> are, like for most of the
+estimation functions of <code>R</code> a <code>formula</code> which
+describes the model to be estimated and a <code>data.frame</code>.
+<code>subset</code>, <code>weights</code>, and <code>na.action</code>
+are also available and have the same behavior as in the <code>lm</code>
+function. Three more main arguments can be set :</p>
 <ul>
-<li><code>index</code> helps <code>plm</code> to understand the structure of the data : if <code>NULL</code>, the first two columns of the data are assumed to contain the individual or the time index. Otherwise, supply the column names of the individual and time index as a character, e.g., use something like <code>c(&quot;firm&quot;, &quot;year&quot;)</code> or just <code>&quot;firm&quot;</code> if there is no explicit time index.</li>
-<li><code>effect</code> indicates the effects that should be taken into account ; this is one of <code>&quot;individual&quot;</code>, <code>&quot;time&quot;</code>, and <code>&quot;twoways&quot;</code>.</li>
-<li><code>model</code> indicates the model to be estimated : <code>&quot;pooling&quot;</code> is just the OLS estimation (equivalent to a call to <code>lm</code>), <code>&quot;between&quot;</code> performs the estimation on the individual or time means, <code>&quot;within&quot;</code> on the deviations from the individual or/and time mean, <code>&quot;fd&quot;</code> on the first differences and <code>&quot;random&quot;</code> perform a feasible generalized least squares estimation which takes into account the correlation induced by the presence of individual and/or time effects.</li>
+<li><code>index</code> helps <code>plm</code> to understand the
+structure of the data : if <code>NULL</code>, the first two columns of
+the data are assumed to contain the individual or the time index.
+Otherwise, supply the column names of the individual and time index as a
+character, e.g., use something like <code>c(&quot;firm&quot;, &quot;year&quot;)</code> or
+just <code>&quot;firm&quot;</code> if there is no explicit time index.</li>
+<li><code>effect</code> indicates the effects that should be taken into
+account ; this is one of <code>&quot;individual&quot;</code>, <code>&quot;time&quot;</code>,
+and <code>&quot;twoways&quot;</code>.</li>
+<li><code>model</code> indicates the model to be estimated :
+<code>&quot;pooling&quot;</code> is just the OLS estimation (equivalent to a call
+to <code>lm</code>), <code>&quot;between&quot;</code> performs the estimation on
+the individual or time means, <code>&quot;within&quot;</code> on the deviations
+from the individual or/and time mean, <code>&quot;fd&quot;</code> on the first
+differences and <code>&quot;random&quot;</code> perform a feasible generalized
+least squares estimation which takes into account the correlation
+induced by the presence of individual and/or time effects.</li>
 </ul>
-<p>The estimation of all but the last model is straightforward, as it requires only the estimation by <em>OLS</em> of obvious transformations of the data. The <em>GLS</em> model requires more explanation. In most of the cases, the estimation is obtained by quasi-differencing the data from the individual and/or the time means. The coefficients used to perform this quasi-difference depends on estimators of the variance of the components of the error, namely <span class="math inline">\(\sigma^2_\nu\)</span>, <span class="math inline">\(\sigma^2_\eta\)</span> in case of individual effects and <span class="math inline">\(\sigma^2_\mu\)</span> in case of time effects.</p>
-<p>The most common technique used to estimate these variance is to use the following result :</p>
+<p>The estimation of all but the last model is straightforward, as it
+requires only the estimation by <em>OLS</em> of obvious transformations
+of the data. The <em>GLS</em> model requires more explanation. In most
+of the cases, the estimation is obtained by quasi-differencing the data
+from the individual and/or the time means. The coefficients used to
+perform this quasi-difference depends on estimators of the variance of
+the components of the error, namely <span class="math inline">\(\sigma^2_\nu\)</span>, <span class="math inline">\(\sigma^2_\eta\)</span> in case of individual
+effects and <span class="math inline">\(\sigma^2_\mu\)</span> in case of
+time effects.</p>
+<p>The most common technique used to estimate these variance is to use
+the following result :</p>
 <p><span class="math display">\[
 \frac{\mbox{E}(\epsilon^\top W \epsilon)}{N(T-1)} = \sigma_\nu^2
 \]</span></p>
 <p>and</p>
 <p><span class="math display">\[
-\frac{\mbox{E}(\epsilon^\top B \epsilon)}{N} = T \sigma_\eta^2 + \sigma_\nu^2
+\frac{\mbox{E}(\epsilon^\top B \epsilon)}{N} = T \sigma_\eta^2 +
+\sigma_\nu^2
 \]</span></p>
-<p>where <span class="math inline">\(B\)</span> and <span class="math inline">\(W\)</span> are respectively the matrices that performs the individual (or time) means and the deviations from these means. Consistent estimators can be obtained by replacing the unknown errors by the residuals of a consistent preliminary estimation and by dropping the expecting value operator. Some degree of freedom correction can also be introduced. <code>plm</code> calls the general function <code>ercomp</code> to estimate the variances. Important arguments to <code>ercomp</code> are:</p>
+<p>where <span class="math inline">\(B\)</span> and <span class="math inline">\(W\)</span> are respectively the matrices that
+performs the individual (or time) means and the deviations from these
+means. Consistent estimators can be obtained by replacing the unknown
+errors by the residuals of a consistent preliminary estimation and by
+dropping the expecting value operator. Some degree of freedom correction
+can also be introduced. <code>plm</code> calls the general function
+<code>ercomp</code> to estimate the variances. Important arguments to
+<code>ercomp</code> are:</p>
 <ul>
-<li><code>models</code> indicates which models are estimated in order to calculate the two quadratic forms ; for example <code>c(&quot;within&quot;, &quot;Between&quot;)</code>. Note that when only one model is provided in <code>models</code>, this means that the same residuals are used to compute the two quadratic forms.</li>
-<li><code>dfcor</code> indicates what kind of degrees of freedom correction is used : if <code>0</code>, the quadratic forms are divided by the number of observations, respectively <span class="math inline">\(N\times T\)</span> and <span class="math inline">\(N\)</span> ; if <code>1</code>, the numerators of the previous expressions are used (<span class="math inline">\(N\times (T-1)\)</span> and <span class="math inline">\(N\)</span>) ; if <code>2</code>, the number of estimated parameters in the preliminary estimate <span class="math inline">\(K\)</span> is deducted. Finally, if <code>3</code>, the unbiased version is computed, which is based on much more complex computations, which relies on the calculus of the trace of different cross-products which depends on the preliminary models used.</li>
-<li><code>method</code> is an alternative to the <code>models</code> argument; it is one of :
+<li><code>models</code> indicates which models are estimated in order to
+calculate the two quadratic forms ; for example
+<code>c(&quot;within&quot;, &quot;Between&quot;)</code>. Note that when only one model is
+provided in <code>models</code>, this means that the same residuals are
+used to compute the two quadratic forms.</li>
+<li><code>dfcor</code> indicates what kind of degrees of freedom
+correction is used : if <code>0</code>, the quadratic forms are divided
+by the number of observations, respectively <span class="math inline">\(N\times T\)</span> and <span class="math inline">\(N\)</span> ; if <code>1</code>, the numerators of
+the previous expressions are used (<span class="math inline">\(N\times
+(T-1)\)</span> and <span class="math inline">\(N\)</span>) ; if
+<code>2</code>, the number of estimated parameters in the preliminary
+estimate <span class="math inline">\(K\)</span> is deducted. Finally, if
+<code>3</code>, the unbiased version is computed, which is based on much
+more complex computations, which relies on the calculus of the trace of
+different cross-products which depends on the preliminary models
+used.</li>
+<li><code>method</code> is an alternative to the <code>models</code>
+argument; it is one of :
 <ul>
-<li><code>&quot;walhus&quot;</code> (equivalent to setting <code>models = c(&quot;pooling&quot;)</code>), <span class="citation">Wallace and Hussain (1969)</span>,</li>
-<li><code>&quot;swar&quot;</code> (equivalent to <code>models = c(&quot;within&quot;, &quot;Between&quot;)</code>), <span class="citation">Swamy and Arora (1972)</span>,</li>
-<li><code>&quot;amemiya&quot;</code> (equivalent to <code>models = c(&quot;within&quot;)</code>), <span class="citation">T. Amemiya (1971)</span>,</li>
-<li><code>&quot;nerlove&quot;</code>, which is a specific method which doesn’t fit to the quadratic form methodology described above (<span class="citation">Nerlove (1971)</span>) and uses an within model for the variance estimation as well,</li>
-<li><code>&quot;ht&quot;</code> is an slightly modified version of <code>&quot;amemiya&quot;</code>: when there are time-invariant covariates, the <span class="citation">T. Amemiya (1971)</span> estimator of the individual component of the variance under-estimates as the time-invariant covariates disappear in the within regression. In this case, <span class="citation">Hausman and Taylor (1981)</span> proposed to regress the estimation of the individual effects on the time-invariant covariates and use the residuals in order to estimate the components of the variance.</li>
+<li><code>&quot;walhus&quot;</code> (equivalent to setting
+<code>models = c(&quot;pooling&quot;)</code>), <span class="citation">Wallace and
+Hussain (1969)</span>,</li>
+<li><code>&quot;swar&quot;</code> (equivalent to
+<code>models = c(&quot;within&quot;, &quot;Between&quot;)</code>), <span class="citation">Swamy and Arora (1972)</span>,</li>
+<li><code>&quot;amemiya&quot;</code> (equivalent to
+<code>models = c(&quot;within&quot;)</code>), <span class="citation">T. Amemiya
+(1971)</span>,</li>
+<li><code>&quot;nerlove&quot;</code>, which is a specific method which doesn’t fit
+to the quadratic form methodology described above (<span class="citation">Nerlove (1971)</span>) and uses an within model for the
+variance estimation as well,</li>
+<li><code>&quot;ht&quot;</code> is an slightly modified version of
+<code>&quot;amemiya&quot;</code>: when there are time-invariant covariates, the
+<span class="citation">T. Amemiya (1971)</span> estimator of the
+individual component of the variance under-estimates as the
+time-invariant covariates disappear in the within regression. In this
+case, <span class="citation">Hausman and Taylor (1981)</span> proposed
+to regress the estimation of the individual effects on the
+time-invariant covariates and use the residuals in order to estimate the
+components of the variance.</li>
 </ul></li>
 </ul>
-<p>Note that for <code>plm</code>, the arguments are <code>random.models</code>, <code>random.dfcor</code>, and <code>random.method</code> and correspond to arguments <code>models</code>, <code>method</code>, and <code>random.dfcor</code> of function <code>ercomp</code> with the same values as above, respectively.</p>
-<p>To illustrate the use of <code>plm</code>, we use examples reproduced in <span class="citation">B. H. Baltagi (2013)</span>, p. 21; <span class="citation">B. H. Baltagi (2021)</span>, p. 31, table 2.1 presents EViews’ results of the estimation on the <code>Grunfeld</code> data set :</p>
+<p>Note that for <code>plm</code>, the arguments are
+<code>random.models</code>, <code>random.dfcor</code>, and
+<code>random.method</code> and correspond to arguments
+<code>models</code>, <code>method</code>, and <code>random.dfcor</code>
+of function <code>ercomp</code> with the same values as above,
+respectively.</p>
+<p>To illustrate the use of <code>plm</code>, we use examples reproduced
+in <span class="citation">B. H. Baltagi (2013)</span>, p. 21; <span class="citation">B. H. Baltagi (2021)</span>, p. 31, table 2.1 presents
+EViews’ results of the estimation on the <code>Grunfeld</code> data set
+:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Grunfeld&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>ols <span class="ot">&lt;-</span> <span class="fu">plm</span>(inv <span class="sc">~</span> value <span class="sc">+</span> capital, Grunfeld, <span class="at">model =</span> <span class="st">&quot;pooling&quot;</span>)</span>
@@ -216,7 +492,10 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>walhus <span class="ot">&lt;-</span> <span class="fu">update</span>(ols, <span class="at">model =</span> <span class="st">&quot;random&quot;</span>, <span class="at">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="at">random.dfcor =</span> <span class="dv">3</span>)</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>amemiya <span class="ot">&lt;-</span> <span class="fu">update</span>(walhus, <span class="at">random.method =</span> <span class="st">&quot;amemiya&quot;</span>)</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>swar <span class="ot">&lt;-</span> <span class="fu">update</span>(amemiya, <span class="at">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span></code></pre></div>
-<p>Note that the <code>random.dfcor</code> argument is set to <code>3</code>, which means that the unbiased version of the estimation of the error components is used. We use the <code>texreg</code> package to present the results :</p>
+<p>Note that the <code>random.dfcor</code> argument is set to
+<code>3</code>, which means that the unbiased version of the estimation
+of the error components is used. We use the <code>texreg</code> package
+to present the results :</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;texreg&quot;</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(<span class="at">ols =</span> ols, <span class="at">between =</span> between, <span class="at">within =</span> within, </span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">walhus =</span> walhus, <span class="at">amemiya =</span> amemiya, <span class="at">swar =</span> swar),</span>
@@ -237,13 +516,19 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## s_id                                                   87.35803       83.52354       84.20095    
 ## =================================================================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-<p>The estimated variance can be extracted using the <code>ercomp</code> function. For example, for the <code>amemiya</code> model :</p>
+<p>The estimated variance can be extracted using the <code>ercomp</code>
+function. For example, for the <code>amemiya</code> model :</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ercomp</span>(amemiya)</span></code></pre></div>
 <pre><code>##                   var std.dev share
 ## idiosyncratic 2784.46   52.77 0.285
 ## individual    6976.18   83.52 0.715
 ## theta: 0.8601</code></pre>
-<p><span class="citation">B. H. Baltagi (2013)</span>, p. 27; <span class="citation">B. H. Baltagi (2021)</span>, p. 31 presents the Stata estimation of the Swamy-Arora estimator ; the Swamy-Arora estimator is the same if <code>random.dfcor</code> is set to <code>3</code> or <code>2</code> (the quadratic forms are divided by <span class="math inline">\(\sum_n T_n - K - N\)</span> and by <span class="math inline">\(N - K - 1\)</span>), so I don’t know what is the behaviour of Stata for the other estimators for which the unbiased estimators differs from the simple one.</p>
+<p><span class="citation">B. H. Baltagi (2013)</span>, p. 27; <span class="citation">B. H. Baltagi (2021)</span>, p. 31 presents the Stata
+estimation of the Swamy-Arora estimator ; the Swamy-Arora estimator is
+the same if <code>random.dfcor</code> is set to <code>3</code> or
+<code>2</code> (the quadratic forms are divided by <span class="math inline">\(\sum_n T_n - K - N\)</span> and by <span class="math inline">\(N - K - 1\)</span>), so I don’t know what is the
+behaviour of Stata for the other estimators for which the unbiased
+estimators differs from the simple one.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>PrSwar <span class="ot">&lt;-</span> <span class="fu">plm</span>(<span class="fu">log</span>(gsp) <span class="sc">~</span> <span class="fu">log</span>(pcap) <span class="sc">+</span> <span class="fu">log</span>(pc) <span class="sc">+</span> <span class="fu">log</span>(emp) <span class="sc">+</span> unemp, Produc, </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">model =</span> <span class="st">&quot;random&quot;</span>, <span class="at">random.method =</span> <span class="st">&quot;swar&quot;</span>, <span class="at">random.dfcor =</span> <span class="dv">3</span>)</span>
@@ -286,7 +571,9 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 </div>
 <div id="the-twoways-effect-model" class="section level1">
 <h1>The twoways effect model</h1>
-<p>The two-ways effect model is obtained by setting the <code>effect</code> argument to <code>&quot;twoways&quot;</code>. <span class="citation">B. H. Baltagi (2013)</span> pp. 51-53; <span class="citation">B. H. Baltagi (2021)</span>, pp. 61-62, tables 3.1-3.3, presents EViews’ output for the Grunfeld data set.</p>
+<p>The two-ways effect model is obtained by setting the
+<code>effect</code> argument to <code>&quot;twoways&quot;</code>. <span class="citation">B. H. Baltagi (2013)</span> pp. 51-53; <span class="citation">B. H. Baltagi (2021)</span>, pp. 61-62, tables 3.1-3.3,
+presents EViews’ output for the Grunfeld data set.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Grw <span class="ot">&lt;-</span> <span class="fu">plm</span>(inv <span class="sc">~</span> value <span class="sc">+</span> capital, Grunfeld, <span class="at">model =</span> <span class="st">&quot;random&quot;</span>, <span class="at">effect =</span> <span class="st">&quot;twoways&quot;</span>, </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">random.method =</span> <span class="st">&quot;walhus&quot;</span>, <span class="at">random.dfcor =</span> <span class="dv">3</span>)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>Grs <span class="ot">&lt;-</span> <span class="fu">update</span>(Grw, <span class="at">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
@@ -311,8 +598,11 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Num. obs.    200              200            200          
 ## ==========================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-<p>The estimated variance of the time component is negative for the Wallace-Hussain as well as the Swamy-Arora models and <code>plm</code> sets it to 0.</p>
-<p><span class="citation">B. H. Baltagi (2009)</span> pp. 60-62, presents EViews’ output for the <code>Produc</code> data.</p>
+<p>The estimated variance of the time component is negative for the
+Wallace-Hussain as well as the Swamy-Arora models and <code>plm</code>
+sets it to 0.</p>
+<p><span class="citation">B. H. Baltagi (2009)</span> pp. 60-62,
+presents EViews’ output for the <code>Produc</code> data.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>Prw <span class="ot">&lt;-</span> <span class="fu">plm</span>(<span class="fu">log</span>(gsp) <span class="sc">~</span> <span class="fu">log</span>(pcap) <span class="sc">+</span> <span class="fu">log</span>(pc) <span class="sc">+</span> <span class="fu">log</span>(emp) <span class="sc">+</span> unemp, Produc, </span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">model =</span> <span class="st">&quot;random&quot;</span>, <span class="at">random.method =</span> <span class="st">&quot;walhus&quot;</span>, </span>
@@ -348,10 +638,23 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 <h1>Unbalanced panels</h1>
 <p>Two difficulties arise with unbalanced panels :</p>
 <ul>
-<li>There are no obvious denominators for the quadratic forms of the residuals that are used to estimate the components of the variance. The strategy is then to compute the expected value and equate it to the actual quadratic forms. Detailed formula are omitted here, they depend on the preliminary estimator.</li>
-<li>For the one-way effect model, the estimator is still obtained by applying <em>OLS</em> on demeaned data (the individual <strong>and</strong> the time means are now deducted) for the within model and on quasi-demeaned data for the random effects model ; this is not the case for the two-ways effects model.</li>
+<li>There are no obvious denominators for the quadratic forms of the
+residuals that are used to estimate the components of the variance. The
+strategy is then to compute the expected value and equate it to the
+actual quadratic forms. Detailed formula are omitted here, they depend
+on the preliminary estimator.</li>
+<li>For the one-way effect model, the estimator is still obtained by
+applying <em>OLS</em> on demeaned data (the individual
+<strong>and</strong> the time means are now deducted) for the within
+model and on quasi-demeaned data for the random effects model ; this is
+not the case for the two-ways effects model.</li>
 </ul>
-<p><span class="citation">B. H. Baltagi (2021)</span>, <span class="citation">B. H. Baltagi (2013)</span>, and <span class="citation">B. H. Baltagi (2009)</span> present results of the estimation of the <span class="citation">Swamy and Arora (1972)</span> model with the <code>Hedonic</code> data set. <span class="citation">B. H. Baltagi (2013)</span>, p. 195; <span class="citation">B. H. Baltagi (2021)</span>, p. 237, table 9.1, presents the Stata output and <span class="citation">B. H. Baltagi (2009)</span>, p. 211 presents EViews’ output. EViews’ Wallace-Hussain estimator is reported in <span class="citation">B. H. Baltagi (2009)</span>, p. 210.</p>
+<p><span class="citation">B. H. Baltagi (2021)</span>, <span class="citation">B. H. Baltagi (2013)</span>, and <span class="citation">B. H. Baltagi (2009)</span> present results of the
+estimation of the <span class="citation">Swamy and Arora (1972)</span>
+model with the <code>Hedonic</code> data set. <span class="citation">B.
+H. Baltagi (2013)</span>, p. 195; <span class="citation">B. H. Baltagi
+(2021)</span>, p. 237, table 9.1, presents the Stata output and <span class="citation">B. H. Baltagi (2009)</span>, p. 211 presents EViews’
+output. EViews’ Wallace-Hussain estimator is reported in <span class="citation">B. H. Baltagi (2009)</span>, p. 210.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Hedonic&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>form <span class="ot">&lt;-</span> mv <span class="sc">~</span> crim <span class="sc">+</span> zn <span class="sc">+</span> indus <span class="sc">+</span> chas <span class="sc">+</span> nox <span class="sc">+</span> rm <span class="sc">+</span> </span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    age <span class="sc">+</span> dis <span class="sc">+</span> rad <span class="sc">+</span> tax <span class="sc">+</span> ptratio <span class="sc">+</span> blacks <span class="sc">+</span> lstat</span>
@@ -388,25 +691,67 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## Num. obs.    506                      506                      506                    
 ## ======================================================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-<p>The difference is due to the fact that Stata uses a between regression on <span class="math inline">\(N\)</span> observations while EViews uses a between regression on <span class="math inline">\(\sum_n T_n\)</span> observations, which are not the same on unbalanced panels. Note the use of between with or without the B capitalized (<code>&quot;Between&quot;</code> and <code>&quot;between&quot;</code>) in the <code>random.models</code> argument. <code>plm</code>’s default is to use the between regression with <span class="math inline">\(\sum_n T_n\)</span> observations when setting <code>model = &quot;random&quot;, random.method = &quot;swar&quot;</code>. The default employed is what the original paper for the unbalanced one-way Swamy-Arora estimator defined (in <span class="citation">B. H. Baltagi and Chang (1994)</span>, p. 73). A more detailed analysis of Stata’s Swamy-Arora estimation procedure is given by <span class="citation">Cottrell (2017)</span>.</p>
+<p>The difference is due to the fact that Stata uses a between
+regression on <span class="math inline">\(N\)</span> observations while
+EViews uses a between regression on <span class="math inline">\(\sum_n
+T_n\)</span> observations, which are not the same on unbalanced panels.
+Note the use of between with or without the B capitalized
+(<code>&quot;Between&quot;</code> and <code>&quot;between&quot;</code>) in the
+<code>random.models</code> argument. <code>plm</code>’s default is to
+use the between regression with <span class="math inline">\(\sum_n
+T_n\)</span> observations when setting
+<code>model = &quot;random&quot;, random.method = &quot;swar&quot;</code>. The default
+employed is what the original paper for the unbalanced one-way
+Swamy-Arora estimator defined (in <span class="citation">B. H. Baltagi
+and Chang (1994)</span>, p. 73). A more detailed analysis of Stata’s
+Swamy-Arora estimation procedure is given by <span class="citation">Cottrell (2017)</span>.</p>
 </div>
 <div id="instrumental-variable-estimators" class="section level1">
 <h1>Instrumental variable estimators</h1>
-<p>All of the models presented above may be estimated using instrumental variables (IV). The instruments are specified using two- or three-part formulas, each part being separated by a <code>|</code> sign :</p>
+<p>All of the models presented above may be estimated using instrumental
+variables (IV). The instruments are specified using two- or three-part
+formulas, each part being separated by a <code>|</code> sign :</p>
 <ul>
 <li>the first part contains the covariates,</li>
-<li>the second part contains the “double-exogenous” instruments, <em>i.e.</em>, variables that can be used twice as instruments, using their within and the between transformation,</li>
-<li>the third part contains the “single-exogenous” instruments, <em>i.e.</em>, variables for which only the within transformation can be used as instruments, those variables being correlated with the individual effects.</li>
+<li>the second part contains the “double-exogenous” instruments,
+<em>i.e.</em>, variables that can be used twice as instruments, using
+their within and the between transformation,</li>
+<li>the third part contains the “single-exogenous” instruments,
+<em>i.e.</em>, variables for which only the within transformation can be
+used as instruments, those variables being correlated with the
+individual effects.</li>
 </ul>
-<p>The instrumental variables estimator used is indicated with the <code>inst.method</code> argument:</p>
+<p>The instrumental variables estimator used is indicated with the
+<code>inst.method</code> argument:</p>
 <ul>
-<li><code>&quot;bvk&quot;</code>, from <span class="citation">Balestra and Varadharajan–Krishnakumar (1987)</span>, the default value : in this case, all the instruments are introduced in quasi-differences, using the same transformation as for the response and the covariates,</li>
-<li><code>&quot;baltagi&quot;</code>, from <span class="citation">B. H. Baltagi (1981)</span>, the instruments of the <em>second</em> part are introduced twice by using the between and the within transformation and instruments of the <em>third</em> part are introduced with only the within transformation,</li>
-<li><code>&quot;am&quot;</code>, from <span class="citation">Takeshi Amemiya and MaCurdy (1986)</span>, in addition to the instrument set of <code>&quot;baltagi&quot;</code>, the within transformation of the variables of the <em>second</em> part for each period are also included as instruments,</li>
-<li><code>&quot;bms&quot;</code>, from <span class="citation">Breusch, Mizon, and Schmidt (1989)</span>, in addition to the instrument set of <code>&quot;baltagi&quot;</code>, the within transformation of the variables of the <em>second</em> and the <em>third</em> part for each period are included as instruments.</li>
+<li><code>&quot;bvk&quot;</code>, from <span class="citation">Balestra and
+Varadharajan–Krishnakumar (1987)</span>, the default value : in this
+case, all the instruments are introduced in quasi-differences, using the
+same transformation as for the response and the covariates,</li>
+<li><code>&quot;baltagi&quot;</code>, from <span class="citation">B. H. Baltagi
+(1981)</span>, the instruments of the <em>second</em> part are
+introduced twice by using the between and the within transformation and
+instruments of the <em>third</em> part are introduced with only the
+within transformation,</li>
+<li><code>&quot;am&quot;</code>, from <span class="citation">Takeshi Amemiya and
+MaCurdy (1986)</span>, in addition to the instrument set of
+<code>&quot;baltagi&quot;</code>, the within transformation of the variables of
+the <em>second</em> part for each period are also included as
+instruments,</li>
+<li><code>&quot;bms&quot;</code>, from <span class="citation">Breusch, Mizon, and
+Schmidt (1989)</span>, in addition to the instrument set of
+<code>&quot;baltagi&quot;</code>, the within transformation of the variables of
+the <em>second</em> and the <em>third</em> part for each period are
+included as instruments.</li>
 </ul>
-<p>The various possible values of the <code>inst.method</code> argument are not relevant for fixed effect IV models as there is only one method for this type of IV models but many for random effect IV models.</p>
-<p>The instrumental variable estimators are illustrated in the following example from <span class="citation">B. H. Baltagi (2005)</span>, pp. 117/120; <span class="citation">B. H. Baltagi (2013)</span>, pp. 133/137; <span class="citation">B. H. Baltagi (2021)</span>, pp. 162/165, tables 7.1, 7.3.</p>
+<p>The various possible values of the <code>inst.method</code> argument
+are not relevant for fixed effect IV models as there is only one method
+for this type of IV models but many for random effect IV models.</p>
+<p>The instrumental variable estimators are illustrated in the following
+example from <span class="citation">B. H. Baltagi (2005)</span>,
+pp. 117/120; <span class="citation">B. H. Baltagi (2013)</span>,
+pp. 133/137; <span class="citation">B. H. Baltagi (2021)</span>,
+pp. 162/165, tables 7.1, 7.3.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Crime&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>crbalt <span class="ot">&lt;-</span> <span class="fu">plm</span>(lcrmrte <span class="sc">~</span> lprbarr <span class="sc">+</span> lpolpc <span class="sc">+</span> lprbconv <span class="sc">+</span> lprbpris <span class="sc">+</span> lavgsen <span class="sc">+</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>              ldensity <span class="sc">+</span> lwcon <span class="sc">+</span> lwtuc <span class="sc">+</span> lwtrd <span class="sc">+</span> lwfir <span class="sc">+</span> lwser <span class="sc">+</span> lwmfg <span class="sc">+</span> lwfed <span class="sc">+</span></span>
@@ -469,7 +814,13 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 ## s_id                                     0.21456        0.21456    
 ## ===================================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-<p>The Hausman-Taylor model (<span class="citation">Hausman and Taylor (1981)</span>) may be estimated with the <code>plm</code> function by setting argument <code>random.method = &quot;ht&quot;</code> and <code>inst.method = &quot;baltagi&quot;</code>. The following example is from <span class="citation">B. H. Baltagi (2005)</span>, p. 130; <span class="citation">B. H. Baltagi (2013)</span>, pp. 145-7, tables 7.4-7.6; <span class="citation">B. H. Baltagi (2021)</span>, pp. 174-6 , tables 7.5-7.7.</p>
+<p>The Hausman-Taylor model (<span class="citation">Hausman and Taylor
+(1981)</span>) may be estimated with the <code>plm</code> function by
+setting argument <code>random.method = &quot;ht&quot;</code> and
+<code>inst.method = &quot;baltagi&quot;</code>. The following example is from
+<span class="citation">B. H. Baltagi (2005)</span>, p. 130; <span class="citation">B. H. Baltagi (2013)</span>, pp. 145-7, tables 7.4-7.6;
+<span class="citation">B. H. Baltagi (2021)</span>, pp. 174-6 , tables
+7.5-7.7.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Wages&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>ht <span class="ot">&lt;-</span> <span class="fu">plm</span>(lwage <span class="sc">~</span> wks <span class="sc">+</span> south <span class="sc">+</span> smsa <span class="sc">+</span> married <span class="sc">+</span> exp <span class="sc">+</span> <span class="fu">I</span>(exp<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> </span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>            bluecol <span class="sc">+</span> ind <span class="sc">+</span> union <span class="sc">+</span> sex <span class="sc">+</span> black <span class="sc">+</span> ed <span class="sc">|</span> </span>
@@ -525,16 +876,29 @@ y_{nt}=\alpha + \beta^\top x_{nt} + \epsilon_{nt} = \alpha + \beta^\top x_{nt} +
 </div>
 <div id="nested-error-component-model" class="section level1">
 <h1>Nested error component model</h1>
-<p>This section shows how the nested error component model as per <span class="citation">B. H. Baltagi, Song, and Jung (2001)</span> can be estimated. The model is given by :</p>
+<p>This section shows how the nested error component model as per <span class="citation">B. H. Baltagi, Song, and Jung (2001)</span> can be
+estimated. The model is given by :</p>
 <p><span class="math display">\[
-y_{nt}=\alpha + \beta^\top x_{jnt} + u_{jnt} = \alpha + \beta^\top x_{jnt} + \mu_{j} + \nu_{jn} + \epsilon_{jnt}
-\]</span> where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes and <span class="math inline">\(j\)</span> is the group index in which the individuals are nested. The error <span class="math inline">\(u_{jnt}\)</span> consists of three components :</p>
+y_{nt}=\alpha + \beta^\top x_{jnt} + u_{jnt} = \alpha + \beta^\top
+x_{jnt} + \mu_{j} + \nu_{jn} + \epsilon_{jnt}
+\]</span> where <span class="math inline">\(n\)</span> and <span class="math inline">\(t\)</span> are the individual and time indexes and
+<span class="math inline">\(j\)</span> is the group index in which the
+individuals are nested. The error <span class="math inline">\(u_{jnt}\)</span> consists of three components
+:</p>
 <ul>
 <li><span class="math inline">\(\mu_j\)</span> is the group effect,</li>
-<li><span class="math inline">\(\nu_{jn}\)</span> the nested effect of the individual nested in group <span class="math inline">\(j\)</span></li>
-<li><span class="math inline">\(\epsilon_{jnt}\)</span> is the idiosyncratic error.</li>
+<li><span class="math inline">\(\nu_{jn}\)</span> the nested effect of
+the individual nested in group <span class="math inline">\(j\)</span></li>
+<li><span class="math inline">\(\epsilon_{jnt}\)</span> is the
+idiosyncratic error.</li>
 </ul>
-<p>In the estimated examples below (replication of <span class="citation">B. H. Baltagi, Song, and Jung (2001)</span>, p. 378, table 6; <span class="citation">B. H. Baltagi (2021)</span>, p. 248, table 9.1), states are nested within regions. The group index is given in the 3rd position of the <code>index</code> argument to <code>pdata.frame</code> or to <code>plm</code> directly and <code>plm</code>’s argument <code>effect</code> is set to <code>&quot;nested&quot;</code>:</p>
+<p>In the estimated examples below (replication of <span class="citation">B. H. Baltagi, Song, and Jung (2001)</span>, p. 378,
+table 6; <span class="citation">B. H. Baltagi (2021)</span>, p. 248,
+table 9.1), states are nested within regions. The group index is given
+in the 3rd position of the <code>index</code> argument to
+<code>pdata.frame</code> or to <code>plm</code> directly and
+<code>plm</code>’s argument <code>effect</code> is set to
+<code>&quot;nested&quot;</code>:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Produc&quot;</span>, <span class="at">package =</span> <span class="st">&quot;plm&quot;</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>swar <span class="ot">&lt;-</span> <span class="fu">plm</span>(form <span class="ot">&lt;-</span> <span class="fu">log</span>(gsp) <span class="sc">~</span> <span class="fu">log</span>(pc) <span class="sc">+</span> <span class="fu">log</span>(emp) <span class="sc">+</span> <span class="fu">log</span>(hwy) <span class="sc">+</span> <span class="fu">log</span>(water) <span class="sc">+</span> <span class="fu">log</span>(util) <span class="sc">+</span> unemp, </span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>            Produc, <span class="at">index =</span> <span class="fu">c</span>(<span class="st">&quot;state&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;region&quot;</span>), <span class="at">model =</span> <span class="st">&quot;random&quot;</span>, <span class="at">effect =</span> <span class="st">&quot;nested&quot;</span>, <span class="at">random.method =</span> <span class="st">&quot;swar&quot;</span>)</span>
@@ -573,52 +937,80 @@ y_{nt}=\alpha + \beta^\top x_{jnt} + u_{jnt} = \alpha + \beta^\top x_{jnt} + \mu
 <h1 class="unnumbered">Bibliography</h1>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-AMEM:71" class="csl-entry">
-Amemiya, T. 1971. <span>“The Estimation of the Variances in a Variance–Components Model.”</span> <em>International Economic Review</em> 12: 1–13.
+Amemiya, T. 1971. <span>“The Estimation of the Variances in a
+Variance–Components Model.”</span> <em>International Economic
+Review</em> 12: 1–13.
 </div>
 <div id="ref-AMEM:MACU:86" class="csl-entry">
-Amemiya, Takeshi, and Thomas E MaCurdy. 1986. <span>“Instrumental-Variable Estimation of an Error-Components Model.”</span> <em>Econometrica</em> 54 (4): 869–80.
+Amemiya, Takeshi, and Thomas E MaCurdy. 1986.
+<span>“Instrumental-Variable Estimation of an Error-Components
+Model.”</span> <em>Econometrica</em> 54 (4): 869–80.
 </div>
 <div id="ref-BALE:VARA:87" class="csl-entry">
-Balestra, P., and J. Varadharajan–Krishnakumar. 1987. <span>“Full Information Estimations of a System of Simultaneous Equations with Error Components.”</span> <em>Econometric Theory</em> 3: 223–46.
+Balestra, P., and J. Varadharajan–Krishnakumar. 1987. <span>“Full
+Information Estimations of a System of Simultaneous Equations with Error
+Components.”</span> <em>Econometric Theory</em> 3: 223–46.
 </div>
 <div id="ref-BALT:81" class="csl-entry">
-Baltagi, B. H. 1981. <span>“Simultaneous Equations with Error Components.”</span> <em>Journal of Econometrics</em> 17: 21–49.
+Baltagi, B. H. 1981. <span>“Simultaneous Equations with Error
+Components.”</span> <em>Journal of Econometrics</em> 17: 21–49.
 </div>
 <div id="ref-BALT:05" class="csl-entry">
-Baltagi, B. H. 2005. <em>Econometric Analysis of Panel Data</em>. 3rd ed. John Wiley; Sons ltd.
+Baltagi, B. H. 2005. <em>Econometric Analysis of Panel Data</em>. 3rd
+ed. John Wiley; Sons ltd.
 </div>
 <div id="ref-BALT:09" class="csl-entry">
-———. 2009. <em>A Companion to Econometric Analysis of Panel Data</em>. John Wiley; Sons ltd.
+———. 2009. <em>A Companion to Econometric Analysis of Panel Data</em>.
+John Wiley; Sons ltd.
 </div>
 <div id="ref-BALT:13" class="csl-entry">
-———. 2013. <em>Econometric Analysis of Panel Data</em>. 5th ed. John Wiley; Sons ltd.
+———. 2013. <em>Econometric Analysis of Panel Data</em>. 5th ed. John
+Wiley; Sons ltd.
 </div>
 <div id="ref-BALT:21" class="csl-entry">
-———. 2021. <em>Econometric Analysis of Panel Data</em>. 6th ed. Springer.
+———. 2021. <em>Econometric Analysis of Panel Data</em>. 6th ed.
+Springer.
 </div>
 <div id="ref-BALT:CHAN:94" class="csl-entry">
-Baltagi, B. H., and Y. J. Chang. 1994. <span>“Incomplete Panels: A Comparative Study of Alternative Estimators for the Unbalanced One-Way Error Component Regression Model.”</span> <em>Journal of Econometrics</em> 62: 67–89.
+Baltagi, B. H., and Y. J. Chang. 1994. <span>“Incomplete Panels: A
+Comparative Study of Alternative Estimators for the Unbalanced One-Way
+Error Component Regression Model.”</span> <em>Journal of
+Econometrics</em> 62: 67–89.
 </div>
 <div id="ref-BALT:SONG:JUNG:01" class="csl-entry">
-Baltagi, B. H., S. H. Song, and B. C. Jung. 2001. <span>“The Unbalanced Nested Error Component Regression Model.”</span> <em>Journal of Econometrics</em> 101: 357–81.
+Baltagi, B. H., S. H. Song, and B. C. Jung. 2001. <span>“The Unbalanced
+Nested Error Component Regression Model.”</span> <em>Journal of
+Econometrics</em> 101: 357–81.
 </div>
 <div id="ref-BREU:MIZO:SCHM:89" class="csl-entry">
-Breusch, Trevor S, Grayham E Mizon, and Peter Schmidt. 1989. <span>“Efficient Estimation Using Panel Data.”</span> <em>Econometrica</em> 57 (3): 695–700.
+Breusch, Trevor S, Grayham E Mizon, and Peter Schmidt. 1989.
+<span>“Efficient Estimation Using Panel Data.”</span>
+<em>Econometrica</em> 57 (3): 695–700.
 </div>
 <div id="ref-COTT:2017" class="csl-entry">
-Cottrell, A. 2017. <span>“Random Effects Estimators for Unbalanced Panel Data: A Monte Carlo Analysis.”</span> <em>Gretl Working Papers</em>, no. 4. <a href="https://EconPapers.repec.org/RePEc:anc:wgretl:4">https://EconPapers.repec.org/RePEc:anc:wgretl:4</a>.
+Cottrell, A. 2017. <span>“Random Effects Estimators for Unbalanced Panel
+Data: A Monte Carlo Analysis.”</span> <em>Gretl Working Papers</em>, no.
+4. <a href="https://EconPapers.repec.org/RePEc:anc:wgretl:4">https://EconPapers.repec.org/RePEc:anc:wgretl:4</a>.
 </div>
 <div id="ref-HAUS:TAYL:81" class="csl-entry">
-Hausman, J. A., and W. E. Taylor. 1981. <span>“Panel Data and Unobservable Individual Effects.”</span> <em>Econometrica</em> 49: 1377–98.
+Hausman, J. A., and W. E. Taylor. 1981. <span>“Panel Data and
+Unobservable Individual Effects.”</span> <em>Econometrica</em> 49:
+1377–98.
 </div>
 <div id="ref-NERLO:71" class="csl-entry">
-Nerlove, M. 1971. <span>“Further Evidence on the Estimation of Dynamic Economic Relations from a Time–Series of Cross–Sections.”</span> <em>Econometrica</em> 39: 359–82.
+Nerlove, M. 1971. <span>“Further Evidence on the Estimation of Dynamic
+Economic Relations from a Time–Series of Cross–Sections.”</span>
+<em>Econometrica</em> 39: 359–82.
 </div>
 <div id="ref-SWAM:AROR:72" class="csl-entry">
-Swamy, P. A. V. B., and S. S Arora. 1972. <span>“The Exact Finite Sample Properties of the Estimators of Coefficients in the Error Components Regression Models.”</span> <em>Econometrica</em> 40: 261–75.
+Swamy, P. A. V. B., and S. S Arora. 1972. <span>“The Exact Finite Sample
+Properties of the Estimators of Coefficients in the Error Components
+Regression Models.”</span> <em>Econometrica</em> 40: 261–75.
 </div>
 <div id="ref-WALL:HUSS:69" class="csl-entry">
-Wallace, T. D., and A. Hussain. 1969. <span>“The Use of Error Components Models in Combining Cross Section with Time Series Data.”</span> <em>Econometrica</em> 37 (1): 55–72.
+Wallace, T. D., and A. Hussain. 1969. <span>“The Use of Error Components
+Models in Combining Cross Section with Time Series Data.”</span>
+<em>Econometrica</em> 37 (1): 55–72.
 </div>
 </div>
 </div>
