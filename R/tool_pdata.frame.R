@@ -26,6 +26,9 @@
 ## - print.summary
 ## - is.pseries
 
+## - pseries2pdataframe (non-exported)
+## - pmerge (non-exported)
+
 ## pdim:
 ## - pdim.default
 ## - pdim.data.frame
@@ -487,7 +490,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
 #   
 #   ## two sanity checks as [.pseries-subsetting was introduced in Q3/2021 and some packages
 #   ## produced illegal pseries (these pkg errors were fixed by new CRAN releases but maybe
-#   ## other code outhere produces illegal pseries, so leave these sanity checks in here for
+#   ## other code out there produces illegal pseries, so leave these sanity checks in here for
 #   ## a while, then remove (for speed)
 #     if(is.null(index)) warning("pseries object with is.null(index(pseries)) == TRUE encountered")
 #     if(!is.null(index) && !is.index(index)) warning(paste0("pseries object has illegal index with class(index) == ", paste0(class(index), collapse = ", ")))
@@ -644,7 +647,7 @@ subset_pseries <- function(x, ...) {
     mydata <- eval(sc_mod)
 
     if (is.null(dim(mydata))) {
-      # if dim is NULL, subsetting did not return a data frame but  a vector or a
+      # if dim is NULL, subsetting did not return a data frame but a vector or a
       #   factor or NULL (nothing more is left)
       if (is.null(mydata)) {
         # since R 3.4.0, NULL cannot have attributes, so special case it
@@ -958,7 +961,7 @@ is.pseries <- function(object) {
 #'     observations (individual, time) actually used for model
 #'     estimation are taken into account.  When called on a
 #'     `(p)data.frame`, the rows in the `(p)data.frame` are
-#'     considered, disregarding any `NA`values in the dependent or
+#'     considered, disregarding any `NA` values in the dependent or
 #'     independent variable(s) which would be dropped during model
 #'     estimation.
 #' @export
@@ -1380,7 +1383,7 @@ checkNA.index <- function(index, which = "all", error = TRUE) {
   if(which == "all") {
     if(anyNA(index[[1L]])) feedback("NA in the individual index variable")
     if(anyNA(index[[2L]])) feedback("NA in the time index variable")
-    n.index <- if(inherits(index, "pindex")) ncol(index) else length(index) # else-branche is list (for speed)
+    n.index <- if(inherits(index, "pindex")) ncol(index) else length(index) # else-branch is list (for speed)
     if(n.index == 3L) { if(anyNA(index[[3L]])) feedback("NA in the group index variable") }
   }
   if(which == 1L) {
@@ -1393,6 +1396,26 @@ checkNA.index <- function(index, which = "all", error = TRUE) {
     if(anyNA(index[[3L]])) feedback("NA in the group index variable")
   }
 }
+
+
+make.fdindex <- function(x) {
+  ## non-exported helper function
+  ## constructs an index suitable for time-wise first-difference data
+  ## input: an index (class c("pindex", "data.frame"))
+  ## return value: plain 2-entry list of the index factors
+  ix <- unclass(x)
+  
+  ix.ind.lag <- lag(add_pseries_features(ix[[1L]], ix))
+  ix.ti.lag  <- lag(add_pseries_features(ix[[2L]], ix))
+
+  na <- is.na(ix.ind.lag) # NAs are in same positions for ind and time index
+
+  ix.ind.lag <- ix.ind.lag[!na]
+  ix.ti.lag  <- ix.ti.lag[!na]
+  
+  list(ix.ind.lag, ix.ti.lag)
+}
+
 
 # pos.index:
 # not exported, helper function
@@ -1412,4 +1435,41 @@ pos.index <- function(x, ...) {
   index_pos <- match(index_names, names(x))
   names(index_pos) <- index_names
   return(index_pos)
+}
+
+pseries2pdataframe <- function(x, pdata.frame = TRUE, ...) {
+  ## non-exported
+  ## Transforms a pseries in a (p)data.frame with the indices as regular columns
+  ## in positions 1, 2 and (if present) 3 (individual index, time index, group index).
+  ## if pdataframe = TRUE -> return a pdata.frame, if FALSE -> return a data.frame
+  ## ellipsis (dots) passed on to pdata.frame()
+  if(!inherits(x, "pseries")) stop("input needs to be of class 'pseries'")
+  indices <- attr(x, "index")
+  class(indices) <- setdiff(class(indices), "pindex")
+  vx <- remove_pseries_features(x)
+  dfx <- cbind(indices, vx)
+  dimnames(dfx)[[2L]] <- c(names(indices), deparse(substitute(x)))
+  res <- if(pdata.frame == TRUE) {
+    pdata.frame(dfx, index = names(indices), ...)
+  } else { dfx }
+  return(res)
+}
+
+pmerge <- function(x, y, ...) {
+  ## non-exported
+  ## Returns a data.frame, not a pdata.frame.
+  ## pmerge is used to merge pseries or pdata.frames into a data.frame or
+  ## to merge a pseries to a data.frame
+  
+  ## transf. if pseries or pdata.frame
+  if(inherits(x, "pseries")) x <- pseries2pdataframe(x, pdata.frame = FALSE)
+  if(inherits(y, "pseries")) y <- pseries2pdataframe(y, pdata.frame = FALSE)
+  if(inherits(x, "pdata.frame")) x <- as.data.frame(x, keep.attributes = FALSE)
+  if(inherits(y, "pdata.frame")) y <- as.data.frame(y, keep.attributes = FALSE)
+  
+  # input to merge() needs to be data.frames; not yet suitable for 3rd index (group variable)
+  z <- merge(x, y,
+             by.x = dimnames(x)[[2L]][1:2],
+             by.y = dimnames(y)[[2L]][1:2], ...)
+  return(z)
 }

@@ -26,8 +26,8 @@
 #' Test for Granger (non-)causality in panel data.
 #' 
 #' 
-# % TODO: write about assumptions of panel Granger test: % * cross-sectional
-# independence % * convergence
+# % TODO: write about assumptions of panel Granger test: 
+#         cross-sectional independence, convergence
 #' 
 #' The panel Granger (non-)causality test is a combination of Granger
 #' tests \insertCite{GRAN:69}{plm} performed per individual. The test
@@ -160,9 +160,8 @@ pgrangertest <- function(formula, data, test = c("Ztilde", "Zbar", "Wbar"), orde
     wrn <- paste0(wrn1, wrn2)
     warning(wrn)
   }
-  
-  listdata <- split(data, indi) # split data per individual
-  
+
+  listdata <- collapse::rsplit(data, indi, use.names = FALSE) # split data per individual
   
   ## use lmtest::grangertest for the individual Granger tests
   

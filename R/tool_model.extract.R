@@ -54,8 +54,6 @@
 #' pGrunfeld <- pdata.frame(Grunfeld)
 #' 
 #' # then make a model frame from a formula and a pdata.frame
-##pform <- pFormula(inv ~ value + capital)
-##mf <- model.frame(pform, data = pGrunfeld)
 #' form <- inv ~ value
 #' mf <- model.frame(pGrunfeld, form)
 #' 
@@ -145,7 +143,7 @@ model.matrix.pdata.frame <- function(object,
     effect <- match.arg(effect)
     formula <- attr(object, "formula")
     data <- object
-    has.intercept <- has.intercept(formula, rhs = rhs)
+    has.intercept <- has.intercept(formula, rhs = rhs, data = data)
     # relevant defaults for cstcovar.rm
     if(is.null(cstcovar.rm)) cstcovar.rm <- if(model == "within") "intercept" else "none"
     balanced <- is.pbalanced(data)
@@ -166,8 +164,8 @@ model.matrix.pdata.frame <- function(object,
     if(model == "Between") X <- Between(X, effect)
     if(model == "between") X <- between(X, effect)
     if(model == "mean")    X <- Mean(X)
-    if(model == "fd")      X <- pdiff(X, effect = "individual",
-                                   has.intercept = has.intercept)
+    if(model == "fd")      X <- pdiff(X, effect = "individual",   # pdiff has its own handling of intercept and const. columns
+                                   has.intercept = has.intercept, shift = "row")
     if(model == "random"){
         if(is.null(theta)) stop("a theta argument must be provided for model = \"random\"")
         if(effect %in% c("time", "individual")) X <- X - theta * Between(X, effect)
@@ -211,7 +209,8 @@ model.matrix.pdata.frame <- function(object,
 #' 
 #' The model response is extracted from a `pdata.frame` (where the
 #' response must reside in the first column; this is the case for a
-#' model frame), a `pFormula` + `data` or a `plm` object, and the
+#' model frame), a `Formula` + `data` (being a model frame) or a `plm` 
+#' object, and the
 #' transformation specified by `effect` and `model` is applied to
 #' it.\cr Constructing the model frame first ensures proper `NA`
 #' handling and the response being placed in the first column, see
@@ -239,7 +238,7 @@ model.matrix.pdata.frame <- function(object,
 #' data("Grunfeld", package = "plm")
 #' pGrunfeld <- pdata.frame(Grunfeld)
 #' 
-#' # then make a model frame from a pFormula and a pdata.frame
+#' # then make a model frame from a Formula and a pdata.frame
 #' form <- inv ~ value + capital
 #' mf <- model.frame(pGrunfeld, form)
 #'
@@ -315,7 +314,7 @@ ptransform <- function(x, model = NULL, effect = NULL, theta = NULL, ...){
     if(model == "within")  x <- Within(x, effect)
     if(model == "between") x <- between(x, effect)
     if(model == "Between") x <- Between(x, effect)
-    if(model == "fd")      x <- pdiff(x, "individual")
+    if(model == "fd")      x <- pdiff(x, effect = "individual", shift = "row")
     if(model == "random") {
         balanced <- is.pbalanced(x) # need to check this right here as long as x is a pseries
         if(is.null(theta)) stop("a theta argument must be provided")

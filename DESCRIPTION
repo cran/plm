@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.6-2
-Date: 2022-08-15
+Version: 2.6-3
+Date: 2023-04-09
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = c("aut"), email = "giovanni.millo@deams.units.it"),
@@ -12,7 +12,7 @@ Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"
              person(given = "Liviu",     family = "Andronic",     role = "ctb"),
              person(given = "Nina",      family = "Schoenfelder", role = "ctb"))
 Depends: R (>= 3.2.0)
-Imports: MASS, bdsmatrix, collapse (>= 1.8.0), zoo, nlme, sandwich,
+Imports: MASS, bdsmatrix, collapse (>= 1.8.9), zoo, nlme, sandwich,
         lattice, lmtest, maxLik, Rdpack, Formula, stats
 Suggests: AER, car, statmod, urca, pder, texreg, knitr, rmarkdown,
         fixest, lfe
@@ -32,11 +32,11 @@ VignetteBuilder: knitr
 URL: https://cran.r-project.org/package=plm (CRAN releases),
         https://github.com/ycroissant/plm (development repository)
 BugReports: https://github.com/ycroissant/plm/issues
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.3
 RdMacros: Rdpack
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2022-08-15 10:57:00 UTC; kevin
+Packaged: 2023-04-09 10:39:10 UTC; kevin
 Author: Yves Croissant [aut],
   Giovanni Millo [aut],
   Kevin Tappe [aut, cre],
@@ -48,4 +48,4 @@ Author: Yves Croissant [aut],
   Nina Schoenfelder [ctb]
 Maintainer: Kevin Tappe <kevin.tappe@bwi.uni-stuttgart.de>
 Repository: CRAN
-Date/Publication: 2022-08-16 13:00:13 UTC
+Date/Publication: 2023-04-09 11:40:02 UTC

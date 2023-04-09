@@ -508,8 +508,9 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
               relevant.ind <- timeind
               lab <- groupind})
     
-    tind <- split(seq_along(relevant.ind), relevant.ind)
-    tlab <- split(lab, relevant.ind)
+    relevant.ind.GRP <- collapse::GRP(relevant.ind)
+    tind <- collapse::gsplit(seq_along(relevant.ind), relevant.ind.GRP)
+    tlab <- collapse::gsplit(lab, relevant.ind.GRP)
 
   ## lab were the 'labels' (a numeric, actually) for the relevant index;
   ## in use again from the need to make pseudo-diagonals for
@@ -1025,8 +1026,9 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
               lab <- groupind
             })
     
-    tind <- split(seq_along(relevant.ind), relevant.ind)
-    tlab <- split(lab, relevant.ind)
+    relevant.ind.GRP <- collapse::GRP(relevant.ind)
+    tind <- collapse::gsplit(seq_along(relevant.ind), relevant.ind.GRP)
+    tlab <- collapse::gsplit(lab, relevant.ind.GRP)
     
   ## define residuals weighting function omega(res)
   ## (code taken from meatHC and modified)
@@ -1136,23 +1138,52 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
 ## for any vcov that makes sense computed on the transformed
 ## data from model.matrix.pcce and pmodel.response.pcce
 
-## TODO: vcovBK.pcce missing? Or not valid?
+## TODO: vcovBK.pcce, vcovDC.pcce missing? Or not valid?
+##       Have a stopping break for now w/ informative error
+
+#' @export
+vcovBK.pcce <- function(x, ...) stop("plm::vcovBK not implemented for 'pcce' models")
+
+#' @export
+vcovDC.pcce <- function(x, ...) stop("plm::vcovDC not implemented for 'pcce' models")
 
 #' @rdname vcovG
 #' @export
-vcovG.pcce   <- vcovG.plm
+vcovG.pcce <- vcovG.plm
 
 #' @rdname vcovHC.plm
 #' @export
-vcovHC.pcce  <- vcovHC.plm
+vcovHC.pcce <- vcovHC.plm
 
 #' @rdname vcovNW
 #' @export
-vcovNW.pcce  <- vcovNW.plm
+vcovNW.pcce <- vcovNW.plm
 
 #' @rdname vcovSCC
 #' @export
 vcovSCC.pcce <- vcovSCC.plm
+
+########################################################
+## vcovXX methods for pggls objects as stopping break ##
+########################################################
+vcovXX.pggls.error <- "not implemented as not sensible for 'pggls' models"
+#' @export
+vcovG.pggls <- function(x, ...) stop(paste0("plm::vcovG ", vcovXX.pggls.error))
+
+#' @export
+vcovHC.pggls <- function(x, ...) stop(paste0("plm::vcovHC ", vcovXX.pggls.error))
+
+#' @export
+vcovNW.pggls <- function(x, ...) stop(paste0("plm::vcovNW ", vcovXX.pggls.error))
+
+#' @export
+vcovSCC.pggls <- function(x, ...) stop(paste0("plm::vcovSCC ", vcovXX.pggls.error))
+
+#' @export
+vcovBK.pggls <- function(x, ...) stop(paste0("plm::vcovBK ", vcovXX.pggls.error))
+
+#' @export
+vcovDC.pggls <- function(x, ...) stop(paste0("plm::vcovDC ", vcovXX.pggls.error))
 
 
 ####################################

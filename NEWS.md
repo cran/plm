@@ -6,8 +6,40 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 
 ***
 
-# plm 2.6-2
+# plm 2.6-3
 
+### Speed-up:
+* `lag`, `lead`, and `diff` on panel data (pseries, pdata.frame) are now faster 
+    due to usage of the fast collapse functions internally (`collapse::flag`, 
+    `collapse::fdiff`), on large data sets approx. 10x to 20x faster.
+* `plm/pggls(., model = "fd")`: faster first-difference model estimation (due to 
+   using `collapse::fdiff`).
+   NB: FD models are based on row-wise differences, not (yet) time-wise.
+* Usages of `split()` substituted with `collapse`'s fast `rsplit()`/`gsplit()`.
+
+### Minors:
+* `ciptstest`: error gracefully when argument `lags = 0L` (partly addresses 
+   [#39](https://github.com/ycroissant/plm/issues/39)).
+* model estimation with dot (`.`) in formula now possible, e.g., `plm(y ~ ., data = <data>)`.
+  This needs dependency package `Formula` in version >= 1.2-5, on CRAN since
+  2023-02-24 (addresses [#35](https://github.com/ycroissant/plm/issues/35)).
+* `has.intercept`: gained new argument `data` to support formulae containing a 
+  `.` (dot) (partly addresses [#35](https://github.com/ycroissant/plm/issues/35)).
+* `vcovXX.pggls`: stopping break for `vcovHC`, `vcovNW`, `vcovBK`, 
+   `vcovSCC`, `vcovDC`, and `vcovG` applied to `pggls` objects implemented via
+   newly introduced methods giving an informative error message. (P)GGLS models 
+   estimate a parametric covariance, hence it does not make much sense to 
+   robustify them.
+
+### Clean-ups:
+* `phansitest`: deprecated working alias `phansi` for `phansitest` is now an 
+   error (see also NEWS entry for 2.6-0 when `phansi` was renamed to `phansitest`).
+* `pFormula`: removed long deprecated class, function, and associated 
+   methods (see deprecation note in plm 2.0-0 (2019-05-14)).
+
+***
+
+# plm 2.6-2
 
 ### Features:
 * `predict.plm`:
@@ -31,7 +63,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 * `pldv`: variance-covariance fixed for case `model = "fd"` when `objfun == "lsq"` 
    and `sample == "cens"`.
 * `fixef(., type = "dfirst"`): for models with `length(fixef(<model_object>)) == 2`, 
-  fixef does not error anymore and for `length(fixef(<model_object>)) == 1`, 
+  `fixef` does not error anymore and for `length(fixef(<model_object>)) == 1`, 
   the result is more sane (`numeric(0)`).
   
 ### Speed-up:
@@ -88,11 +120,9 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 * Fast mode is now the default for the package: when the package is attached,
   `options("plm.fast" = TRUE)` is set (by R's .onAttach mechanism), requiring 
   package `collapse` as a hard dependency.
-  
 * *Recommendation*: Install suggest-dependency package `fixest` or `lfe` as a 
   further significant speed up for the two-ways within transformation (as in 
   two-ways fixed effects models) is gained.
-  
 * See `?plm.fast` for more information and a benchmark.
 
 ### Features:
@@ -475,10 +505,10 @@ plm()): Between, between, Sum, Within.
 
 * class 'pFormula' is deprecated and will be removed soon.
 * model.frame now has a pdata.frame method (instead of a pFormula
-    method) and model.matrix has a pdata.frame method (a pdata.frame
-    with a terms attribute). 'formula' as an argument in model.matrix
-    was unnecessary as the formula can be retrieved from the
-    pdata.frame.
+    method) and model.matrix has a pdata.frame method (takes as input a model 
+    frame as a pdata.frame with a terms attribute and a formula attribute).
+    'formula' as an argument in model.matrix was unnecessary as the formula can 
+    be retrieved from the pdata.frame.
 * A third vignette was added describing the plm model components
     (plmModelComponents.Rmd).
 * plm: the informative error message about the deprecated argument

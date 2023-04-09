@@ -164,8 +164,10 @@ data.name <- function(x) {
 #'     `plm` or `panelmodel`),
 #' @param rhs an integer (length > 1 is possible), indicating the parts of right
 #'      hand sides of the formula to be evaluated for the presence of an
-#'      intercept or NULL for all parts of the right hand side
-#'      (relevant for the `Formula` and the `plm` methods)
+#'      intercept or `NULL` for all parts of the right hand side
+#'      (relevant for the `Formula` and the `plm` methods),
+#' @param data default is `NULL` and only needs to be changes to a data set if
+#'             the formula contains a dot (`.`) to allow evaluation of the dot,
 #' @param \dots further arguments.
 #'
 #' @return a logical
@@ -176,27 +178,27 @@ has.intercept <- function(object, ...) {
 
 #' @rdname has.intercept
 #' @export
-has.intercept.default <- function(object, ...) {
-  has.intercept(formula(object), ...)
+has.intercept.default <- function(object, data = NULL, ...) {
+  has.intercept(formula(object), data = data, ...)
 }
 
 #' @rdname has.intercept
 #' @export
-has.intercept.formula <- function(object, ...) {
-  attr(terms(object), "intercept") == 1L
+has.intercept.formula <- function(object, data = NULL, ...) {
+  attr(terms(object, data = data, ...), "intercept") == 1L
 }
 
 #' @rdname has.intercept
 #' @export
-has.intercept.Formula <- function(object, rhs = NULL, ...) {
+has.intercept.Formula <- function(object, rhs = NULL, data = NULL, ...) {
   ## NOTE: returns a logical vector of the necessary length
   ## (which might be > 1)
   if (is.null(rhs)) rhs <- seq_along(attr(object, "rhs"))
   res <- sapply(rhs, function(x) {
     aform <- formula(object, lhs = 0, rhs = x)
     # expand the dot if any in all the parts except the first
-    if (x > 1L) aform <- update(formula(object, lhs = 0, rhs = 1), aform)
-    has.intercept(aform)
+    if (x > 1L) aform <- update(formula(object, lhs = 0, rhs = 1), aform, ...)
+    has.intercept(aform, data = data)
   })
   return(res)
 }
@@ -660,12 +662,13 @@ print.pvar <- function(x, ...){
 
 #' Create a Dummy Matrix
 #' 
-#' Contrast-coded dummy matrix created from a factor
+#' Contrast-coded dummy matrix (treatment coding) created from a factor
 #' 
-#' This function creates a matrix of dummies from the levels of a factor.
-#' In model estimations, it is usually preferable to not create the dummy matrix 
-#' prior to estimation but to simply specify a factor in the formula and let the
-#' estimation function handle the creation of the dummies.
+#' This function creates a matrix of dummies from the levels of a factor in 
+#' treatment coding. In model estimations, it is usually preferable to not 
+#' create the dummy matrix prior to estimation but to simply specify a factor 
+#' in the formula and let the estimation function handle the creation of the 
+#' dummies.
 #' 
 #' This function is merely a convenience wrapper around `stats::contr.treatment`
 #' to ease the dummy matrix creation process shall the dummy matrix be explicitly
@@ -692,7 +695,8 @@ print.pvar <- function(x, ...){
 #'            specify the column which is used to derive the dummies from,
 #' @param \dots further arguments.
 #'
-#' @return For the default method, a matrix containing the contrast-coded dummies, 
+#' @return For the default method, a matrix containing the contrast-coded 
+#'         dummies (treatment coding), 
 #'         dimensions are n x n where `n = length(levels(x))` if argument  
 #'        `base.add = TRUE` or `n = length(levels(x)-1)` if `base.add = FALSE`;
 #'         for the data frame and pdata.frame method, a data frame or pdata.frame,
@@ -789,5 +793,23 @@ make.dummies.pdata.frame <- function(x, col, base = 1L, base.add = TRUE, ...) {
   attr(res, "index") <- idx
   class(res) <- c("pdata.frame", class(res))
   res
+}
+
+
+gettvalue <- function(x, coefname) {
+  ## non-exported
+  ## helper function to extract one or more t value(s)
+  ## (coef/s.e.) for a coefficient from model object useful if one wants
+  ## to avoid the computation of a whole lot of values with summary()
+  
+  # x: model object (usually class plm or lm) coefname: character
+  # indicating name(s) of coefficient(s) for which the t value(s) is
+  # (are) requested
+  # return value: named numeric vector of length == length(coefname)
+  # with requested t value(s)
+  beta <- coef(x)[coefname]
+  se <- sqrt(diag(vcov(x))[coefname])
+  tvalue <- beta / se
+  return(tvalue)
 }
 

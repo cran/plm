@@ -24,8 +24,11 @@ Within.default.baseR <- plm:::Within.default
 Within.pseries.baseR <- plm:::Within.pseries
 Within.matrix.baseR  <- plm:::Within.matrix
 
+pdiff.baseR         <- plm:::pdiff
+
 pseriesfy.baseR      <- plm:::pseriesfy # ... in tool_pdata.frame.R:
 
+## lag, lead, diff: are collapse-powered but in file tool_transformations.R (incl. their wrappers).
 
 ## ad 2) implement wrapper switches
 
@@ -131,6 +134,25 @@ Within.matrix <- function(x, effect, ...) {
            "lfe"      = Within.matrix.collapse.lfe(   x, effect, ...), # collapse for 1-way FE + lfe for 2-way FE,
            stop("unknown value of option 'plm.fast.pkg.FE.tw'"))
   }
+}
+
+#### wrapper for pdiff ####
+pdiff <- function(x, effect = c("individual", "time"), has.intercept = FALSE,
+                  shift = c("time", "row")) {
+  if(!isTRUE(getOption("plm.fast"))) {
+    pdiff.baseR(x, effect, has.intercept, shift) } else {
+      if(!isTRUE(getOption("plm.fast.pkg.collapse"))) stop(txt.no.collapse, call. = FALSE)
+      pdiff.collapse(x, effect, has.intercept, shift) }
+}
+
+
+#### wrapper for pseriesfy ####
+# both pseriesfy functions are in file tool_pdata.frame.R 
+pseriesfy <- function(x,  ...) {
+  if(!isTRUE(getOption("plm.fast"))) {
+    pseriesfy.baseR(x, ...) } else {
+      if(!isTRUE(getOption("plm.fast.pkg.collapse"))) stop(txt.no.collapse, call. = FALSE)
+      pseriesfy.collapse(x, ...) }
 }
 
 
@@ -595,14 +617,67 @@ Within.matrix.collapse.lfe <- function(x, effect,  ...) {
   return(result)
 }
 
-#### wrapper for pseriesfy ####
-# both pseriesfy functions are in file tool_pdata.frame.R 
-pseriesfy <- function(x,  ...) {
-  if(!isTRUE(getOption("plm.fast"))) {
-    pseriesfy.baseR(x, ...) } else {
-      if(!isTRUE(getOption("plm.fast.pkg.collapse"))) stop(txt.no.collapse, call. = FALSE)
-      pseriesfy.collapse(x, ...) }
+pdiff.collapse <- function(x, effect = c("individual", "time"), has.intercept = FALSE, shift = c("time", "row")){
+  # NB: x is assumed to have an index attribute
+  #     can check with has.index(x)
+  # TODO: pdiff's usage in model.matrix is not very elegant as pdiff does its own
+  #     removal of constant columns and intercept handling which could be handled
+  #     via model.matrix.
+  
+  effect <- match.arg(effect)
+  shift <- match.arg(shift)
+  xindex <- unclass(attr(x, "index"))
+  checkNA.index(xindex) # index may not contain any NA
+
+  if(shift == "row") {
+    eff.no <- switch(effect,
+                     "individual" = 1L,
+                     "time"       = 2L,
+                     stop("unknown value of argument 'effect'"))
+    
+    eff.fac <- xindex[[eff.no]]
+    
+    if(inherits(x, "pseries")) x <- remove_pseries_features(x)
+    res <- collapse::fdiff(x, g = eff.fac)
+    
+  } else {
+    # shift = "time"
+    
+    # make a pdata.frame the dirty way (esp. to keep names like "(Intercept)")
+    # .. works as x is already ensured to be panel-stacked
+    # and apply collapse::fdiff on it
+    if(is.matrix(x)) {
+      x.pdf <- as.data.frame(x)
+      class(x.pdf) <- c("pdata.frame", class(x.pdf))
+      attr(x.pdf, "index") <- attr(x, "index")
+      
+      res <- collapse::fdiff(x.pdf)
+      res <- as.matrix(res)  
+    } else {
+      # pseries case
+      res <- collapse::fdiff(x)
+    }
+  }
+
+  ## last data preperation before return
+  res <- na.omit(res)
+  if(is.matrix(x)) {
+    # original pdiff (coded in base R) removes constant columns in matrix, 
+    # so do likewise collapse-powered version
+    cst.col <- apply(res, 2, is.constant)
+    res <- res[ , !cst.col, drop = FALSE]
+    
+    # if intercept is requested, set intercept column to 1 as it was 
+    # diff'ed out by collapse::fdiff and anyways removed by the removal of
+    # constant columns just above
+    if(has.intercept){
+      res <- cbind(1, res)
+      colnames(res)[1L] <- "(Intercept)"
+    }
+  }
+  res
 }
+
 
 .onAttach <- function(libname, pkgname) {
   options("plm.fast" = TRUE) # since 2.6: needs pkg collapse as hard dependency
@@ -676,7 +751,9 @@ pseriesfy <- function(x,  ...) {
 #'   \item Between,
 #'   \item Sum,
 #'   \item Within,
-#'   \item pseriesfy.
+#'   \item lag, lead, and diff,
+#'   \item pseriesfy,
+#'   \item pdiff (internal function).
 #' }
 #' 
 #' @name plm.fast

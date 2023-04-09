@@ -94,7 +94,7 @@
 #' \item{call}{the call.}
 #' 
 #' In addition, it has attribute `"pdim"` which contains the pdim object for
-#' model.
+#' the model.
 #' 
 #' It has `print`, `summary` and `print.summary` methods.
 #' @author Yves Croissant
@@ -148,7 +148,7 @@
 pgmm <- function(formula, data, subset, na.action,
                  effect = c("twoways", "individual"),
                  model = c("onestep", "twosteps"),
-                 collapse = FALSE, # TODO: collapse does not seem to be assumed a locigal in the code below but rahter a character vector
+                 collapse = FALSE, # TODO: collapse does not seem to be assumed a logical in the code below but rather a character vector
                  lost.ts = NULL,
                  transformation = c("d", "ld"),
                  fsm = NULL, # TODO: argument 'fsm' is not evaluated, 
@@ -697,8 +697,11 @@ extract.data <- function(data, as.matrix = TRUE){
     X <- cbind(data[[1L]], X)
     colnames(X)[1L] <- deparse(trms[[2L]])
   }
+### TODO: can speed up with collapse:
   data <- split(as.data.frame(X), index[[1L]])
   time <- split(index[[2L]], index[[1L]])
+#  data <- collapse::rsplit(as.data.frame(X), index[[1L]])  # does not yet work
+#  time <- collapse::gsplit(index[[2L]], index[[1L]])
   data <- mapply(
                  function(x, y){
                    rownames(x) <- y

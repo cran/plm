@@ -4,8 +4,8 @@ starX <- function(formula, data, model, rhs = 1, effect){
   # NB: function is not symmetric in individual and time effect
     apdim <- pdim(data)
     amatrix <- model.matrix(data, model, effect, rhs)
-    T <- apdim$nT$T # was (same): length(unique(index(data, 2L)))
-    N <- apdim$nT$n # was (same): length(unique(index(data, 1L)))
+    T <- apdim$nT$T
+    N <- apdim$nT$n
     if (apdim$balanced){
         result <- Reduce("cbind",
                         lapply(seq_len(ncol(amatrix)),
@@ -310,14 +310,15 @@ plm <- function(formula, data, subset, weights, na.action,
     inst.method <- match.arg(inst.method)
     
     # note that model can be NA, in this case the model.frame is returned
-    if (! anyNA(model)) model <- match.arg(model) 
-    if (! anyNA(model) && effect == "nested" && model != "random") {
+    anyNA.model <- anyNA(model)
+    if (! anyNA.model) model <- match.arg(model) 
+    if (! anyNA.model && effect == "nested" && model != "random") {
       # input check for nested RE model
       stop(paste0("effect = \"nested\" only valid for model = \"random\", but input is model = \"",
                      model, "\"."))
       }
     
-    if (! anyNA(model) && model == "fd") {
+    if (! anyNA.model && model == "fd") {
       # input checks for FD model: give informative error messages as
       # described in footnote in vignette
         if (effect == "time") stop(paste("effect = \"time\" for first-difference model",
@@ -331,7 +332,7 @@ plm <- function(formula, data, subset, weights, na.action,
       
       # model = "ht" in plm() and pht() are no longer maintained, but working
       # -> call pht() and early exit
-      if (! anyNA(model) && model == "ht"){
+      if (! anyNA.model && model == "ht"){
           ht <- match.call(expand.dots = FALSE)
           m <- match(c("formula", "data", "subset", "na.action", "index"), names(ht), 0)
           ht <- ht[c(1L, m)]
@@ -402,16 +403,17 @@ plm.fit <- function(data, model, effect, random.method,
 
     # if a random effect model is estimated, compute the error components
     if (model == "random"){
+      ## stopping control
+      if (length(formula)[2L] > 1L && effect == "twoways")
+        stop(paste("Instrumental variable random effect estimation",
+                   "not implemented for two-ways panels"))
+      
         is.balanced <- is.pbalanced(data)
         estec <- ercomp(data, effect, method = random.method,
                         models = random.models, dfcor = random.dfcor)
         sigma2 <- estec$sigma2
         theta <- estec$theta
-        if (length(formula)[2L] > 1L && effect == "twoways")
-            stop(paste("Instrumental variable random effect estimation",
-                       "not implemented for two-ways panels"))
-    }
-    else theta <- NULL
+    } else theta <- NULL
 
     # For all models except the unbalanced twoways random model, the
     # estimator is obtained as a linear regression on transformed data
@@ -428,7 +430,7 @@ plm.fit <- function(data, model, effect, random.method,
         w <- model.weights(data)
         if (! is.null(w)){
             if (! is.numeric(w)) stop("'weights' must be a numeric vector")
-            if (any(w < 0 | is.na(w))) stop("missing or negative weights not allowed")
+            if (any(w < 0) || anyNA(w)) stop("missing or negative weights not allowed")
             X <- X * sqrt(w)
             y <- y * sqrt(w)
         }

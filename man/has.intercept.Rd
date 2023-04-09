@@ -12,11 +12,11 @@ model}
 \usage{
 has.intercept(object, ...)
 
-\method{has.intercept}{default}(object, ...)
+\method{has.intercept}{default}(object, data = NULL, ...)
 
-\method{has.intercept}{formula}(object, ...)
+\method{has.intercept}{formula}(object, data = NULL, ...)
 
-\method{has.intercept}{Formula}(object, rhs = NULL, ...)
+\method{has.intercept}{Formula}(object, rhs = NULL, data = NULL, ...)
 
 \method{has.intercept}{panelmodel}(object, ...)
 
@@ -28,10 +28,13 @@ has.intercept(object, ...)
 
 \item{\dots}{further arguments.}
 
+\item{data}{default is \code{NULL} and only needs to be changes to a data set if
+the formula contains a dot (\code{.}) to allow evaluation of the dot,}
+
 \item{rhs}{an integer (length > 1 is possible), indicating the parts of right
 hand sides of the formula to be evaluated for the presence of an
-intercept or NULL for all parts of the right hand side
-(relevant for the \code{Formula} and the \code{plm} methods)}
+intercept or \code{NULL} for all parts of the right hand side
+(relevant for the \code{Formula} and the \code{plm} methods),}
 }
 \value{
 a logical

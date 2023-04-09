@@ -1,8 +1,8 @@
 ## taken from pmg to estimate CIPS test statistic as "average of t's"
 ## since version 4: added type warning, and output single CADF
-## regressions as well, use func gettvalue for speed.  estimation loop
+## regressions as well, use func gettvalue for speed. estimation loop
 ## for single TS models is now lm(formula, data) with 'data' properly
-## subsetted; this allows for decent output of individual mods.
+## subset; this allows for decent output of individual mods.
 
 ## needed for standalone operation:
 #plm <- plm:::plm
@@ -61,7 +61,7 @@
 #' ## check whether the gross state product (gsp) is trend-stationary
 #' cipstest(Produc$gsp, type = "trend")
 #' 
-cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
+cipstest <- function (x, lags = 2L, type = c("trend", "drift", "none"),
                       model = c("cmg", "mg", "dmg"), truncated = FALSE, ...) {
 
   ## type = c("trend", "drift", "none") corresponds to Case III, II, I 
@@ -71,7 +71,11 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
   if(!inherits(x, "pseries")) stop("Argument 'x' has to be a pseries")
   if(!is.numeric(lags)) stop("Argument 'lags' has to be an integer") # but accept numeric as well
   if(round(lags) != lags) stop("Argument 'lags' has to be an integer")
-  # TODO: does 'lags' always need to be >= 1? if so, check for this, too
+  ## TODO: does 'lags' always need to be >= 1? if so, check for this, too
+  #  code below fails for lags = 0 while Stata's pescadf runs with lags = 0.
+  #  Use of lags = 0 is doubtful, see https://github.com/ycroissant/plm/issues/39
+  #  For now, error gracefully for lags = 0
+  if(lags == 0L) stop("cipstest implementation does not support 'lags = 0L'.")
 
   dati <- pmerge(diff(x), lag(x))
   dati <- pmerge(dati, diff(lag(x)))
@@ -131,7 +135,7 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
     y <- as.numeric(model.response(model.frame(pmod)))
     
   ## det. *minimum* group numerosity
-  t <- min(Ti) # == min(tapply(X[,1], ind, length))
+  t <- min(Ti)
 
   ## check min. t numerosity
   ## NB it is also possible to allow estimation if there *is* one group
@@ -242,10 +246,13 @@ cipstest <- function (x, lags = 2, type = c("trend", "drift", "none"),
   #  * for "cmg" this is:
   ##    for each x-sect. i=1..n estimate (over t) an augmented model
   ##    y_it = alpha_i + beta_i*X_it + c1_i*my_t + c2_i*mX_t + err_it
-  adfdati.list <- split(adfdati, ind)
+  adfdati.list <- collapse::rsplit(adfdati, ind, use.names = FALSE)
   tmods <- lapply(adfdati.list, function(tdati) lm(adffm, tdati, model = FALSE))
-    # TODO: check if my.lm.fit can be used instead of lm (with minor modifications
+    # TODO: 
+    #     * check if my.lm.fit can be used instead of lm (with minor modifications
     #       to code down below for t-val extraction etc.)
+    #     * check if data needs to be converted to a data frame as is now or can
+    #       go directly via matrices only to lm.fit()
   
   ## CIPS statistic as an average of the t-stats on the coefficient of 'le'
   tstats <- vapply(tmods, function(mod) gettvalue(mod, "le"), FUN.VALUE = 0.0, USE.NAMES = FALSE)
@@ -554,56 +561,3 @@ critvals.cips <- function(stat, n, T., type = c("trend", "drift", "none"),
 }
 
 
-gettvalue <- function(x, coefname) {
-  ## non-exported
-  ## helper function to extract one or more t value(s)
-  ## (coef/s.e.) for a coefficient from model object useful if one wants
-  ## to avoid the computation of a whole lot of values with summary()
-  
-  # x: model object (usually class plm or lm) coefname: character
-  # indicating name(s) of coefficient(s) for which the t value(s) is
-  # (are) requested
-  # return value: named numeric vector of length == length(coefname)
-  # with requested t value(s)
-    beta <- coef(x)[coefname]
-    se <- sqrt(diag(vcov(x))[coefname])
-    tvalue <- beta / se
-    return(tvalue)
-}
-
-pseries2pdataframe <- function(x, pdata.frame = TRUE, ...) {
-  ## non-exported
-  ## Transforms a pseries in a (p)data.frame with the indices as regular columns
-  ## in positions 1, 2 and (if present) 3 (individual index, time index, group index).
-  ## if pdataframe = TRUE -> return a pdata.frame, if FALSE -> return a data.frame
-  ## ellipsis (dots) passed on to pdata.frame()
-  if(!inherits(x, "pseries")) stop("input needs to be of class 'pseries'")
-  indices <- attr(x, "index")
-  class(indices) <- setdiff(class(indices), "pindex")
-  vx <- remove_pseries_features(x)
-  dfx <- cbind(indices, vx)
-  dimnames(dfx)[[2L]] <- c(names(indices), deparse(substitute(x)))
-  res <- if(pdata.frame == TRUE) {
-    pdata.frame(dfx, index = names(indices), ...)
-   } else { dfx }
-  return(res)
-}
-
-pmerge <- function(x, y, ...) {
-  ## non-exported
-  ## Returns a data.frame, not a pdata.frame.
-  ## pmerge is used to merge pseries or pdata.frames into a data.frame or
-  ## to merge a pseries to a data.frame
-  
-  ## transf. if pseries or pdata.frame
-  if(inherits(x, "pseries")) x <- pseries2pdataframe(x, pdata.frame = FALSE)
-  if(inherits(y, "pseries")) y <- pseries2pdataframe(y, pdata.frame = FALSE)
-  if(inherits(x, "pdata.frame")) x <- as.data.frame(x, keep.attributes = FALSE)
-  if(inherits(y, "pdata.frame")) y <- as.data.frame(y, keep.attributes = FALSE)
-  
-  # input to merge() needs to be data.frames; not yet suitable for 3rd index (group variable)
-  z <- merge(x, y,
-             by.x = dimnames(x)[[2L]][1:2],
-             by.y = dimnames(y)[[2L]][1:2], ...)
-  return(z)
-}
