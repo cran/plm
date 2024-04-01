@@ -54,11 +54,10 @@ pvcm(
 An object of class \code{c("pvcm", "panelmodel")}, which has the
 following elements:
 
-\item{coefficients}{the vector (or the data frame for fixed
-effects) of coefficients,}
+\item{coefficients}{the vector (numeric) of coefficients (or data frame for
+fixed effects),}
 
-\item{residuals}{the vector of
-residuals,}
+\item{residuals}{the vector (numeric) of residuals,}
 
 \item{fitted.values}{the vector of fitted values,}
 
@@ -70,13 +69,21 @@ fixed effects model (\code{model = "within"})),}
 \item{model}{a data frame containing the variables used for the
 estimation,}
 
-\item{call}{the call,} \item{Delta}{the estimation of the
-covariance matrix of the coefficients (random effect models only),}
+\item{call}{the call,}
 
+\item{args}{the arguments of the call,}
+
+random coefficients model only (\code{model = "random"}):
+\item{Delta}{the estimation of the covariance matrix of the coefficients,}
+\item{single.coefs}{matrix of unbiased coefficients of single estimations,}
+\item{single.vcov}{list of variance-covariance matrices for \code{single.coefs},}
+\item{single.std.error}{matrix of standard errors of \code{single.coefs},}
+\item{chisq.test}{htest object: parameter stability test (homogeneous
+coefficients),}
+
+separate OLS estimations only (\code{model = "within"}):
 \item{std.error}{a data frame containing standard errors for all
-coefficients for each individual (within models only).}
-
-\code{pvcm} objects have \code{print}, \code{summary} and \code{print.summary} methods.
+coefficients for each single regression.}
 }
 \description{
 Estimators for random and fixed effects models with variable coefficients.
@@ -90,8 +97,19 @@ Coefficients are assumed to be fixed if \code{model = "within"}, i.e., separate
 pooled OLS models are estimated per individual (\code{effect = "individual"})
 or per time period (\code{effect = "time"}). Coefficients are assumed to be
 random if \code{model = "random"} and the model by
-\insertCite{SWAM:70;textual}{plm} is estimated. It is a generalized least
-squares model which uses the results of the previous model.
+\insertCite{SWAM:70;textual}{plm} is estimated; it is a generalized least
+squares model which uses the results of the OLS models estimated per
+individual/time dimension (coefficient estimates are weighted averages of the
+single OLS estimates with weights inversely proportional to the
+variance-covariance matrices). The corresponding unbiased single coefficients,
+variance-covariance matrices, and standard errors of the random coefficients
+model are available in the returned object (see \emph{Value}).
+
+A test for parameter stability (homogeneous coefficients) of the random
+coefficients model is printed in the model's summary and is available in the
+returned object (see \emph{Value}).
+
+\code{pvcm} objects have \code{print}, \code{summary} and \code{print.summary} methods.
 }
 \examples{
 
@@ -99,22 +117,45 @@ data("Produc", package = "plm")
 zw <- pvcm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model = "within")
 zr <- pvcm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp, data = Produc, model = "random")
 
-## replicate Greene (2012), p. 419, table 11.14
+## replicate Greene (2018), p. 452, table 11.22/(2012), p. 419, table 11.14
 summary(pvcm(log(gsp) ~ log(pc) + log(hwy) + log(water) + log(util) + log(emp) + unemp, 
              data = Produc, model = "random"))
              
+## replicate Poi (2003) (need data adjustment, remaining tiny diffs are due 
+## Poi's data set having more digits, not justified by the original Grunfeld data)
+data(Grunfeld) # need firm = 1, 4, 3, 8, 2
+Gr.Poi.2003 <- Grunfeld[c(1:20, 61:80, 41:60, 141:160, 21:40), ]
+Gr.Poi.2003$firm <- rep(1:5, each = 20)
+Gr.Poi.2003[c(86, 98), "inv"] <- c(261.6, 645.2)
+Gr.Poi.2003[c(92), "capital"] <- c(232.6)
+
+mod.poi <- pvcm(inv ~ value + capital, data = Gr.Poi.2003, model = "random")
+summary(mod.poi)
+print(mod.poi$single.coefs)
+print(mod.poi$single.std.err)
+
 \dontrun{
-# replicate Swamy (1970), p. 166, table 5.2
+# replicate Swamy (1971), p. 166, table 5.2
 data(Grunfeld, package = "AER") # 11 firm Grunfeld data needed from package AER
 gw <- pvcm(invest ~ value + capital, data = Grunfeld, index = c("firm", "year"))
+# close replication of Swamy (1970), (7.4) [remaining diffs likely due to less 
+# precise numerical methods in the 1970, as supposed in Kleiber/Zeileis (2010), p. 9]
+gr <- pvcm(invest ~ value + capital, data = Grunfeld, index = c("firm", "year"), model = "random")
 }
-
 
 }
 \references{
-\insertRef{SWAM:70}{plm}
+\insertAllCited{}
+
+\insertRef{SWAM:71}{plm}
+
+\insertRef{GREE:18}{plm}
+
+\insertRef{POI:03}{plm}
+
+\insertRef{KLEI:ZEIL:10}{plm}
 }
 \author{
-Yves Croissant
+Yves Croissant, Kevin Tappe
 }
 \keyword{regression}

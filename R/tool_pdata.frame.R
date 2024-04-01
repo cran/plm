@@ -15,6 +15,7 @@
 ## - as.list
 ## - as.data.frame
 ## - pseriesfy
+## - arrange for dplyr compatibility
 
 ## pseries:
 ## - [
@@ -60,7 +61,7 @@ fancy.row.names <- function(index, sep = "-") {
 
 
 
-#' data.frame for panel data
+#' pdata.frame: a data.frame for panel data
 #' 
 #' An object of class 'pdata.frame' is a data.frame with an index
 #' attribute that describes its individual and time dimensions.
@@ -140,7 +141,7 @@ fancy.row.names <- function(index, sep = "-") {
 #'     as.data.frame),
 #' @param name the name of the `data.frame`,
 #' @param value the name of the variable to include,
-#' @param \dots further arguments.
+#' @param \dots further arguments passed on to internal usage of  `data.frame`.
 #' @return a `pdata.frame` object: this is a `data.frame` with an
 #'     `index` attribute which is a `data.frame` with two variables,
 #'     the individual and the time indexes, both being factors.  The
@@ -152,7 +153,7 @@ fancy.row.names <- function(index, sep = "-") {
 #'     'pdata.frame' (and other objects), [pdim()] to check the
 #'     dimensions of a 'pdata.frame' (and other objects), [pvar()] to
 #'     check for each variable if it varies cross-sectionally and over
-#'     time.  To check if the time periods are consecutive per
+#'     time. To check if the time periods are consecutive per
 #'     individual, see [is.pconsecutive()].
 #' @keywords classes
 #' @examples
@@ -180,18 +181,27 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
                         stringsAsFactors = FALSE,
                         replace.non.finite = FALSE,
                         drop.NA.series = FALSE, drop.const.series = FALSE,
-                        drop.unused.levels = FALSE) {
+                        drop.unused.levels = FALSE, ...) {
 
-    if (inherits(x, "pdata.frame")) stop("already a pdata.frame")
+    if(inherits(x, "pdata.frame")) {
+      if(!is.pdata.frame(x)) {
+        # check properties beyond class and if non-compliant, create proper
+        # pdata.frame by continuing with pdata.frame function
+        wrn.txt <- paste0("input 'x' claims to be a pdata.frame but does not have ",
+                          "compliant properties, so tried to re-create a compliant ",
+                          "pdata.frame from 'x'")
+        warning(wrn.txt)
+      }
+    }
   
-    if (length(index) > 3L){
+    if(length(index) > 3L){
         stop("'index' can be of length 3 at the most (one index variable for individual, time, group)")
     }
     
     # prune input: x is supposed to be a plain data.frame. Other classes building
     # on top of R's data frame can inject attributes etc. that confuse functions
     # in pkg plm.
-    x <- data.frame(x)
+    x <- data.frame(x, ...)
     
     # if requested: coerce character vectors to factors
     if (stringsAsFactors) {
@@ -255,7 +265,7 @@ pdata.frame <- function(x, index = NULL, drop.index = FALSE, row.names = TRUE,
     # grouping variable, this should be the third element of the index
     # vector or any "group" named element of this vector
     group.name <- NULL
-    if (! is.null(names(index)) || length(index == 3L)){
+    if (! is.null(names(index)) || length(index) == 3L){
         if (! is.null(names(index))){
             grouppos <- match("group", names(index))
             if (! is.na(grouppos)){
@@ -701,7 +711,7 @@ print.pdata.frame <- function(x, ...) {
   class(x) <- "data.frame"
   # This is a workaround: print.data.frame cannot handle
   # duplicated row names which are currently possible for pdata frames
-  if (anyDuplicated(rownames(x))) {
+  if (collapse::any_duplicated(rownames(x))) {
       print("Note: pdata.frame contains duplicated row names, thus original row names are not printed")
       rownames(x) <- NULL 
   }
@@ -840,6 +850,10 @@ as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, kee
       # do as base::as.data.frame does for NULL
       x <- as.data.frame(x, row.names = NULL)
     } else {
+      # argument check
+      if(!(isTRUE(row.names) || isFALSE(row.names) || is.character(row.names)))
+        stop("argument 'row.names' is none of NULL, FALSE, TRUE, and not a character")
+      
       if(is.logical(row.names) && row.names == FALSE) {
         # set row names to integer sequence 1, 2, 3, ...
         x <- as.data.frame(x)
@@ -854,8 +868,7 @@ as.data.frame.pdata.frame <- function(x, row.names = NULL, optional = FALSE, kee
         x <- as.data.frame(x)
         row.names(x) <- row.names
       }
-      if(!(isTRUE(row.names) || isFALSE(row.names) || is.character(row.names)))
-        stop("argument 'row.names' is none of NULL, FALSE, TRUE, and not a character")
+      
       # using row.names(x) <- "something" is safer (does not allow
       # duplicate row.names) than # attr(x,"row.names") <- "something"
     }
@@ -1357,7 +1370,10 @@ index.panelmodel <- function(x, which = NULL, ...) {
 is.index <- function(index) {
   # not exported, helper function
   # checks if the index is an index in the sense of package plm
-  if(all(class(index) == c("pindex", "data.frame"))) TRUE else FALSE
+  res <- TRUE
+  if(!all(class(index) == c("pindex", "data.frame"))) res <- FALSE
+  if(!is.null(n <- ncol(index)) && !(n %in% c(2, 3))) res <- FALSE
+  res
 }
 
 has.index <- function(object) {
@@ -1395,6 +1411,7 @@ checkNA.index <- function(index, which = "all", error = TRUE) {
   if(which == 3L) {
     if(anyNA(index[[3L]])) feedback("NA in the group index variable")
   }
+  NULL
 }
 
 
@@ -1437,6 +1454,38 @@ pos.index <- function(x, ...) {
   return(index_pos)
 }
 
+is.pdata.frame <- function(x, feedback = NULL) {
+  # not exported, helper function
+  # checks if a pdata.frame has appropriate properties
+
+  res <- TRUE
+  if(!inherits(x, "pdata.frame")) res <- FALSE
+  if(!has.index(x))               res <- FALSE
+  if(!nrow(index(x)) == nrow(x))  res <- FALSE
+  
+  if(!res && !is.null(feedback)) {
+    feedback <- switch(feedback,
+                       "error" = stop,
+                       "warn"  = warning)
+    feedback.txt <- paste0("input data claims to be a pdata.frame but does not seem to have compliant properties, ",
+                           "results can be unreliable. This can happen due to data manipulation by ",
+                           "non-pdata.frame-aware functions (e.g., 'dplyr' on pdata.frame). \n Maybe re-create ",
+                           "data input as fresh pdata.frame after last data manipulation with other tools.")
+    feedback(feedback.txt)
+  }
+  res
+}
+
+check.pdata.frame <- function(x) {
+  # not exported, helper function
+  # checks if a pdata.frame has appropriate properties
+  # Like is.pdata.frame but with error output about ill-specification
+  stopifnot(inherits(x, "pdata.frame"))
+  stopifnot(has.index(x))
+  stopifnot(nrow(index(x)) == nrow(x))
+  NULL
+}
+
 pseries2pdataframe <- function(x, pdata.frame = TRUE, ...) {
   ## non-exported
   ## Transforms a pseries in a (p)data.frame with the indices as regular columns
@@ -1473,3 +1522,47 @@ pmerge <- function(x, y, ...) {
              by.y = dimnames(y)[[2L]][1:2], ...)
   return(z)
 }
+
+## dplyr "compatibility"/awareness/warning, see https://github.com/ycroissant/plm/issues/46
+# test in test_pdata.frame_compliant.R
+# 
+# Approach: Avoid dplyr-dependency albeit registering methods for it, needs the
+# utils::globalVariables() statement to avoid a NOTE in R CMD check about 
+# undefined global variable.
+# Shall CRAN ever increase the code checking strictness, the approach with a
+# Suggests-dependency is given commented below as well.
+utils::globalVariables("arrange")
+#' @rawNamespace if(getRversion() >= "3.6.0") {S3method(dplyr::arrange, pdata.frame)}
+arrange.pdata.frame <- function(.data, ..., .by_group = FALSE, .locale = NULL) {
+  # function signature of dplyr:::arrange.data.frame
+  idx <- index(.data)
+  ag.data <- NextMethod()
+  ag.idx <- arrange(idx, ..., .by_group = FALSE, .locale = NULL) # dispatches to arrange.pindex
+  attr(ag.data, "index") <- ag.idx
+  ag.data
+}
+
+#' @rawNamespace if(getRversion() >= "3.6.0") {S3method(dplyr::arrange, pindex)}
+arrange.pindex <- function(.data, ..., .by_group = .by_group, .locale = .locale) {
+  NextMethod()
+}
+
+### alternatives
+# arrange.pdata.frame <- function(.data, ..., .by_group = FALSE, .locale = NULL) {
+#   ### this alternative would require dplyr to be at least a Suggests-dependency
+#   stopifnot(requireNamespace("dplyr"))
+#   idx <- index(.data)
+#   ag.df  <- dplyr::arrange(.data, ..., .by_group = FALSE, .locale = NULL)
+#   ag.idx <- dplyr::arrange(idx,   ..., .by_group = FALSE, .locale = NULL)
+#   attr(ag.df, "index") <- ag.idx
+#   ag.df
+# }
+
+# arrange.pdata.frame <- function(.data, ..., .by_group = FALSE, .locale = NULL) {
+#   # this alternative just warns and executes dplyr's plain arrange destroying the index
+#   wrn <- paste0("dplyr::arrange not safe on pdata.frames!\n",
+#                 "Before input to estimation and test functions of package plm, ",
+#                 "create a fresh pdata.frame from the dplyr-manipulated data to be safe")
+#   warning(wrn)
+#   NextMethod()
+# }

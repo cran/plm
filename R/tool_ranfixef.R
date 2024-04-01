@@ -242,7 +242,7 @@ fixef.plm <- function(object, effect = NULL,
         ## other dfirst
         other.fixef.dfirst <- other.fixef.lvl - other.fixef.lvl[1L]
         tw.fixef.lvl <- tw.fixef.lvl - other.fixef.dfirst[indexl[[other.idx]]]
-        tw.fixef.lvl <- tw.fixef.lvl[!duplicated(indexl[[idx]])]
+        tw.fixef.lvl <- tw.fixef.lvl[!collapse::fduplicated(indexl[[idx]], all = FALSE)]
         names(tw.fixef.lvl) <- pdim[["panel.names"]][[idx]]
       } else {
         # effect = "twoways": everything already computed, just set names
@@ -427,8 +427,8 @@ ranef.plm <- function(object, effect = NULL, ...) {
     # in the unbalanced cases, ercomp[["theta"]] is full length (# obs)
     #  -> reduce to per id/time
     select <- switch(effect,
-                     "individual" = !duplicated(index(object$model)[1L]),
-                     "time"       = !duplicated(index(object$model)[2L]))
+                     "individual" = !collapse::fduplicated(index(object$model)[1L], all = FALSE),
+                     "time"       = !collapse::fduplicated(index(object$model)[2L], all = FALSE))
     theta <- theta[select]
   }
   
@@ -464,7 +464,7 @@ ranef.plm <- function(object, effect = NULL, ...) {
 #' computationally more demanding than just taking the weighted
 #' mean. However, with `within_intercept` one also gets the
 #' associated standard error and it is possible to get an overall
-#' intercept for twoway fixed effect models.
+#' intercept for two-way fixed effect models.
 #' 
 #' Users can set argument `vcov` to a function to calculate a
 #' specific (robust) variance--covariance matrix and get the
@@ -534,8 +534,8 @@ ranef.plm <- function(object, effect = NULL, ...) {
 #' ## have a model returned
 #' mod_fe_int <- within_intercept(gi, return.model = TRUE)
 #' summary(mod_fe_int)
-#' # replicates Stata's robust standard errors
-#' summary(mod_fe_int, vcvov = function(x) vcovHC(x, type = "sss")) 
+#' # replicates Stata's robust standard errors exactly as model is with intercept
+#' summary(mod_fe_int, vcov = function(x) vcovHC(x, type = "sss")) 
 # 
 within_intercept <- function(object, ...) {
   UseMethod("within_intercept")
@@ -548,7 +548,7 @@ within_intercept <- function(object, ...) {
 #       system interprets '.intercept' as a class called 'intercept'.
 
 # Note: return value of within_intercept is related to return values of fixef.plm,
-#       see tests/test_within_intercept.R
+#       see inst/tests/test_within_intercept.R
 
 #' @rdname within_intercept
 #' @export

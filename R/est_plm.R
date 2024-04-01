@@ -52,6 +52,12 @@ starX <- function(formula, data, model, rhs = 1, effect){
 #' \insertCite{NERLO:71}{plm} (see below for Hausman-Taylor instrumental
 #' variable case).
 #' 
+#' The nested random effect model (\insertCite{BALT:SONG:JUNG:01}{plm}) 
+#' is estimated by setting `model = "random"` and `effect = "nested"`, 
+#' requiring the data to be indexed by a third index  in which the "individual" 
+#' dimension is nested (see section *Examples* and the vignette 
+#' "Estimation of error components models with the plm function".)
+#' 
 #' For first--difference models, the intercept is maintained (which
 #' from a specification viewpoint amounts to allowing for a trend in
 #' the levels model). The user can exclude it from the estimated
@@ -303,7 +309,6 @@ plm <- function(formula, data, subset, weights, na.action,
         stop(paste0("arguments 'restrict.matrix' and 'restrict.rhs' cannot yet be used ",
                     "for single equations"))
     }
-    dots <- list(...)
     
     # match and check the effect and model arguments
     effect <- match.arg(effect)
@@ -321,18 +326,18 @@ plm <- function(formula, data, subset, weights, na.action,
     if (! anyNA.model && model == "fd") {
       # input checks for FD model: give informative error messages as
       # described in footnote in vignette
-        if (effect == "time") stop(paste("effect = \"time\" for first-difference model",
-                                         "meaningless because cross-sections do not",
-                                         "generally have a natural ordering"))
-        if (effect == "twoways") stop(paste("effect = \"twoways\" is not defined",
-                                            "for first-difference models"))
+        if(effect == "time") stop(paste("effect = \"time\" for first-difference model",
+                                        "meaningless because cross-sections do not",
+                                        "generally have a natural ordering"))
+        if(effect == "twoways") stop(paste("effect = \"twoways\" is not defined",
+                                           "for first-difference models"))
     }
     
     # Deprecated section
       
       # model = "ht" in plm() and pht() are no longer maintained, but working
       # -> call pht() and early exit
-      if (! anyNA.model && model == "ht"){
+      if(! anyNA.model && model == "ht"){
           ht <- match.call(expand.dots = FALSE)
           m <- match(c("formula", "data", "subset", "na.action", "index"), names(ht), 0)
           ht <- ht[c(1L, m)]
@@ -341,12 +346,17 @@ plm <- function(formula, data, subset, weights, na.action,
           return(ht)
       }
     
+    orig_rownames <- row.names(data) # save original rownames for later restoring
+    
     # check whether data and formula are pdata.frame and Formula and if not
     # coerce them
-    orig_rownames <- row.names(data)
-
-    if (! inherits(data, "pdata.frame")) data <- pdata.frame(data, index)
-    if (! inherits(formula, "Formula")) formula <- as.Formula(formula)
+    
+    # convert data to pdata.frame; if already pdata.frame input, do a sanity check
+    if(!inherits(data, "pdata.frame")) {
+      data <- pdata.frame(data, index = index, ...)
+      } else is.pdata.frame(data, feedback = "warn")
+        
+    if(!inherits(formula, "Formula")) formula <- as.Formula(formula)
 
     # in case of 2-part formula, check whether the second part should
     # be updated, e.g., y ~ x1 + x2 + x3 | . - x2 + z becomes 
@@ -367,15 +377,18 @@ plm <- function(formula, data, subset, weights, na.action,
     mf$formula <- data
     mf$data <- formula
     data <- eval(mf, parent.frame())
-
+    
     # preserve original row.names for data [also fancy rownames]; so functions
     # like pmodel.response(), model.frame(), model.matrix(), residuals() return
     # the original row.names eval(mf, parent.frame()) returns row.names as
     # character vector containing the "row_number" with incomplete observations
     # dropped
-    row.names(data) <- orig_rownames[as.numeric(row.names(data))]
+    # row.names(data) <- orig_rownames[as.numeric(row.names(data))]
+    ## TODO make this cleaner. This is a dirty workaround to enable sandwich::vcovBS
+    ##      on plm objects (vcovBS(fe_complete, cluster=~firm, R = 999))
+    attr(data, "row.names") <- orig_rownames[as.numeric(row.names(data))]
 
-    # return the model.frame (via early exit) if model = NA, else estimate model
+    # if model = NA return the model.frame (via early exit), else continue to estimate model
     if (is.na(model)){
         attr(data, "formula") <- formula
         return(data)
@@ -565,16 +578,19 @@ plm.fit <- function(data, model, effect, random.method,
     result
 }
 
+
 tss <- function(x, ...){
   UseMethod("tss")
 }
 
-tss.default <- function(x){
+#' @rawNamespace S3method(tss, default)
+tss.default <- function(x, ...){
   # always gives centered TSS (= demeaned TSS)
   var(x) * (length(x) - 1)
 }
 
-tss.plm <- function(x, model = NULL){
+#' @rawNamespace S3method(tss, plm)
+tss.plm <- function(x, model = NULL, ...){
     if(is.null(model)) model <- describe(x, "model")
     effect <- describe(x, "effect")
     if(model == "ht") model <- "pooling"
@@ -697,26 +713,3 @@ r.squared_no_intercept <- function(object, model = NULL,
     return(R2)
 }
 
-
-
-# describe function: extract characteristics of plm model
-describe <- function(x,
-                     what = c("model", "effect", "random.method",
-                              "inst.method", "transformation", "ht.method")){
-  what <- match.arg(what)
-  cl <- x$args
-  switch(what,
-         "model"          = if(!is.null(cl$model))
-                                   cl$model else  "within",
-         "effect"         = if(!is.null(cl$effect)) 
-                                   cl$effect else "individual",
-         "random.method"  = if(!is.null(cl$random.method))
-                                   cl$random.method else "swar",
-         "inst.method"    = if(!is.null(cl$inst.method))
-                                   cl$inst.method else "bvk",
-         "transformation" = if(!is.null(cl$transformation))
-                                   cl$transformation else "d",
-         "ht.method"      = if(!is.null(cl$ht.method))
-                                   cl$ht.method else "ht"
-         )
-}

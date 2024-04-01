@@ -14,18 +14,15 @@
 ## - myvar : calculates variance with NA removal, checks if input is constant (also for factor and character)
 ## - pvar : checks if input varies in individual / time dimension
 ## - make.dummies : create a contrast-coded dummy matrix from a factor
+## - describe : extract characteristics of plm and other model objects
 
-trace <- function(x) sum(diag(x))
+trace <- function(x, names = FALSE) sum(diag(x, names = names)) # opposite default for names for speed
 
 is.constant <- function(x) (max(x) - min(x)) < sqrt(.Machine$double.eps)
 
 sumres <- function(x){
   sr <- summary(unclass(resid(x)))
-  srm <- sr["Mean"]
-  if (abs(srm) < 1e-10){
-    sr <- sr[c(1:3, 5:6)]
-  }
-  sr
+  if(abs(sr["Mean"]) < 1e-10) sr[c(1:3, 5:6)] else sr
 }
 
 bdiag <- function(...){
@@ -384,7 +381,7 @@ punbalancedness <- function(x, ...) {
   UseMethod("punbalancedness")
 }
 
-
+#' @export
 punbalancedness.default <- function(x, ...) {
   ii <- index(x)
   if(!is.index(ii)) stop("no valid index found for input object 'x'")
@@ -457,7 +454,7 @@ myvar <- function(x){
     if(n == 1L) z <- 0
   } else {
     z <- if(!(is.factor(x) || is.character(x))) var(x)
-         else !all(duplicated(x)[-1L])
+         else !all(collapse::fduplicated(x, all = FALSE)[-1L])
   }
   z
 }
@@ -529,6 +526,7 @@ pvar <- function(x, ...){
   UseMethod("pvar")
 }
 
+#' @export
 pvar.default <- function(x, id, time, ...){
   name.var <- names(x)
   len <- length(x)
@@ -629,6 +627,12 @@ pvar.pseries <- function(x, ...){
   # use drop.index = TRUE so that the index columns' 
   # variations are not evaluated:
   pdfx <- pseries2pdataframe(x, drop.index = TRUE)
+
+  # give the variable in pdata.frame the original name, so it prints nicely
+  substx <- substitute(x)
+  len <- length(substx)
+  names(pdfx) <- paste(substx)[len]
+
   pvar.pdata.frame(pdfx)
 }
 
@@ -813,3 +817,17 @@ gettvalue <- function(x, coefname) {
   return(tvalue)
 }
 
+# describe function: extract characteristics of plm and other model objects
+describe <- function(x, what = c("model", "effect", "random.method",
+                                 "inst.method", "transformation", "ht.method")){
+  what <- match.arg(what)
+  cl <- x$args
+  switch(what,
+         "model"          = if(!is.null(cl$model))          cl$model          else "within",
+         "effect"         = if(!is.null(cl$effect))         cl$effect         else "individual",
+         "random.method"  = if(!is.null(cl$random.method))  cl$random.method  else "swar",
+         "inst.method"    = if(!is.null(cl$inst.method))    cl$inst.method    else "bvk",
+         "transformation" = if(!is.null(cl$transformation)) cl$transformation else "d",
+         "ht.method"      = if(!is.null(cl$ht.method))      cl$ht.method      else "ht"
+  )
+}

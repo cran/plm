@@ -55,7 +55,7 @@
 #'     the matrix are the individuals,
 #' @param plot,scale,transparency,col,lwd plot arguments,
 #' @param \dots further arguments, e. g., `na.rm = TRUE` for
-#'     transformation functions like `beetween`, see **Details**
+#'     transformation functions like `between`, see **Details**
 #'     and **Examples**.
 #' @return All these functions return an object of class `pseries` or a matrix,
 #'     except:\cr `between`, which returns a numeric vector or a matrix;
@@ -224,10 +224,6 @@ summary.pseries <- function(object, ...) {
     if(!inherits(object, special_treatment_vars)) {
         Bid   <- Between(object, na.rm = TRUE)
         Btime <- Between(object, effect = "time", na.rm = TRUE)
-        ## res <- structure(c(total = sumsq(object),
-        ##                    between_id = sumsq(Bid),
-        ##                    between_time = sumsq(Btime)), 
-        ##                  class = c("summary.pseries", "numeric"))
         res <- structure(c(total        = sum( (na.omit(object) - mean(object, na.rm = TRUE)) ^ 2),
                            between_id   = sum( (na.omit(Bid)    - mean(Bid,    na.rm = TRUE)) ^ 2),
                            between_time = sum( (na.omit(Btime)  - mean(Btime,  na.rm = TRUE)) ^ 2)), 

@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2023-04-09" />
+<meta name="date" content="2024-04-01" />
 
 <title>Model components for fitted models with plm</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Model components for fitted models with
 plm</h1>
 <h4 class="author">Yves Croissant</h4>
-<h4 class="date">2023-04-09</h4>
+<h4 class="date">2024-04-01</h4>
 
 
 
@@ -400,20 +400,20 @@ therefore created a generic called <code>pmodel.response</code> and
 provide a <code>pmodel.response.pdata.frame</code> method. We illustrate
 these features using a simplified (in terms of covariates) example with
 the <code>SeatBelt</code> data set:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;plm&quot;</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;SeatBelt&quot;</span>, <span class="at">package =</span> <span class="st">&quot;pder&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>SeatBelt<span class="sc">$</span>occfat <span class="ot">&lt;-</span> <span class="fu">with</span>(SeatBelt, <span class="fu">log</span>(farsocc <span class="sc">/</span> (vmtrural <span class="sc">+</span> vmturban)))</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>pSB <span class="ot">&lt;-</span> <span class="fu">pdata.frame</span>(SeatBelt)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;plm&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;SeatBelt&quot;</span>, <span class="at">package =</span> <span class="st">&quot;pder&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>SeatBelt<span class="sc">$</span>occfat <span class="ot">&lt;-</span> <span class="fu">with</span>(SeatBelt, <span class="fu">log</span>(farsocc <span class="sc">/</span> (vmtrural <span class="sc">+</span> vmturban)))</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>pSB <span class="ot">&lt;-</span> <span class="fu">pdata.frame</span>(SeatBelt)</span></code></pre></div>
 <p>We start with an OLS (pooling) specification:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>formols <span class="ot">&lt;-</span> occfat <span class="sc">~</span> <span class="fu">log</span>(usage) <span class="sc">+</span> <span class="fu">log</span>(percapin)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>mfols <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(pSB, formols)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>Xols <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfols)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">pmodel.response</span>(mfols)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm.fit</span>(Xols, y))</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>formols <span class="ot">&lt;-</span> occfat <span class="sc">~</span> <span class="fu">log</span>(usage) <span class="sc">+</span> <span class="fu">log</span>(percapin)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>mfols <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(pSB, formols)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>Xols <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfols)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">pmodel.response</span>(mfols)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm.fit</span>(Xols, y))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.4193570     0.1657293    -1.1583712</code></pre>
 <p>which is equivalent to:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">plm</span>(formols, SeatBelt, <span class="at">model =</span> <span class="st">&quot;pooling&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">plm</span>(formols, SeatBelt, <span class="at">model =</span> <span class="st">&quot;pooling&quot;</span>))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.4193570     0.1657293    -1.1583712</code></pre>
 <p>Next, we use an instrumental variables specification. Variable
@@ -423,8 +423,8 @@ indicating the law context: <code>ds</code>, <code>dp</code>, and
 <p>The model is described using a two-parts formula, the first part of
 the RHS describing the covariates and the second part the instruments.
 The following two formulations can be used:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>formiv1 <span class="ot">&lt;-</span> occfat <span class="sc">~</span> <span class="fu">log</span>(usage) <span class="sc">+</span> <span class="fu">log</span>(percapin) <span class="sc">|</span> <span class="fu">log</span>(percapin) <span class="sc">+</span> ds <span class="sc">+</span> dp <span class="sc">+</span> dsp</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>formiv2 <span class="ot">&lt;-</span> occfat <span class="sc">~</span> <span class="fu">log</span>(usage) <span class="sc">+</span> <span class="fu">log</span>(percapin) <span class="sc">|</span> . <span class="sc">-</span> <span class="fu">log</span>(usage) <span class="sc">+</span> ds <span class="sc">+</span> dp <span class="sc">+</span> dsp</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>formiv1 <span class="ot">&lt;-</span> occfat <span class="sc">~</span> <span class="fu">log</span>(usage) <span class="sc">+</span> <span class="fu">log</span>(percapin) <span class="sc">|</span> <span class="fu">log</span>(percapin) <span class="sc">+</span> ds <span class="sc">+</span> dp <span class="sc">+</span> dsp</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>formiv2 <span class="ot">&lt;-</span> occfat <span class="sc">~</span> <span class="fu">log</span>(usage) <span class="sc">+</span> <span class="fu">log</span>(percapin) <span class="sc">|</span> . <span class="sc">-</span> <span class="fu">log</span>(usage) <span class="sc">+</span> ds <span class="sc">+</span> dp <span class="sc">+</span> dsp</span></code></pre></div>
 <p>The second formulation has two advantages:</p>
 <ul>
 <li>in the common case when a lot of covariates are instruments, these
@@ -437,10 +437,10 @@ formula,</li>
 <code>Formula</code> package. <code>model.matrix.pdata.frame</code> then
 internally calls <code>model.matrix.Formula</code> in order to extract
 the covariates and instruments model matrices:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>mfSB1 <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(pSB, formiv1)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB1, <span class="at">rhs =</span> <span class="dv">1</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>W1 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB1, <span class="at">rhs =</span> <span class="dv">2</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(X1, <span class="dv">3</span>) ; <span class="fu">head</span>(W1, <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>mfSB1 <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(pSB, formiv1)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB1, <span class="at">rhs =</span> <span class="dv">1</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>W1 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB1, <span class="at">rhs =</span> <span class="dv">2</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">head</span>(X1, <span class="dv">3</span>) ; <span class="fu">head</span>(W1, <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -0.7985077      9.955748
 ## 9            1 -0.4155154      9.975622
@@ -459,8 +459,8 @@ methods. <code>.</code> has actually two meanings:</p>
 <p>which correspond respectively to <code>dot = &quot;seperate&quot;</code> (the
 default) and <code>dot = &quot;previous&quot;</code>. See the difference between
 the following two examples:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;Formula&quot;</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">model.frame</span>(<span class="fu">Formula</span>(formiv2), SeatBelt), <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;Formula&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">model.frame</span>(<span class="fu">Formula</span>(formiv2), SeatBelt), <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##       occfat log(usage) log(percapin) state year farsocc farsnocc usage
 ## 8  -3.788976 -0.7985077      9.955748    AK 1990      90        8  0.45
 ## 9  -3.904837 -0.4155154      9.975622    AK 1991      81       20  0.66
@@ -477,7 +477,7 @@ the following two examples:</p>
 ## 8   0  0   0
 ## 9   1  0   0
 ## 10  1  0   0</code></pre>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">model.frame</span>(<span class="fu">Formula</span>(formiv2), SeatBelt, <span class="at">dot =</span> <span class="st">&quot;previous&quot;</span>), <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">model.frame</span>(<span class="fu">Formula</span>(formiv2), SeatBelt, <span class="at">dot =</span> <span class="st">&quot;previous&quot;</span>), <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##       occfat log(usage) log(percapin) ds dp dsp
 ## 8  -3.788976 -0.7985077      9.955748  0  0   0
 ## 9  -3.904837 -0.4155154      9.975622  1  0   0
@@ -488,10 +488,10 @@ as “everything”.</p>
 <p>In <code>plm</code>, the <code>dot</code> argument is internally set
 to <code>previous</code> so that the end-user doesn’t have to worry
 about these subtleties.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>mfSB2 <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(pSB, formiv2)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB2, <span class="at">rhs =</span> <span class="dv">1</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>W2 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB2, <span class="at">rhs =</span> <span class="dv">2</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(X2, <span class="dv">3</span>) ; <span class="fu">head</span>(W2, <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>mfSB2 <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(pSB, formiv2)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB2, <span class="at">rhs =</span> <span class="dv">1</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>W2 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(mfSB2, <span class="at">rhs =</span> <span class="dv">2</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="fu">head</span>(X2, <span class="dv">3</span>) ; <span class="fu">head</span>(W2, <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -0.7985077      9.955748
 ## 9            1 -0.4155154      9.975622
@@ -502,26 +502,26 @@ about these subtleties.</p>
 ## 10           1     10.002110  1  0   0</code></pre>
 <p>The IV estimator can then be obtained as a 2SLS estimator: First,
 regress the covariates on the instruments and get the fitted values:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>HX1 <span class="ot">&lt;-</span> <span class="fu">lm.fit</span>(W1, X1)<span class="sc">$</span>fitted.values</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(HX1, <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>HX1 <span class="ot">&lt;-</span> <span class="fu">lm.fit</span>(W1, X1)<span class="sc">$</span>fitted.values</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">head</span>(HX1, <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##    (Intercept) log(usage) log(percapin)
 ## 8            1 -1.0224257      9.955748
 ## 9            1 -0.5435055      9.975622
 ## 10           1 -0.5213364     10.002110</code></pre>
 <p>Next, regress the response on these fitted values:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm.fit</span>(HX1, y))</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm.fit</span>(HX1, y))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 <p>The same can be achieved in one command by using the
 <code>formula</code>-<code>data</code> interface with
 <code>plm</code>:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">plm</span>(formiv1, SeatBelt, <span class="at">model =</span> <span class="st">&quot;pooling&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">plm</span>(formiv1, SeatBelt, <span class="at">model =</span> <span class="st">&quot;pooling&quot;</span>))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 <p>or with the <code>ivreg</code> function from package <code>AER</code>
 (or with the newer function <code>ivreg</code> in package
 <code>ivreg</code> superseding <code>AER::ivreg()</code>):</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(AER<span class="sc">::</span><span class="fu">ivreg</span>(formiv1, <span class="at">data =</span> SeatBelt))</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">coef</span>(AER<span class="sc">::</span><span class="fu">ivreg</span>(formiv1, <span class="at">data =</span> SeatBelt))</span></code></pre></div>
 <pre><code>##   (Intercept)    log(usage) log(percapin) 
 ##     7.5641209     0.1768576    -1.1722590</code></pre>
 

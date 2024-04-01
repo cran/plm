@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.6-3
-Date: 2023-04-09
+Version: 2.6-4
+Date: 2024-04-01
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = c("aut"), email = "giovanni.millo@deams.units.it"),
@@ -29,14 +29,14 @@ Description: A set of estimators for models and (robust) covariance matrices, an
              Panel Data Econometrics with R (<doi:10.1002/9781119504641>).
 License: GPL (>= 2)
 VignetteBuilder: knitr
-URL: https://cran.r-project.org/package=plm (CRAN releases),
-        https://github.com/ycroissant/plm (development repository)
+URL: https://cran.r-project.org/package=plm,
+        https://github.com/ycroissant/plm
 BugReports: https://github.com/ycroissant/plm/issues
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 RdMacros: Rdpack
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2023-04-09 10:39:10 UTC; kevin
+Packaged: 2024-04-01 18:51:47 UTC; kevin
 Author: Yves Croissant [aut],
   Giovanni Millo [aut],
   Kevin Tappe [aut, cre],
@@ -48,4 +48,4 @@ Author: Yves Croissant [aut],
   Nina Schoenfelder [ctb]
 Maintainer: Kevin Tappe <kevin.tappe@bwi.uni-stuttgart.de>
 Repository: CRAN
-Date/Publication: 2023-04-09 11:40:02 UTC
+Date/Publication: 2024-04-01 23:40:03 UTC

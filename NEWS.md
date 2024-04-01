@@ -6,6 +6,60 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 
 ***
 
+# plm 2.6-4
+
+### Features:
+* `pvcm`: 
+  * implemented parameter homogeneity test for variable coefficients model
+    (`model = "random"`), printed when summary is printed.
+  * implemented estimation of single unbiased coefficients (incl. variance/std.
+    error) for `model = "random"`, can be extracted via 
+    `return_value$single.coef`, `return_value$single.vcov`, 
+    `return_value$single.std.error`, respectively.
+
+### Speed-up:
+* Replaced base R's `duplicated` with faster `collapse::fduplicated(x, all = FALSE)`.
+* `pvcm`: faster due to improved code path.
+
+### Fixes:
+* `phtest(<.>, method = "aux")` (regression-based Hausman test): errored in case of
+  `NA`s and one independent variable (reported by Kurt Schmidheiny).
+* `pvcm`:
+    * return value now always has a single valid value in `$args$model`.
+    * tiny fix for coefficient estimation in case of NA coefficients.
+* `pdata.frame`: fix in detection of 3rd index variable (relevant only in quite 
+   specific circumstances) ([#50](https://github.com/ycroissant/plm/pull/50), 
+   thanks to @MichaelChirico).
+
+### Others:
+* Compatibility for `dplyr::arange` by supplying a `pdata.frame` method for `arrange`
+  which takes care of pdata.frame's index attribute ([#46](https://github.com/ycroissant/plm/issues/46)
+  , thanks to @ssoyounglee for reporting and @zeileis for prompt analysis and hints).
+* Estimation functions (e.g., `plm()`, `pcce()`) now warn if a data input claims to 
+  be a pdata.frame but has non-compliant properties. This can happen due to data 
+  manipulation by non-pdata.frame-aware functions (e.g., `dplyr`'s row-filtering 
+  on pdata.frame does not take care of pdata.frame's index attribute).
+* `pdata.frame()`:
+   * does not stop anymore when a pdata.frame is input, just continues to create
+     a new pdata.frame from input.
+   * warns if pdata.frame with non-compliant features is input.
+* `plm()` passes on ellipsis ("dots" (`...`)) to internal pdata.frame creation, 
+  further passed on to internal usage of `data.frame` (if pdata.frame is to be 
+  created internally due to non-pdata.frame passed in `plm()`'s `data` argument).
+* `pvar.pseries`: when printed, original variable's name is printed 
+  (not always `x` anymore).
+* `pvcm`: more informative about non-estimable models:
+   * `model = "random"`: implemented stopping control for non-estimable model 
+     if only one group.
+   * improved error message if too few observations.
+   * `model = "within"`: be less strict about required number of observations 
+     for pure coefficient estimation (#obs = #coefs now allowed, errored before, 
+     variance cannot be estimated then, though). Note: this relaxation is not 
+     possible for the `model = "random"` case (Swamy (1970)).
+
+***
+
+
 # plm 2.6-3
 
 ### Speed-up:
@@ -50,6 +104,11 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
   * change: case without supplied non-`NULL` `newdata` now gives the predicted 
     values of the outer model (before: inner model).
 
+### Speed-up:
+* Many functions which split data by an index dimension are now faster on large
+  data sets due to more efficient splitting approach, esp. `pcce`, `pggls`, 
+  `pmg`, `cipstest`, `pcdtest`.
+
 ### Fixes:
 * `mtest`: error gracefully if argument `order` specifies a value larger than or 
    equal to the number of available observations ([#23](https://github.com/ycroissant/plm/issues/23)).
@@ -65,11 +124,6 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 * `fixef(., type = "dfirst"`): for models with `length(fixef(<model_object>)) == 2`, 
   `fixef` does not error anymore and for `length(fixef(<model_object>)) == 1`, 
   the result is more sane (`numeric(0)`).
-  
-### Speed-up:
-* Many functions which split data by an index dimension are now faster on large
-  data sets due to more efficient splitting approach, esp. `pcce`, `pggls`, 
-  `pmg`, `cipstest`, `pcdtest`.
   
 ### Others/Minors/Admin:
 * `purtest`: errors more informatively when no non-NA cases are left after lagging.
@@ -1424,7 +1478,7 @@ plm()): Between, between, Sum, Within.
 
 ***
 
-Change since version 1-1.4
+# Change since version 1-1.4
 
 * an 'args' argument is added to plm objects, and the internal
     function relies now on it (and not on the call as previously).
