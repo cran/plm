@@ -1,8 +1,27 @@
 ---
 title: NEWS/Changelog for package plm
 subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
-          panel data econometrics - <https://cran.r-project.org/package=plm>
+          panel data econometrics - <https://cran.r-project.org/package=plm> 
+          (development repository <https://github.com/ycroissant/plm/>)
 ---
+
+# 2.6-5
+
+### Fixes:
+* `pgmm`: argument `fsm` can now be set to influence the first step's weighting matrix.
+* `mtest`:
+    * fix test for one-step models with robust covariance matrix and two-steps models.
+    * result object's statistic is now a numeric (was 1x1 matrix).
+* `vcovXX`: FD models with only one observation per group prior to 
+    first-differencing errored ([#58](https://github.com/ycroissant/plm/issues/58)).
+* `pggls`: FD models errored with the data constellation as described above for `vcovXX`.
+* `is.pdata.frame` (non-exported helper function): fix part of the check if object 
+    does not have an index.
+    
+### Documentation:
+* `?mtest` now has more explanation with replication examples.
+* First vignette: improved description of `pgmm`'s `effect` argument.
+
 
 ***
 
@@ -735,7 +754,7 @@ plm()): Between, between, Sum, Within.
         before (all default to FALSE).
   * warning issued if an index variable is to be constructed that subsequently 
         overwrites an already present column of the same name ('id' and/or 'time').
-  * pacified warning in subsetting with with non-existent rows and columns due
+  * pacified warning in subsetting with non-existent rows and columns due
         to deprecation of 'structure(NULL, *)' in R >= 3.4.0.
   * \$<-.pdata.frame: preserves storage mode and sets correct class if propagation
                          to higher class occurred for a pseries prior to assignment

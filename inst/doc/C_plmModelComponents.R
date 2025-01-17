@@ -53,20 +53,20 @@ coef(plm(formiv1, SeatBelt, model = "pooling"))
 coef(AER::ivreg(formiv1, data = SeatBelt))
 
 ## ----eval = FALSE, include = FALSE--------------------------------------------
-#  X2 <- model.matrix(Formula(form1), mfSB, rhs = 2, dot = "previous")
-#  
-#  formols <- occfat ~ log(usage) + log(percapin)  | . - log(usage) +  ds + dp + dsp
-#  
-#  form1 <- occfat ~ log(usage) + log(percapin) + log(unemp) + log(meanage) +
-#      log(precentb) + log(precenth) + log(densrur) + log(densurb) +
-#      log(viopcap) + log(proppcap) + log(vmtrural) + log(vmturban) +
-#      log(fueltax) + lim65 + lim70p + mlda21 + bac08
-#  form2 <- . ~ . |  . - log(usage) + ds + dp +dsp
-#  
-#  jorm1 <- occfat ~ log(usage) + log(percapin) + log(unemp) + log(meanage) +
-#      log(precentb) + log(precenth) + log(densrur) + log(densurb) +
-#      log(viopcap) + log(proppcap) + log(vmtrural) + log(vmturban) +
-#      log(fueltax) + lim65 + lim70p + mlda21 + bac08 | . - log(usage) +
-#      ds + dp + dsp
-#  jorm2 <- noccfat ~ . | .
+# X2 <- model.matrix(Formula(form1), mfSB, rhs = 2, dot = "previous")
+# 
+# formols <- occfat ~ log(usage) + log(percapin)  | . - log(usage) +  ds + dp + dsp
+# 
+# form1 <- occfat ~ log(usage) + log(percapin) + log(unemp) + log(meanage) +
+#     log(precentb) + log(precenth) + log(densrur) + log(densurb) +
+#     log(viopcap) + log(proppcap) + log(vmtrural) + log(vmturban) +
+#     log(fueltax) + lim65 + lim70p + mlda21 + bac08
+# form2 <- . ~ . |  . - log(usage) + ds + dp +dsp
+# 
+# jorm1 <- occfat ~ log(usage) + log(percapin) + log(unemp) + log(meanage) +
+#     log(precentb) + log(precenth) + log(densrur) + log(densurb) +
+#     log(viopcap) + log(proppcap) + log(vmtrural) + log(vmturban) +
+#     log(fueltax) + lim65 + lim70p + mlda21 + bac08 | . - log(usage) +
+#     ds + dp + dsp
+# jorm2 <- noccfat ~ . | .
 

@@ -353,8 +353,8 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     nT <- pdim$nT$N
     Ti <- pdim$Tint$Ti
     k <- dim(demX)[[2L]]
-    n0 <- pdim$nT$n
-    t0 <- pdim$nT$T
+    n0 <- pdim$nT$n # no. of groups
+    t0 <- pdim$nT$T # max time periods over groups
 
   ## extract residuals
     uhat <- x$residuals
@@ -480,8 +480,16 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     groupind <- as.numeric(xindex[[1L]])
     timeind  <- as.numeric(xindex[[2L]])
 
+
   ## adjust for 'fd' model (losing first time period)
     if(model == "fd") {
+      ## debug printing:
+      #print("before FD adj:")
+      #print(paste0("nT = ", nT))
+      #print(paste0("Ti = ", paste0(Ti, collapse = ", ")))
+      #print(paste0("t0 = ", t0))
+      #cat("\n")
+   
       groupi <- as.numeric(groupind)
       ## make vector =1 on first obs in each group, 0 elsewhere
       selector <- groupi - c(0, groupi[-length(groupi)])
@@ -491,7 +499,19 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
       timeind  <- timeind[!selector]
       nT <- nT - n0
       Ti <- Ti - 1
+      if(any(drop <- Ti == 0L)) {
+        # drop groups in Ti that are now empty (group had 1 observation before first-differencing, hence 0 after)
+        # and adjust n0 due to same reason
+        Ti <- Ti[!drop]
+        n0 <- n0 - sum(drop)
+      }
       t0 <- t0 - 1
+      
+      ## debug printing:
+      #print("after FD adj:")
+      #print(paste0("nT = ", nT))
+      #print(paste0("Ti = ", paste0(Ti, collapse = ", ")))
+      #print(paste0("t0 = ", t0))
     }
 
   ## set grouping indexes
@@ -539,6 +559,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     
     ## (l=0 gives the special contemporaneous case where Xi=Xil, ui=uil
     ## for computing W, CX, CT)
+
     for(i in (1+l):n) {
       X  <- demX[tind[[i]], ,   drop = FALSE]
       Xl <- demX[tind[[i-l]], , drop = FALSE]
@@ -623,8 +644,9 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' `linearHypothesis()` in the \CRANpkg{car} package (see the
 #' examples), see \insertCite{@see also @ZEIL:04}{plm}, 4.1-2, and examples below.
 #' 
-#' A special procedure for `pgmm` objects, proposed by
-#' \insertCite{WIND:05;textual}{plm}, is also provided.
+#' A method for `pgmm` objects, `vcovHC.pgmm`, is also provided and gives the robust
+#' variance-covariances matrix, in case of a two-steps panel GMM model with the 
+#' small-sample correction proposed by \insertCite{WIND:05;textual}{plm}.
 #' 
 #' @name vcovHC.plm
 #' @aliases vcovHC
@@ -1002,15 +1024,39 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     groupind <- as.numeric(xindex[[1L]])
     timeind  <- as.numeric(xindex[[2L]])
 
-  ## Achim's fix for 'fd' model (losing first time period)
+    ## adjust for 'fd' model (losing first time period)
     if(model == "fd") {
-      groupind <- groupind[timeind > 1]
-      timeind  <- timeind[ timeind > 1]
+      ## debug printing:
+      #print("before FD adj:")
+      #print(paste0("nT = ", nT))
+      #print(paste0("Ti = ", paste0(Ti, collapse = ", ")))
+      #print(paste0("t0 = ", t0))
+      #cat("\n")
+      
+      groupi <- as.numeric(groupind)
+      ## make vector =1 on first obs in each group, 0 elsewhere
+      selector <- groupi - c(0, groupi[-length(groupi)])
+      selector[1L] <- 1 # the first must always be 1
+      ## eliminate first obs in time for each group
+      groupind <- groupind[!selector]
+      timeind  <- timeind[!selector]
       nT <- nT - n0
       Ti <- Ti - 1
+      if(any(drop <- Ti == 0L)) {
+        # drop groups in Ti that are now empty (group had 1 observation before first-differencing, hence 0 after)
+        # and adjust n0 due to same reason
+        Ti <- Ti[!drop]
+        n0 <- n0 - sum(drop)
+      }
       t0 <- t0 - 1
+      
+      ## debug printing:
+      #print("after FD adj:")
+      #print(paste0("nT = ", nT))
+      #print(paste0("Ti = ", paste0(Ti, collapse = ", ")))
+      #print(paste0("t0 = ", t0))
     }
-
+    
   ## set grouping indexes
     cluster <- match.arg(cluster)
     switch(cluster,
@@ -1089,12 +1135,12 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     
     unlabs <- unique(lab) # fetch (all, unique) values of the relevant labels
     seq.len.t <- seq_len(t)
-    
+        
     for(i in seq_len(n)) {
       ut <- uhat[tind[[i]]]
       tpos <- seq.len.t[unlabs %in% tlab[[i]]]
       ## put non-diag elements to 0 if diagonal=TRUE
-      tres[tpos, tpos, i] <- if(diagonal) diag(diag(ut %o% ut)) else ut %o% ut
+      tres[tpos, tpos, i] <- if(diagonal) diag(diag(tcrossprod(ut))) else tcrossprod(ut)
     }
 
     ## average over all omega blocks, removing NAs (apply preserving
@@ -1111,7 +1157,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     ## for every group, take relevant positions
     tpos <- unlabs %in% grouplabs
     OmegaTi <- OmegaT[tpos, tpos, drop = FALSE]
-    salame[ , , i] <- crossprod(xi, OmegaTi) %*% xi
+    salame[ , , i] <- tcrossprod(crossprod(xi, OmegaTi), t(xi))
   }
   ## meat
   salame <- rowSums(salame, dims = 2L) # == apply(salame, 1:2, sum) but faster
@@ -1198,6 +1244,7 @@ vcovHC.pgmm <- function(x, ...) {
   transformation <- describe(x, "transformation")
   A1 <- x$A1
   A2 <- x$A2
+  B1 <- x$B1 # needs to be B1 (from one-step model)
 
   if(transformation == "ld") {
 ##     yX <- lapply(x$model,function(x) rbind(diff(x),x))
@@ -1206,9 +1253,11 @@ vcovHC.pgmm <- function(x, ...) {
     residuals <- x$residuals
   }
   else {
+    # transformation = "d"
     yX <- x$model
     residuals <- x$residuals
   }
+  
   minevA2 <- min(abs(Re(eigen(A2)$values)))
   eps <- 1E-9
   
@@ -1217,44 +1266,36 @@ vcovHC.pgmm <- function(x, ...) {
     ginv(A2)
   } else solve(A2)
   
+  WX <- Reduce("+", mapply(function(w, y) crossprod(w, y[ , -1L, drop = FALSE]), x$W, yX, SIMPLIFY = FALSE))
+  
+  # robust vcov for one-step GMM, see Roodman (2009), formula (15)
+  vcovr1s <- B1 %*% (t(WX) %*% A1 %*% SA2 %*% A1 %*% WX) %*% B1
+  
   if(model == "twosteps") {
     coef1s <- x$coefficients[[1L]]
     res1s <- lapply(yX, function(x) x[ , 1L] - crossprod(t(x[ , -1L, drop = FALSE]), coef1s))
     K <- ncol(yX[[1L]])
     D <- c()
-    WX <- Reduce("+",
-                 mapply(function(x, y) crossprod(x, y[ , -1L, drop = FALSE]), x$W, yX, SIMPLIFY = FALSE))
     We <- Reduce("+", mapply(function(x, y) crossprod(x, y), x$W, residuals, SIMPLIFY = FALSE))
-    B1 <- solve(t(WX) %*% A1 %*% WX)
-    B2 <- vcov(x)
-
-    vcov1s <- B1 %*% (t(WX) %*% A1 %*% SA2 %*% A1 %*% WX) %*% B1
     for (k in 2:K) {
-      exk <- mapply(
-                    function(x, y){
+      exk <- mapply(function(x, y){
                       z <- crossprod(t(x[ , k, drop = FALSE]), t(y))
-                      - z - t(z)
+                      return(- z - t(z))
                     },
                     yX, res1s, SIMPLIFY = FALSE)
-      wexkw <- Reduce("+",
-                      mapply(
-                             function(x, y)
-                             crossprod(x, crossprod(y, x)),
-                             x$W, exk, SIMPLIFY = FALSE))
+      
+      wexkw <- Reduce("+", mapply(function(x, y) 
+                                    crossprod(x, crossprod(y, x)),
+                                  x$W, exk, SIMPLIFY = FALSE))
+      B2 <- x$vcov # is "B2" for a two-step model
       Dk <- -B2 %*% t(WX) %*% A2 %*% wexkw %*% A2 %*% We
       D <- cbind(D, Dk)
     }
-    vcovr <- B2 + crossprod(t(D), B2) + t(crossprod(t(D), B2)) + D %*% vcov1s %*% t(D)
+    # Windmeijer (2005) small-sample bias correction for twosteps GMM model, 
+    # see Windmeijer (2005), p. 33 formula (3.3); Roodman (2019) form. (18)
+    vcovr2s <- B2 + crossprod(t(D), B2) + t(crossprod(t(D), B2)) + D %*% vcovr1s %*% t(D)
   }
-  else {
-    # model = "onestep"
-    res1s <- lapply(yX, function(z) z[ , 1L] - crossprod(t(z[ , -1L, drop = FALSE]), x$coefficients))
-    K <- ncol(yX[[1L]])
-    WX <- Reduce("+", mapply(function(z, y) crossprod(z[ , -1L, drop = FALSE], y), yX, x$W, SIMPLIFY = FALSE))
-    B1 <- vcov(x)
-    vcovr <- B1 %*% (WX %*% A1 %*% SA2 %*% A1 %*% t(WX)) %*% B1
-  }
-  vcovr
+  if(model == "twosteps") vcovr2s else vcovr1s
 }
 
 

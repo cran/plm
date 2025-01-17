@@ -102,7 +102,7 @@ summary(grun.varr)
 emp.gmm <- pgmm(log(emp)~lag(log(emp), 1:2)+lag(log(wage), 0:1)+log(capital)+
                 lag(log(output), 0:1) | lag(log(emp), 2:99),
                 data = EmplUK, effect = "twoways", model = "twosteps")
-summary(emp.gmm)
+summary(emp.gmm, robust = FALSE)
 
 ## ----gmm2---------------------------------------------------------------------
 z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +

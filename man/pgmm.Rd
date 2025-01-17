@@ -17,7 +17,7 @@ pgmm(
   collapse = FALSE,
   lost.ts = NULL,
   transformation = c("d", "ld"),
-  fsm = NULL,
+  fsm = switch(transformation, d = "G", ld = "full"),
   index = NULL,
   ...
 )
@@ -66,10 +66,11 @@ missing, it is set to the first one minus one,}
 model: either \code{"d"} (the default value) for the
 "difference GMM" model or \code{"ld"} for the "system GMM" model,}
 
-\item{fsm}{the matrix for the one step estimator: one of \code{"I"}
-(identity matrix) or \code{"G"} (\eqn{=D'D} where \eqn{D} is the
-first--difference operator) if \code{transformation="d"}, one of
-\code{"GI"} or \code{"full"} if \code{transformation="ld"},}
+\item{fsm}{character of length 1 to specify type of weighting matrix
+for the first step /the \code{"onestep"} estimator: one of \code{"I"} (identity
+matrix) or \code{"G"} (\eqn{=D'D} where \eqn{D} is the first--difference
+operator), if \code{transformation="d"}, one of \code{"GI"} or \code{"full"}
+if \code{transformation="ld"},}
 
 \item{index}{the indexes,}
 
@@ -78,7 +79,8 @@ first--difference operator) if \code{transformation="d"}, one of
 \item{object, x}{an object of class \code{"pgmm"},}
 
 \item{robust}{for pgmm's summary method: if \code{TRUE} (default), robust inference
-is performed in the summary,}
+is performed in the summary, for a two-steps model with the
+small-sample correction by \insertCite{WIND:05;textual}{plm},}
 
 \item{time.dummies}{for pgmm's summary method: if \code{TRUE}, the estimated
 coefficients of time dummies are present in the table of coefficients;
@@ -107,9 +109,6 @@ list element) (two lists in case of system GMM,}
 \item{A1}{the weighting matrix for the one--step estimator,}
 \item{A2}{the weighting matrix for the two--steps estimator,}
 \item{call}{the call.}
-
-In addition, it has attribute \code{"pdim"} which contains the pdim object for
-the model.
 
 It has \code{print}, \code{summary} and \code{print.summary} methods.
 }
@@ -150,35 +149,48 @@ library for Stata \insertCite{@see @ROOD:09}{plm}.
 
 data("EmplUK", package = "plm")
 
-## Arellano and Bond (1991), table 4 col. b 
-z1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
-           + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
-            data = EmplUK, effect = "twoways", model = "twosteps")
-summary(z1, robust = FALSE)
+# Arellano/Bond 1991, Table 4, column (a1) (has robust SEs)
+ab.a1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+             + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
+             data = EmplUK, effect = "twoways", model = "onestep")
+summary(ab.a1, robust = TRUE)
+
+# Arellano/Bond 1991, Table 4, column (a2) (has non-robust SEs)
+ab.a2 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+              + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
+              data = EmplUK, effect = "twoways", model = "twosteps")
+summary(ab.a2, robust = FALSE)
+
+# Arellano and Bond (1991), table 4 col. b / # Windmeijer (2005), table 2, std. errc
+ab.b <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+             + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+             data = EmplUK, effect = "twoways", model = "twosteps")
+summary(ab.b, robust = FALSE) # Arellano/Bond
+summary(ab.b, robust = TRUE)  # Windmeijer
 
 ## Blundell and Bond (1998) table 4 (cf. DPD for OX p. 12 col. 4)
-z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+bb.4 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
            lag(log(capital), 0:1) | lag(log(emp), 2:99) +
            lag(log(wage), 2:99) + lag(log(capital), 2:99),
            data = EmplUK, effect = "twoways", model = "onestep", 
            transformation = "ld")
-summary(z2, robust = TRUE)
+summary(bb.4, robust = TRUE)
 
 \dontrun{
 ## Same with the old formula or dynformula interface
 ## Arellano and Bond (1991), table 4, col. b 
-z1 <- pgmm(log(emp) ~ log(wage) + log(capital) + log(output),
+ab.b <- pgmm(log(emp) ~ log(wage) + log(capital) + log(output),
             lag.form = list(2,1,0,1), data = EmplUK, 
             effect = "twoways", model = "twosteps",
             gmm.inst = ~log(emp), lag.gmm = list(c(2,99)))
-summary(z1, robust = FALSE)
+summary(ab.b, robust = FALSE)
 
-## Blundell and Bond (1998) table 4 (cf DPD for OX p. 12 col. 4)
-z2 <- pgmm(dynformula(log(emp) ~ log(wage) + log(capital), list(1,1,1)), 
+## Blundell and Bond (1998) table 4 (cf. DPD for OX p. 12 col. 4)
+bb.4 <- pgmm(dynformula(log(emp) ~ log(wage) + log(capital), list(1,1,1)), 
             data = EmplUK, effect = "twoways", model = "onestep", 
             gmm.inst = ~log(emp) + log(wage) + log(capital), 
             lag.gmm = c(2,99), transformation = "ld")
-summary(z2, robust = TRUE)
+summary(bb.4, robust = TRUE)
 }
 
 }
@@ -187,8 +199,8 @@ summary(z2, robust = TRUE)
 }
 \seealso{
 \code{\link[=sargan]{sargan()}} for the Hansen--Sargan test and \code{\link[=mtest]{mtest()}} for
-Arellano--Bond's test of serial correlation.  \code{\link[=dynformula]{dynformula()}} for
-dynamic formulas (deprecated).
+Arellano--Bond's test of serial correlation. \link{vcovHC.pgmm} for the robust
+inference.
 }
 \author{
 Yves Croissant

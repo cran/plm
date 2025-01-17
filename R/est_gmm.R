@@ -58,15 +58,16 @@
 #' @param transformation the kind of transformation to apply to the
 #'     model: either `"d"` (the default value) for the
 #'     "difference GMM" model or `"ld"` for the "system GMM" model,
-#' @param fsm the matrix for the one step estimator: one of `"I"`
-#'     (identity matrix) or `"G"` (\eqn{=D'D} where \eqn{D} is the
-#'     first--difference operator) if `transformation="d"`, one of
-#'     `"GI"` or `"full"` if `transformation="ld"`,
-# TODO: fms = NULL (default)/"full"/"GI" not explained; arg fsm is not evaluated at all
+#' @param fsm character of length 1 to specify type of weighting matrix
+#'      for the first step /the `"onestep"` estimator: one of `"I"` (identity 
+#'      matrix) or `"G"` (\eqn{=D'D} where \eqn{D} is the first--difference 
+#'      operator), if `transformation="d"`, one of `"GI"` or `"full"` 
+#'      if `transformation="ld"`,
 #' @param index the indexes,
 #' @param \dots further arguments.
 #' @param robust for pgmm's summary method: if `TRUE` (default), robust inference
-#'               is performed in the summary,
+#'               is performed in the summary, for a two-steps model with the 
+#'               small-sample correction by \insertCite{WIND:05;textual}{plm},
 #' @param time.dummies for pgmm's summary method: if `TRUE`, the estimated
 #'     coefficients of time dummies are present in the table of coefficients;
 #'     default is `FALSE`, thus time dummies are dropped in summary's coefficient
@@ -74,7 +75,6 @@
 #'     i.e., only for `effect = "twoways"`),
 #' @param digits digits,
 #' @param width the maximum length of the lines in the print output.
-
 #' @return An object of class `c("pgmm","panelmodel")`, which has the
 #'     following elements:
 #' 
@@ -88,13 +88,11 @@
 #'              estimation for each individual,} 
 #' \item{W}{a list containing the instruments for each individual (a matrix per
 #'          list element) (two lists in case of system GMM,}
-# TODO: not correct W does not contain two lists for system GMM
+# TODO: not correct, W does not contain two lists for system GMM
 #' \item{A1}{the weighting matrix for the one--step estimator,}
 #' \item{A2}{the weighting matrix for the two--steps estimator,}
+# TODO: add B1 description here
 #' \item{call}{the call.}
-#' 
-#' In addition, it has attribute `"pdim"` which contains the pdim object for
-#' the model.
 #' 
 #' It has `print`, `summary` and `print.summary` methods.
 #' @author Yves Croissant
@@ -103,8 +101,8 @@
 #' @seealso
 #' 
 #' [sargan()] for the Hansen--Sargan test and [mtest()] for
-#' Arellano--Bond's test of serial correlation.  [dynformula()] for
-#' dynamic formulas (deprecated).
+#' Arellano--Bond's test of serial correlation. [vcovHC.pgmm] for the robust
+#' inference.
 #' @references
 #'
 #' \insertAllCited{}
@@ -114,35 +112,48 @@
 #' 
 #' data("EmplUK", package = "plm")
 #' 
-#' ## Arellano and Bond (1991), table 4 col. b 
-#' z1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
-#'            + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
-#'             data = EmplUK, effect = "twoways", model = "twosteps")
-#' summary(z1, robust = FALSE)
-#' 
+#'# Arellano/Bond 1991, Table 4, column (a1) (has robust SEs)
+#'ab.a1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+#'              + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
+#'              data = EmplUK, effect = "twoways", model = "onestep")
+#'summary(ab.a1, robust = TRUE)
+#'
+#' # Arellano/Bond 1991, Table 4, column (a2) (has non-robust SEs)
+#' ab.a2 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+#'               + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
+#'               data = EmplUK, effect = "twoways", model = "twosteps")
+#' summary(ab.a2, robust = FALSE)
+#'
+#' # Arellano and Bond (1991), table 4 col. b / # Windmeijer (2005), table 2, std. errc
+#' ab.b <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+#'              + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+#'              data = EmplUK, effect = "twoways", model = "twosteps")
+#' summary(ab.b, robust = FALSE) # Arellano/Bond
+#' summary(ab.b, robust = TRUE)  # Windmeijer
+#'
 #' ## Blundell and Bond (1998) table 4 (cf. DPD for OX p. 12 col. 4)
-#' z2 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
+#' bb.4 <- pgmm(log(emp) ~ lag(log(emp), 1)+ lag(log(wage), 0:1) +
 #'            lag(log(capital), 0:1) | lag(log(emp), 2:99) +
 #'            lag(log(wage), 2:99) + lag(log(capital), 2:99),
 #'            data = EmplUK, effect = "twoways", model = "onestep", 
 #'            transformation = "ld")
-#' summary(z2, robust = TRUE)
+#' summary(bb.4, robust = TRUE)
 #' 
 #' \dontrun{
 #' ## Same with the old formula or dynformula interface
 #' ## Arellano and Bond (1991), table 4, col. b 
-#' z1 <- pgmm(log(emp) ~ log(wage) + log(capital) + log(output),
+#' ab.b <- pgmm(log(emp) ~ log(wage) + log(capital) + log(output),
 #'             lag.form = list(2,1,0,1), data = EmplUK, 
 #'             effect = "twoways", model = "twosteps",
 #'             gmm.inst = ~log(emp), lag.gmm = list(c(2,99)))
-#' summary(z1, robust = FALSE)
+#' summary(ab.b, robust = FALSE)
 #' 
-#' ## Blundell and Bond (1998) table 4 (cf DPD for OX p. 12 col. 4)
-#' z2 <- pgmm(dynformula(log(emp) ~ log(wage) + log(capital), list(1,1,1)), 
+#' ## Blundell and Bond (1998) table 4 (cf. DPD for OX p. 12 col. 4)
+#' bb.4 <- pgmm(dynformula(log(emp) ~ log(wage) + log(capital), list(1,1,1)), 
 #'             data = EmplUK, effect = "twoways", model = "onestep", 
 #'             gmm.inst = ~log(emp) + log(wage) + log(capital), 
 #'             lag.gmm = c(2,99), transformation = "ld")
-#' summary(z2, robust = TRUE)
+#' summary(bb.4, robust = TRUE)
 #' }
 #' 
 pgmm <- function(formula, data, subset, na.action,
@@ -151,17 +162,29 @@ pgmm <- function(formula, data, subset, na.action,
                  collapse = FALSE, # TODO: collapse does not seem to be assumed a logical in the code below but rather a character vector
                  lost.ts = NULL,
                  transformation = c("d", "ld"),
-                 fsm = NULL, # TODO: argument 'fsm' is not evaluated, 
+                 fsm = switch(transformation, "d" = "G", "ld" = "full"),
                  index = NULL, ...) {
 
-  # yX : response / covariates, W : gmm instruments, Z : normal
-  # instruments, V : time dummies
+  # yX : response / covariates, W : gmm instruments, 
+  # Z : normal instruments, V : time dummies
   
 #  cl <- match.call(expand.dots = FALSE)
   cl <- match.call(expand.dots = TRUE)
   effect <- match.arg(effect)
   model <- match.arg(model)
   transformation <- match.arg(transformation)
+  if(!is.null(fsm)) {
+    # some interface checks
+    stopifnot(is.character(fsm) && length(fsm) == 1L)
+    if(!(fsm %in% names(pgmm.fsm.list))) stop("argument 'fsm' must be one of ", oneof(pgmm.fsm.list))
+    if(transformation == "d")  stopifnot(fsm == "I"  || fsm == "G")
+    if(transformation == "ld") stopifnot(fsm == "GI" || fsm == "full")
+  } else {
+    # set fsm if null
+    fsm <- switch(transformation, "d" = "G", "ld" = "full")
+    warning(paste0("as argument 'fsm' was NULL, it has been set to \"", fsm, "\""))
+    }
+
   namesV <- NULL
   
   #################################################################
@@ -284,9 +307,9 @@ pgmm <- function(formula, data, subset, na.action,
     # of any covariates + 1 because of first - differencing or the
     # largest minimum lag for any gmm or normal instruments
     # min or max to select the number of lost time series?
-    gmm.minlag  <- min(unlist(gmm.lags, use.names = FALSE))                                  # was (==): min(sapply(gmm.lags, min))
-    inst.maxlag <- if (!is.null(inst.lags)) max(unlist(inst.lags, use.names = FALSE)) else 0 # was (==): max(sapply(inst.lags, max)) else 0
-    main.maxlag <- max(unlist(main.lags, use.names = FALSE))                                 # was (==): max(sapply(main.lags, max))
+    gmm.minlag  <- min(unlist(gmm.lags, use.names = FALSE))
+    inst.maxlag <- if (!is.null(inst.lags)) max(unlist(inst.lags, use.names = FALSE)) else 0
+    main.maxlag <- max(unlist(main.lags, use.names = FALSE))
     TL1 <- max(main.maxlag + 1, inst.maxlag + 1, gmm.minlag)
     TL2 <- max(main.maxlag,     inst.maxlag,     gmm.minlag - 1)
     # if TL2 = 0 (no lags), one observation is lost anyway because of
@@ -341,47 +364,36 @@ pgmm <- function(formula, data, subset, na.action,
   ##### individuals
   #################################################################
 
-  attr(data, "formula") <- formula(main.form)
-  yX <- extract.data(data)
+  yX <- extract.data(data, form = main.form)
   names.coef <- colnames(yX[[1L]])[-1L]
   Z <- if(normal.instruments){
-          attr(data, "formula") <- inst.form
-          extract.data(data)
+          extract.data(data, form = inst.form)
         } else NULL
-  attr(data, "formula") <- gmm.form
-  W <- extract.data(data, as.matrix = FALSE)
+  W <- extract.data(data, form = gmm.form, as.matrix = FALSE)
   
   #################################################################
   ##### 6. Create the matrix of response/covariates, gmm instruments
   ##### and normal instruments for the diff model
   #################################################################
   # create the matrix of gmm instruments for every individual
-  W1 <- lapply(W,
-               function(x){
+  W1 <- lapply(W, function(x){
                  u <- mapply(makegmm, x, gmm.lags, TL1, collapse, SIMPLIFY = FALSE)
-                 u <- matrix(unlist(u), nrow = nrow(u[[1L]]))
-                 u
-               }
-               )
+                 matrix(unlist(u), nrow = nrow(u[[1L]]))
+               })
 
   # differentiate the matrix of response/covariates (and of normal
-  # instruments if any) and remove T1 - 1 time series (xd is already
+  # instruments, if any) and remove T1 - 1 time series (xd is already
   # differenced)
-  yX1 <- lapply(yX,
-                function(x){
+  yX1 <- lapply(yX, function(x){
                   xd <- diff(x)
-                  xd <- xd[- c(seq_len(TL1 - 1)), , drop = FALSE]
-                  xd
-                }
-                )
+                  xd[-seq_len(TL1 - 1), , drop = FALSE]
+                })
+  
   if (normal.instruments){
-    Z1 <- lapply(Z,
-                 function(x){
+    Z1 <- lapply(Z, function(x){
                    xd <- diff(x)
-                   xd <- xd[- c(seq_len(TL1 - 1)), , drop = FALSE]
-                   xd
-                 }
-                 )
+                   xd[-seq_len(TL1 - 1), , drop = FALSE]
+                 })
   }
   
   #################################################################
@@ -391,8 +403,7 @@ pgmm <- function(formula, data, subset, na.action,
   #################################################################
 
   if (transformation == "ld"){
-    W2 <- lapply(W,
-                 function(x){
+    W2 <- lapply(W, function(x){
                    u <- mapply(makeW2, x, collapse, SIMPLIFY = FALSE)
                    # the matrix of instruments in difference has T - 2
                    # rows if one time series is lost (there are no gmm
@@ -404,17 +415,17 @@ pgmm <- function(formula, data, subset, na.action,
                    u <- matrix(unlist(u), nrow = nrow.ud)
                    if (TL2 == 1) u <- rbind(0, u)
                    u
-                 }
-                 )
+                 })
+    
     # remove the relevant number of time series for data in level
-    yX2 <- lapply(yX,
-                  function(x){
-                    x <- x[- c(0:TL2), , drop = FALSE]
-                    x
-                  }
-                  )
+    yX2 <- lapply(yX, function(x){
+                    x[-seq_len(TL2), , drop = FALSE]
+                  })
+    
     if (normal.instruments){
-      Z2 <- lapply(Z, function(x){x <- x[- c(0:TL2), , drop = FALSE]; x})
+      Z2 <- lapply(Z, function(x){
+                     x[-seq_len(TL2), , drop = FALSE]
+                     })
     }
   }
 
@@ -425,8 +436,8 @@ pgmm <- function(formula, data, subset, na.action,
   if (effect == "twoways"){
     namesV <- levels(index(data, which = "time"))
     if (transformation == "d"){
-      V1 <- td.model.diff <- diff(diag(1, T - TL1 + 1))[, -1]
-      namesV <- namesV[- c(0:(TL1))]
+      V1 <- td.model.diff <- diff(diag(1, T - TL1 + 1))[ , -1, drop = FALSE]
+      namesV <- namesV[-seq_len(TL1)]
     }
     else{
       td <- cbind(1, rbind(0, diag(1, T - 1)))
@@ -436,15 +447,16 @@ pgmm <- function(formula, data, subset, na.action,
       # intercept and should be kept anyway
       V2 <- td[- c(seq_len(TL2)), - c(2:(2 + TL2 - 1))]
       V1 <- diff(V2)
-      namesV <- c("(Intercept)", namesV[- c(0:TL2 + 1)])
+      namesV <- c("(Intercept)", namesV[-seq_len(TL2 + 1)])
     }
+    
     for (i in seq_len(N)){
       yX1[[i]] <- cbind(yX1[[i]], V1)
       if (transformation == "d"){
         W1[[i]] <- cbind(W1[[i]], V1)
       }
       else{
-        W2[[i]] <- cbind(W2[[i]], V2)
+        W2[[i]]  <- cbind( W2[[i]], V2)
         yX2[[i]] <- cbind(yX2[[i]], V2)
       }
     }
@@ -452,7 +464,7 @@ pgmm <- function(formula, data, subset, na.action,
   # A QAD fix for the bug in mtest for ld model without time.dummies
   if (effect == "individual" && transformation == "ld"){
     namesV <- levels(index(data, which = "time"))
-    namesV <- c("(Intercept)", namesV[-c(0:TL2 + 1)])
+    namesV <- c("(Intercept)", namesV[-seq_len(TL2 + 1)])
   }
   
   #################################################################
@@ -482,17 +494,19 @@ pgmm <- function(formula, data, subset, na.action,
   }
 
   #################################################################
-  ##### 10. In case of sys gmm, bdiag or rbind the diff and level
-  ##### matrices
+  ##### 10. a) In case of sys gmm: bdiag or rbind the diff and level
+  #####        matrices; 
+  #####     b) cbind normal instruments, if any
   #################################################################
   
   if (transformation == "ld"){
     for (i in seq_len(N)){
-      W1[[i]] <- bdiag(W1[[i]], W2[[i]])
+       W1[[i]] <- bdiag( W1[[i]],  W2[[i]])
       yX1[[i]] <- rbind(yX1[[i]], yX2[[i]])
       if (normal.instruments) Z1[[i]] <- bdiag(Z1[[i]], Z2[[i]])
     }
   }
+
   if (normal.instruments){
     for (i in seq_len(N)) W1[[i]] <- cbind(W1[[i]], Z1[[i]])
   }
@@ -502,14 +516,8 @@ pgmm <- function(formula, data, subset, na.action,
   ##### 11. Compute the estimator
   #################################################################
 
-  W <- W1
+  W  <- W1
   yX <- yX1
-  
-  # Compute the first step matrices
-  if (transformation == "d")  A1 <- tcrossprod(diff(diag(1, T - TL1 + 1)))
-  if (transformation == "ld") A1 <- FSM(T - TL2, "full")  # TODO: always uses "full" but man page tells otherwise
-
-  # compute the estimator
   
   ## WX <- mapply(function(x, y) crossprod(x, y), W, yX, SIMPLIFY = FALSE)
   ## WX <- Reduce("+", WX)
@@ -519,7 +527,15 @@ pgmm <- function(formula, data, subset, na.action,
   WX <- mapply(function(x, y) crossprod(x, y), W, yX, SIMPLIFY = FALSE)
   Wy <- lapply(WX, function(x) x[ ,  1L])
   WX <- lapply(WX, function(x) x[ , -1L, drop = FALSE])
-  A1 <- lapply(W, function(x) crossprod(t(crossprod(x, A1)), x))
+  WX <- Reduce("+", WX)
+  Wy <- Reduce("+", Wy)
+
+  # Compute the first step matrices
+  H <- switch(transformation,
+          "d" = FSM(T - TL1, fsm), # for fsm == "G": FSM(. "G") gives the same as previously hard coded tcrossprod(diff(diag(1, T - TL1 + 1)))
+         "ld" = FSM(T - TL2, fsm))
+  
+  A1 <- lapply(W, function(x) crossprod(t(crossprod(x, H)), x))
   A1 <- Reduce("+", A1)
   minevA1 <- min(eigen(A1)$values)
   eps <- 1E-9
@@ -528,54 +544,54 @@ pgmm <- function(formula, data, subset, na.action,
     ginv(A1)
   } else solve(A1)
   A1 <- A1 * length(W)
-  
-  WX <- Reduce("+", WX)
-  Wy <- Reduce("+", Wy)
+
+  # coefficients: Roodman (2019) formula (13, upper part for beta1) with B1 = (X'Z(Z'HZ)^(-1)Z'X)^(-1), A1 = (Z'HZ)^(-1)
   t.CP.WX.A1 <- t(crossprod(WX, A1))
   B1 <- solve(crossprod(WX, t.CP.WX.A1))
   Y1 <- crossprod(t.CP.WX.A1, Wy)
   coefficients <- as.numeric(crossprod(B1, Y1))
+  
   if (effect == "twoways") names.coef <- c(names.coef, namesV)
   names(coefficients) <- names.coef
 
-  residuals <- lapply(yX,
-                      function(x)
+  residuals <- lapply(yX, function(x)
                       as.vector(x[ , 1L] - crossprod(t(x[ , -1L, drop = FALSE]), coefficients)))
-  outresid <- lapply(residuals, function(x) outer(x, x))
   
-  A2 <- mapply(function(x, y) crossprod(t(crossprod(x, y)), x), W, outresid, SIMPLIFY = FALSE)
+
+  # A2 is also needed  for "onestep" model in vcovHC.pgmm, hence calc. here and 
+  # always include in model object 
+  A2 <- mapply(function(w, res) tcrossprod(crossprod(w, tcrossprod(res)), t(w)), W, residuals, SIMPLIFY = FALSE) # == mapply(function(w, res) t(w) %*% tcrossprod(res) %*% w, W, residuals, SIMPLIFY = FALSE)
   A2 <- Reduce("+", A2)
   minevA2 <- min(eigen(A2)$values)
   A2 <- if (minevA2 < eps) {
     warning("the second-step matrix is singular, a general inverse is used")
     ginv(A2)
   } else solve(A2)
-
+  
   if (model == "twosteps") {
     coef1s <- coefficients
     t.CP.WX.A2 <- t(crossprod(WX, A2))
     Y2 <- crossprod(t.CP.WX.A2, Wy)
-    B2 <- solve(crossprod(WX, t.CP.WX.A2))
-    coefficients <- as.numeric(crossprod(B2, Y2))
-    names(coefficients) <- names.coef
+    vcov <- solve(crossprod(WX, t.CP.WX.A2)) # "B2"
+    coef2s <- as.numeric(crossprod(vcov, Y2))
+    names(coef2s) <- names.coef
+    coefficients <- list("step1" = coef1s, "step2" = coef2s)
     
     # calc. residuals with coefs from 2nd step
-    residuals <- lapply(yX,
-                         function(x){
+    residuals <- lapply(yX, function(x){
                            nz <- rownames(x)
-                           z <- as.vector(x[ , 1L] - crossprod(t(x[ , -1L, drop = FALSE]), coefficients))
+                           z <- as.vector(x[ , 1L] - crossprod(t(x[ , -1L, drop = FALSE]), coef2s))
                            names(z) <- nz
                            z})
-    vcov <- B2
+  } else {
+    vcov <- B1
   }
-  else vcov <- B1
+  
   rownames(vcov) <- colnames(vcov) <- names.coef
 
   # TODO: yX does not contain the original data (but first-diff-ed data) -> fitted.values not what you would expect
   fitted.values <- mapply(function(x, y) x[ , 1L] - y, yX, residuals)
   # fitted.values <- data[ , 1L] - unlist(residuals) # in 'data' is original data, but obs lost due to diff-ing are not dropped -> format incompatible
-  
-  if(model == "twosteps") coefficients <- list(coef1s, coefficients)
   
   args <- list(model          = model,
                effect         = effect,
@@ -592,6 +608,7 @@ pgmm <- function(formula, data, subset, na.action,
                  W             = W,
                  A1            = A1,
                  A2            = A2,
+                 B1            = B1,
                  call          = cl,
                  args          = args)
   
@@ -677,13 +694,10 @@ dynterms2formula <- function(x, response.name = NULL){
   else as.formula(paste(response.name, "~", paste(result, collapse = "+")))
 }
 
-extract.data <- function(data, as.matrix = TRUE){
-  # the previous version is *very* slow because :
-  # 1. split works wrong on pdata.frame
-  # 2. model.matrix is lapplied !
-  form <- attr(data, "formula")
+extract.data <- function(data, form, as.matrix = TRUE){
+  # uses collapse's fast *split functions / 2024-12-27
   trms <- terms(form)
-  has.response <- attr(trms, 'response') == 1
+  has.response  <- attr(trms, 'response')  == 1
   has.intercept <- attr(trms, 'intercept') == 1
   if (has.intercept == 1){
     # Formula is unable to update formulas with no lhs
@@ -697,18 +711,14 @@ extract.data <- function(data, as.matrix = TRUE){
     X <- cbind(data[[1L]], X)
     colnames(X)[1L] <- deparse(trms[[2L]])
   }
-### TODO: can speed up with collapse:
-  data <- split(as.data.frame(X), index[[1L]])
-  time <- split(index[[2L]], index[[1L]])
-#  data <- collapse::rsplit(as.data.frame(X), index[[1L]])  # does not yet work
-#  time <- collapse::gsplit(index[[2L]], index[[1L]])
-  data <- mapply(
-                 function(x, y){
+  
+  if(!as.matrix) X <- as.data.frame(X)
+  data <- collapse::rsplit(X, index[[1L]], simplify = FALSE)
+  time <- collapse::gsplit(index[[2L]], index[[1L]])
+  data <- mapply(function(x, y){
                    rownames(x) <- y
-                   if (as.matrix) x <- as.matrix(x)
                    x
-                 }
-                 , data, time, SIMPLIFY = FALSE)
+                 }, data, time, SIMPLIFY = FALSE)
   data
 }
 
@@ -735,7 +745,8 @@ Id <- function(t){
   diag(1, t)
 }
 
-FSM <- function(t, fsm){
+FSM <- function(t, fsm = c("I", "G", "GI", "full")){
+  fsm <- match.arg(fsm)
   switch(fsm,
          "I" = Id(t),
          "G" = G(t),
@@ -792,11 +803,11 @@ summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...) {
   K <- if(model == "onestep") length(object$coefficients)
        else                   length(object$coefficients[[2L]])
   object$sargan <- sargan(object, "twosteps")
-  object$m1 <- mtest(object, order = 1, vcov = vv)
+  object$m1 <- mtest(object, order = 1L, vcov = if(!robust) NULL else vv)
   # mtest with order = 2 is only feasible if more than 2 observations are present
-  if(NROW(object$model[[1]]) > 2) object$m2 <- mtest(object, order = 2, vcov = vv)
-  object$wald.coef <- pwaldtest(object, param = "coef", vcov = vv)
-  if(effect == "twoways") object$wald.td <- pwaldtest(object, param = "time", vcov = vv)
+  if(NROW(object$model[[1L]]) > 2L) object$m2 <- mtest(object, order = 2L, vcov = if(!robust) NULL else vv)
+  object$wald.coef <- pwaldtest(object, param = "coef", vcov = if(!robust) NULL else vv)
+  if(effect == "twoways") object$wald.td <- pwaldtest(object, param = "time", vcov = if(!robust) NULL else vv)
   Kt <- length(object$args$namest)
   rowsel <- if(!time.dummies && effect == "twoways") -c((K - Kt + 1):K)
             else seq_len(K)
@@ -817,8 +828,21 @@ summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...) {
 #' 
 #' The Arellano--Bond test is a test of correlation based on the residuals of
 #' the estimation. By default, the computation is done with the standard
-#' covariance matrix of the coefficients.  A robust estimator of this
+#' covariance matrix of the coefficients. A robust estimator of a
 #' covariance matrix can be supplied with the `vcov` argument.
+#' 
+#' Note that `mtest` computes like DPD for Ox and xtabond do, i.e., uses for two-steps
+#' models the one-step model's residuals which were used to construct the efficient
+#' two-steps estimator, see \insertCite{DOOR:AREL:BOND:12}{plm}, p. 32, footnote 7;
+#' As noted by \insertCite{AREL:BOND:91}{plm} (p. 282), the m statistic is rather 
+#' flexible and can be defined with any consistent GMM estimator which gives leeway 
+#' for implementation, but the test's asymptotic  power depends on the estimator's efficiency. 
+#' \insertCite{AREL:BOND:91}{plm} (see their footnote 9) used 
+#' DPD98 for Gauss (\insertCite{AREL:BOND:98}{plm}) as did 
+#' \insertCite{WIND:05}{plm} (see footnote 10) for the basis of his 
+#' covariance correction, both with a slightly different implementation. 
+#' Hence some results for `mtest` with two-step models diverge from original papers,
+#' see examples below.
 #' 
 #' @param object an object of class `"pgmm"`,
 #' @param order integer: the order of the serial correlation,
@@ -828,21 +852,35 @@ summary.pgmm <- function(object, robust = TRUE, time.dummies = FALSE, ...) {
 #' @return An object of class `"htest"`.
 #' @export
 #' @author Yves Croissant
-#' @seealso [pgmm()]
+#' @seealso [pgmm()], [vcovHC.pgmm()]
 #' @references
 #'
-#' \insertCite{AREL:BOND:91}{plm}
+#' \insertAllCited{}
 #' 
 #' @keywords htest
 #' @examples
-#' 
 #' data("EmplUK", package = "plm")
-#' ar <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1) +
-#'            lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
-#'            data = EmplUK, effect = "twoways", model = "twosteps")
-#' mtest(ar, order = 1L)
-#' mtest(ar, order = 2L, vcov = vcovHC)
-#'
+#' # Arellano/Bond 1991, Table 4, column (a1)
+#' ab.a1 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+#'               + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
+#'               data = EmplUK, effect = "twoways", model = "onestep")
+#' mtest(ab.a1, 1L)
+#' mtest(ab.a1, 2L, vcov = vcovHC)
+#' 
+#' # Windmeijer (2005), table 2, onestep with corrected std. err
+#' ab.b.onestep <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+#'                      + log(capital) + lag(log(output), 0:1) | lag(log(emp), 2:99),
+#'                      data = EmplUK, effect = "twoways", model = "onestep")
+#' mtest(ab.b.onestep, 1L, vcov = vcovHC)
+#' mtest(ab.b.onestep, 2L, vcov = vcovHC)
+#' 
+#' # Arellano/Bond 1991, Table 4, column (a2)
+#' ab.a2 <- pgmm(log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+#'              + lag(log(capital), 0:2) + lag(log(output), 0:2) | lag(log(emp), 2:99),
+#'              data = EmplUK, effect = "twoways", model = "twosteps")
+#' mtest(ab.a2, 1L)
+#' mtest(ab.a2, 2L) # while a la Arellano/Bond (1991) -0.434
+
 mtest <- function(object, ...) {
   UseMethod("mtest")
 }
@@ -869,32 +907,28 @@ mtest.pgmm <- function(object, order = 1L, vcov = NULL, ...) {
   switch(transformation,
          "d" = {
            resid <- object$residuals
-           residl <- lapply(resid,
-                            function(x)
-                              c(rep(0, order), x[seq_len(length(x) - order)]))
+           residl <- lapply(resid, function(x) c(rep(0, order), x[seq_len(length(x) - order)]))
                },
          "ld" = {
-           resid <- lapply(object$residuals,
-                           function(x)
+           resid <- lapply(object$residuals, function(x)
                              c(x[-c(Kt:(2 * Kt + 1))], rep(0, Kt)))
-           residl <- lapply(object$residuals,
-                            function(x)
+           residl <- lapply(object$residuals, function(x)
                               c(rep(0, order), x[seq_len(Kt - order - 1)], rep(0, Kt)))
          })
   
   X <- lapply(object$model, function(x) x[ , -1L, drop = FALSE])
   W <- object$W
   A <- if(model == "onestep") object$A1 else object$A2
-  EVE <- Reduce("+",
-                mapply(function(x, y) t(y) %*% x %*% t(x) %*% y, resid, residl, SIMPLIFY = FALSE))
-  EX <- Reduce("+", mapply(crossprod, residl, X, SIMPLIFY = FALSE))
-  XZ <- Reduce("+", mapply(crossprod, W,      X, SIMPLIFY = FALSE))
-  ZVE <- Reduce("+",
-                mapply(function(x, y, z) t(x) %*% y %*% t(y) %*% z, W, resid, residl, SIMPLIFY = FALSE))
+  B <- object$vcov # object$vcov is "B1" for one-step and "B2" for two-steps model
+  EX  <- Reduce("+", mapply(crossprod, residl, X, SIMPLIFY = FALSE))
+  XZ  <- Reduce("+", mapply(crossprod, W,      X, SIMPLIFY = FALSE))
+  V <- mapply(tcrossprod, resid, SIMPLIFY = FALSE)
+  EVE <- Reduce("+", mapply(function(v, e)    t(e) %*% v %*% e,    V, residl, SIMPLIFY = FALSE))
+  ZVE <- Reduce("+", mapply(function(w, v, e) t(w) %*% v %*% e, W, V, residl, SIMPLIFY = FALSE))
 
-  denom <- EVE - 2 * EX %*% vcov(object) %*% t(XZ) %*% A %*% ZVE + EX %*% vv %*% t(EX)
   num <- Reduce("+", mapply(crossprod, resid, residl, SIMPLIFY = FALSE))
-  stat <- num / sqrt(denom)
+  denom <- EVE - 2 * EX %*% B %*% t(XZ) %*% A %*% ZVE + EX %*% vv %*% t(EX)
+  stat <- as.numeric(num / sqrt(denom))
   names(stat) <- "normal"
   if(!is.null(vcov)) vcov <- paste0(", vcov: ", deparse(substitute(vcov)))
   method <- paste0("Arellano-Bond autocorrelation test of degree ", order, vcov)
@@ -923,6 +957,8 @@ print.summary.pgmm <- function(x, digits = max(3, getOption("digits") - 2),
                       model.pgmm.transformation.list[transformation], sep = " ")
   cat(paste(model.text, "\n"))
   ## TODO: add info about collapse argument in printed output
+  
+  ## TODO: print information about non-robust/robust SE, see, e.g., print.summary.plm
 
   cat("\nCall:\n")
   print(x$call)

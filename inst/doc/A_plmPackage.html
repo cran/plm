@@ -49,7 +49,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -60,7 +60,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -158,6 +158,7 @@ width: 90%;
 div.csl-bib-body { }
 div.csl-entry {
 clear: both;
+margin-bottom: 0em;
 }
 .hanging div.csl-entry {
 margin-left:2em;
@@ -513,8 +514,8 @@ model</p>
 \end{equation*}\]</span></p>
 <p>(where <span class="math inline">\(\Delta
 y_{it}=y_{it}-y_{i,t-1}\)</span>, <span class="math inline">\(\Delta
-x_{it}=x_{it}-x_{i,t-1}\)</span> and, from @ref(eq:errcomp), <span class="math inline">\(\Delta u_{it}=u_{it}-u_{i,t-1}=\Delta
-\epsilon_{it}\)</span> for <span class="math inline">\(t=2,...,T\)</span>) can be consistently estimated
+x_{it}=x_{it}-x_{i,t-1}\)</span> and, from @ref(eq:errcomp), <span class="math inline">\(\Delta
+u_{it}=u_{it}-u_{i,t-1}=\Delta \epsilon_{it}\)</span> for <span class="math inline">\(t=2,...,T\)</span>) can be consistently estimated
 by pooled OLS. This is called the <em>first-difference</em> or FD
 estimator. Its relative efficiency, and so reasons for choosing it
 against other consistent alternatives, depends on the properties of the
@@ -788,12 +789,12 @@ the Wald test, constructed as <span class="math inline">\(\hat{\beta}^\top \hat{
 \hat{\beta}\)</span>, where <span class="math inline">\(\hat{\beta}\)</span> and <span class="math inline">\(\hat{V}\)</span> are consistent estimates of <span class="math inline">\(\beta\)</span> and <span class="math inline">\(V(\beta)\)</span>, The Wald test may be used for
 zero-restriction (i.e., significance) testing and, more generally, for
 linear hypotheses in the form <span class="math inline">\((R \hat{\beta}
-- r)^\top [R \hat{V} R^\top ]^{-1} (R \hat{\beta} - r)\)</span><a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>. To be
-applicable, the test functions require extractor methods for
-coefficients’ and covariance matrix estimates to be defined for the
-model object to be tested. Model objects in <code>plm</code> all have
-<code>coef()</code> and <code>vcov()</code> methods and are therefore
-compatible with the above functions.</p>
+- r)^\top  [R \hat{V} R^\top ]^{-1} (R
+\hat{\beta} - r)\)</span><a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>. To be applicable, the test functions
+require extractor methods for coefficients’ and covariance matrix
+estimates to be defined for the model object to be tested. Model objects
+in <code>plm</code> all have <code>coef()</code> and <code>vcov()</code>
+methods and are therefore compatible with the above functions.</p>
 <p>In the same framework, robust inference is accomplished substituting
 (“plugging in”) a robust estimate of the coefficient covariance matrix
 into the Wald statistic formula. In the panel context, the estimator of
@@ -806,8 +807,8 @@ for <code>plm</code> objects.</p>
 (X^\top X)^{-1}
 \end{equation*}\]</span></p>
 <p>where <span class="math inline">\(E_i\)</span> is a function of the
-residuals <span class="math inline">\(\hat{e}_{it}, \; t=1, \dots
-T\)</span> chosen according to the relevant heteroskedasticity and
+residuals <span class="math inline">\(\hat{e}_{it}, \; t=1,
+\dots T\)</span> chosen according to the relevant heteroskedasticity and
 correlation structure. Moreover, it turns out that the White covariance
 matrix calculated on the demeaned model’s regressors and residuals (both
 part of <code>plm</code> objects) is a consistent estimator of the
@@ -919,12 +920,16 @@ the values in deviation from the individual means. The
 <code>Within</code> function performs this operation.</li>
 <li>the first difference transformation <span class="math inline">\(D=I_n \otimes d\)</span> where</li>
 </ul>
-<p><span class="math inline">\(d=\left( \begin{array}{ccccccc} 1 &amp;
--1 &amp; 0 &amp; 0 &amp; ... &amp; 0 &amp; 0 \\ 0 &amp; 1 &amp; -1 &amp;
-0 &amp; ... &amp; 0 &amp; 0 \\ 0 &amp; 0 &amp; 1 &amp; -1 &amp; ...
-&amp; 0 &amp; 0 \\ \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp;
-\ddots &amp; \vdots &amp; \vdots \\ 0 &amp; 0 &amp; 0 &amp; 0 &amp; ...
-&amp; 1 &amp; -1 \\ \end{array} \right)\)</span></p>
+<p><span class="math inline">\(d=\left(
+\begin{array}{ccccccc}
+1 &amp; -1 &amp; 0 &amp; 0 &amp; ... &amp; 0 &amp; 0 \\
+0 &amp;  1 &amp; -1 &amp; 0 &amp; ... &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; -1 &amp; ... &amp; 0 &amp; 0 \\
+\vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots
+&amp; \vdots \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; ... &amp; 1 &amp; -1 \\
+\end{array}
+\right)\)</span></p>
 <p>is of dimension <span class="math inline">\((T-1,T)\)</span>.</p>
 <p>Note that <code>R</code>’s <code>diff()</code> and <code>lag()</code>
 functions don’t compute correctly these transformations for panel data
@@ -1583,9 +1588,8 @@ formula. By default, all the variables of the model that are not used as
 GMM instruments are used as normal instruments, with the same lag
 structure; “normal” instruments may also be indicated in the third part
 of the formula.</p>
-<p>The <code>effect</code> argument is either <code>NULL</code>,
-<code>&quot;individual&quot;</code> (the default), or <code>&quot;twoways&quot;</code>. In
-the first case, the model is estimated in levels. In the second case,
+<p>The <code>effect</code> argument is either <code>&quot;individual&quot;</code>
+or <code>&quot;twoways&quot;</code> (the default). In the first case, the model is
 the model is estimated in first differences to get rid of the
 individuals effects. In the last case, the model is estimated in first
 differences and time dummies are included.</p>
@@ -1593,13 +1597,13 @@ differences and time dummies are included.</p>
 two-steps model is requested (<code>&quot;onestep&quot;</code> or
 <code>&quot;twosteps&quot;</code>).</p>
 <p>The following example is from <span class="citation">M. Arellano and
-Bond (1991)</span>. Employment is explained by past values of employment
-(two lags), current and first lag of wages and output and current value
-of capital.</p>
+Bond (1991)</span>, table 4, column b. Employment is explained by past
+values of employment (two lags), current and first lag of wages and
+output and current value of capital.</p>
 <div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a>emp.gmm <span class="ot">&lt;-</span> <span class="fu">pgmm</span>(<span class="fu">log</span>(emp)<span class="sc">~</span><span class="fu">lag</span>(<span class="fu">log</span>(emp), <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>)<span class="sc">+</span><span class="fu">lag</span>(<span class="fu">log</span>(wage), <span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>)<span class="sc">+</span><span class="fu">log</span>(capital)<span class="sc">+</span></span>
 <span id="cb52-2"><a href="#cb52-2" tabindex="-1"></a>                <span class="fu">lag</span>(<span class="fu">log</span>(output), <span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>) <span class="sc">|</span> <span class="fu">lag</span>(<span class="fu">log</span>(emp), <span class="dv">2</span><span class="sc">:</span><span class="dv">99</span>),</span>
 <span id="cb52-3"><a href="#cb52-3" tabindex="-1"></a>                <span class="at">data =</span> EmplUK, <span class="at">effect =</span> <span class="st">&quot;twoways&quot;</span>, <span class="at">model =</span> <span class="st">&quot;twosteps&quot;</span>)</span>
-<span id="cb52-4"><a href="#cb52-4" tabindex="-1"></a><span class="fu">summary</span>(emp.gmm)</span></code></pre></div>
+<span id="cb52-4"><a href="#cb52-4" tabindex="-1"></a><span class="fu">summary</span>(emp.gmm, <span class="at">robust =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 <pre><code>## Twoways effects Two-steps model Difference GMM 
 ## 
 ## Call:
@@ -1615,27 +1619,28 @@ of capital.</p>
 ## -0.6190677 -0.0255683  0.0000000 -0.0001339  0.0332013  0.6410272 
 ## 
 ## Coefficients:
-##                         Estimate Std. Error z-value    Pr(&gt;|z|)    
-## lag(log(emp), 1:2)1     0.474151   0.185398  2.5575   0.0105437 *  
-## lag(log(emp), 1:2)2    -0.052967   0.051749 -1.0235   0.3060506    
-## lag(log(wage), 0:1)0   -0.513205   0.145565 -3.5256   0.0004225 ***
-## lag(log(wage), 0:1)1    0.224640   0.141950  1.5825   0.1135279    
-## log(capital)            0.292723   0.062627  4.6741 0.000002953 ***
-## lag(log(output), 0:1)0  0.609775   0.156263  3.9022 0.000095304 ***
-## lag(log(output), 0:1)1 -0.446373   0.217302 -2.0542   0.0399605 *  
+##                         Estimate Std. Error  z-value              Pr(&gt;|z|)    
+## lag(log(emp), 1:2)1     0.474151   0.085303   5.5584    0.0000000272221654 ***
+## lag(log(emp), 1:2)2    -0.052967   0.027284  -1.9413             0.0522200 .  
+## lag(log(wage), 0:1)0   -0.513205   0.049345 -10.4003 &lt; 0.00000000000000022 ***
+## lag(log(wage), 0:1)1    0.224640   0.080063   2.8058             0.0050192 ** 
+## log(capital)            0.292723   0.039463   7.4177    0.0000000000001191 ***
+## lag(log(output), 0:1)0  0.609775   0.108524   5.6188    0.0000000192269973 ***
+## lag(log(output), 0:1)1 -0.446373   0.124815  -3.5763             0.0003485 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Sargan test: chisq(25) = 30.11247 (p-value = 0.22011)
-## Autocorrelation test (1): normal = -1.53845 (p-value = 0.12394)
-## Autocorrelation test (2): normal = -0.2796829 (p-value = 0.77972)
-## Wald test for coefficients: chisq(7) = 142.0353 (p-value = &lt; 0.000000000000000222)
-## Wald test for time dummies: chisq(6) = 16.97046 (p-value = 0.0093924)</code></pre>
+## Autocorrelation test (1): normal = -2.427829 (p-value = 0.01519)
+## Autocorrelation test (2): normal = -0.3325401 (p-value = 0.73948)
+## Wald test for coefficients: chisq(7) = 371.9877 (p-value = &lt; 0.000000000000000222)
+## Wald test for time dummies: chisq(6) = 26.9045 (p-value = 0.0001509)</code></pre>
 <p>The following example is from <span class="citation">Blundell and
 Bond (1998)</span>. The “sys” estimator is obtained using
 <code>transformation = &quot;ld&quot;</code> for level and difference. The
 <code>robust</code> argument of the <code>summary</code> method enables
-to use the robust covariance matrix proposed by <span class="citation">Windmeijer (2005)</span>. For all pgmm models,
+to use the robust covariance matrix, in case of a two-steps model with
+the small-sample correction proposed by <span class="citation">Windmeijer (2005)</span>. For all pgmm models,
 <code>robust = TRUE</code> is the default (but set in this example
 explicitly).</p>
 <div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a>z2 <span class="ot">&lt;-</span> <span class="fu">pgmm</span>(<span class="fu">log</span>(emp) <span class="sc">~</span> <span class="fu">lag</span>(<span class="fu">log</span>(emp), <span class="dv">1</span>)<span class="sc">+</span> <span class="fu">lag</span>(<span class="fu">log</span>(wage), <span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>) <span class="sc">+</span></span>
@@ -1898,10 +1903,11 @@ test for the null hypothesis that <span class="math inline">\(\sigma^2_{\mu}=0\)
 unobserved effects in the residuals. Given that under the null the
 covariance matrix of the residuals for each individual is diagonal, the
 test statistic is based on the average of elements in the upper (or
-lower) triangle of its estimate, diagonal excluded: <span class="math inline">\(n^{-1/2} \sum_{i=1}^n \sum_{t=1}^{T-1}
-\sum_{s=t+1}^T \hat{u}_{it} \hat{u}_{is}\)</span> (where <span class="math inline">\(\hat{u}\)</span> are the pooled OLS residuals),
-which must be “statistically close” to zero under the null, scaled by
-its standard deviation: <span class="math display">\[W=\frac{
+lower) triangle of its estimate, diagonal excluded: <span class="math inline">\(n^{-1/2} \sum_{i=1}^n
+\sum_{t=1}^{T-1} \sum_{s=t+1}^T \hat{u}_{it} \hat{u}_{is}\)</span>
+(where <span class="math inline">\(\hat{u}\)</span> are the pooled OLS
+residuals), which must be “statistically close” to zero under the null,
+scaled by its standard deviation: <span class="math display">\[W=\frac{
 \sum_{i=1}^n \sum_{t=1}^{T-1} \sum_{s=t+1}^T
   \hat{u}_{it} \hat{u}_{is} }{ [{ \sum_{i=1}^n ( \sum_{t=1}^{T-1}
     \sum_{s=t+1}^T \hat{u}_{it} \hat{u}_{is} } )^2 ]^{1/2}
@@ -2046,8 +2052,8 @@ correlation test to the quasi-demeaned model. The same applies in a
 pooled model, w.r.t. the original data.</p>
 <p>The FE case needs some qualification. It is well-known that if the
 original model’s errors are uncorrelated then FE residuals are
-negatively serially correlated, with <span class="math inline">\(cor(\hat{u}_{it}, \hat{u}_{is})=-1/(T-1)\)</span>
-for each <span class="math inline">\(t,s\)</span> (see <span class="citation">Wooldridge (2002)</span> 10.5.4). This correlation
+negatively serially correlated, with <span class="math inline">\(cor(\hat{u}_{it},
+\hat{u}_{is})=-1/(T-1)\)</span> for each <span class="math inline">\(t,s\)</span> (see <span class="citation">Wooldridge (2002)</span> 10.5.4). This correlation
 clearly dies out as T increases, so this kind of AR test is applicable
 to <code>within</code> model objects only for T “sufficiently large”<a href="#fn14" class="footnote-ref" id="fnref14"><sup>14</sup></a>. On the
 converse, in short panels the test gets severely biased towards
@@ -2084,8 +2090,9 @@ negatively serially correlated, with <span class="math inline">\(cor(\hat{\epsil
 for this null hypothesis on a pooled regression of FE residuals on
 themselves, lagged one period: <span class="math display">\[\hat{\epsilon}_{i,t}=\alpha + \delta
 \hat{\epsilon}_{i,t-1} + \eta_{i,t}\]</span> Rejecting the restriction
-<span class="math inline">\(\delta = -1/(T-1)\)</span> makes us conclude
-against the original null of no serial correlation.</p>
+<span class="math inline">\(\delta =
+-1/(T-1)\)</span> makes us conclude against the original null of no
+serial correlation.</p>
 <p>The building blocks available in <code>plm</code> make it easy to
 construct a function carrying out this procedure: first the FE model is
 estimated and the residuals retrieved, then they are lagged and a
@@ -2113,8 +2120,8 @@ the most efficient estimator between fixed effects (<code>within</code>)
 and first difference (<code>fd</code>).</p>
 <p>The starting point is the observation that if the idiosyncratic
 errors of the original model <span class="math inline">\(u_{it}\)</span>
-are uncorrelated, the errors of the (first) differenced model<a href="#fn16" class="footnote-ref" id="fnref16"><sup>16</sup></a> <span class="math inline">\(e_{it} \equiv u_{it}-u_{i,t-1}\)</span> will be
-correlated, with <span class="math inline">\(cor(e_{it},
+are uncorrelated, the errors of the (first) differenced model<a href="#fn16" class="footnote-ref" id="fnref16"><sup>16</sup></a> <span class="math inline">\(e_{it} \equiv
+u_{it}-u_{i,t-1}\)</span> will be correlated, with <span class="math inline">\(cor(e_{it},
 e_{i,t-1})=-0.5\)</span>, while any time-invariant effect, “fixed” or
 “random”, is wiped out in the differencing. So a serial correlation test
 for models with individual effects of any kind can be based on
@@ -2126,11 +2133,11 @@ provides Monte Carlo evidence of the good empirical properties of the
 test.</p>
 <p>On the other extreme (see <span class="citation">Wooldridge
 (2002)</span> 10.6.1), if the differenced errors <span class="math inline">\(e_{it}\)</span> are uncorrelated, as by definition
-<span class="math inline">\(u_{it} = u_{i,t-1} + e_{it}\)</span>, then
-<span class="math inline">\(u_{it}\)</span> is a random walk. In this
-latter case, the most efficient estimator is the first difference
-(<code>fd</code>) one; in the former case, it is the fixed effects one
-(<code>within</code>).</p>
+<span class="math inline">\(u_{it} = u_{i,t-1}
++ e_{it}\)</span>, then <span class="math inline">\(u_{it}\)</span> is a
+random walk. In this latter case, the most efficient estimator is the
+first difference (<code>fd</code>) one; in the former case, it is the
+fixed effects one (<code>within</code>).</p>
 <p>The function <code>pwfdtest</code> allows testing either hypothesis:
 the default behaviour <code>h0=&quot;fd&quot;</code> is to test for serial
 correlation in <em>first-differenced</em> errors:</p>
@@ -2197,9 +2204,10 @@ observations are considered, and <span class="math inline">\(T_{ij}=min(T_i,T_j)
 individual <span class="math inline">\(i\)</span>; else, if the panel is
 balanced, <span class="math inline">\(T_{ij}=T\)</span> for each <span class="math inline">\(i,j\)</span>. The test is distributed as <span class="math inline">\(\chi^2_{n(n-1)/2}\)</span>. It is inappropriate
 whenever the <span class="math inline">\(n\)</span> dimension is
-“large”. A scaled version, applicable also if <span class="math inline">\(T \rightarrow \infty\)</span> and <em>then</em>
-<span class="math inline">\(n \rightarrow \infty\)</span> (as in some
-pooled time series contexts), is defined as</p>
+“large”. A scaled version, applicable also if <span class="math inline">\(T \rightarrow
+\infty\)</span> and <em>then</em> <span class="math inline">\(n
+\rightarrow \infty\)</span> (as in some pooled time series contexts), is
+defined as</p>
 <p><span class="math display">\[SCLM=\sqrt{\frac{1}{n(n-1)}} (
 \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} T_{ij} \hat{\rho}_{ij}^2 -1
 )\]</span></p>
@@ -2384,7 +2392,8 @@ information criterion (BIC)),</li>
 they are not significant.</li>
 </ul>
 <p>The ADF regression is run on <span class="math inline">\(T-p_i-1\)</span> observations for each individual,
-so that the total number of observations is <span class="math inline">\(n\times \tilde{T}\)</span> where <span class="math inline">\(\tilde{T}=T-p_i-1\)</span></p>
+so that the total number of observations is <span class="math inline">\(n\times
+\tilde{T}\)</span> where <span class="math inline">\(\tilde{T}=T-p_i-1\)</span></p>
 <p><span class="math inline">\(\bar{p}\)</span> is the average number of
 lags. Call <span class="math inline">\(e_{i}\)</span> the vector of
 residuals.</p>
@@ -2736,9 +2745,8 @@ this case, optional parameters are provided as shown below (see also
 may be used to test for linear restrictions:</p>
 <div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" tabindex="-1"></a><span class="fu">library</span>(<span class="st">&quot;car&quot;</span>)</span>
 <span id="cb112-2"><a href="#cb112-2" tabindex="-1"></a><span class="fu">linearHypothesis</span>(re, <span class="st">&quot;2*value=capital&quot;</span>, <span class="at">vcov. =</span> vcovHC)</span></code></pre></div>
-<pre><code>## Linear hypothesis test
-## 
-## Hypothesis:
+<pre><code>## 
+## Linear hypothesis test:
 ## 2 value - capital = 0
 ## 
 ## Model 1: restricted model
@@ -2904,12 +2912,12 @@ also ML.</p>
 <div id="random-effects" class="section level3">
 <h3>Random effects</h3>
 <p>In the Laird and Ware notation, the RE specification is a model with
-only one random effects regressor: the intercept. Formally, <span class="math inline">\(z_{1ij}=1 \phantom{p}\forall i,j, \phantom{p}
-z_{qij}=0 \phantom{p} \forall i, \forall j, \forall q \neq 1\)</span>
-<span class="math inline">\(\lambda_{ij}=1\)</span> for <span class="math inline">\(i=j\)</span>, <span class="math inline">\(0\)</span> else). The composite error is therefore
-<span class="math inline">\(u_{ij}=1b_{i1} + \epsilon_{ij}\)</span>.
-Below we report coefficients of Grunfeld’s model estimated by GLS and
-then by ML:</p>
+only one random effects regressor: the intercept. Formally, <span class="math inline">\(z_{1ij}=1
+\phantom{p}\forall i,j, \phantom{p} z_{qij}=0 \phantom{p} \forall i,
+\forall j, \forall q \neq 1\)</span> <span class="math inline">\(\lambda_{ij}=1\)</span> for <span class="math inline">\(i=j\)</span>, <span class="math inline">\(0\)</span> else). The composite error is therefore
+<span class="math inline">\(u_{ij}=1b_{i1} +
+\epsilon_{ij}\)</span>. Below we report coefficients of Grunfeld’s model
+estimated by GLS and then by ML:</p>
 <div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" tabindex="-1"></a><span class="fu">library</span>(nlme)</span>
 <span id="cb114-2"><a href="#cb114-2" tabindex="-1"></a>reGLS <span class="ot">&lt;-</span> <span class="fu">plm</span>(inv<span class="sc">~</span>value<span class="sc">+</span>capital, <span class="at">data=</span>Grunfeld, <span class="at">model=</span><span class="st">&quot;random&quot;</span>)</span>
 <span id="cb114-3"><a href="#cb114-3" tabindex="-1"></a></span>
@@ -2927,9 +2935,9 @@ then by ML:</p>
 <p>Swamy’s variable coefficients model <span class="citation">(Swamy
 1970)</span> has coefficients varying randomly (and independently of
 each other) around a set of fixed values, so the equivalent
-specification is <span class="math inline">\(z_{q}=x_{q} \phantom{p}
-\forall q\)</span>, i.e. the fixed effects and the random effects
-regressors are the same, and <span class="math inline">\(\psi_{kk&#39;}=\sigma_\mu^2 I_N\)</span>, and
+specification is <span class="math inline">\(z_{q}=x_{q}
+\phantom{p} \forall q\)</span>, i.e. the fixed effects and the random
+effects regressors are the same, and <span class="math inline">\(\psi_{kk&#39;}=\sigma_\mu^2 I_N\)</span>, and
 <span class="math inline">\(\lambda_{ijj}=1\)</span>, <span class="math inline">\(\lambda_{ijj&#39;}=0\)</span> for <span class="math inline">\(j \neq j&#39;\)</span>, that’s to say they are not
 correlated.</p>
 <p>Estimation of a mixed model with random coefficients on all
@@ -3123,7 +3131,7 @@ Benedetti.</p>
 <h1 class="unnumbered">Bibliography</h1>
 <p><!-- Local IspellDict: english -->
 <!-- Local IspellPersDict: ~/emacs/.ispell-english --></p>
-<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
 <div id="ref-AHRE:PINC:81" class="csl-entry">
 Ahrens, H., and R. Pincus. 1981. <span>“On Two Measures of
 Unbalancedness in a One-Way Model and Their Relation to
@@ -3194,7 +3202,7 @@ the Error Components Model with Incomplete Panels.”</span>
 <div id="ref-BALT:FENG:KAO:12" class="csl-entry">
 Baltagi, Badi H., Qu Feng, and Chihwa Kao. 2012. <span>“A Lagrange
 Multiplier Test for Cross-Sectional Dependence in a Fixed Effects Panel
-Data Model.”</span> <em>Journal of Econometrics</em> 170 (1): 164–77. <a href="https://www.sciencedirect.com/science/article/pii/S030440761200098X">https://www.sciencedirect.com/science/article/pii/S030440761200098X</a>.
+Data Model.”</span> <em>Journal of Econometrics</em> 170 (1): 164–77. <a href="https://doi.org/10.1016/j.jeconom.2012.04.004">https://doi.org/10.1016/j.jeconom.2012.04.004</a>.
 </div>
 <div id="ref-BALT:WU:99" class="csl-entry">
 Baltagi, Badi H., and Ping X. Wu. 1999. <span>“Unequally Spaced Panel
@@ -3258,7 +3266,7 @@ Breusch, Trevor S, Grayham E Mizon, and Peter Schmidt. 1989.
 </div>
 <div id="ref-CHOI:01" class="csl-entry">
 Choi, In. 2001. <span>“Unit Root Tests for Panel Data.”</span>
-<em>Journal of International Money and Finance</em> 20 (2): 249–72. <a href="https://www.sciencedirect.com/science/article/pii/S0261560600000486">https://www.sciencedirect.com/science/article/pii/S0261560600000486</a>.
+<em>Journal of International Money and Finance</em> 20 (2): 249–72. <a href="https://doi.org/10.1016/S0261-5606(00)00048-6">https://doi.org/10.1016/S0261-5606(00)00048-6</a>.
 </div>
 <div id="ref-CORN:RUPE:88" class="csl-entry">
 Cornwell, C., and P. Rupert. 1988. <span>“Efficient Estimation with
@@ -3363,7 +3371,7 @@ Kwiatkowski, Denis, Peter C. B. Phillips, Peter Schmidt, and Yongcheol
 Shin. 1992. <span>“Testing the Null Hypothesis of Stationarity Against
 the Alternative of a Unit Root: How Sure Are We That Economic Time
 Series Have a Unit Root?”</span> <em>Journal of Econometrics</em> 54
-(1): 159–78. <a href="https://www.sciencedirect.com/science/article/pii/030440769290104Y">https://www.sciencedirect.com/science/article/pii/030440769290104Y</a>.
+(1): 159–78. <a href="https://doi.org/10.1016/0304-4076(92)90104-Y">https://doi.org/10.1016/0304-4076(92)90104-Y</a>.
 </div>
 <div id="ref-LAIR:WARE:82" class="csl-entry">
 Laird, N. M., and J. H. Ware. 1982. <span>“Random–Effects Models for
