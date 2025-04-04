@@ -11,7 +11,7 @@ abstract: |
   estimate with only plain `R`. `plm` is a package for `R` which
   intends to make the estimation of linear panel models
   straightforward. `plm` provides functions to estimate a wide
-  variety of models and to make (robust) inference.
+  variety of models, to make (robust) inference, and for various tests.
 title: 'Panel data econometrics in R:'
 subtitle: 'the plm package'
 author: 
@@ -2057,8 +2057,8 @@ linearHypothesis(re, "2*value=capital", vcov. = vcovHC)
 ```
 
 A specific methods are also provided for `pcce` and `pgmm` objects, for the latter
-`vcovHC` provides the robust covariance matrix proposed by
-@WIND:05 for generalized method of moments estimators.
+`vcovHC` provides a robust covariance matrix with the small-sample adjustment as 
+proposed by @WIND:05 for generalized method of moments estimators.
 
 
 # plm versus nlme and lme4{#nlme}
@@ -2340,7 +2340,7 @@ Linear models with groupwise structures of time-dependence^[Take heed
 that here, in contrast to the usual meaning of serial correlation in
 time series, we always speak of serial correlation *between the errors
 of each group*.]  may be fitted by `gls()`, specifying the correlation
-structure in the `correlation` option^[note that the time index is
+structure in the `correlation` option^[Note that the time index is
 coerced to numeric before the estimation.]:
 
 

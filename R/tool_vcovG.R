@@ -266,13 +266,12 @@ vcovDC <- function(x, ...){
 #' @aliases vcovG
 #' @param x an object of class `"plm"` or `"pcce"`
 #' @param type the weighting scheme used, one of `"HC0"`,
-#'     `"sss"`, `"HC1"`, `"HC2"`, `"HC3"`,
-#'     `"HC4"`,
+#'     `"sss"`, `"HC1"`, `"HC2"`, `"HC3"`, `"HC4"`,
 #' @param cluster one of `"group"`, `"time"`,
 #' @param l lagging order, defaulting to zero
 #' @param inner the function to be applied to the residuals inside the
 #'     sandwich: one of `"cluster"` or `"white"` or
-#'     `"diagavg"`,
+#'     `"diagavg"`, or a user specified R function,
 #' @param \dots further arguments
 #' @return An object of class `"matrix"` containing the estimate
 #'     of the covariance matrix of coefficients.
@@ -280,8 +279,7 @@ vcovDC <- function(x, ...){
 #' @author Giovanni Millo
 #' @seealso [vcovHC()], [vcovSCC()],
 #'     [vcovDC()], [vcovNW()], and
-#'     [vcovBK()] albeit the latter does not make use of
-#'     vcovG.
+#'     [vcovBK()] albeit the latter does not make use of vcovG.
 #' @references
 #'
 #' \insertRef{mil17b}{plm}
@@ -359,46 +357,18 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## extract residuals
     uhat <- x$residuals
 
-  ## define residuals weighting function omega(res)
-  ## (code taken from meatHC and modified)
-  ## (the weighting is defined "in sqrt" relative to the literature)
-  ## 
-  ## (see the theoretical comments in pvcovHC)
-
-    ## this is computationally heavy, do only if needed
     diaghat <- switch(type, "HC0" = NULL,
                             "sss" = NULL,
                             "HC1" = NULL,
                             "HC2" = try(dhat(demX), silent = TRUE),
                             "HC3" = try(dhat(demX), silent = TRUE),
                             "HC4" = try(dhat(demX), silent = TRUE))
-    df <- nT - k
-    switch(type, 
-           "HC0" = {
-            omega <- function(residuals, diaghat, df, g) residuals
-        }, "sss" = {
-            omega <- function(residuals, diaghat, df, g) residuals *
-                                sqrt(g/(g-1)*((nT-1)/(nT-k)))
-        }, "HC1" = {
-            omega <- function(residuals, diaghat, df, g) residuals *
-                                sqrt(length(residuals)/df)
-        }, "HC2" = {
-            omega <- function(residuals, diaghat, df, g) residuals /
-                                sqrt(1 - diaghat)
-        }, "HC3" = {
-            omega <- function(residuals, diaghat, df, g) residuals /
-                                (1 - diaghat)
-        }, "HC4" = {
-            omega <- function(residuals, diaghat, df, g) {
-                residuals/sqrt(1 - diaghat)^
-                 pmin(4, length(residuals) *
-                      diaghat/as.integer(round(sum(diaghat),
-                digits = 0)))
-            }
-        })
+    
 
    ## Definition module for E(u,v)
     if(is.function(inner)) {
+      # case of user-specified function
+      # (only if user calls workhorse vcovG directly (i.e., not possible via wrappers vcovXX)
         E <- inner
     } else {
       ## outer for clustering/arellano, diag(diag(inner)) for white
@@ -537,15 +507,17 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
   ## calc. the lagged White terms on unbalanced panels
 
   ## transform residuals by weights (here because type='sss' needs to
-  ## know who the grouping index 'g' is
+  ## know who the grouping index 'g' is in helper function omega())
 
   ## set number of clusters for Stata-like small sample correction
   ## (if clustering, i.e., inner="cluster", then G is the cardinality of
   ## the grouping index; if inner="white" it is simply the sample size)
-    ## find some more elegant solution for this!
+    ## TODO: find some more elegant solution for this!
     ## (perhaps if white then sss -> HC1 but check...)
   G <- if(match.arg(inner) == "cluster") n else nT
-  uhat <- omega(uhat, diaghat, df, G)
+  
+  # transform residuals by weights
+  uhat <- omega(residuals = uhat, diaghat = diaghat, g = G, nT = nT, k = k, type = type)
 
   ## compute basic block: X'_t u_t u'_(t-l) X_(t-l) foreach t,
   ## then calculate Sl_t and sum over t (here i in place of t)
@@ -555,7 +527,7 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
     ## preallocate k x k x (T-l) array for 'pile' of kxk matrices
     ## holding the X' E(u,ul) X elements
-    Sl <- array(dim = c(k, k, n-l))
+    Sl <- array(NA_real_, dim = c(k, k, n-l))
     
     ## (l=0 gives the special contemporaneous case where Xi=Xil, ui=uil
     ## for computing W, CX, CT)
@@ -565,10 +537,10 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
       Xl <- demX[tind[[i-l]], , drop = FALSE]
       u  <- uhat[tind[[i]]]
       ul <- uhat[tind[[(i-l)]]]
-      names(u)  <- tlab[[i]]
-      names(ul) <- tlab[[(i-l)]]
+      names(u)  <- tlab[[i]]      # names needed in E()
+      names(ul) <- tlab[[(i-l)]]  #   --- " ---
       ## calculate V_yy
-      Sl[ , , i-l] <- crossprod(X, E(u, ul)) %*% Xl
+      Sl[ , , i-l] <- tcrossprod(crossprod(X, E(u, ul)), t(Xl))
     }
     
     ## in order to sum on available observations two things can be done:
@@ -590,11 +562,11 @@ vcovG.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     ## bread by standard method
     pane <- solve(crossprod(demX))
     ## sandwich
-    mycov <-  tcrossprod(crossprod(t(pane), salame), t(pane)) # == pane %*% salame %*% pane
+    mycov <- tcrossprod(tcrossprod(pane, salame), t(pane)) # == pane %*% salame %*% pane
     
     # save information about cluster variable in matrix (needed for e.g.,
     # robust F test)
-    attr(mycov, which = "cluster") <- match.arg(cluster)
+    attr(mycov, which = "cluster") <- cluster
     return(mycov)
 }
 
@@ -738,9 +710,9 @@ NULL
 
 #' @rdname vcovHC.plm
 #' @export
-vcovHC.plm <- function(x, method=c("arellano", "white1", "white2"),
-                       type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
-                       cluster=c("group", "time"), ...) {
+vcovHC.plm <- function(x, method = c("arellano", "white1", "white2"),
+                       type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
+                       cluster = c("group", "time"), ...) {
     ## user-level wrapper for White-Arellano covariances
 
     ## translate arguments
@@ -749,35 +721,32 @@ vcovHC.plm <- function(x, method=c("arellano", "white1", "white2"),
                     "white1"   = "white",
                     "white2"   = "diagavg")
 
-    return(vcovG(x, type=type, cluster=cluster,
-                        l=0, inner=inner, ...))
+    return(vcovG(x, type = type, cluster = cluster, l = 0, inner = inner, ...))
 }
 
 #' @rdname vcovNW
 #' @export
-vcovNW.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
-                       maxlag=NULL,
-                       wj=function(j, maxlag) 1-j/(maxlag+1),
+vcovNW.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
+                       maxlag = NULL,
+                       wj = function(j, maxlag) 1-j/(maxlag+1),
                        ...) {
     ## user-level wrapper for panel Newey-West estimator
 
     ## set default lag order
     if(is.null(maxlag)) maxlag <- floor((max(pdim(x)$Tint$Ti))^(1/4))
 
-    return(vcovSCC(x, type=type, maxlag=maxlag, inner="white", wj=wj, ...))
+    return(vcovSCC(x, type = type, maxlag = maxlag, inner = "white", wj = wj, ...))
 }
 
 #' @rdname vcovDC
 #' @export
-vcovDC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
+vcovDC.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
                        ...) {
     ## user-level wrapper for double-clustering (no persistence)
 
-    Vcx <- vcovG(x, type=type, cluster="group",
-                        l=0, inner="cluster", ...)
-    Vct <- vcovG(x, type=type, cluster="time",
-                        l=0, inner="cluster", ...)
-    Vw <- vcovG(x, type=type, l=0, inner="white", ...)
+    Vcx <- vcovG(x, type = type, cluster = "group", l = 0, inner = "cluster", ...)
+    Vct <- vcovG(x, type = type, cluster = "time",  l = 0, inner = "cluster", ...)
+    Vw  <- vcovG(x, type = type,                    l = 0, inner = "white", ...)
 
     res <- Vcx + Vct - Vw
     
@@ -789,14 +758,12 @@ vcovDC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 
 #' @rdname vcovSCC
 #' @export
-vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
-                        cluster="time",
-                        maxlag=NULL,
-                        inner=c("cluster", "white", "diagavg"),
-                        wj=function(j, maxlag) 1-j/(maxlag+1),
+vcovSCC.plm <- function(x, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
+                        cluster = "time",
+                        maxlag = NULL,
+                        inner = c("cluster", "white", "diagavg"),
+                        wj = function(j, maxlag) 1-j/(maxlag+1),
                         ...) {
-
-    ## replicates vcovSCC
 
     ## set default lag order
     if(is.null(maxlag)) maxlag <- floor((max(pdim(x)$Tint$Ti))^(1/4))
@@ -805,12 +772,11 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
     ## wj <- function(j, maxlag) 1-j/(maxlag+1)
     ## has been passed as argument
 
-    S0 <- vcovG(x, type=type, cluster=cluster, l=0, inner=inner)
+    S0 <- vcovG(x, type = type, cluster = cluster, l = 0, inner = inner)
 
     if(maxlag > 0) {
         for(i in seq_len(maxlag)) {
-            Vctl <- vcovG(x, type=type, cluster=cluster,
-                             l=i, inner=inner)
+            Vctl <- vcovG(x, type = type, cluster = cluster, l = i, inner = inner)
             S0 <- S0 + wj(i, maxlag) * (Vctl + t(Vctl))
         }
     }
@@ -822,8 +788,6 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 ##############################################################
 
 ## separate function for BK (PCSE) covariance
-
-
 
 #' Beck and Katz Robust Covariance Matrix Estimators
 #' 
@@ -872,7 +836,7 @@ vcovSCC.plm <- function(x, type=c("HC0", "sss", "HC1", "HC2", "HC3", "HC4"),
 #' examples), see \insertCite{@see also @ZEIL:04}{plm}, 4.1-2, and examples below.
 #' 
 #' @param x an object of class `"plm"`,
-#' @param type the weighting scheme used, one of `"HC0"`, `"HC1"`,
+#' @param type the weighting scheme used, one of `"HC0"`, `"sss"`, `"HC1"`,
 #'     `"HC2"`, `"HC3"`, `"HC4"`, see Details,
 #' @param cluster one of `"group"`, `"time"`,
 #' @param diagonal a logical value specifying whether to force
@@ -930,12 +894,9 @@ vcovBK <- function(x, ...) {
     UseMethod("vcovBK")
 }
 
-
-# TODO: add type "sss" for vcovBK
-
 #' @rdname vcovBK
 #' @export
-vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
+vcovBK.plm <- function(x, type = c("HC0", "sss" , "HC1", "HC2", "HC3", "HC4"),
                        cluster = c("group", "time"),
                        diagonal = FALSE, ...) {
 
@@ -1024,7 +985,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     groupind <- as.numeric(xindex[[1L]])
     timeind  <- as.numeric(xindex[[2L]])
 
-    ## adjust for 'fd' model (losing first time period)
+    ## adjust for 'fd' model (losing first time period) [same code as in vcovG.plm]
     if(model == "fd") {
       ## debug printing:
       #print("before FD adj:")
@@ -1076,41 +1037,16 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     tind <- collapse::gsplit(seq_along(relevant.ind), relevant.ind.GRP)
     tlab <- collapse::gsplit(lab, relevant.ind.GRP)
     
-  ## define residuals weighting function omega(res)
-  ## (code taken from meatHC and modified)
-  ## (the weighting is defined "in sqrt" relative to the literature)
-  ##
-  ## (see the theoretical comments in pvcovHC)
-
-    ## this is computationally heavy, do only if needed
     diaghat <- switch(type, "HC0" = NULL,
+                            "sss" = NULL,
                             "HC1" = NULL,
                             "HC2" = try(dhat(demX), silent = TRUE),
                             "HC3" = try(dhat(demX), silent = TRUE),
                             "HC4" = try(dhat(demX), silent = TRUE))
-    df <- nT - k
-    switch(type, 
-           "HC0" = {
-            omega <- function(residuals, diaghat, df) residuals
-        }, "HC1" = {
-            omega <- function(residuals, diaghat, df) residuals *
-                                sqrt(length(residuals)/df)
-        }, "HC2" = {
-            omega <- function(residuals, diaghat, df) residuals /
-                                sqrt(1 - diaghat)
-        }, "HC3" = {
-            omega <- function(residuals, diaghat, df) residuals /
-                                (1 - diaghat)
-        }, "HC4" = {
-            omega <- function(residuals, diaghat, df) residuals/sqrt(1 -
-                diaghat)^pmin(4, length(residuals) * diaghat/as.integer(round(sum(diaghat),
-                digits = 0)))
-        })
-
+  
   ## transform residuals by weights
-  uhat <- omega(uhat, diaghat, df)
-
-  ## CODE TAKEN FROM pvcovHC() UNTIL HERE except for ind/time labeling ##
+  uhat <- omega(residuals = uhat, diaghat = diaghat,
+                g = n, nT = nT, k = k, type = type)
 
   ## the PCSE covariance estimator is based on the unconditional estimate
   ## of the intragroup (intraperiod) covariance of errors, OmegaT or OmegaM
@@ -1125,7 +1061,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
 
     ## est. omega submatrix
     ## "pre-allocate" an empty array
-    tres <- array(dim = c(t, t, n))
+    tres <- array(NA_real_, dim = c(t, t, n))
 
     ## array of n "empirical omega-blocks"
     ## with outer product of t(i) residuals
@@ -1149,7 +1085,7 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
     OmegaT <- rowMeans(tres, dims = 2L, na.rm = TRUE) # == apply(tres, 1:2, mean, na.rm = TRUE) but faster
   ## end of PCSE covariance calculation.
 
-  salame <- array(dim = c(k, k, n))
+  salame <- array(NA_real_, dim = c(k, k, n))
   for(i in seq_len(n)) {
     groupinds <- tind[[i]]
     grouplabs <- tlab[[i]]
@@ -1166,11 +1102,11 @@ vcovBK.plm <- function(x, type = c("HC0", "HC1", "HC2", "HC3", "HC4"),
   pane <- solve(crossprod(demX))
 
   ## sandwich
-  mycov <- tcrossprod(crossprod(t(pane), salame), t(pane)) # == pane %*% salame %*% pane
+  mycov <- tcrossprod(tcrossprod(pane, salame), t(pane)) # == pane %*% salame %*% pane
   
   # save information about cluster variable in matrix (needed for e.g.,
   # robust F test)
-  attr(mycov, which = "cluster") <- match.arg(cluster)
+  attr(mycov, which = "cluster") <- cluster
   return(mycov)
 }
 
@@ -1302,4 +1238,21 @@ vcovHC.pgmm <- function(x, ...) {
 ## dhat: diaghat function for matrices
 dhat <- function(x) {
   rowSums(crossprod(t(x), solve(crossprod(x))) * x) # == (old) diag(crossprod(t(x), solve(crossprod(x), t(x)))
+}
+
+## omega: weighting function, used in vcvG and vcovBK
+## define residuals weighting function omega(res)
+## (code taken from meatHC and modified)
+## (the weighting is defined "in sqrt" relative to the literature)
+omega <- function(residuals, diaghat, g, nT, k, type = c("HC0", "sss", "HC1", "HC2", "HC3", "HC4")) {
+  type <- match.arg(type)
+  switch(type,
+         "HC0" = { residuals },
+         "sss" = { residuals * sqrt(g/(g-1) * ((nT-1) / (nT-k))) },
+         "HC1" = { residuals * sqrt(length(residuals) / (nT-k))  },
+         "HC2" = { residuals / sqrt(1 - diaghat) },
+         "HC3" = { residuals /     (1 - diaghat) },
+         "HC4" = { residuals / sqrt(1 - diaghat)^pmin(4, length(residuals) *
+                                                        diaghat/as.integer(round(sum(diaghat), digits = 0))) }
+  )
 }

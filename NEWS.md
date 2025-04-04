@@ -5,6 +5,24 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
           (development repository <https://github.com/ycroissant/plm/>)
 ---
 
+# 2.6-6:
+
+### Features:
+* `vcovBK`: enabled `type = "sss"` (weighting scheme), the Stata-style small 
+            sample adjustment (like for other `vcovXX` functions for a long time).
+
+### Fixes:
+* `vcovXX`: for first-difference models with weighting scheme `type = "HC1"`
+            fix degrees of freedom used in weighting (was previously only correct 
+            for `vcovBK`).
+* `predict.plm`: when argument `newdata` is a pdata.frame, the (internal) model 
+                 frame creation based on the new data is fixed ([#67](https://github.com/ycroissant/plm/issues/67)).
+### Others:
+
+* `sargan`: switch from plain function to generic and method for `pgmm` objects.
+
+***
+
 # 2.6-5
 
 ### Fixes:
@@ -205,7 +223,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 
 ### Clean-ups:
 * phansi: function renamed to phansitest for name consistency, with a *temporary*
-  back-compatible solution.
+  back-compatible solution. [back-compatibility removed in plm 2.6-3]
 * phtest: for formula method, argument 'effect' is now explicit as 4th argument 
   (previously, it was extracted from ellipsis (...)).
 * detect_lin_dep/detect.lindep: alias detect_lin_dep removed, thus this
@@ -260,7 +278,7 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
 * Source code repository for development is now on GitHub <https://github.com/ycroissant/plm>,
   not on R-Forge anymore.
 * Added a REAMDE file to the package giving basic information about package, 
-  displayed on CRAN (as on GitHub repository).
+  displayed on CRAN (and on GitHub repository).
 * Update one author's e-mail address.
 
 ***
@@ -317,7 +335,8 @@ subtitle: plm - Linear Models for Panel Data - A set of estimators and tests for
    (methods for data frame and matrix) ([#11](https://github.com/ycroissant/plm/issues/11)).
  * has.intercept.plm: argument 'part' renamed to 'rhs', argument values
    (integer or NULL) aligned with and correctly passed on to 
-   has.intercept.Formula (with a *temporary* back-compatible solution).
+   has.intercept.Formula (with a *temporary* back-compatible solution 
+   [back-compatibility removed in plm 2.6-0]).
  * pcdtest: for formula method, the formula is evaluated in the parent environment.
  * groupGenerics: no more warning in arithmetic operations on pseries when index
    of both operands have same length but different content (e.g., something like
@@ -448,7 +467,7 @@ plm()): Between, between, Sum, Within.
   stemming from, e.g., a conversion from a tibble.
 * as.data.frame.pdata.frame: clarify argument 'row.names' a bit: FALSE will give
   an integer sequence as row names, TRUE "fancy" row names, and (new) a character
-  will gives row names set to the character's elements (character's length is
+  sets row names to the character's elements (character's length is
   required to match the number of rows).
 
 ### Internals:
@@ -581,7 +600,7 @@ plm()): Between, between, Sum, Within.
     method) and model.matrix has a pdata.frame method (takes as input a model 
     frame as a pdata.frame with a terms attribute and a formula attribute).
     'formula' as an argument in model.matrix was unnecessary as the formula can 
-    be retrieved from the pdata.frame.
+    be retrieved from model frame's pdata.frame.
 * A third vignette was added describing the plm model components
     (plmModelComponents.Rmd).
 * plm: the informative error message about the deprecated argument
@@ -1083,8 +1102,7 @@ plm()): Between, between, Sum, Within.
 * summary.plm: 
   * argument '.vcov' can also be a function (before, only matrix was possible).
   * internal: the furnished vcov is saved in the summary.plm object in
-                             object\$rvcov (vcov function name in
-                             attr(object\$rvcov, which="rvcov.name").
+       object\$rvcov (vcov function name in attr(object\$rvcov, which="rvcov.name").
 * Ftest: 
   * gained '.vcov' argument, which enables robust F test and chi-sq
          test computations [robust versions not yet weaved in
@@ -1148,7 +1166,7 @@ plm()): Between, between, Sum, Within.
     estimated model compared to specified model.matrix.
 * added testfile tests/test_fitted.plm.R (some of those test currently do not run
     (commented, i.e., inactive)).
-* some testfiles: fixed wired encodings.
+* some testfiles: fixed weird encodings.
 
 ***
 

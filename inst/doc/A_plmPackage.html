@@ -384,7 +384,8 @@ statistics profession, but most of the models used are difficult to
 estimate with only plain <code>R</code>. <code>plm</code> is a package
 for <code>R</code> which intends to make the estimation of linear panel
 models straightforward. <code>plm</code> provides functions to estimate
-a wide variety of models and to make (robust) inference.</p>
+a wide variety of models, to make (robust) inference, and for various
+tests.</p>
 </div>
 
 
@@ -2760,9 +2761,10 @@ may be used to test for linear restrictions:</p>
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <p>A specific methods are also provided for <code>pcce</code> and
-<code>pgmm</code> objects, for the latter <code>vcovHC</code> provides
-the robust covariance matrix proposed by <span class="citation">Windmeijer (2005)</span> for generalized method of
-moments estimators.</p>
+<code>pgmm</code> objects, for the latter <code>vcovHC</code> provides a
+robust covariance matrix with the small-sample adjustment as proposed by
+<span class="citation">Windmeijer (2005)</span> for generalized method
+of moments estimators.</p>
 </div>
 </div>
 <div id="nlme" class="section level1">
@@ -3639,7 +3641,7 @@ forth).<a href="#fnref30" class="footnote-back">↩︎</a></p></li>
 <li id="fn31"><p>Take heed that here, in contrast to the usual meaning
 of serial correlation in time series, we always speak of serial
 correlation <em>between the errors of each group</em>.<a href="#fnref31" class="footnote-back">↩︎</a></p></li>
-<li id="fn32"><p>note that the time index is coerced to numeric before
+<li id="fn32"><p>Note that the time index is coerced to numeric before
 the estimation.<a href="#fnref32" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>

@@ -1,6 +1,6 @@
 Package: plm
-Version: 2.6-5
-Date: 2025-01-16
+Version: 2.6-6
+Date: 2025-04-04
 Title: Linear Models for Panel Data
 Authors@R: c(person(given = "Yves",      family = "Croissant",    role = c("aut"), email = "yves.croissant@univ-reunion.fr"),
              person(given = "Giovanni",  family = "Millo",        role = c("aut"), email = "giovanni.millo@deams.units.it"),
@@ -36,7 +36,7 @@ RoxygenNote: 7.3.2
 RdMacros: Rdpack
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2025-01-16 16:27:55 UTC; kevin
+Packaged: 2025-04-03 22:01:12 UTC; kevin
 Author: Yves Croissant [aut],
   Giovanni Millo [aut],
   Kevin Tappe [aut, cre],
@@ -48,4 +48,4 @@ Author: Yves Croissant [aut],
   Nina Schoenfelder [ctb]
 Maintainer: Kevin Tappe <kevin.tappe@bwi.uni-stuttgart.de>
 Repository: CRAN
-Date/Publication: 2025-01-17 14:30:12 UTC
+Date/Publication: 2025-04-04 15:00:02 UTC
